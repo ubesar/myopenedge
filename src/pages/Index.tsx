@@ -54,7 +54,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto flex items-center gap-3">
           <TrendingUp className="h-6 w-6 text-primary" />
           <h1 className="text-xl font-bold text-foreground tracking-tight">
-            Initial Balance Analyzer
+            MyOpenEdge
           </h1>
           <span className="text-xs text-muted-foreground ml-1">Auction Market Theory</span>
         </div>
