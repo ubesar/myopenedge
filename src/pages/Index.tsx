@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { TrendingUp } from "lucide-react";
 import ControlPanel from "@/components/ControlPanel";
 import IBChart from "@/components/IBChart";
+import IBDayChart from "@/components/IBDayChart";
 import SummaryTable from "@/components/SummaryTable";
 import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 
@@ -111,6 +112,16 @@ const Index = () => {
                   />
                 </div>
                 <SummaryTable result={result} symbol={symbol} />
+                {result.lastDay && (
+                  <IBDayChart
+                    date={result.lastDay.date}
+                    bars={result.lastDay.bars}
+                    ibHigh={result.lastDay.ibHigh}
+                    ibLow={result.lastDay.ibLow}
+                    symbol={symbol}
+                    ibWindowMinutes={result.ibWindowMinutes}
+                  />
+                )}
               </div>
             )}
           </section>

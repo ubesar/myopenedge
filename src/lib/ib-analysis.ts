@@ -16,12 +16,28 @@ interface DayResult {
   breakout: "high" | "low" | "inside";
 }
 
+export interface CandleBar {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+}
+
+export interface LastDayData {
+  date: string;
+  bars: CandleBar[];
+  ibHigh: number;
+  ibLow: number;
+}
+
 export interface AnalysisResult {
   totalDays: number;
   insideDays: number;
   ibWindowMinutes: number;
   highFirst: { total: number; breakHigh: number; breakLow: number };
   lowFirst: { total: number; breakHigh: number; breakLow: number };
+  lastDay: LastDayData | null;
 }
 
 function parseDateTime(dt: string): Date {
@@ -99,6 +115,33 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60): Analys
   const highFirst = breakoutDays.filter((r) => r.highFirstFormed);
   const lowFirst = breakoutDays.filter((r) => !r.highFirstFormed);
 
+  // Get the most recent day's data for candlestick chart
+  let lastDay: LastDayData | null = null;
+  if (allDayResults.length > 0) {
+    const sortedDates = allDayResults.map(r => r.date).sort();
+    const lastDate = sortedDates[sortedDates.length - 1];
+    const lastDayBars = byDate.get(lastDate);
+    const lastDayResult = allDayResults.find(r => r.date === lastDate);
+    if (lastDayBars && lastDayResult) {
+      const marketBars = lastDayBars.filter((b) => {
+        const m = getTimeMinutes(parseDateTime(b.datetime));
+        return m >= IB_START && m < MARKET_CLOSE;
+      });
+      lastDay = {
+        date: lastDate,
+        bars: marketBars.map(b => ({
+          time: b.datetime.split(" ")[1].slice(0, 5),
+          open: parseFloat(b.open),
+          high: parseFloat(b.high),
+          low: parseFloat(b.low),
+          close: parseFloat(b.close),
+        })),
+        ibHigh: lastDayResult.ibHigh,
+        ibLow: lastDayResult.ibLow,
+      };
+    }
+  }
+
   return {
     totalDays: breakoutDays.length,
     insideDays,
@@ -113,5 +156,6 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60): Analys
       breakHigh: lowFirst.filter((r) => r.breakout === "high").length,
       breakLow: lowFirst.filter((r) => r.breakout === "low").length,
     },
+    lastDay,
   };
 }
