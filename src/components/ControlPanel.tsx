@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, Play, KeyRound, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,9 +18,15 @@ const IB_WINDOWS = [
 ];
 
 const ControlPanel = ({ onRun, loading }: ControlPanelProps) => {
-  const [apiKey, setApiKey] = useState("");
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem("twelvedata_api_key") || "");
   const [symbol, setSymbol] = useState("QQQ");
   const [ibWindow, setIbWindow] = useState("60");
+
+  useEffect(() => {
+    if (apiKey.trim()) {
+      localStorage.setItem("twelvedata_api_key", apiKey.trim());
+    }
+  }, [apiKey]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
