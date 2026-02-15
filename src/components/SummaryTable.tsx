@@ -17,11 +17,13 @@ const SummaryTable = ({ result, symbol }: SummaryTableProps) => {
   const lowFirstBreakHighPct = result.lowFirst.total > 0 ? (result.lowFirst.breakHigh / result.lowFirst.total) * 100 : 0;
   const lowFirstBreakLowPct = result.lowFirst.total > 0 ? (result.lowFirst.breakLow / result.lowFirst.total) * 100 : 0;
 
-  const highFirstRec = highFirstBreakHighPct > highFirstBreakLowPct
+  const highFirstIsLong = highFirstBreakHighPct > highFirstBreakLowPct;
+  const highFirstRec = highFirstIsLong
     ? `Jika IB High terbentuk duluan → cenderung Break IB High (${highFirstBreakHighPct.toFixed(1)}%). Setup: Bias Long setelah IB selesai.`
     : `Jika IB High terbentuk duluan → cenderung Break IB Low (${highFirstBreakLowPct.toFixed(1)}%). Setup: Bias Short setelah IB selesai.`;
 
-  const lowFirstRec = lowFirstBreakHighPct > lowFirstBreakLowPct
+  const lowFirstIsLong = lowFirstBreakHighPct > lowFirstBreakLowPct;
+  const lowFirstRec = lowFirstIsLong
     ? `Jika IB Low terbentuk duluan → cenderung Break IB High (${lowFirstBreakHighPct.toFixed(1)}%). Setup: Bias Long setelah IB selesai.`
     : `Jika IB Low terbentuk duluan → cenderung Break IB Low (${lowFirstBreakLowPct.toFixed(1)}%). Setup: Bias Short setelah IB selesai.`;
 
@@ -34,11 +36,23 @@ const SummaryTable = ({ result, symbol }: SummaryTableProps) => {
         IB Window: First {ibLabel} · {totalAnalyzed} hari trading dianalisis
       </p>
       <div className="space-y-2 mb-4">
-        <div className="rounded-md bg-accent/30 border border-accent px-4 py-3">
-          <p className="text-sm font-medium text-accent-foreground">{highFirstRec}</p>
+        <div className={`rounded-md border px-4 py-3 ${highFirstIsLong ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+          <div className="flex items-center gap-2">
+            <span className={`inline-block h-2.5 w-2.5 rounded-full ${highFirstIsLong ? 'bg-emerald-500' : 'bg-red-500'}`} />
+            <span className={`text-xs font-bold uppercase tracking-wider ${highFirstIsLong ? 'text-emerald-400' : 'text-red-400'}`}>
+              {highFirstIsLong ? 'LONG BIAS' : 'SHORT BIAS'}
+            </span>
+          </div>
+          <p className="text-sm font-medium text-card-foreground mt-1">{highFirstRec}</p>
         </div>
-        <div className="rounded-md bg-accent/30 border border-accent px-4 py-3">
-          <p className="text-sm font-medium text-accent-foreground">{lowFirstRec}</p>
+        <div className={`rounded-md border px-4 py-3 ${lowFirstIsLong ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+          <div className="flex items-center gap-2">
+            <span className={`inline-block h-2.5 w-2.5 rounded-full ${lowFirstIsLong ? 'bg-emerald-500' : 'bg-red-500'}`} />
+            <span className={`text-xs font-bold uppercase tracking-wider ${lowFirstIsLong ? 'text-emerald-400' : 'text-red-400'}`}>
+              {lowFirstIsLong ? 'LONG BIAS' : 'SHORT BIAS'}
+            </span>
+          </div>
+          <p className="text-sm font-medium text-card-foreground mt-1">{lowFirstRec}</p>
         </div>
       </div>
       <Table>
