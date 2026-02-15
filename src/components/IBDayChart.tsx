@@ -101,6 +101,10 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes }: IBDa
             IB Low
           </span>
           <span className="flex items-center gap-1">
+            <span className="inline-block h-0.5 w-4 bg-green-400" />
+            IB50
+          </span>
+          <span className="flex items-center gap-1">
             <span className="inline-block h-4 w-0.5 bg-yellow-500/50" />
             IB End
           </span>
@@ -189,6 +193,20 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes }: IBDa
                 value: `IB Low ${ibLow.toFixed(2)}`,
                 position: "left",
                 fill: "#fb923c",
+                fontSize: 10,
+              }}
+            />
+
+            {/* IB 50% reference line */}
+            <ReferenceLine
+              y={(ibHigh + ibLow) / 2}
+              stroke="#4ade80"
+              strokeDasharray="4 4"
+              strokeWidth={1}
+              label={{
+                value: `IB50 ${((ibHigh + ibLow) / 2).toFixed(2)}`,
+                position: "left",
+                fill: "#4ade80",
                 fontSize: 10,
               }}
             />
