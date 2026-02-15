@@ -12,14 +12,35 @@ const SummaryTable = ({ result, symbol }: SummaryTableProps) => {
   const ibLabel = result.ibWindowMinutes === 60 ? "60 min" : `${result.ibWindowMinutes} min`;
   const totalAnalyzed = result.totalDays + result.insideDays;
 
+  const highFirstBreakHighPct = result.highFirst.total > 0 ? (result.highFirst.breakHigh / result.highFirst.total) * 100 : 0;
+  const highFirstBreakLowPct = result.highFirst.total > 0 ? (result.highFirst.breakLow / result.highFirst.total) * 100 : 0;
+  const lowFirstBreakHighPct = result.lowFirst.total > 0 ? (result.lowFirst.breakHigh / result.lowFirst.total) * 100 : 0;
+  const lowFirstBreakLowPct = result.lowFirst.total > 0 ? (result.lowFirst.breakLow / result.lowFirst.total) * 100 : 0;
+
+  const highFirstRec = highFirstBreakHighPct > highFirstBreakLowPct
+    ? `Jika IB High terbentuk duluan → cenderung Break IB High (${highFirstBreakHighPct.toFixed(1)}%). Setup: Bias Long setelah IB selesai.`
+    : `Jika IB High terbentuk duluan → cenderung Break IB Low (${highFirstBreakLowPct.toFixed(1)}%). Setup: Bias Short setelah IB selesai.`;
+
+  const lowFirstRec = lowFirstBreakHighPct > lowFirstBreakLowPct
+    ? `Jika IB Low terbentuk duluan → cenderung Break IB High (${lowFirstBreakHighPct.toFixed(1)}%). Setup: Bias Long setelah IB selesai.`
+    : `Jika IB Low terbentuk duluan → cenderung Break IB Low (${lowFirstBreakLowPct.toFixed(1)}%). Setup: Bias Short setelah IB selesai.`;
+
   return (
     <div className="rounded-lg border border-border bg-card p-6">
       <h3 className="text-lg font-semibold text-card-foreground mb-1">
-        Summary Statistics — {symbol}
+        📋 Rekomendasi Setup Hari Ini — {symbol}
       </h3>
-      <p className="text-sm text-muted-foreground mb-4">
-        IB Window: First {ibLabel} · {totalAnalyzed} trading days total
+      <p className="text-sm text-muted-foreground mb-3">
+        IB Window: First {ibLabel} · {totalAnalyzed} hari trading dianalisis
       </p>
+      <div className="space-y-2 mb-4">
+        <div className="rounded-md bg-accent/30 border border-accent px-4 py-3">
+          <p className="text-sm font-medium text-accent-foreground">{highFirstRec}</p>
+        </div>
+        <div className="rounded-md bg-accent/30 border border-accent px-4 py-3">
+          <p className="text-sm font-medium text-accent-foreground">{lowFirstRec}</p>
+        </div>
+      </div>
       <Table>
         <TableHeader>
           <TableRow>
