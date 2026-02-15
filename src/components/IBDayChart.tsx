@@ -110,7 +110,7 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes }: IBDa
           </span>
         </div>
       </div>
-      <div className="h-[400px]">
+      <div className="h-[260px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={displayBars}
