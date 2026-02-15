@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { TrendingUp } from "lucide-react";
 import ControlPanel from "@/components/ControlPanel";
 import IBChart from "@/components/IBChart";
+import SummaryTable from "@/components/SummaryTable";
 import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 
 const Index = () => {
@@ -10,7 +11,7 @@ const Index = () => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [symbol, setSymbol] = useState("");
 
-  const handleRun = async (apiKey: string, ticker: string) => {
+  const handleRun = async (apiKey: string, ticker: string, ibWindow: number) => {
     setLoading(true);
     setResult(null);
     setSymbol(ticker);
@@ -30,7 +31,7 @@ const Index = () => {
         return;
       }
 
-      const analysis = analyzeIB(json.values);
+      const analysis = analyzeIB(json.values, ibWindow);
 
       if (analysis.totalDays === 0) {
         toast.error("Not enough trading days in the data to analyze.");
@@ -38,7 +39,7 @@ const Index = () => {
       }
 
       setResult(analysis);
-      toast.success(`Analyzed ${analysis.totalDays} trading days for ${ticker}`);
+      toast.success(`Analyzed ${analysis.totalDays + analysis.insideDays} trading days for ${ticker}`);
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch data");
     } finally {
@@ -92,7 +93,7 @@ const Index = () => {
                 <div className="flex items-baseline gap-3">
                   <h2 className="text-2xl font-bold text-foreground">{symbol}</h2>
                   <span className="text-sm text-muted-foreground">
-                    {result.totalDays} days · IB Breakout Probabilities
+                    {result.totalDays} breakout days · IB Window: {result.ibWindowMinutes} min
                   </span>
                 </div>
                 <div className="flex flex-col md:flex-row gap-6">
@@ -109,6 +110,7 @@ const Index = () => {
                     breakLow={result.lowFirst.breakLow}
                   />
                 </div>
+                <SummaryTable result={result} symbol={symbol} />
               </div>
             )}
           </section>
