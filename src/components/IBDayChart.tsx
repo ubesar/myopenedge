@@ -54,7 +54,7 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes }: IBDa
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-sm font-bold text-card-foreground">{symbol}</span>
-          <span className="text-xs text-muted-foreground">· 1 min · {date}</span>
+          <span className="text-xs text-muted-foreground">· 5 min · {date}</span>
         </div>
         <div className="flex items-center gap-3 text-xs">
           <span className="flex items-center gap-1">
