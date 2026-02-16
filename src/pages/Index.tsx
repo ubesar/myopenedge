@@ -12,7 +12,7 @@ const Index = () => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [symbol, setSymbol] = useState("");
 
-  const handleRun = async (apiKey: string, ticker: string, ibWindow: number) => {
+  const handleRun = async (apiKey: string, ticker: string, ibWindow: number, maxDays: number) => {
     setLoading(true);
     setResult(null);
     setSymbol(ticker);
@@ -32,7 +32,7 @@ const Index = () => {
         return;
       }
 
-      const analysis = analyzeIB(json.values, ibWindow);
+      const analysis = analyzeIB(json.values, ibWindow, maxDays);
 
       if (analysis.totalDays === 0) {
         toast.error("Not enough trading days in the data to analyze.");

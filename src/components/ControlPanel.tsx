@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ControlPanelProps {
-  onRun: (apiKey: string, symbol: string, ibWindow: number) => void;
+  onRun: (apiKey: string, symbol: string, ibWindow: number, maxDays: number) => void;
   loading: boolean;
 }
 
@@ -17,10 +17,19 @@ const IB_WINDOWS = [
   { value: "90", label: "First 90 min (09:30–11:00)" },
 ];
 
+const DAY_OPTIONS = [
+  { value: "0", label: "All Days" },
+  { value: "30", label: "Last 30 Days" },
+  { value: "60", label: "Last 60 Days" },
+  { value: "90", label: "Last 90 Days" },
+  { value: "120", label: "Last 120 Days" },
+];
+
 const ControlPanel = ({ onRun, loading }: ControlPanelProps) => {
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("twelvedata_api_key") || "");
   const [symbol, setSymbol] = useState("QQQ");
   const [ibWindow, setIbWindow] = useState("60");
+  const [maxDays, setMaxDays] = useState("0");
 
   useEffect(() => {
     if (apiKey.trim()) {
@@ -31,7 +40,7 @@ const ControlPanel = ({ onRun, loading }: ControlPanelProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!apiKey.trim() || !symbol.trim()) return;
-    onRun(apiKey.trim(), symbol.trim().toUpperCase(), parseInt(ibWindow));
+    onRun(apiKey.trim(), symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays));
   };
 
   return (
@@ -66,6 +75,20 @@ const ControlPanel = ({ onRun, loading }: ControlPanelProps) => {
           onChange={(e) => setSymbol(e.target.value)}
           className="bg-muted border-border text-foreground placeholder:text-muted-foreground uppercase"
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-sm text-muted-foreground">Trading Days</Label>
+        <Select value={maxDays} onValueChange={setMaxDays}>
+          <SelectTrigger className="bg-muted border-border text-foreground">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {DAY_OPTIONS.map((d) => (
+              <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-2">
