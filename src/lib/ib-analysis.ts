@@ -51,7 +51,7 @@ function getTimeMinutes(dt: Date): number {
 const IB_START = 9 * 60 + 30; // 09:30
 const MARKET_CLOSE = 16 * 60; // 16:00
 
-export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60): AnalysisResult {
+export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0): AnalysisResult {
   const ibEnd = IB_START + ibWindowMinutes;
 
   const byDate = new Map<string, BarData[]>();
@@ -61,10 +61,17 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60): Analys
     byDate.get(date)!.push(bar);
   }
 
+  // Sort dates and limit if maxDays > 0
+  let dates = Array.from(byDate.keys()).sort();
+  if (maxDays > 0) {
+    dates = dates.slice(-maxDays);
+  }
+
   const allDayResults: DayResult[] = [];
   let totalTradingDays = 0;
 
-  for (const [date, dayBars] of byDate) {
+  for (const date of dates) {
+    const dayBars = byDate.get(date)!;
     dayBars.sort((a, b) => parseDateTime(a.datetime).getTime() - parseDateTime(b.datetime).getTime());
 
     const ibBars = dayBars.filter((b) => {
