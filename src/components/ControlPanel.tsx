@@ -19,6 +19,7 @@ const IB_WINDOWS = [
 
 const DAY_OPTIONS = [
   { value: "0", label: "All Days" },
+  { value: "15", label: "Last 15 Days" },
   { value: "30", label: "Last 30 Days" },
   { value: "60", label: "Last 60 Days" },
   { value: "90", label: "Last 90 Days" },
