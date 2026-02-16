@@ -14,6 +14,7 @@ interface DayResult {
   ibLow: number;
   highFirstFormed: boolean;
   breakout: "high" | "low" | "inside";
+  breakoutRange: number; // ticks beyond IB level after breakout
 }
 
 export interface CandleBar {
@@ -31,12 +32,18 @@ export interface LastDayData {
   ibLow: number;
 }
 
+export interface BreakoutRangeStats {
+  avgBreakHighRange: number;
+  avgBreakLowRange: number;
+}
+
 export interface AnalysisResult {
   totalDays: number;
   insideDays: number;
   ibWindowMinutes: number;
   highFirst: { total: number; breakHigh: number; breakLow: number };
   lowFirst: { total: number; breakHigh: number; breakLow: number };
+  breakoutRange: BreakoutRangeStats;
   lastDay: LastDayData | null;
 }
 
@@ -107,6 +114,7 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
     });
 
     let breakout: "high" | "low" | "inside" = "inside";
+    let breakoutRange = 0;
     for (const bar of postIBBars) {
       const h = parseFloat(bar.high);
       const l = parseFloat(bar.low);
@@ -114,13 +122,40 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
       if (l < ibLow) { breakout = "low"; break; }
     }
 
-    allDayResults.push({ date, ibHigh, ibLow, highFirstFormed, breakout });
+    // Calculate max range beyond IB after breakout
+    if (breakout === "high") {
+      let maxHigh = ibHigh;
+      for (const bar of postIBBars) {
+        const h = parseFloat(bar.high);
+        if (h > maxHigh) maxHigh = h;
+      }
+      breakoutRange = maxHigh - ibHigh;
+    } else if (breakout === "low") {
+      let minLow = ibLow;
+      for (const bar of postIBBars) {
+        const l = parseFloat(bar.low);
+        if (l < minLow) minLow = l;
+      }
+      breakoutRange = ibLow - minLow;
+    }
+
+    allDayResults.push({ date, ibHigh, ibLow, highFirstFormed, breakout, breakoutRange });
   }
 
   const breakoutDays = allDayResults.filter((r) => r.breakout !== "inside");
   const insideDays = allDayResults.filter((r) => r.breakout === "inside").length;
   const highFirst = breakoutDays.filter((r) => r.highFirstFormed);
   const lowFirst = breakoutDays.filter((r) => !r.highFirstFormed);
+
+  // Calculate average breakout ranges
+  const breakHighDays = breakoutDays.filter(r => r.breakout === "high");
+  const breakLowDays = breakoutDays.filter(r => r.breakout === "low");
+  const avgBreakHighRange = breakHighDays.length > 0
+    ? breakHighDays.reduce((sum, r) => sum + r.breakoutRange, 0) / breakHighDays.length
+    : 0;
+  const avgBreakLowRange = breakLowDays.length > 0
+    ? breakLowDays.reduce((sum, r) => sum + r.breakoutRange, 0) / breakLowDays.length
+    : 0;
 
   // Get the most recent day's data for candlestick chart
   let lastDay: LastDayData | null = null;
@@ -162,6 +197,10 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
       total: lowFirst.length,
       breakHigh: lowFirst.filter((r) => r.breakout === "high").length,
       breakLow: lowFirst.filter((r) => r.breakout === "low").length,
+    },
+    breakoutRange: {
+      avgBreakHighRange,
+      avgBreakLowRange,
     },
     lastDay,
   };
