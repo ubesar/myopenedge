@@ -4,7 +4,6 @@ import { TrendingUp } from "lucide-react";
 import ControlPanel from "@/components/ControlPanel";
 import IBChart from "@/components/IBChart";
 import IBDayChart from "@/components/IBDayChart";
-import BreakoutRangeCard from "@/components/BreakoutRangeCard";
 import SummaryTable from "@/components/SummaryTable";
 import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 
@@ -112,7 +111,6 @@ const Index = () => {
                     breakLow={result.lowFirst.breakLow}
                   />
                 </div>
-                <BreakoutRangeCard stats={result.breakoutRange} />
                 <SummaryTable result={result} symbol={symbol} />
                 {result.lastDay && (
                   <IBDayChart
