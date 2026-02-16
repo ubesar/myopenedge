@@ -6,6 +6,7 @@ interface BreakoutRangeCardProps {
 }
 
 const BreakoutRangeCard = ({ stats }: BreakoutRangeCardProps) => {
+  if (!stats) return null;
   return (
     <div className="rounded-lg border border-border bg-card p-6">
       <h3 className="text-lg font-semibold text-card-foreground mb-1">
