@@ -91,12 +91,6 @@ const Index = () => {
 
             {result && (
               <div className="space-y-6">
-                <div className="flex items-baseline gap-3">
-                  <h2 className="text-2xl font-bold text-foreground">{symbol}</h2>
-                  <span className="text-sm text-muted-foreground">
-                    {result.totalDays} breakout days · IB Window: {result.ibWindowMinutes} min
-                  </span>
-                </div>
                 <div className="flex flex-col md:flex-row gap-6">
                   <IBChart
                     title="IB High Formed First"
