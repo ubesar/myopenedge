@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ComposedChart, XAxis, YAxis, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, Bar } from "recharts";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { CandleBar } from "@/lib/ib-analysis";
 
 interface IBDayChartProps {
@@ -11,6 +13,9 @@ interface IBDayChartProps {
   ibWindowMinutes: number;
   highFirstFormed: boolean;
   breakout: "high" | "low" | "inside";
+  availableDates: string[];
+  selectedDate: string;
+  onDateChange: (date: string) => void;
 }
 
 const TIMEFRAMES = [
@@ -51,7 +56,7 @@ function aggregateBars(bars: CandleBar[], tfMinutes: number): CandleBar[] {
   }));
 }
 
-const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFirstFormed, breakout }: IBDayChartProps) => {
+const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFirstFormed, breakout, availableDates, selectedDate, onDateChange }: IBDayChartProps) => {
   const [timeframe, setTimeframe] = useState(5);
 
   if (bars.length === 0) return null;
@@ -74,10 +79,41 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
   return (
     <div className="rounded-lg border border-border bg-[hsl(220,13%,8%)] p-4">
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-bold text-card-foreground">{symbol}</span>
-          <span className="text-xs text-muted-foreground">· {date}</span>
-          <span className={`ml-2 text-xs font-semibold px-2 py-0.5 rounded ${breakout === 'high' ? 'bg-emerald-500/15 text-emerald-400' : breakout === 'low' ? 'bg-red-500/15 text-red-400' : 'bg-muted text-muted-foreground'}`}>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                const idx = availableDates.indexOf(selectedDate);
+                if (idx > 0) onDateChange(availableDates[idx - 1]);
+              }}
+              disabled={availableDates.indexOf(selectedDate) <= 0}
+              className="p-0.5 rounded hover:bg-muted disabled:opacity-30"
+            >
+              <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+            </button>
+            <Select value={selectedDate} onValueChange={onDateChange}>
+              <SelectTrigger className="h-7 w-[130px] text-xs bg-muted border-border">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {[...availableDates].reverse().map((d) => (
+                  <SelectItem key={d} value={d} className="text-xs">{d}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <button
+              onClick={() => {
+                const idx = availableDates.indexOf(selectedDate);
+                if (idx < availableDates.length - 1) onDateChange(availableDates[idx + 1]);
+              }}
+              disabled={availableDates.indexOf(selectedDate) >= availableDates.length - 1}
+              className="p-0.5 rounded hover:bg-muted disabled:opacity-30"
+            >
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
+          </div>
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded ${breakout === 'high' ? 'bg-emerald-500/15 text-emerald-400' : breakout === 'low' ? 'bg-red-500/15 text-red-400' : 'bg-muted text-muted-foreground'}`}>
             {highFirstFormed ? 'IB High First' : 'IB Low First'} → {breakout === 'high' ? 'Break IB High' : breakout === 'low' ? 'Break IB Low' : 'Inside Day'}
           </span>
           <div className="flex items-center gap-1 ml-2">

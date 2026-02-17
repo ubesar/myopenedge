@@ -40,6 +40,7 @@ export interface AnalysisResult {
   highFirst: { total: number; breakHigh: number; breakLow: number };
   lowFirst: { total: number; breakHigh: number; breakLow: number };
   lastDay: LastDayData | null;
+  allDays: LastDayData[];
 }
 
 function parseDateTime(dt: string): Date {
@@ -124,34 +125,33 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
   const highFirst = breakoutDays.filter((r) => r.highFirstFormed);
   const lowFirst = breakoutDays.filter((r) => !r.highFirstFormed);
 
-  // Get the most recent day's data for candlestick chart
-  let lastDay: LastDayData | null = null;
-  if (allDayResults.length > 0) {
-    const sortedDates = allDayResults.map(r => r.date).sort();
-    const lastDate = sortedDates[sortedDates.length - 1];
-    const lastDayBars = byDate.get(lastDate);
-    const lastDayResult = allDayResults.find(r => r.date === lastDate);
-    if (lastDayBars && lastDayResult) {
-      const marketBars = lastDayBars.filter((b) => {
-        const m = getTimeMinutes(parseDateTime(b.datetime));
-        return m >= IB_START && m < MARKET_CLOSE;
-      });
-      lastDay = {
-        date: lastDate,
-        bars: marketBars.map(b => ({
-          time: b.datetime.split(" ")[1].slice(0, 5),
-          open: parseFloat(b.open),
-          high: parseFloat(b.high),
-          low: parseFloat(b.low),
-          close: parseFloat(b.close),
-        })),
-        ibHigh: lastDayResult.ibHigh,
-        ibLow: lastDayResult.ibLow,
-        highFirstFormed: lastDayResult.highFirstFormed,
-        breakout: lastDayResult.breakout,
-      };
-    }
+  // Build all days' chart data
+  const allDays: LastDayData[] = [];
+  for (const dayResult of allDayResults) {
+    const dayBars = byDate.get(dayResult.date);
+    if (!dayBars) continue;
+    const marketBars = dayBars.filter((b) => {
+      const m = getTimeMinutes(parseDateTime(b.datetime));
+      return m >= IB_START && m < MARKET_CLOSE;
+    });
+    if (marketBars.length === 0) continue;
+    allDays.push({
+      date: dayResult.date,
+      bars: marketBars.map(b => ({
+        time: b.datetime.split(" ")[1].slice(0, 5),
+        open: parseFloat(b.open),
+        high: parseFloat(b.high),
+        low: parseFloat(b.low),
+        close: parseFloat(b.close),
+      })),
+      ibHigh: dayResult.ibHigh,
+      ibLow: dayResult.ibLow,
+      highFirstFormed: dayResult.highFirstFormed,
+      breakout: dayResult.breakout,
+    });
   }
+
+  const lastDay = allDays.length > 0 ? allDays[allDays.length - 1] : null;
 
   return {
     totalDays: breakoutDays.length,
@@ -168,5 +168,6 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
       breakLow: lowFirst.filter((r) => r.breakout === "low").length,
     },
     lastDay,
+    allDays,
   };
 }
