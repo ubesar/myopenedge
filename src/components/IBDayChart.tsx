@@ -9,6 +9,8 @@ interface IBDayChartProps {
   ibLow: number;
   symbol: string;
   ibWindowMinutes: number;
+  highFirstFormed: boolean;
+  breakout: "high" | "low" | "inside";
 }
 
 const TIMEFRAMES = [
@@ -49,7 +51,7 @@ function aggregateBars(bars: CandleBar[], tfMinutes: number): CandleBar[] {
   }));
 }
 
-const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes }: IBDayChartProps) => {
+const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFirstFormed, breakout }: IBDayChartProps) => {
   const [timeframe, setTimeframe] = useState(5);
 
   if (bars.length === 0) return null;
@@ -75,6 +77,9 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes }: IBDa
         <div className="flex items-center gap-2">
           <span className="text-sm font-bold text-card-foreground">{symbol}</span>
           <span className="text-xs text-muted-foreground">· {date}</span>
+          <span className={`ml-2 text-xs font-semibold px-2 py-0.5 rounded ${breakout === 'high' ? 'bg-emerald-500/15 text-emerald-400' : breakout === 'low' ? 'bg-red-500/15 text-red-400' : 'bg-muted text-muted-foreground'}`}>
+            {highFirstFormed ? 'IB High First' : 'IB Low First'} → {breakout === 'high' ? 'Break IB High' : breakout === 'low' ? 'Break IB Low' : 'Inside Day'}
+          </span>
           <div className="flex items-center gap-1 ml-2">
             {TIMEFRAMES.map((tf) => (
               <button

@@ -29,6 +29,8 @@ export interface LastDayData {
   bars: CandleBar[];
   ibHigh: number;
   ibLow: number;
+  highFirstFormed: boolean;
+  breakout: "high" | "low" | "inside";
 }
 
 export interface AnalysisResult {
@@ -145,6 +147,8 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
         })),
         ibHigh: lastDayResult.ibHigh,
         ibLow: lastDayResult.ibLow,
+        highFirstFormed: lastDayResult.highFirstFormed,
+        breakout: lastDayResult.breakout,
       };
     }
   }
