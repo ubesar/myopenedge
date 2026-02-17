@@ -114,6 +114,8 @@ const Index = () => {
                     ibLow={result.lastDay.ibLow}
                     symbol={symbol}
                     ibWindowMinutes={result.ibWindowMinutes}
+                    highFirstFormed={result.lastDay.highFirstFormed}
+                    breakout={result.lastDay.breakout}
                   />
                 )}
               </div>
