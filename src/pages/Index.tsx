@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { TrendingUp } from "lucide-react";
 import ControlPanel from "@/components/ControlPanel";
@@ -11,6 +11,7 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [symbol, setSymbol] = useState("");
+  const [selectedDate, setSelectedDate] = useState<string>("");
 
   const handleRun = async (apiKey: string, ticker: string, ibWindow: number, maxDays: number) => {
     setLoading(true);
@@ -40,6 +41,7 @@ const Index = () => {
       }
 
       setResult(analysis);
+      setSelectedDate(analysis.lastDay?.date || "");
       toast.success(`Analyzed ${analysis.totalDays + analysis.insideDays} trading days for ${ticker}`);
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch data");
@@ -106,17 +108,25 @@ const Index = () => {
                   />
                 </div>
                 <SummaryTable result={result} symbol={symbol} />
-                {result.lastDay && (
-                  <IBDayChart
-                    date={result.lastDay.date}
-                    bars={result.lastDay.bars}
-                    ibHigh={result.lastDay.ibHigh}
-                    ibLow={result.lastDay.ibLow}
-                    symbol={symbol}
-                    ibWindowMinutes={result.ibWindowMinutes}
-                    highFirstFormed={result.lastDay.highFirstFormed}
-                    breakout={result.lastDay.breakout}
-                  />
+                {result.allDays.length > 0 && (
+                  (() => {
+                    const dayData = result.allDays.find(d => d.date === selectedDate) || result.allDays[result.allDays.length - 1];
+                    return (
+                      <IBDayChart
+                        date={dayData.date}
+                        bars={dayData.bars}
+                        ibHigh={dayData.ibHigh}
+                        ibLow={dayData.ibLow}
+                        symbol={symbol}
+                        ibWindowMinutes={result.ibWindowMinutes}
+                        highFirstFormed={dayData.highFirstFormed}
+                        breakout={dayData.breakout}
+                        availableDates={result.allDays.map(d => d.date)}
+                        selectedDate={selectedDate || dayData.date}
+                        onDateChange={setSelectedDate}
+                      />
+                    );
+                  })()
                 )}
               </div>
             )}
