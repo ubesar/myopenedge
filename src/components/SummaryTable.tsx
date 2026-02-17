@@ -30,7 +30,7 @@ const SummaryTable = ({ result, symbol }: SummaryTableProps) => {
         📋 Rekomendasi Setup Hari Ini — {symbol}
       </h3>
       <p className="text-sm text-muted-foreground mb-3">
-        IB Window: First {ibLabel} · {totalAnalyzed} hari trading dianalisis
+        IB Window: First {ibLabel} · {totalAnalyzed} hari trading · <span className="text-yellow-400">{result.insideDays} Inside Days</span>
       </p>
       <div className="space-y-2">
         <div className={`rounded-md border px-4 py-3 ${highFirstIsLong ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
