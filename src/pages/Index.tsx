@@ -83,8 +83,8 @@ const Index = () => {
           </aside>
 
           <section>
-            {!result && !momentumResult && !loading && (
-              <div className="flex items-center justify-center h-[400px] rounded-lg border border-dashed border-border">
+            {!result && !momentumResult && !loading &&
+            <div className="flex items-center justify-center h-[400px] rounded-lg border border-dashed border-border">
                 <div className="text-center">
                   <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-40" />
                   <p className="text-muted-foreground text-sm">
@@ -92,10 +92,10 @@ const Index = () => {
                   </p>
                 </div>
               </div>
-            )}
+            }
 
-            {loading && (
-              <div className="flex items-center justify-center h-[400px] rounded-lg border border-border bg-card">
+            {loading &&
+            <div className="flex items-center justify-center h-[400px] rounded-lg border border-border bg-card">
                 <div className="text-center space-y-3">
                   <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
                   <p className="text-muted-foreground text-sm">
@@ -103,99 +103,99 @@ const Index = () => {
                   </p>
                 </div>
               </div>
-            )}
+            }
 
             {/* IB Mode Results */}
-            {activeMode === "ib" && result && (
-              <div className="space-y-6">
+            {activeMode === "ib" && result &&
+            <div className="space-y-6">
                 <div className="flex flex-col md:flex-row gap-6">
                   <IBChart
-                    title="IB High Formed First"
-                    total={result.highFirst.total}
-                    breakHigh={result.highFirst.breakHigh}
-                    breakLow={result.highFirst.breakLow}
-                    inside={result.highFirst.inside}
-                  />
+                  title="IB High Formed First"
+                  total={result.highFirst.total}
+                  breakHigh={result.highFirst.breakHigh}
+                  breakLow={result.highFirst.breakLow}
+                  inside={result.highFirst.inside} />
+
                   <IBChart
-                    title="IB Low Formed First"
-                    total={result.lowFirst.total}
-                    breakHigh={result.lowFirst.breakHigh}
-                    breakLow={result.lowFirst.breakLow}
-                    inside={result.lowFirst.inside}
-                  />
+                  title="IB Low Formed First"
+                  total={result.lowFirst.total}
+                  breakHigh={result.lowFirst.breakHigh}
+                  breakLow={result.lowFirst.breakLow}
+                  inside={result.lowFirst.inside} />
+
                 </div>
                 <SummaryTable result={result} symbol={symbol} />
                 {result.allDays.length > 0 && (() => {
-                  const dayData = result.allDays.find(d => d.date === selectedDate) || result.allDays[result.allDays.length - 1];
-                  return (
-                    <IBDayChart
-                      date={dayData.date}
-                      bars={dayData.bars}
-                      ibHigh={dayData.ibHigh}
-                      ibLow={dayData.ibLow}
-                      symbol={symbol}
-                      ibWindowMinutes={result.ibWindowMinutes}
-                      highFirstFormed={dayData.highFirstFormed}
-                      breakout={dayData.breakout}
-                      availableDates={result.allDays.map(d => d.date)}
-                      selectedDate={selectedDate || dayData.date}
-                      onDateChange={setSelectedDate}
-                    />
-                  );
-                })()}
+                const dayData = result.allDays.find((d) => d.date === selectedDate) || result.allDays[result.allDays.length - 1];
+                return (
+                  <IBDayChart
+                    date={dayData.date}
+                    bars={dayData.bars}
+                    ibHigh={dayData.ibHigh}
+                    ibLow={dayData.ibLow}
+                    symbol={symbol}
+                    ibWindowMinutes={result.ibWindowMinutes}
+                    highFirstFormed={dayData.highFirstFormed}
+                    breakout={dayData.breakout}
+                    availableDates={result.allDays.map((d) => d.date)}
+                    selectedDate={selectedDate || dayData.date}
+                    onDateChange={setSelectedDate} />);
+
+
+              })()}
               </div>
-            )}
+            }
 
             {/* Momentum Mode Results */}
-            {activeMode === "momentum" && momentumResult && (
-              <div className="space-y-6">
+            {activeMode === "momentum" && momentumResult &&
+            <div className="space-y-6">
                 <div className="text-center space-y-1">
                   <h2 className="text-lg font-semibold text-card-foreground">Momentum Candle Probability</h2>
-                  <p className="text-sm text-muted-foreground">
-                    {momentumResult.totalDays} trading days · M15 · 09:30–12:00 window · IB {momentumResult.ibWindowMinutes}min
-                  </p>
+                  
+
+
                   <p className="text-xs text-muted-foreground">
                     2 consecutive same-color M15 candles (body ≥ 50%) = momentum signal
                   </p>
                 </div>
                 <div className="flex flex-col md:flex-row gap-6">
                   <MomentumChart
-                    title="IB High Formed First"
-                    total={momentumResult.highFirst.total}
-                    bullish={momentumResult.highFirst.bullish}
-                    bearish={momentumResult.highFirst.bearish}
-                    choppy={momentumResult.highFirst.choppy}
-                  />
+                  title="IB High Formed First"
+                  total={momentumResult.highFirst.total}
+                  bullish={momentumResult.highFirst.bullish}
+                  bearish={momentumResult.highFirst.bearish}
+                  choppy={momentumResult.highFirst.choppy} />
+
                   <MomentumChart
-                    title="IB Low Formed First"
-                    total={momentumResult.lowFirst.total}
-                    bullish={momentumResult.lowFirst.bullish}
-                    bearish={momentumResult.lowFirst.bearish}
-                    choppy={momentumResult.lowFirst.choppy}
-                  />
+                  title="IB Low Formed First"
+                  total={momentumResult.lowFirst.total}
+                  bullish={momentumResult.lowFirst.bullish}
+                  bearish={momentumResult.lowFirst.bearish}
+                  choppy={momentumResult.lowFirst.choppy} />
+
                 </div>
                 {momentumResult.allDays.length > 0 && (() => {
-                  const dayData = momentumResult.allDays.find(d => d.date === selectedDate) || momentumResult.allDays[momentumResult.allDays.length - 1];
-                  return (
-                    <MomentumDayChart
-                      date={dayData.date}
-                      bars={dayData.bars}
-                      symbol={symbol}
-                      momentum={dayData.momentum}
-                      signals={dayData.signals}
-                      availableDates={momentumResult.allDays.map(d => d.date)}
-                      selectedDate={selectedDate || dayData.date}
-                      onDateChange={setSelectedDate}
-                    />
-                  );
-                })()}
+                const dayData = momentumResult.allDays.find((d) => d.date === selectedDate) || momentumResult.allDays[momentumResult.allDays.length - 1];
+                return (
+                  <MomentumDayChart
+                    date={dayData.date}
+                    bars={dayData.bars}
+                    symbol={symbol}
+                    momentum={dayData.momentum}
+                    signals={dayData.signals}
+                    availableDates={momentumResult.allDays.map((d) => d.date)}
+                    selectedDate={selectedDate || dayData.date}
+                    onDateChange={setSelectedDate} />);
+
+
+              })()}
               </div>
-            )}
+            }
           </section>
         </div>
       </main>
-    </div>
-  );
+    </div>);
+
 };
 
 export default Index;
