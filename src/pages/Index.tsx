@@ -154,9 +154,9 @@ const Index = () => {
                   
 
 
-                  <p className="text-xs text-muted-foreground">
-                    2 consecutive same-color M15 candles (body ≥ 50%) = momentum signal
-                  </p>
+                  
+
+
                 </div>
                 <div className="flex flex-col md:flex-row gap-6">
                   <MomentumChart
