@@ -2,22 +2,20 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ComposedChart, XAxis, YAxis, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, Bar } from "recharts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { aggregateToM15, type CandleBar } from "@/lib/m15-aggregation";
+import type { MomentumSignal } from "@/lib/momentum-analysis";
 
-interface IBDayChartProps {
+interface MomentumDayChartProps {
   date: string;
   bars: CandleBar[];
-  ibHigh: number;
-  ibLow: number;
   symbol: string;
-  ibWindowMinutes: number;
-  highFirstFormed: boolean;
-  breakout: "high" | "low" | "inside";
+  momentum: "bullish" | "bearish" | "choppy";
+  signals: MomentumSignal[];
   availableDates: string[];
   selectedDate: string;
   onDateChange: (date: string) => void;
 }
 
-const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFirstFormed, breakout, availableDates, selectedDate, onDateChange }: IBDayChartProps) => {
+const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDates, selectedDate, onDateChange }: MomentumDayChartProps) => {
   if (bars.length === 0) return null;
 
   const displayBars = aggregateToM15(bars);
@@ -28,12 +26,19 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
   const domainMin = priceMin - padding;
   const domainMax = priceMax + padding;
 
-  const ibEndMinute = 9 * 60 + 30 + ibWindowMinutes;
-  const ibEndH = Math.floor(ibEndMinute / 60);
-  const ibEndM = ibEndMinute % 60;
-  const ibEndLabel = `${ibEndH.toString().padStart(2, '0')}:${ibEndM.toString().padStart(2, '0')}`;
-
   const tickInterval = Math.max(1, Math.floor(displayBars.length / 12));
+
+  // Build highlight set from momentum signals
+  const highlightSet = new Set<string>();
+  for (const sig of signals) {
+    for (const t of sig.times) highlightSet.add(t);
+  }
+
+  const momentumBadge = momentum === "bullish"
+    ? { text: "🟢 Bullish Momentum", cls: "bg-emerald-500/15 text-emerald-400" }
+    : momentum === "bearish"
+    ? { text: "🔴 Bearish Momentum", cls: "bg-red-500/15 text-red-400" }
+    : { text: "⚪ Choppy / No Momentum", cls: "bg-muted text-muted-foreground" };
 
   return (
     <div className="rounded-lg border border-border bg-[hsl(220,13%,8%)] p-4">
@@ -72,32 +77,31 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </button>
           </div>
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded ${breakout === 'high' ? 'bg-emerald-500/15 text-emerald-400' : breakout === 'low' ? 'bg-red-500/15 text-red-400' : 'bg-muted text-muted-foreground'}`}>
-            {highFirstFormed ? 'IB High First' : 'IB Low First'} → {breakout === 'high' ? 'Break IB High' : breakout === 'low' ? 'Break IB Low' : 'Inside Day'}
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded ${momentumBadge.cls}`}>
+            {momentumBadge.text}
           </span>
+          {signals.length > 0 && (
+            <span className="text-xs font-medium px-2 py-0.5 rounded bg-amber-500/15 text-amber-400">
+              {signals.length} signal(s)
+            </span>
+          )}
           <span className="text-xs font-medium px-2 py-0.5 rounded bg-muted text-muted-foreground">M15</span>
         </div>
         <div className="flex items-center gap-3 text-xs">
           <span className="flex items-center gap-1">
-            <span className="inline-block h-0.5 w-4 bg-blue-400" />
-            IB High
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block h-0.5 w-4 bg-orange-400" />
-            IB Low
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block h-0.5 w-4 bg-green-400" />
-            IB50
-          </span>
-          <span className="flex items-center gap-1">
             <span className="inline-block h-4 w-0.5 bg-yellow-500/50" />
-            IB End
+            09:30
           </span>
           <span className="flex items-center gap-1">
             <span className="inline-block h-4 w-0.5 bg-red-400/60" />
             12:00
           </span>
+          {signals.length > 0 && (
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-3 w-3 border border-amber-400 border-dashed rounded-sm" />
+              Momentum
+            </span>
+          )}
         </div>
       </div>
       <div className="h-[400px]">
@@ -143,20 +147,14 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
                 );
               }}
             />
-            <ReferenceLine y={ibHigh} stroke="#60a5fa" strokeDasharray="6 3" strokeWidth={1.5}
-              label={{ value: `IB High ${ibHigh.toFixed(2)}`, position: "left", fill: "#60a5fa", fontSize: 10 }} />
-            <ReferenceLine y={ibLow} stroke="#fb923c" strokeDasharray="6 3" strokeWidth={1.5}
-              label={{ value: `IB Low ${ibLow.toFixed(2)}`, position: "left", fill: "#fb923c", fontSize: 10 }} />
-            <ReferenceLine y={(ibHigh + ibLow) / 2} stroke="#4ade80" strokeDasharray="4 4" strokeWidth={1}
-              label={{ value: `IB50 ${((ibHigh + ibLow) / 2).toFixed(2)}`, position: "left", fill: "#4ade80", fontSize: 10 }} />
-            <ReferenceLine x={ibEndLabel} stroke="hsl(45,90%,50%)" strokeDasharray="4 4" strokeWidth={1} strokeOpacity={0.5} />
+            <ReferenceLine x="09:30" stroke="hsl(45,90%,50%)" strokeDasharray="4 4" strokeWidth={1} strokeOpacity={0.5} />
             <ReferenceLine x="12:00" stroke="#f87171" strokeDasharray="4 4" strokeWidth={1} strokeOpacity={0.6}
               label={{ value: "12:00", position: "top", fill: "#f87171", fontSize: 10 }} />
             <Bar dataKey="high" fill="transparent" isAnimationActive={false} barSize={6}
               shape={(props: any) => {
                 const { x, width, payload } = props;
                 if (!payload) return <rect />;
-                const { open, close, high, low } = payload;
+                const { open, close, high, low, time } = payload;
                 const isUp = close >= open;
                 const color = isUp ? "#22c55e" : "#ef4444";
                 const yAxisHeight = props.background?.height || 360;
@@ -168,8 +166,22 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
                 const wickX = x + width / 2;
                 const bodyY = toY(Math.max(open, close));
                 const bodyHeight = Math.max(1, toY(Math.min(open, close)) - bodyY);
+                const isHighlighted = highlightSet.has(time);
                 return (
                   <g>
+                    {isHighlighted && (
+                      <rect
+                        x={x - 3}
+                        y={toY(high) - 3}
+                        width={width + 6}
+                        height={toY(low) - toY(high) + 6}
+                        fill="none"
+                        stroke="#fbbf24"
+                        strokeWidth={2}
+                        strokeDasharray="3 2"
+                        rx={2}
+                      />
+                    )}
                     <line x1={wickX} y1={toY(high)} x2={wickX} y2={toY(low)} stroke={color} strokeWidth={1} />
                     <rect x={x} y={bodyY} width={width} height={bodyHeight} fill={color} stroke={color} strokeWidth={0.5} rx={0.5} />
                   </g>
@@ -183,4 +195,4 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
   );
 };
 
-export default IBDayChart;
+export default MomentumDayChart;

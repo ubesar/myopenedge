@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+export type AnalysisMode = "ib" | "momentum";
+
 interface ControlPanelProps {
-  onRun: (apiKey: string, symbol: string, ibWindow: number, maxDays: number) => void;
+  onRun: (apiKey: string, symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => void;
   loading: boolean;
 }
 
@@ -31,6 +33,7 @@ const ControlPanel = ({ onRun, loading }: ControlPanelProps) => {
   const [symbol, setSymbol] = useState("QQQ");
   const [ibWindow, setIbWindow] = useState("60");
   const [maxDays, setMaxDays] = useState("0");
+  const [mode, setMode] = useState<AnalysisMode>("ib");
 
   useEffect(() => {
     if (apiKey.trim()) {
@@ -41,7 +44,7 @@ const ControlPanel = ({ onRun, loading }: ControlPanelProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!apiKey.trim() || !symbol.trim()) return;
-    onRun(apiKey.trim(), symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays));
+    onRun(apiKey.trim(), symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode);
   };
 
   return (
@@ -49,6 +52,19 @@ const ControlPanel = ({ onRun, loading }: ControlPanelProps) => {
       <div className="flex items-center gap-2 mb-2">
         <BarChart3 className="h-5 w-5 text-primary" />
         <h2 className="text-lg font-semibold text-card-foreground">IB Analysis</h2>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-sm text-muted-foreground">Analysis Type</Label>
+        <Select value={mode} onValueChange={(v) => setMode(v as AnalysisMode)}>
+          <SelectTrigger className="bg-muted border-border text-foreground">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ib">Initial Balance (IB)</SelectItem>
+            <SelectItem value="momentum">Momentum Candle</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-2">

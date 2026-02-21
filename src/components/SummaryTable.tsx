@@ -6,8 +6,8 @@ interface SummaryTableProps {
 }
 
 const SummaryTable = ({ result, symbol }: SummaryTableProps) => {
-  const ibLabel = result.ibWindowMinutes === 60 ? "60 min" : `${result.ibWindowMinutes} min`;
-  const totalAnalyzed = result.totalDays + result.insideDays;
+  const ibLabel = `${result.ibWindowMinutes} min`;
+  const totalAnalyzed = result.highFirst.total + result.lowFirst.total;
 
   const highFirstBreakHighPct = result.highFirst.total > 0 ? (result.highFirst.breakHigh / result.highFirst.total) * 100 : 0;
   const highFirstBreakLowPct = result.highFirst.total > 0 ? (result.highFirst.breakLow / result.highFirst.total) * 100 : 0;
