@@ -13,20 +13,20 @@ interface ControlPanelProps {
 }
 
 const IB_WINDOWS = [
-  { value: "15", label: "First 15 min (09:30–09:45)" },
-  { value: "30", label: "First 30 min (09:30–10:00)" },
-  { value: "60", label: "First 60 min (09:30–10:30)" },
-  { value: "90", label: "First 90 min (09:30–11:00)" },
-];
+{ value: "15", label: "First 15 min (09:30–09:45)" },
+{ value: "30", label: "First 30 min (09:30–10:00)" },
+{ value: "60", label: "First 60 min (09:30–10:30)" },
+{ value: "90", label: "First 90 min (09:30–11:00)" }];
+
 
 const DAY_OPTIONS = [
-  { value: "0", label: "All Days" },
-  { value: "15", label: "Last 15 Days" },
-  { value: "30", label: "Last 30 Days" },
-  { value: "60", label: "Last 60 Days" },
-  { value: "90", label: "Last 90 Days" },
-  { value: "120", label: "Last 120 Days" },
-];
+{ value: "0", label: "All Days" },
+{ value: "15", label: "Last 15 Days" },
+{ value: "30", label: "Last 30 Days" },
+{ value: "60", label: "Last 60 Days" },
+{ value: "90", label: "Last 90 Days" },
+{ value: "120", label: "Last 120 Days" }];
+
 
 const ControlPanel = ({ onRun, loading }: ControlPanelProps) => {
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("twelvedata_api_key") || "");
@@ -48,7 +48,7 @@ const ControlPanel = ({ onRun, loading }: ControlPanelProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-lg border border-border bg-card p-6 space-y-5">
+    <form onSubmit={handleSubmit} className="rounded-lg border border-border bg-card p-6 space-y-5 my-[24px]">
       <div className="flex items-center gap-2 mb-2">
         <BarChart3 className="h-5 w-5 text-primary" />
         <h2 className="text-lg font-semibold text-card-foreground">IB Analysis</h2>
@@ -77,8 +77,8 @@ const ControlPanel = ({ onRun, loading }: ControlPanelProps) => {
           placeholder="Enter your API key"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
-          className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
-        />
+          className="bg-muted border-border text-foreground placeholder:text-muted-foreground" />
+
       </div>
 
       <div className="space-y-2">
@@ -90,8 +90,8 @@ const ControlPanel = ({ onRun, loading }: ControlPanelProps) => {
           placeholder="QQQ"
           value={symbol}
           onChange={(e) => setSymbol(e.target.value)}
-          className="bg-muted border-border text-foreground placeholder:text-muted-foreground uppercase"
-        />
+          className="bg-muted border-border text-foreground placeholder:text-muted-foreground uppercase" />
+
       </div>
 
       <div className="space-y-2">
@@ -101,9 +101,9 @@ const ControlPanel = ({ onRun, loading }: ControlPanelProps) => {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {DAY_OPTIONS.map((d) => (
-              <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
-            ))}
+            {DAY_OPTIONS.map((d) =>
+            <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>
@@ -115,28 +115,28 @@ const ControlPanel = ({ onRun, loading }: ControlPanelProps) => {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {IB_WINDOWS.map((w) => (
-              <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>
-            ))}
+            {IB_WINDOWS.map((w) =>
+            <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>
 
       <Button type="submit" disabled={loading || !apiKey.trim()} className="w-full">
-        {loading ? (
-          <>
+        {loading ?
+        <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Analyzing…
-          </>
-        ) : (
-          <>
+          </> :
+
+        <>
             <Play className="mr-2 h-4 w-4" />
             Run Analysis
           </>
-        )}
+        }
       </Button>
-    </form>
-  );
+    </form>);
+
 };
 
 export default ControlPanel;
