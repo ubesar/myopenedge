@@ -150,7 +150,7 @@ const Index = () => {
             {activeMode === "momentum" && momentumResult &&
             <div className="space-y-6">
                 <div className="text-center space-y-1">
-                  <h2 className="text-lg font-semibold text-card-foreground">Momentum Candle Probability</h2>
+                  
                   
 
 
