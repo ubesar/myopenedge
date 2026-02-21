@@ -1,4 +1,7 @@
 import { parse } from "date-fns";
+import { aggregateToM15, type CandleBar } from "./m15-aggregation";
+
+export type { CandleBar };
 
 interface BarData {
   datetime: string;
@@ -6,22 +9,6 @@ interface BarData {
   high: string;
   low: string;
   close: string;
-}
-
-interface DayResult {
-  date: string;
-  ibHigh: number;
-  ibLow: number;
-  highFirstFormed: boolean;
-  breakout: "high" | "low" | "inside";
-}
-
-export interface CandleBar {
-  time: string;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
 }
 
 export interface LastDayData {
@@ -37,8 +24,8 @@ export interface AnalysisResult {
   totalDays: number;
   insideDays: number;
   ibWindowMinutes: number;
-  highFirst: { total: number; breakHigh: number; breakLow: number };
-  lowFirst: { total: number; breakHigh: number; breakLow: number };
+  highFirst: { total: number; breakHigh: number; breakLow: number; inside: number };
+  lowFirst: { total: number; breakHigh: number; breakLow: number; inside: number };
   lastDay: LastDayData | null;
   allDays: LastDayData[];
 }
@@ -51,8 +38,9 @@ function getTimeMinutes(dt: Date): number {
   return dt.getHours() * 60 + dt.getMinutes();
 }
 
-const IB_START = 9 * 60 + 30; // 09:30
-const MARKET_CLOSE = 16 * 60; // 16:00
+const IB_START = 9 * 60 + 30;
+const NOON = 12 * 60;
+const MARKET_CLOSE = 16 * 60;
 
 export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0): AnalysisResult {
   const ibEnd = IB_START + ibWindowMinutes;
@@ -64,14 +52,20 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
     byDate.get(date)!.push(bar);
   }
 
-  // Sort dates and limit if maxDays > 0
   let dates = Array.from(byDate.keys()).sort();
   if (maxDays > 0) {
     dates = dates.slice(-maxDays);
   }
 
+  interface DayResult {
+    date: string;
+    ibHigh: number;
+    ibLow: number;
+    highFirstFormed: boolean;
+    breakout: "high" | "low" | "inside";
+  }
+
   const allDayResults: DayResult[] = [];
-  let totalTradingDays = 0;
 
   for (const date of dates) {
     const dayBars = byDate.get(date)!;
@@ -83,7 +77,6 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
     });
 
     if (ibBars.length < 2) continue;
-    totalTradingDays++;
 
     let ibHigh = -Infinity;
     let ibLow = Infinity;
@@ -104,26 +97,35 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
 
     const highFirstFormed = parseDateTime(firstHighTouch).getTime() < parseDateTime(firstLowTouch).getTime();
 
+    // Post-IB breakout: IB end to 12:00, using M15 CLOSE
     const postIBBars = dayBars.filter((b) => {
       const m = getTimeMinutes(parseDateTime(b.datetime));
-      return m >= ibEnd && m < MARKET_CLOSE;
+      return m >= ibEnd && m < NOON;
     });
 
+    const postIBCandles: CandleBar[] = postIBBars.map(b => ({
+      time: b.datetime.split(" ")[1].slice(0, 5),
+      open: parseFloat(b.open),
+      high: parseFloat(b.high),
+      low: parseFloat(b.low),
+      close: parseFloat(b.close),
+    }));
+
+    const m15Candles = aggregateToM15(postIBCandles);
+
     let breakout: "high" | "low" | "inside" = "inside";
-    for (const bar of postIBBars) {
-      const h = parseFloat(bar.high);
-      const l = parseFloat(bar.low);
-      if (h > ibHigh) { breakout = "high"; break; }
-      if (l < ibLow) { breakout = "low"; break; }
+    for (const candle of m15Candles) {
+      if (candle.close > ibHigh) { breakout = "high"; break; }
+      if (candle.close < ibLow) { breakout = "low"; break; }
     }
 
     allDayResults.push({ date, ibHigh, ibLow, highFirstFormed, breakout });
   }
 
-  const breakoutDays = allDayResults.filter((r) => r.breakout !== "inside");
+  const highFirstDays = allDayResults.filter((r) => r.highFirstFormed);
+  const lowFirstDays = allDayResults.filter((r) => !r.highFirstFormed);
   const insideDays = allDayResults.filter((r) => r.breakout === "inside").length;
-  const highFirst = breakoutDays.filter((r) => r.highFirstFormed);
-  const lowFirst = breakoutDays.filter((r) => !r.highFirstFormed);
+  const totalDays = allDayResults.filter((r) => r.breakout !== "inside").length;
 
   // Build all days' chart data
   const allDays: LastDayData[] = [];
@@ -154,18 +156,20 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
   const lastDay = allDays.length > 0 ? allDays[allDays.length - 1] : null;
 
   return {
-    totalDays: breakoutDays.length,
+    totalDays,
     insideDays,
     ibWindowMinutes,
     highFirst: {
-      total: highFirst.length,
-      breakHigh: highFirst.filter((r) => r.breakout === "high").length,
-      breakLow: highFirst.filter((r) => r.breakout === "low").length,
+      total: highFirstDays.length,
+      breakHigh: highFirstDays.filter((r) => r.breakout === "high").length,
+      breakLow: highFirstDays.filter((r) => r.breakout === "low").length,
+      inside: highFirstDays.filter((r) => r.breakout === "inside").length,
     },
     lowFirst: {
-      total: lowFirst.length,
-      breakHigh: lowFirst.filter((r) => r.breakout === "high").length,
-      breakLow: lowFirst.filter((r) => r.breakout === "low").length,
+      total: lowFirstDays.length,
+      breakHigh: lowFirstDays.filter((r) => r.breakout === "high").length,
+      breakLow: lowFirstDays.filter((r) => r.breakout === "low").length,
+      inside: lowFirstDays.filter((r) => r.breakout === "inside").length,
     },
     lastDay,
     allDays,

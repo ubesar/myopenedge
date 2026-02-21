@@ -5,16 +5,25 @@ interface IBChartProps {
   total: number;
   breakHigh: number;
   breakLow: number;
+  inside: number;
 }
 
-const IBChart = ({ title, total, breakHigh, breakLow }: IBChartProps) => {
+const IBChart = ({ title, total, breakHigh, breakLow, inside }: IBChartProps) => {
   const highPct = total > 0 ? (breakHigh / total) * 100 : 0;
   const lowPct = total > 0 ? (breakLow / total) * 100 : 0;
+  const insidePct = total > 0 ? (inside / total) * 100 : 0;
 
   const data = [
     { name: "Break IB High", value: parseFloat(highPct.toFixed(2)), type: "high" },
     { name: "Break IB Low", value: parseFloat(lowPct.toFixed(2)), type: "low" },
+    { name: "Inside Day", value: parseFloat(insidePct.toFixed(2)), type: "inside" },
   ];
+
+  const colorMap: Record<string, string> = {
+    high: "hsl(217,91%,60%)",
+    low: "hsl(0,0%,35%)",
+    inside: "hsl(45,100%,50%)",
+  };
 
   return (
     <div className="rounded-lg border border-border bg-card p-6 flex-1 min-w-[340px]">
@@ -41,10 +50,7 @@ const IBChart = ({ title, total, breakHigh, breakLow }: IBChartProps) => {
             />
             <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={80}>
               {data.map((entry, i) => (
-                <Cell
-                  key={i}
-                  fill={entry.type === "high" ? "hsl(217,91%,60%)" : "hsl(0,0%,35%)"}
-                />
+                <Cell key={i} fill={colorMap[entry.type]} />
               ))}
               <LabelList
                 dataKey="value"
