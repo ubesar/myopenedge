@@ -87,9 +87,9 @@ const Index = () => {
             <div className="flex items-center justify-center h-[400px] rounded-lg border border-dashed border-border">
                 <div className="text-center">
                   <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-40" />
-                  <p className="text-muted-foreground text-sm">Enter your API key  to begin analysis:
+                  <p className="text-muted-foreground text-sm">Enter your API key and ticker to begin analysis: 446c10963a5e4264bba005212ba1349f
 
-446c10963a5e4264bba005212ba1349f
+
 
 
 
