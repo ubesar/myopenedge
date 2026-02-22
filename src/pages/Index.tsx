@@ -87,27 +87,27 @@ const Index = () => {
             <div className="flex items-center justify-center h-[400px] rounded-lg border border-dashed border-border">
                 <div className="text-center">
                   <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-40" />
-                  <p className="text-muted-foreground text-sm">
-                    Enter your API key and ticker to begin analysis
-                  </p>
-                </div>
-              </div>
-            }
+                  <p className="text-muted-foreground text-sm">Enter your API key  to begin analysis:
 
-            {loading &&
-            <div className="flex items-center justify-center h-[400px] rounded-lg border border-border bg-card">
+446c10963a5e4264bba005212ba1349f
+
+
+
+                </p>
+                </div>
+              </div>}
+
+            {loading && <div className="flex items-center justify-center h-[400px] rounded-lg border border-border bg-card">
                 <div className="text-center space-y-3">
                   <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
                   <p className="text-muted-foreground text-sm">
                     Fetching & analyzing {symbol} data…
                   </p>
                 </div>
-              </div>
-            }
+              </div>}
 
             {/* IB Mode Results */}
-            {activeMode === "ib" && result &&
-            <div className="space-y-6">
+            {activeMode === "ib" && result && <div className="space-y-6">
                 <div className="flex flex-col md:flex-row gap-6">
                   <IBChart
                   title="IB High Formed First"
