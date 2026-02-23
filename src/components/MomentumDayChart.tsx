@@ -41,7 +41,7 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
     : { text: "⚪ Choppy / No Momentum", cls: "bg-muted text-muted-foreground" };
 
   return (
-    <div className="rounded-lg border border-border/50 bg-[hsl(220,13%,8%)]/80 backdrop-blur-md p-4 shadow-lg">
+    <div className="rounded-lg border border-border/50 bg-card/80 backdrop-blur-md p-4 shadow-lg">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-bold text-card-foreground">{symbol}</span>
