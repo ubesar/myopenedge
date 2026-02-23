@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import { TrendingUp, BarChart3, Activity, Target, Zap, Shield, ChevronRight } from "lucide-react";
+import { BarChart3, Activity, Target, Zap, Shield, TrendingUp, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logo from "@/assets/logo.jpg";
 
 const features = [
   {
@@ -60,7 +61,7 @@ const Landing = () => {
         <nav className="relative z-10 w-full border-b border-border/40 backdrop-blur-sm">
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <TrendingUp className="h-6 w-6 text-primary" />
+              <img src={logo} alt="MyOpenEdge" className="h-8 w-8 rounded-full object-cover" />
               <span className="text-xl font-bold tracking-tight">MyOpenEdge</span>
             </div>
             <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
@@ -201,7 +202,7 @@ const Landing = () => {
       <footer className="border-t border-border/30 px-6 py-8">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary" />
+            <img src={logo} alt="MyOpenEdge" className="h-5 w-5 rounded-full object-cover" />
             <span className="font-semibold text-foreground">MyOpenEdge</span>
             <span>· Auction Market Theory</span>
           </div>
