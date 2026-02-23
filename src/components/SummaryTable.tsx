@@ -25,14 +25,14 @@ const SummaryTable = ({ result, symbol }: SummaryTableProps) => {
     : `Jika IB Low terbentuk duluan → cenderung Break IB Low (${lowFirstBreakLowPct.toFixed(1)}%). Setup: Bias Short setelah IB selesai.`;
 
   return (
-    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-4 shadow-lg">
-      <h3 className="text-sm font-semibold text-card-foreground mb-0.5">
-        📋 Rekomendasi Setup Hari Ini — {symbol}
+    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 shadow-lg flex-1 min-w-[220px] max-w-[280px]">
+      <h3 className="text-xs font-semibold text-card-foreground mb-0.5">
+        📋 Rekomendasi — {symbol}
       </h3>
-      <p className="text-xs text-muted-foreground mb-2">
-        IB Window: First {ibLabel} · {totalAnalyzed} hari trading · <span className="text-yellow-400">{result.insideDays} Inside Days</span>
+      <p className="text-[10px] text-muted-foreground mb-1.5">
+        {ibLabel} · {totalAnalyzed} hari · <span className="text-yellow-400">{result.insideDays} Inside</span>
       </p>
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         <div className={`rounded-md border px-3 py-2 ${highFirstIsLong ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
           <div className="flex items-center gap-1.5">
             <span className={`inline-block h-2 w-2 rounded-full ${highFirstIsLong ? 'bg-emerald-500' : 'bg-red-500'}`} />
