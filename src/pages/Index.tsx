@@ -87,7 +87,7 @@ const Index = () => {
             <div className="flex items-center justify-center h-[400px] rounded-lg border border-dashed border-border">
                 <div className="text-center">
                   <img src={logo} className="h-12 w-12 rounded-full object-cover mx-auto mb-4 opacity-40" alt="MyOpenEdge" />
-                  <p className="text-muted-foreground text-sm">Enter your API key and ticker to begin analysis: 446c10963a5e4264bba005212ba1349f
+                  <p className="text-muted-foreground text-sm">Sign up for free at twelvedata.com and enter your API key.
 
 
 
