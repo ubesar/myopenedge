@@ -88,7 +88,7 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="relative z-10 max-w-7xl mx-auto px-6 py-8">
+      <main className="relative z-10 max-w-7xl mx-auto px-6 py-4">
         <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-5">
           <aside>
             <ControlPanel onRun={handleRun} loading={loading} />
@@ -119,8 +119,8 @@ const Index = () => {
               </div>}
 
             {/* IB Mode Results */}
-            {activeMode === "ib" && result && <div className="space-y-6">
-                <div className="flex flex-col md:flex-row gap-6">
+            {activeMode === "ib" && result && <div className="space-y-3">
+                <div className="flex flex-col md:flex-row gap-3">
                   <IBChart
                   title="IB High Formed First"
                   total={result.highFirst.total}
@@ -160,7 +160,7 @@ const Index = () => {
 
             {/* Momentum Mode Results */}
             {activeMode === "momentum" && momentumResult &&
-            <div className="space-y-6">
+            <div className="space-y-3">
                 <div className="text-center space-y-1">
                   
                   
@@ -170,7 +170,7 @@ const Index = () => {
 
 
                 </div>
-                <div className="flex flex-col md:flex-row gap-6">
+                <div className="flex flex-col md:flex-row gap-3">
                   <MomentumChart
                   title="IB High Formed First"
                   total={momentumResult.highFirst.total}

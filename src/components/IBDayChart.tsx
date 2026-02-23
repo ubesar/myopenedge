@@ -100,7 +100,7 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
           </span>
         </div>
       </div>
-      <div className="h-[400px]">
+      <div className="h-[280px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={displayBars} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,10%,15%)" vertical={false} />
