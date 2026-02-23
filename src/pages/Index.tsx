@@ -89,7 +89,7 @@ const Index = () => {
       </header>
 
       <main className="relative z-10 max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-5">
           <aside>
             <ControlPanel onRun={handleRun} loading={loading} />
           </aside>
