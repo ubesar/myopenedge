@@ -26,12 +26,12 @@ const IBChart = ({ title, total, breakHigh, breakLow, inside }: IBChartProps) =>
   };
 
   return (
-    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-6 flex-1 min-w-[340px] my-[24px] shadow-lg">
-      <h3 className="text-lg font-semibold text-card-foreground mb-1">{title}</h3>
-      <p className="text-sm text-muted-foreground mb-6">
+    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-4 flex-1 min-w-[260px] shadow-lg">
+      <h3 className="text-sm font-semibold text-card-foreground mb-0.5">{title}</h3>
+      <p className="text-xs text-muted-foreground mb-3">
         {total} trading days analyzed
       </p>
-      <div className="h-[280px]">
+      <div className="h-[200px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} barCategoryGap="30%">
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,20%)" vertical={false} />
