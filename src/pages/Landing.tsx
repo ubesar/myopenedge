@@ -93,10 +93,10 @@ const Landing = () => {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Button
                 size="lg"
-                onClick={() => navigate("/app")}
+                onClick={() => navigate("/pricing")}
                 className="text-base px-8 py-6 rounded-full"
               >
-                Get Started for Free
+                Subscription
                 <ChevronRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
