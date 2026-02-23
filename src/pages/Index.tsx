@@ -119,8 +119,8 @@ const Index = () => {
               </div>}
 
             {/* IB Mode Results */}
-            {activeMode === "ib" && result && <div className="space-y-4">
-                <div className="flex flex-col md:flex-row gap-4">
+            {activeMode === "ib" && result && <div className="space-y-6">
+                <div className="flex flex-col md:flex-row gap-6">
                   <IBChart
                   title="IB High Formed First"
                   total={result.highFirst.total}
@@ -135,8 +135,8 @@ const Index = () => {
                   breakLow={result.lowFirst.breakLow}
                   inside={result.lowFirst.inside} />
 
-                  <SummaryTable result={result} symbol={symbol} />
                 </div>
+                <SummaryTable result={result} symbol={symbol} />
                 {result.allDays.length > 0 && (() => {
                 const dayData = result.allDays.find((d) => d.date === selectedDate) || result.allDays[result.allDays.length - 1];
                 return (
