@@ -26,29 +26,30 @@ const IBChart = ({ title, total, breakHigh, breakLow, inside }: IBChartProps) =>
   };
 
   return (
-    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-4 flex-1 min-w-[260px] shadow-lg">
-      <h3 className="text-sm font-semibold text-card-foreground mb-0.5">{title}</h3>
-      <p className="text-xs text-muted-foreground mb-3">
-        {total} trading days analyzed
+    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 flex-1 min-w-[220px] max-w-[280px] aspect-square shadow-lg">
+      <h3 className="text-xs font-semibold text-card-foreground mb-0.5">{title}</h3>
+      <p className="text-[10px] text-muted-foreground mb-2">
+        {total} days analyzed
       </p>
-      <div className="h-[200px]">
+      <div className="h-[calc(100%-40px)]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} barCategoryGap="30%">
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,20%)" vertical={false} />
             <XAxis
               dataKey="name"
-              tick={{ fill: "hsl(0,0%,55%)", fontSize: 13 }}
+              tick={{ fill: "hsl(0,0%,55%)", fontSize: 10 }}
               axisLine={{ stroke: "hsl(0,0%,20%)" }}
               tickLine={false} />
 
             <YAxis
               domain={[0, 100]}
-              tick={{ fill: "hsl(0,0%,55%)", fontSize: 12 }}
+              tick={{ fill: "hsl(0,0%,55%)", fontSize: 10 }}
               axisLine={false}
               tickLine={false}
-              tickFormatter={(v) => `${v}%`} />
+              tickFormatter={(v) => `${v}%`}
+              width={30} />
 
-            <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={80}>
+            <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={50}>
               {data.map((entry, i) =>
               <Cell key={i} fill={colorMap[entry.type]} />
               )}
@@ -56,7 +57,7 @@ const IBChart = ({ title, total, breakHigh, breakLow, inside }: IBChartProps) =>
                 dataKey="value"
                 position="top"
                 formatter={(v: number) => `${v}%`}
-                style={{ fill: "hsl(0,0%,85%)", fontSize: 14, fontWeight: 600 }} />
+                style={{ fill: "hsl(0,0%,85%)", fontSize: 11, fontWeight: 600 }} />
 
             </Bar>
           </BarChart>
