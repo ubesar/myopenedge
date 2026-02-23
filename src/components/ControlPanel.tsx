@@ -69,23 +69,16 @@ const ControlPanel = ({ onRun, loading }: ControlPanelProps) => {
       </div>
 
       <div className="space-y-2">
-        <button
-          type="button"
-          onClick={() => setShowApiKey(!showApiKey)}
-          className="text-sm text-muted-foreground flex items-center gap-1.5 hover:text-foreground transition-colors"
-        >
-          <KeyRound className="h-3.5 w-3.5" /> API Key
-          {showApiKey ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-        </button>
-        {showApiKey && (
-          <Input
-            id="apiKey"
-            type="password"
-            placeholder="Enter your API key"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            className="bg-muted border-border text-foreground placeholder:text-muted-foreground" />
-        )}
+        <Label htmlFor="apiKey" className="text-sm text-muted-foreground flex items-center gap-1.5">
+          <KeyRound className="h-3.5 w-3.5" /> Twelve Data API Key
+        </Label>
+        <Input
+          id="apiKey"
+          type="password"
+          placeholder="Enter your API key"
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          className="bg-muted border-border text-foreground placeholder:text-muted-foreground" />
       </div>
 
       <div className="space-y-2">
