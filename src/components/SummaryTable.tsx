@@ -25,7 +25,7 @@ const SummaryTable = ({ result, symbol }: SummaryTableProps) => {
     : `Jika IB Low terbentuk duluan → cenderung Break IB Low (${lowFirstBreakLowPct.toFixed(1)}%). Setup: Bias Short setelah IB selesai.`;
 
   return (
-    <div className="rounded-lg border border-border bg-card p-6">
+    <div className="rounded-lg border border-border/50 bg-card/80 backdrop-blur-md p-6 shadow-lg">
       <h3 className="text-lg font-semibold text-card-foreground mb-1">
         📋 Rekomendasi Setup Hari Ini — {symbol}
       </h3>
