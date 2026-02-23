@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { TrendingUp } from "lucide-react";
+import logo from "@/assets/logo10.jpg";
 import ControlPanel, { type AnalysisMode } from "@/components/ControlPanel";
 import IBChart from "@/components/IBChart";
 import IBDayChart from "@/components/IBDayChart";
@@ -70,7 +70,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center gap-3">
-          <TrendingUp className="h-6 w-6 text-primary" />
+          <img src={logo} alt="MyOpenEdge" className="h-8 w-8 rounded-full object-cover" />
           <h1 className="text-xl font-bold text-foreground tracking-tight">MyOpenEdge</h1>
           <span className="text-xs text-muted-foreground ml-1">Auction Market Theory</span>
         </div>
@@ -86,7 +86,7 @@ const Index = () => {
             {!result && !momentumResult && !loading &&
             <div className="flex items-center justify-center h-[400px] rounded-lg border border-dashed border-border">
                 <div className="text-center">
-                  <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-40" />
+                  <img src={logo} className="h-12 w-12 rounded-full object-cover mx-auto mb-4 opacity-40" alt="MyOpenEdge" />
                   <p className="text-muted-foreground text-sm">Enter your API key and ticker to begin analysis: 446c10963a5e4264bba005212ba1349f
 
 
