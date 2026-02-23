@@ -6,32 +6,32 @@ const features = [
   {
     icon: BarChart3,
     title: "Initial Balance Analysis",
-    desc: "Identifikasi IB High/Low formation dan breakout probability secara otomatis dari data historis.",
+    desc: "Automatically identify IB High/Low formation and breakout probability from historical data.",
   },
   {
     icon: Activity,
     title: "Momentum Candle Detection",
-    desc: "Deteksi sinyal momentum dari consecutive M15 candles dengan body ratio yang kuat.",
+    desc: "Detect momentum signals from consecutive M15 candles with strong body ratios.",
   },
   {
     icon: Target,
     title: "Breakout Probability",
-    desc: "Lihat statistik breakout berdasarkan IB High First vs Low First untuk edge trading Anda.",
+    desc: "View breakout statistics based on IB High First vs Low First for your trading edge.",
   },
   {
     icon: Zap,
     title: "Real-Time 5min Data",
-    desc: "Powered by TwelveData API dengan 5000 bar data intraday untuk analisis mendalam.",
+    desc: "Powered by TwelveData API with 5000 bars of intraday data for deep analysis.",
   },
   {
     icon: Shield,
     title: "M15 Aggregation",
-    desc: "Agregasi otomatis ke timeframe M15 untuk deteksi breakout dan momentum yang akurat.",
+    desc: "Automatic aggregation to M15 timeframe for accurate breakout and momentum detection.",
   },
   {
     icon: TrendingUp,
     title: "Smart Recommendations",
-    desc: "Rekomendasi setup harian berdasarkan probabilitas statistik IB dan momentum.",
+    desc: "Daily setup recommendations based on IB and momentum statistical probabilities.",
   },
 ];
 
@@ -87,8 +87,8 @@ const Landing = () => {
               <span className="text-primary">Auction Market Theory</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Analisis Initial Balance & Momentum Candle secara otomatis.
-              Temukan edge Anda dengan data statistik yang akurat.
+              Automatically analyze Initial Balance & Momentum Candles.
+              Find your edge with accurate statistical data.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Button
@@ -134,7 +134,7 @@ const Landing = () => {
               <span className="text-primary">AMT Analysis</span>
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Tools profesional untuk analisis Auction Market Theory, dibangun untuk trader yang serius.
+              Professional tools for Auction Market Theory analysis, built for serious traders.
             </p>
           </div>
 
@@ -159,13 +159,13 @@ const Landing = () => {
       <section id="how-it-works" className="py-24 px-6 border-t border-border/30">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
-            Mulai dalam <span className="text-primary">3 Langkah</span>
+            Get Started in <span className="text-primary">3 Steps</span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { step: "01", title: "Masukkan API Key", desc: "Daftar gratis di TwelveData dan masukkan API key Anda." },
-              { step: "02", title: "Pilih Ticker & Mode", desc: "Pilih ticker saham dan mode analisis (IB atau Momentum)." },
-              { step: "03", title: "Analisis & Trading", desc: "Lihat statistik breakout dan rekomendasi setup harian." },
+              { step: "01", title: "Enter API Key", desc: "Sign up for free at TwelveData and enter your API key." },
+              { step: "02", title: "Select Ticker & Mode", desc: "Choose a stock ticker and analysis mode (IB or Momentum)." },
+              { step: "03", title: "Analyze & Trade", desc: "View breakout statistics and daily setup recommendations." },
             ].map((s) => (
               <div key={s.step} className="text-center space-y-3">
                 <div className="text-4xl font-bold text-primary/30">{s.step}</div>
@@ -181,10 +181,10 @@ const Landing = () => {
       <section className="py-24 px-6 border-t border-border/30">
         <div className="max-w-3xl mx-auto text-center space-y-6">
           <h2 className="text-3xl md:text-4xl font-bold">
-            Siap menemukan <span className="text-primary">edge</span> Anda?
+            Ready to find your <span className="text-primary">edge</span>?
           </h2>
           <p className="text-muted-foreground">
-            Mulai analisis Initial Balance dan Momentum Candle sekarang. Gratis.
+            Start analyzing Initial Balance and Momentum Candles now. Free.
           </p>
           <Button
             size="lg"
