@@ -67,8 +67,20 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border px-6 py-4">
+    <div className="min-h-screen bg-background relative">
+      {/* Background Video */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="fixed inset-0 w-full h-full object-cover opacity-20 z-0"
+      >
+        <source src="/videos/hero-bg.mp4" type="video/mp4" />
+      </video>
+      <div className="fixed inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background z-0" />
+
+      <header className="relative z-10 border-b border-border/40 px-6 py-4 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto flex items-center gap-3">
           <img src={logo} alt="MyOpenEdge" className="h-8 w-8 rounded-full object-cover" />
           <h1 className="text-xl font-bold text-foreground tracking-tight">MyOpenEdge</h1>
@@ -76,7 +88,7 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="relative z-10 max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8">
           <aside>
             <ControlPanel onRun={handleRun} loading={loading} />
