@@ -49,10 +49,10 @@ const ControlPanel = ({ onRun, loading }: ControlPanelProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-4 space-y-4 my-[24px] shadow-lg">
-      <div className="flex items-center gap-2 mb-2">
-        <BarChart3 className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-semibold text-card-foreground">IB Analysis</h2>
+    <form onSubmit={handleSubmit} className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 space-y-2.5 mt-4 shadow-lg text-xs">
+      <div className="flex items-center gap-1.5 mb-1">
+        <BarChart3 className="h-4 w-4 text-primary" />
+        <h2 className="text-sm font-semibold text-card-foreground">IB Analysis</h2>
       </div>
 
       <div className="space-y-2">
