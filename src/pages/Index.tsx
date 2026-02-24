@@ -74,8 +74,8 @@ const Index = () => {
         loop
         muted
         playsInline
-        className="fixed inset-0 w-full h-full object-cover opacity-20 z-0"
-      >
+        className="fixed inset-0 w-full h-full object-cover opacity-20 z-0">
+
         <source src="/videos/hero-bg.mp4" type="video/mp4" />
       </video>
       <div className="fixed inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background z-0" />
@@ -84,7 +84,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto flex items-center gap-3">
           <img src={logo} alt="MyOpenEdge" className="h-8 w-8 rounded-full object-cover" />
           <h1 className="text-xl font-bold text-foreground tracking-tight">MyOpenEdge</h1>
-          <span className="text-xs text-muted-foreground ml-1">Auction Market Theory</span>
+          <span className="text-xs text-muted-foreground ml-1">​IB & Momentum Analytics</span>
         </div>
       </header>
 
