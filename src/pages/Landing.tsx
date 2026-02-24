@@ -21,7 +21,7 @@ const features = [
   },
   {
     icon: Zap,
-    title: "Real-Time 5min Data",
+    title: "Real-Time Data",
     desc: "Powered by TwelveData API with 5000 bars of intraday data for deep analysis.",
   },
   {
