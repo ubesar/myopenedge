@@ -69,10 +69,9 @@ const Landing = () => {
               <a href="#how-it-works" className="hover:text-foreground transition-colors">How It Works</a>
             </div>
             <Button
-              onClick={() => navigate("/app")}
+              onClick={() => navigate("/auth")}
               variant="outline"
               className="border-primary/50 text-primary hover:bg-primary/10">
-
               Launch App
             </Button>
           </div>
@@ -188,9 +187,8 @@ const Landing = () => {
           </p>
           <Button
             size="lg"
-            onClick={() => navigate("/app")}
+            onClick={() => navigate("/auth")}
             className="text-base px-8 py-6 rounded-full">
-
             Launch MyOpenEdge
             <ChevronRight className="ml-2 h-5 w-5" />
           </Button>
