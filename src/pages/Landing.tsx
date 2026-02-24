@@ -82,14 +82,13 @@ const Landing = () => {
         <div className="relative z-10 flex-1 flex items-center justify-center px-6">
           <div className="text-center max-w-4xl mx-auto space-y-8">
             <h1 className="text-5xl md:text-7xl font-bold leading-tight tracking-tight">
-              Supercharge Your Trading
+              Decode the Market
               <br />
               With{" "}
-              <span className="text-primary">Auction Market Theory</span>
+              <span className="text-primary">IB & Momentum Data</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Automatically analyze Initial Balance & Momentum Candles.
-              Find your edge with accurate statistical data.
+              Spot Initial Balance breakouts & momentum candles instantly. Turn raw 5-min data into actionable trading setups.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Button
@@ -109,9 +108,9 @@ const Landing = () => {
           <div className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-md p-6 shadow-2xl shadow-primary/5">
             <div className="grid grid-cols-3 gap-4">
               {[
-                { label: "IB Breakout Rate", value: "+73%", color: "text-emerald-400" },
-                { label: "Momentum Accuracy", value: "+68%", color: "text-primary" },
-                { label: "Win Rate Avg", value: "+71%", color: "text-amber-400" },
+                { label: "IB Breakout Rate", value: "73%", color: "text-emerald-400" },
+                { label: "Momentum Accuracy", value: "68%", color: "text-primary" },
+                { label: "Trading Days Analyzed", value: "100+", color: "text-amber-400" },
               ].map((stat) => (
                 <div
                   key={stat.label}
@@ -132,10 +131,10 @@ const Landing = () => {
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-3xl md:text-4xl font-bold">
               Everything You Need for{" "}
-              <span className="text-primary">AMT Analysis</span>
+              <span className="text-primary">IB & Momentum Analysis</span>
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Professional tools for Auction Market Theory analysis, built for serious traders.
+              Professional tools to decode Initial Balance breakouts and momentum candle patterns.
             </p>
           </div>
 
@@ -182,10 +181,10 @@ const Landing = () => {
       <section className="py-24 px-6 border-t border-border/30">
         <div className="max-w-3xl mx-auto text-center space-y-6">
           <h2 className="text-3xl md:text-4xl font-bold">
-            Ready to find your <span className="text-primary">edge</span>?
+            Ready to decode your <span className="text-primary">edge</span>?
           </h2>
           <p className="text-muted-foreground">
-            Start analyzing Initial Balance and Momentum Candles now. Free.
+            Start analyzing IB breakouts and momentum candles with real data. Free.
           </p>
           <Button
             size="lg"
