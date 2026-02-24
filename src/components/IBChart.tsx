@@ -26,7 +26,7 @@ const IBChart = ({ title, total, breakHigh, breakLow, inside }: IBChartProps) =>
   };
 
   return (
-    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-4 flex-1 min-w-[280px] shadow-lg aspect-square flex flex-col">
+    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-4 flex-1 min-w-[280px] shadow-lg h-[320px] flex flex-col">
       <h3 className="text-sm font-semibold text-card-foreground mb-0.5">{title}</h3>
       <p className="text-xs text-muted-foreground mb-3">
         {total} trading days analyzed
