@@ -1,5 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 import logo from "@/assets/logo10.jpg";
 import ControlPanel, { type AnalysisMode } from "@/components/ControlPanel";
 import IBChart from "@/components/IBChart";
@@ -11,12 +15,20 @@ import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
 
 const Index = () => {
+  const { user, loading: authLoading, signOut } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [momentumResult, setMomentumResult] = useState<MomentumResult | null>(null);
   const [symbol, setSymbol] = useState("");
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
+
+  // Redirect if not authenticated
+  if (!authLoading && !user) {
+    navigate("/auth");
+    return null;
+  }
 
   const handleRun = async (apiKey: string, ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => {
     setLoading(true);
@@ -85,6 +97,12 @@ const Index = () => {
           <img src={logo} alt="MyOpenEdge" className="h-8 w-8 rounded-full object-cover" />
           <h1 className="text-xl font-bold text-foreground tracking-tight">MyOpenEdge</h1>
           <span className="text-xs text-muted-foreground ml-1">​IB & Momentum Analytics</span>
+          <div className="ml-auto">
+            <Button variant="ghost" size="sm" onClick={signOut} className="gap-2 text-muted-foreground">
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </Button>
+          </div>
         </div>
       </header>
 
