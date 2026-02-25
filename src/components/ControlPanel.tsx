@@ -10,6 +10,7 @@ export type AnalysisMode = "ib" | "momentum";
 interface ControlPanelProps {
   onRun: (apiKey: string, symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => void;
   loading: boolean;
+  isFree?: boolean;
 }
 
 const IB_WINDOWS = [
@@ -21,6 +22,7 @@ const IB_WINDOWS = [
 
 const DAY_OPTIONS = [
 { value: "0", label: "All Days" },
+{ value: "7", label: "Last 7 Days" },
 { value: "15", label: "Last 15 Days" },
 { value: "30", label: "Last 30 Days" },
 { value: "60", label: "Last 60 Days" },
@@ -28,11 +30,11 @@ const DAY_OPTIONS = [
 { value: "120", label: "Last 120 Days" }];
 
 
-const ControlPanel = ({ onRun, loading }: ControlPanelProps) => {
+const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => {
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("twelvedata_api_key") || "446c10963a5e4264bba005212ba1349f");
   const [symbol, setSymbol] = useState("QQQ");
-  const [ibWindow, setIbWindow] = useState("30");
-  const [maxDays, setMaxDays] = useState("15");
+  const [ibWindow, setIbWindow] = useState(isFree ? "60" : "30");
+  const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
   const [mode, setMode] = useState<AnalysisMode>("ib");
   const [showApiKey, setShowApiKey] = useState(false);
 
@@ -57,15 +59,16 @@ const ControlPanel = ({ onRun, loading }: ControlPanelProps) => {
 
       <div className="space-y-2">
         <Label className="text-sm text-muted-foreground">Analysis Type</Label>
-        <Select value={mode} onValueChange={(v) => setMode(v as AnalysisMode)}>
+        <Select value={isFree ? "ib" : mode} onValueChange={(v) => !isFree && setMode(v as AnalysisMode)} disabled={isFree}>
           <SelectTrigger className="bg-muted border-border text-foreground">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ib">Initial Balance (IB)</SelectItem>
-            <SelectItem value="momentum">Momentum Candle</SelectItem>
+            {!isFree && <SelectItem value="momentum">Momentum Candle</SelectItem>}
           </SelectContent>
         </Select>
+        {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for Momentum analysis</p>}
       </div>
 
       <div className="space-y-2">
@@ -96,30 +99,38 @@ const ControlPanel = ({ onRun, loading }: ControlPanelProps) => {
 
       <div className="space-y-2">
         <Label className="text-sm text-muted-foreground">Trading Days</Label>
-        <Select value={maxDays} onValueChange={setMaxDays}>
+        <Select value={isFree ? "7" : maxDays} onValueChange={(v) => !isFree && setMaxDays(v)} disabled={isFree}>
           <SelectTrigger className="bg-muted border-border text-foreground">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {DAY_OPTIONS.map((d) =>
-            <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
-            )}
+            {isFree
+              ? <SelectItem value="7">Last 7 Days</SelectItem>
+              : DAY_OPTIONS.map((d) =>
+                <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+              )
+            }
           </SelectContent>
         </Select>
+        {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for more days</p>}
       </div>
 
       <div className="space-y-2">
         <Label className="text-sm text-muted-foreground">IB Window</Label>
-        <Select value={ibWindow} onValueChange={setIbWindow}>
+        <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => !isFree && setIbWindow(v)} disabled={isFree}>
           <SelectTrigger className="bg-muted border-border text-foreground">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {IB_WINDOWS.map((w) =>
-            <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>
-            )}
+            {isFree
+              ? <SelectItem value="60">First 60 min (09:30–10:30)</SelectItem>
+              : IB_WINDOWS.map((w) =>
+                <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>
+              )
+            }
           </SelectContent>
         </Select>
+        {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for more windows</p>}
       </div>
 
       <Button type="submit" disabled={loading || !apiKey.trim()} className="w-full">

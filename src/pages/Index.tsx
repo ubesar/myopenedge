@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,19 +27,38 @@ const Index = () => {
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
 
+  const isFree = !isActive;
+
+  // Daily run limit for free users
+  const getRunCount = useCallback(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const stored = localStorage.getItem("free_run_count");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed.date === today) return parsed.count as number;
+    }
+    return 0;
+  }, []);
+
+  const incrementRunCount = useCallback(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const count = getRunCount() + 1;
+    localStorage.setItem("free_run_count", JSON.stringify({ date: today, count }));
+  }, [getRunCount]);
+
   // Redirect if not authenticated
   if (!authLoading && !user) {
     navigate("/auth");
     return null;
   }
 
-  // Redirect if not subscribed
-  if (!authLoading && !subLoading && user && !isActive) {
-    navigate("/upgrade");
-    return null;
-  }
-
   const handleRun = async (apiKey: string, ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => {
+    // Free user: max 3 runs per day
+    if (isFree && getRunCount() >= 3) {
+      toast.error("Free users can only run 3 analyses per day. Upgrade to Pro for unlimited access.");
+      return;
+    }
+
     setLoading(true);
     setResult(null);
     setMomentumResult(null);
@@ -69,6 +88,7 @@ const Index = () => {
         }
         setResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
+        if (isFree) incrementRunCount();
         toast.success(`Analyzed ${analysis.highFirst.total + analysis.lowFirst.total} trading days for ${ticker}`);
       } else {
         const analysis = analyzeMomentum(json.values, ibWindow, maxDays);
@@ -78,6 +98,7 @@ const Index = () => {
         }
         setMomentumResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
+        if (isFree) incrementRunCount();
         toast.success(`Momentum analysis: ${analysis.totalDays} trading days for ${ticker}`);
       }
     } catch (err: any) {
@@ -106,7 +127,7 @@ const Index = () => {
           <img src={logo} alt="MyOpenEdge" className="h-8 w-8 rounded-full object-cover" />
           <h1 className="text-xl font-bold text-foreground tracking-tight">MyOpenEdge</h1>
           <span className="text-xs text-muted-foreground ml-1">​IB & Momentum Analytics</span>
-          {isActive && (
+          {isActive ? (
             <div className="flex items-center gap-2 ml-2">
               <Badge variant="secondary" className="gap-1 text-xs bg-primary/15 text-primary border-primary/30">
                 <Crown className="h-3 w-3" /> Pro
@@ -117,6 +138,14 @@ const Index = () => {
                 </span>
               )}
             </div>
+          ) : (
+            <Badge
+              variant="outline"
+              className="gap-1 text-xs cursor-pointer hover:bg-primary/10"
+              onClick={() => navigate("/upgrade")}
+            >
+              Free · Upgrade to Pro
+            </Badge>
           )}
           <div className="ml-auto">
             <Button variant="ghost" size="sm" onClick={signOut} className="gap-2 text-muted-foreground">
@@ -130,7 +159,7 @@ const Index = () => {
       <main className="relative z-10 max-w-7xl mx-auto px-6 py-4">
         <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-5">
           <aside>
-            <ControlPanel onRun={handleRun} loading={loading} />
+            <ControlPanel onRun={handleRun} loading={loading} isFree={isFree} />
           </aside>
 
           <section>
