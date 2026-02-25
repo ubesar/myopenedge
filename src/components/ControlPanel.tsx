@@ -76,6 +76,17 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
           </SelectContent>
         </Select>
         {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for Momentum analysis</p>}
+        <div className="rounded-md border border-border/20 bg-muted/30 px-2.5 py-2 text-[10px] text-muted-foreground leading-relaxed mt-1">
+          {(isFree ? "ib" : mode) === "ib" ? (
+            <>
+              <span className="font-semibold text-foreground/80">IB Analysis</span> — Menghitung range IB (High & Low) dari 5-min bars dalam window yang dipilih. Mendeteksi sisi mana yang terbentuk duluan (High/Low First), lalu scan breakout menggunakan <span className="font-medium text-foreground/70">M15 candle close</span> dari akhir IB sampai 12:00. Hasil: probabilitas Break High / Break Low / Inside Day.
+            </>
+          ) : (
+            <>
+              <span className="font-semibold text-foreground/80">Momentum Candle</span> — Mencari 2 candle M15 berturut-turut dengan warna sama (bullish/bearish) di window 09:30–12:00. Candle pertama harus body ≥50% range, candle kedua ≥30% range. Sinyal pertama menentukan bias hari itu: Bullish, Bearish, atau Choppy.
+            </>
+          )}
+        </div>
       </div>
 
       <div className="space-y-2">
