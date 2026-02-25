@@ -143,25 +143,27 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
         {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for more days</p>}
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-sm text-muted-foreground">IB Window</Label>
-        <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => !isFree && setIbWindow(v)} disabled={isFree}>
-          <SelectTrigger className="bg-muted border-border text-foreground">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {isFree
-              ? <SelectItem value="60">First 60 min (09:30–10:30)</SelectItem>
-              : IB_WINDOWS
-                .filter((w) => mode === "ib" || !w.ibOnly)
-                .map((w) =>
-                  <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>
-                )
-            }
-          </SelectContent>
-        </Select>
-        {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for more windows</p>}
-      </div>
+      {mode !== "occ" && (
+        <div className="space-y-2">
+          <Label className="text-sm text-muted-foreground">IB Window</Label>
+          <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => !isFree && setIbWindow(v)} disabled={isFree}>
+            <SelectTrigger className="bg-muted border-border text-foreground">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {isFree
+                ? <SelectItem value="60">First 60 min (09:30–10:30)</SelectItem>
+                : IB_WINDOWS
+                  .filter((w) => mode === "ib" || !w.ibOnly)
+                  .map((w) =>
+                    <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>
+                  )
+              }
+            </SelectContent>
+          </Select>
+          {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for more windows</p>}
+        </div>
+      )}
 
       <Button type="submit" disabled={loading || !apiKey.trim()} className="w-full">
         {loading ?
