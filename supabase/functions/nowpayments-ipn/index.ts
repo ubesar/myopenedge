@@ -1,11 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-nowpayments-sig",
-};
-
 function sortObject(obj: Record<string, unknown>): Record<string, unknown> {
   return Object.keys(obj)
     .sort()
@@ -20,9 +14,13 @@ function sortObject(obj: Record<string, unknown>): Record<string, unknown> {
     }, {});
 }
 
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const validStatuses = ['waiting', 'confirming', 'confirmed', 'finished', 'failed', 'refunded', 'expired'];
+
 Deno.serve(async (req) => {
+  // No CORS needed - server-to-server webhook
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { status: 204 });
   }
 
   try {
@@ -50,13 +48,28 @@ Deno.serve(async (req) => {
 
     if (hexHash !== sig) {
       console.error("IPN signature mismatch");
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
 
-    const { payment_status, order_id } = body;
+    const { payment_status, order_id, price_amount } = body;
+
+    // Validate required fields
+    if (!order_id || !payment_status) {
+      console.error("Missing required fields");
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }
+
+    // Validate order_id format
+    if (!uuidRegex.test(order_id)) {
+      console.error("Invalid order_id format:", order_id);
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }
+
+    // Validate payment status
+    if (!validStatuses.includes(payment_status)) {
+      console.error("Invalid payment_status:", payment_status);
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }
 
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -72,21 +85,21 @@ Deno.serve(async (req) => {
 
     if (!existingOrder) {
       console.error("Order not found:", order_id);
-      return new Response(JSON.stringify({ ok: true }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
     }
 
     if (existingOrder.status === "finished") {
-      return new Response(JSON.stringify({ ok: true }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
     }
 
     // Process finished payment
     if (payment_status === "finished") {
+      // Verify payment amount if provided
+      if (price_amount && parseFloat(price_amount) < 3) {
+        console.error("Payment amount mismatch:", price_amount);
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+
       await adminClient
         .from("orders")
         .update({ status: "finished" })
@@ -106,15 +119,9 @@ Deno.serve(async (req) => {
       console.log("Subscription activated for user:", existingOrder.user_id);
     }
 
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ ok: true }), { status: 200 });
   } catch (err) {
     console.error("IPN error:", err.message);
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ ok: true }), { status: 200 });
   }
 });
