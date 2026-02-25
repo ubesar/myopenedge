@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import logo from "@/assets/logo.jpg";
 
 const features = [
-  "Unlimited IB & Momentum Analysis",
+  "Unlimited IB, Momentum & OCC Analysis",
   "Unlimited tickers",
   "5000 bars intraday data",
   "Breakout Probability Stats",
@@ -110,7 +110,7 @@ const Upgrade = () => {
           <div className="rounded-xl border border-primary/30 bg-card/80 backdrop-blur-sm p-10 max-w-md w-full text-center">
             <Zap className="h-10 w-10 text-primary mx-auto mb-4" />
             <h1 className="text-3xl font-bold mb-2">Upgrade to Pro</h1>
-            <p className="text-muted-foreground mb-2">Full access to all IB & Momentum tools</p>
+            <p className="text-muted-foreground mb-2">Full access to all IB, Momentum & OCC tools</p>
             <div className="mb-6">
               <span className="text-5xl font-bold">$3</span>
               <span className="text-muted-foreground">/month</span>
