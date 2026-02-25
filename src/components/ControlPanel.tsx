@@ -14,7 +14,7 @@ interface ControlPanelProps {
 }
 
 const IB_WINDOWS = [
-{ value: "15", label: "First 15 min (09:30–09:45)" },
+{ value: "15", label: "First 15 min (09:30–09:45)", ibOnly: true },
 { value: "30", label: "First 30 min (09:30–10:00)" },
 { value: "60", label: "First 60 min (09:30–10:30)" },
 { value: "90", label: "First 90 min (09:30–11:00)" }];
@@ -37,6 +37,13 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
   const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
   const [mode, setMode] = useState<AnalysisMode>("ib");
   const [showApiKey, setShowApiKey] = useState(false);
+
+  // Auto-switch IB window if current selection is invalid for momentum mode
+  useEffect(() => {
+    if (mode === "momentum" && ibWindow === "15") {
+      setIbWindow("30");
+    }
+  }, [mode, ibWindow]);
 
   useEffect(() => {
     if (apiKey.trim()) {
@@ -124,9 +131,11 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
           <SelectContent>
             {isFree
               ? <SelectItem value="60">First 60 min (09:30–10:30)</SelectItem>
-              : IB_WINDOWS.map((w) =>
-                <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>
-              )
+              : IB_WINDOWS
+                .filter((w) => mode === "ib" || !w.ibOnly)
+                .map((w) =>
+                  <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>
+                )
             }
           </SelectContent>
         </Select>
