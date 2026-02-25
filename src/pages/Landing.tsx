@@ -1,6 +1,7 @@
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { BarChart3, Activity, Target, Zap, TrendingUp, ChevronRight, CandlestickChart } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.jpg";
 
@@ -75,16 +76,29 @@ const steps = [
 const Landing = () => {
   const navigate = useNavigate();
 
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const videoY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
+  const videoScale = useTransform(scrollYProgress, [0, 1], [1, 1.15]);
+  const overlayOpacity = useTransform(scrollYProgress, [0, 1], [0.4, 0.85]);
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* Hero Section */}
-      <section className="relative min-h-screen flex flex-col">
-        <video
+      <section ref={heroRef} className="relative min-h-screen flex flex-col overflow-hidden">
+        <motion.video
           autoPlay loop muted playsInline
+          style={{ y: videoY, scale: videoScale }}
           className="absolute inset-0 w-full h-full object-cover opacity-30">
           <source src="/videos/hero-bg.mp4" type="video/mp4" />
-        </video>
-        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background" />
+        </motion.video>
+        <motion.div
+          style={{ opacity: overlayOpacity }}
+          className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background"
+        />
 
         {/* Navbar */}
         <motion.nav
