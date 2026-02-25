@@ -19,7 +19,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 const Index = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
-  const { isActive, loading: subLoading } = useSubscription();
+  const { isActive, endDate, loading: subLoading } = useSubscription();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [momentumResult, setMomentumResult] = useState<MomentumResult | null>(null);
@@ -107,9 +107,16 @@ const Index = () => {
           <h1 className="text-xl font-bold text-foreground tracking-tight">MyOpenEdge</h1>
           <span className="text-xs text-muted-foreground ml-1">​IB & Momentum Analytics</span>
           {isActive && (
-            <Badge variant="secondary" className="ml-2 gap-1 text-xs bg-primary/15 text-primary border-primary/30">
-              <Crown className="h-3 w-3" /> Pro
-            </Badge>
+            <div className="flex items-center gap-2 ml-2">
+              <Badge variant="secondary" className="gap-1 text-xs bg-primary/15 text-primary border-primary/30">
+                <Crown className="h-3 w-3" /> Pro
+              </Badge>
+              {endDate && (
+                <span className="text-xs text-muted-foreground">
+                  exp {new Date(endDate).toLocaleDateString()}
+                </span>
+              )}
+            </div>
           )}
           <div className="ml-auto">
             <Button variant="ghost" size="sm" onClick={signOut} className="gap-2 text-muted-foreground">
