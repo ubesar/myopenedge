@@ -30,6 +30,7 @@ const Index = () => {
   const [symbol, setSymbol] = useState("");
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
+  const [occTf, setOccTf] = useState("M15");
 
   const isFree = !isActive;
 
@@ -291,18 +292,36 @@ const Index = () => {
             {/* OCC Mode Results */}
             {activeMode === "occ" && occResult &&
             <div className="space-y-3">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {Object.entries(occResult.tfStats).map(([tf, stats]) => (
-                    <OCCChart
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs text-muted-foreground">Timeframe:</span>
+                  {["M5", "M15", "M30", "H1"].map((tf) => (
+                    <button
                       key={tf}
-                      title={tf}
-                      total={stats.total}
-                      bullish={stats.bullish}
-                      bearish={stats.bearish}
-                      failed={stats.failed}
-                    />
+                      onClick={() => setOccTf(tf)}
+                      className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                        occTf === tf
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      {tf}
+                    </button>
                   ))}
                 </div>
+                {occResult.tfDirectionStats[occTf] && (
+                  <div className="flex flex-col md:flex-row gap-3">
+                    <OCCChart
+                      title="Candle 1 Bullish"
+                      stats={occResult.tfDirectionStats[occTf].bullishFirst}
+                      color="emerald"
+                    />
+                    <OCCChart
+                      title="Candle 1 Bearish"
+                      stats={occResult.tfDirectionStats[occTf].bearishFirst}
+                      color="red"
+                    />
+                  </div>
+                )}
                 {occResult.allDays.length > 0 && (() => {
                   const dayData = occResult.allDays.find((d) => d.date === selectedDate) || occResult.allDays[occResult.allDays.length - 1];
                   return (
