@@ -1,12 +1,23 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+const allowedOrigins = [
+  "https://myopenedge.lovable.app",
+  "https://id-preview--c6b96b0f-b08c-4fc5-9451-f9469e1fb477.lovable.app",
+  "http://localhost:5173",
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("origin") || "";
+  return {
+    "Access-Control-Allow-Origin": allowedOrigins.includes(origin) ? origin : allowedOrigins[0],
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  };
+}
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -51,7 +62,8 @@ Deno.serve(async (req) => {
       .single();
 
     if (orderError) {
-      throw new Error(`Failed to create order: ${orderError.message}`);
+      console.error("Failed to create order:", orderError.message);
+      throw new Error("Order creation failed");
     }
 
     // Get the project URL for redirects
@@ -81,7 +93,8 @@ Deno.serve(async (req) => {
     const invoiceData = await invoiceRes.json();
 
     if (!invoiceRes.ok) {
-      throw new Error(invoiceData.message || "NOWPayments API error");
+      console.error("NOWPayments API error:", invoiceData.message);
+      throw new Error("Payment processing failed");
     }
 
     // Update order with invoice_id
@@ -95,9 +108,10 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
+    console.error("Invoice error:", err.message);
     return new Response(
-      JSON.stringify({ error: err.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: "Payment processing failed. Please try again." }),
+      { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }
 });

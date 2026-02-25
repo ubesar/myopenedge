@@ -31,7 +31,7 @@ const DAY_OPTIONS = [
 
 
 const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => {
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem("twelvedata_api_key") || "446c10963a5e4264bba005212ba1349f");
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem("twelvedata_api_key") || "");
   const [symbol, setSymbol] = useState("QQQ");
   const [ibWindow, setIbWindow] = useState(isFree ? "60" : "30");
   const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
