@@ -28,12 +28,24 @@ export interface OCCDayData {
   overallBias: OCCStatus; // majority across 4 TFs
 }
 
+export interface OCCDirectionStats {
+  total: number;
+  valid: number;
+  invalid: number;
+}
+
+export interface OCCTFDirectionStats {
+  bullishFirst: OCCDirectionStats;
+  bearishFirst: OCCDirectionStats;
+}
+
 export interface OCCResult {
   totalDays: number;
   bullishDays: number;
   bearishDays: number;
   failedDays: number;
   tfStats: Record<string, { total: number; bullish: number; bearish: number; failed: number }>;
+  tfDirectionStats: Record<string, OCCTFDirectionStats>;
   allDays: OCCDayData[];
   lastDay: OCCDayData | null;
 }
@@ -147,8 +159,13 @@ export function analyzeOCC(bars: BarData[], maxDays: number = 0): OCCResult {
 
   // TF-level stats
   const tfStats: Record<string, { total: number; bullish: number; bearish: number; failed: number }> = {};
+  const tfDirectionStats: Record<string, OCCTFDirectionStats> = {};
   for (const cfg of TF_CONFIGS) {
     tfStats[cfg.tf] = { total: 0, bullish: 0, bearish: 0, failed: 0 };
+    tfDirectionStats[cfg.tf] = {
+      bullishFirst: { total: 0, valid: 0, invalid: 0 },
+      bearishFirst: { total: 0, valid: 0, invalid: 0 },
+    };
   }
   for (const day of allDays) {
     for (const tf of day.timeframes) {
@@ -156,6 +173,21 @@ export function analyzeOCC(bars: BarData[], maxDays: number = 0): OCCResult {
       if (s) {
         s.total++;
         s[tf.status]++;
+      }
+      // Direction stats: based on first candle color
+      const ds = tfDirectionStats[tf.tf];
+      if (ds && tf.candle1) {
+        const firstIsBullish = tf.candle1.close > tf.candle1.open;
+        const firstIsBearish = tf.candle1.close < tf.candle1.open;
+        if (firstIsBullish) {
+          ds.bullishFirst.total++;
+          if (tf.status === "bullish") ds.bullishFirst.valid++;
+          else ds.bullishFirst.invalid++;
+        } else if (firstIsBearish) {
+          ds.bearishFirst.total++;
+          if (tf.status === "bearish") ds.bearishFirst.valid++;
+          else ds.bearishFirst.invalid++;
+        }
       }
     }
   }
@@ -166,6 +198,7 @@ export function analyzeOCC(bars: BarData[], maxDays: number = 0): OCCResult {
     bearishDays: allDays.filter((d) => d.overallBias === "bearish").length,
     failedDays: allDays.filter((d) => d.overallBias === "failed").length,
     tfStats,
+    tfDirectionStats,
     allDays,
     lastDay: allDays.length > 0 ? allDays[allDays.length - 1] : null,
   };

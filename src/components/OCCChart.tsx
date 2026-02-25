@@ -1,37 +1,40 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, ResponsiveContainer, LabelList } from "recharts";
+import type { OCCDirectionStats } from "@/lib/occ-analysis";
 
 interface OCCChartProps {
   title: string;
-  total: number;
-  bullish: number;
-  bearish: number;
-  failed: number;
+  stats: OCCDirectionStats;
+  color: "emerald" | "red";
 }
 
-const OCCChart = ({ title, total, bullish, bearish, failed }: OCCChartProps) => {
-  const bullPct = total > 0 ? (bullish / total) * 100 : 0;
-  const bearPct = total > 0 ? (bearish / total) * 100 : 0;
-  const failedPct = total > 0 ? (failed / total) * 100 : 0;
+const OCCChart = ({ title, stats, color }: OCCChartProps) => {
+  const validPct = stats.total > 0 ? (stats.valid / stats.total) * 100 : 0;
+  const invalidPct = stats.total > 0 ? (stats.invalid / stats.total) * 100 : 0;
 
   const data = [
-    { name: "Bullish", value: parseFloat(bullPct.toFixed(2)), type: "bullish" },
-    { name: "Bearish", value: parseFloat(bearPct.toFixed(2)), type: "bearish" },
-    { name: "Failed", value: parseFloat(failedPct.toFixed(2)), type: "failed" },
+    { name: "Valid", value: parseFloat(validPct.toFixed(1)), type: "valid" },
+    { name: "Invalid", value: parseFloat(invalidPct.toFixed(1)), type: "invalid" },
   ];
 
   const colorMap: Record<string, string> = {
-    bullish: "hsl(142,71%,45%)",
-    bearish: "hsl(0,84%,60%)",
-    failed: "hsl(45,100%,50%)",
+    valid: color === "emerald" ? "hsl(142,71%,45%)" : "hsl(0,84%,60%)",
+    invalid: "hsl(220,10%,40%)",
   };
 
+  const borderColor = color === "emerald" ? "border-emerald-500/30" : "border-red-500/30";
+  const bgColor = color === "emerald" ? "bg-emerald-500/5" : "bg-red-500/5";
+  const iconColor = color === "emerald" ? "text-emerald-400" : "text-red-400";
+
   return (
-    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-4 flex-1 min-w-[220px] shadow-lg flex flex-col">
-      <h3 className="text-sm font-semibold text-card-foreground mb-0.5">{title}</h3>
-      <p className="text-xs text-muted-foreground mb-2">{total} days</p>
+    <div className={`rounded-lg border ${borderColor} ${bgColor} backdrop-blur-md p-4 flex-1 min-w-[220px] shadow-lg flex flex-col`}>
+      <div className="flex items-center gap-2 mb-0.5">
+        <span className={`text-base ${iconColor}`}>{color === "emerald" ? "🟢" : "🔴"}</span>
+        <h3 className="text-sm font-semibold text-card-foreground">{title}</h3>
+      </div>
+      <p className="text-xs text-muted-foreground mb-2">{stats.total} days</p>
       <div className="flex-1 min-h-[180px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} barCategoryGap="20%">
+          <BarChart data={data} barCategoryGap="30%">
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,20%)" vertical={false} />
             <XAxis
               dataKey="name"
@@ -61,17 +64,13 @@ const OCCChart = ({ title, total, bullish, bearish, failed }: OCCChartProps) => 
         </ResponsiveContainer>
       </div>
       <div className="flex gap-2 mt-2">
-        <div className="flex-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1.5 text-center">
-          <div className="text-[10px] text-emerald-400 font-medium">Bullish</div>
-          <div className="text-base font-bold text-emerald-400">{bullish}</div>
+        <div className={`flex-1 rounded-md border ${color === "emerald" ? "border-emerald-500/30 bg-emerald-500/10" : "border-red-500/30 bg-red-500/10"} px-2 py-1.5 text-center`}>
+          <div className={`text-[10px] ${iconColor} font-medium`}>Valid</div>
+          <div className={`text-base font-bold ${iconColor}`}>{stats.valid}</div>
         </div>
-        <div className="flex-1 rounded-md border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-center">
-          <div className="text-[10px] text-red-400 font-medium">Bearish</div>
-          <div className="text-base font-bold text-red-400">{bearish}</div>
-        </div>
-        <div className="flex-1 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-2 py-1.5 text-center">
-          <div className="text-[10px] text-yellow-400 font-medium">Failed</div>
-          <div className="text-base font-bold text-yellow-400">{failed}</div>
+        <div className="flex-1 rounded-md border border-border/30 bg-muted/30 px-2 py-1.5 text-center">
+          <div className="text-[10px] text-muted-foreground font-medium">Invalid</div>
+          <div className="text-base font-bold text-muted-foreground">{stats.invalid}</div>
         </div>
       </div>
     </div>
