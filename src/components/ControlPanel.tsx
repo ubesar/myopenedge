@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Loader2, Play, KeyRound, BarChart3, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, Play, KeyRound, BarChart3, ChevronDown, ChevronUp, ClipboardPaste } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -103,13 +103,27 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
         <Label htmlFor="apiKey" className="text-sm text-muted-foreground flex items-center gap-1.5">
           <KeyRound className="h-3.5 w-3.5" /> Twelve Data API Key
         </Label>
-        <Input
-          id="apiKey"
-          type="password"
-          placeholder="Enter your API key"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          className="bg-muted border-border text-foreground placeholder:text-muted-foreground" />
+        <div className="flex gap-1.5">
+          <Input
+            id="apiKey"
+            type="password"
+            placeholder="Enter your API key"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            className="bg-muted border-border text-foreground placeholder:text-muted-foreground flex-1" />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="shrink-0 h-9 w-9"
+            onClick={async () => {
+              const text = await navigator.clipboard.readText();
+              if (text) setApiKey(text);
+            }}
+          >
+            <ClipboardPaste className="h-4 w-4" />
+          </Button>
+        </div>
         <p className="text-[10px] text-muted-foreground">🔒 Key stored in session only — cleared when browser tab closes</p>
       </div>
 
