@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      orders: {
+        Row: {
+          created_at: string
+          id: string
+          invoice_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invoice_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invoice_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -21,6 +45,8 @@ export type Database = {
           display_name: string | null
           email: string | null
           id: string
+          subscription_end_date: string | null
+          subscription_status: string
           updated_at: string
           user_id: string
         }
@@ -30,6 +56,8 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          subscription_end_date?: string | null
+          subscription_status?: string
           updated_at?: string
           user_id: string
         }
@@ -39,6 +67,8 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          subscription_end_date?: string | null
+          subscription_status?: string
           updated_at?: string
           user_id?: string
         }
