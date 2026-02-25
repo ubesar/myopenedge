@@ -12,8 +12,11 @@ import IBDayChart from "@/components/IBDayChart";
 import SummaryTable from "@/components/SummaryTable";
 import MomentumChart from "@/components/MomentumChart";
 import MomentumDayChart from "@/components/MomentumDayChart";
+import OCCChart from "@/components/OCCChart";
+import OCCDayChart from "@/components/OCCDayChart";
 import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
+import { analyzeOCC, type OCCResult } from "@/lib/occ-analysis";
 import { useSubscription } from "@/hooks/useSubscription";
 
 const Index = () => {
@@ -23,6 +26,7 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [momentumResult, setMomentumResult] = useState<MomentumResult | null>(null);
+  const [occResult, setOccResult] = useState<OCCResult | null>(null);
   const [symbol, setSymbol] = useState("");
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
@@ -62,6 +66,7 @@ const Index = () => {
     setLoading(true);
     setResult(null);
     setMomentumResult(null);
+    setOccResult(null);
     setSymbol(ticker);
     setActiveMode(mode);
 
@@ -90,7 +95,7 @@ const Index = () => {
         setSelectedDate(analysis.lastDay?.date || "");
         if (isFree) incrementRunCount();
         toast.success(`Analyzed ${analysis.highFirst.total + analysis.lowFirst.total} trading days for ${ticker}`);
-      } else {
+      } else if (mode === "momentum") {
         const analysis = analyzeMomentum(json.values, ibWindow, maxDays);
         if (analysis.totalDays === 0) {
           toast.error("Not enough trading days in the data to analyze.");
@@ -100,6 +105,17 @@ const Index = () => {
         setSelectedDate(analysis.lastDay?.date || "");
         if (isFree) incrementRunCount();
         toast.success(`Momentum analysis: ${analysis.totalDays} trading days for ${ticker}`);
+      } else {
+        // OCC mode
+        const analysis = analyzeOCC(json.values, maxDays);
+        if (analysis.totalDays === 0) {
+          toast.error("Not enough trading days in the data to analyze.");
+          return;
+        }
+        setOccResult(analysis);
+        setSelectedDate(analysis.lastDay?.date || "");
+        if (isFree) incrementRunCount();
+        toast.success(`OCC analysis: ${analysis.totalDays} trading days for ${ticker}`);
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch data");
@@ -163,7 +179,7 @@ const Index = () => {
           </aside>
 
           <section>
-            {!result && !momentumResult && !loading &&
+            {!result && !momentumResult && !occResult && !loading &&
             <div className="flex items-center justify-center h-[400px] rounded-lg border border-dashed border-border">
                 <div className="text-center">
                   <img src={logo} className="h-12 w-12 rounded-full object-cover mx-auto mb-4 opacity-40" alt="MyOpenEdge" />
@@ -269,6 +285,39 @@ const Index = () => {
 
 
               })()}
+              </div>
+            }
+
+            {/* OCC Mode Results */}
+            {activeMode === "occ" && occResult &&
+            <div className="space-y-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {Object.entries(occResult.tfStats).map(([tf, stats]) => (
+                    <OCCChart
+                      key={tf}
+                      title={tf}
+                      total={stats.total}
+                      bullish={stats.bullish}
+                      bearish={stats.bearish}
+                      failed={stats.failed}
+                    />
+                  ))}
+                </div>
+                {occResult.allDays.length > 0 && (() => {
+                  const dayData = occResult.allDays.find((d) => d.date === selectedDate) || occResult.allDays[occResult.allDays.length - 1];
+                  return (
+                    <OCCDayChart
+                      date={dayData.date}
+                      bars={dayData.bars}
+                      symbol={symbol}
+                      timeframes={dayData.timeframes}
+                      overallBias={dayData.overallBias}
+                      availableDates={occResult.allDays.map((d) => d.date)}
+                      selectedDate={selectedDate || dayData.date}
+                      onDateChange={setSelectedDate}
+                    />
+                  );
+                })()}
               </div>
             }
           </section>
