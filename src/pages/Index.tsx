@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,22 +34,6 @@ const Index = () => {
 
   const isFree = !isActive;
 
-  // Daily run limit for free users
-  const getRunCount = useCallback(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    const stored = localStorage.getItem("free_run_count");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (parsed.date === today) return parsed.count as number;
-    }
-    return 0;
-  }, []);
-
-  const incrementRunCount = useCallback(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    const count = getRunCount() + 1;
-    localStorage.setItem("free_run_count", JSON.stringify({ date: today, count }));
-  }, [getRunCount]);
 
   // Redirect if not authenticated
   if (!authLoading && !user) {
@@ -58,12 +42,6 @@ const Index = () => {
   }
 
   const handleRun = async (apiKey: string, ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => {
-    // Free user: max 3 runs per day
-    if (isFree && getRunCount() >= 3) {
-      toast.error("Free users can only run 3 analyses per day. Upgrade to Pro for unlimited access.");
-      return;
-    }
-
     setLoading(true);
     setResult(null);
     setMomentumResult(null);
@@ -94,7 +72,6 @@ const Index = () => {
         }
         setResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
-        if (isFree) incrementRunCount();
         toast.success(`Analyzed ${analysis.highFirst.total + analysis.lowFirst.total} trading days for ${ticker}`);
       } else if (mode === "momentum") {
         const analysis = analyzeMomentum(json.values, ibWindow, maxDays);
@@ -104,7 +81,6 @@ const Index = () => {
         }
         setMomentumResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
-        if (isFree) incrementRunCount();
         toast.success(`Momentum analysis: ${analysis.totalDays} trading days for ${ticker}`);
       } else {
         // OCC mode
@@ -115,7 +91,7 @@ const Index = () => {
         }
         setOccResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
-        if (isFree) incrementRunCount();
+        
         toast.success(`OCC analysis: ${analysis.totalDays} trading days for ${ticker}`);
       }
     } catch (err: any) {
