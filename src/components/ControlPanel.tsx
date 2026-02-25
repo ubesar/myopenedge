@@ -14,10 +14,10 @@ interface ControlPanelProps {
 }
 
 const IB_WINDOWS = [
-{ value: "15", label: "First 15 min (09:30–09:45)", ibOnly: true },
-{ value: "30", label: "First 30 min (09:30–10:00)", ibOnly: false },
-{ value: "60", label: "First 60 min (09:30–10:30)", ibOnly: false },
-{ value: "90", label: "First 90 min (09:30–11:00)", ibOnly: false }];
+{ value: "15", label: "First 15 min (09:30–09:45)" },
+{ value: "30", label: "First 30 min (09:30–10:00)" },
+{ value: "60", label: "First 60 min (09:30–10:30)" },
+{ value: "90", label: "First 90 min (09:30–11:00)" }];
 
 
 const DAY_OPTIONS = [
@@ -34,10 +34,6 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("twelvedata_api_key") || "446c10963a5e4264bba005212ba1349f");
   const [symbol, setSymbol] = useState("QQQ");
   const [ibWindow, setIbWindow] = useState(isFree ? "60" : "30");
-  const handleModeChange = (v: AnalysisMode) => {
-    setMode(v);
-    if (v === "momentum" && ibWindow === "15") setIbWindow("30");
-  };
   const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
   const [mode, setMode] = useState<AnalysisMode>("ib");
   const [showApiKey, setShowApiKey] = useState(false);
@@ -63,7 +59,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
 
       <div className="space-y-2">
         <Label className="text-sm text-muted-foreground">Analysis Type</Label>
-        <Select value={isFree ? "ib" : mode} onValueChange={(v) => !isFree && handleModeChange(v as AnalysisMode)} disabled={isFree}>
+        <Select value={isFree ? "ib" : mode} onValueChange={(v) => !isFree && setMode(v as AnalysisMode)} disabled={isFree}>
           <SelectTrigger className="bg-muted border-border text-foreground">
             <SelectValue />
           </SelectTrigger>
@@ -128,11 +124,9 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
           <SelectContent>
             {isFree
               ? <SelectItem value="60">First 60 min (09:30–10:30)</SelectItem>
-              : IB_WINDOWS
-                  .filter((w) => mode === "ib" || !w.ibOnly)
-                  .map((w) =>
-                    <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>
-                  )
+              : IB_WINDOWS.map((w) =>
+                <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>
+              )
             }
           </SelectContent>
         </Select>
