@@ -212,12 +212,14 @@ const Landing = () => {
               <motion.div
                 key={f.title}
                 variants={staggerItem}
-                className="group rounded-xl border border-border/50 bg-card/50 p-6 hover:border-primary/30 hover:bg-card/80 transition-all duration-300"
+                whileHover={{ y: -6, scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="group rounded-xl border border-border/50 bg-card/50 p-6 hover:border-primary/40 hover:bg-card/80 hover:shadow-[0_8px_30px_-8px_hsl(var(--primary)/0.25)] transition-all duration-300 cursor-default"
               >
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 group-hover:shadow-[0_0_12px_hsl(var(--primary)/0.3)] transition-all duration-300">
                   <f.icon className="h-5 w-5 text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">{f.title}</h3>
+                <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors duration-300">{f.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
