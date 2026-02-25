@@ -92,7 +92,7 @@ const Landing = () => {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Button
                 size="lg"
-                onClick={() => navigate("/auth?redirect=/pricing")}
+                onClick={() => navigate("/auth")}
                 className="text-base px-8 py-6 rounded-full">
 
                 Get it Started
