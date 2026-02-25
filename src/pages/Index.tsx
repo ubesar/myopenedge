@@ -115,18 +115,18 @@ const Index = () => {
       </video>
       <div className="fixed inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background z-0" />
 
-      <header className="relative z-10 border-b border-border/40 px-6 py-4 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto flex items-center gap-3">
-          <img src={logo} alt="MyOpenEdge" className="h-8 w-8 rounded-full object-cover" />
-          <h1 className="text-xl font-bold text-foreground tracking-tight">MyOpenEdge</h1>
-          <span className="text-xs text-muted-foreground ml-1">​IB & Momentum Analytics</span>
+      <header className="relative z-10 border-b border-border/40 px-3 sm:px-6 py-3 sm:py-4 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto flex items-center gap-2 sm:gap-3 flex-wrap">
+          <img src={logo} alt="MyOpenEdge" className="h-7 w-7 sm:h-8 sm:w-8 rounded-full object-cover" />
+          <h1 className="text-base sm:text-xl font-bold text-foreground tracking-tight">MyOpenEdge</h1>
+          <span className="text-xs text-muted-foreground ml-1 hidden sm:inline">​IB & Momentum Analytics</span>
           {isActive ? (
-            <div className="flex items-center gap-2 ml-2">
-              <Badge variant="secondary" className="gap-1 text-xs bg-primary/15 text-primary border-primary/30">
+            <div className="flex items-center gap-2 ml-1 sm:ml-2">
+              <Badge variant="secondary" className="gap-1 text-[10px] sm:text-xs bg-primary/15 text-primary border-primary/30">
                 <Crown className="h-3 w-3" /> Pro
               </Badge>
               {endDate && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">
                   exp {new Date(endDate).toLocaleDateString()}
                 </span>
               )}
@@ -134,23 +134,23 @@ const Index = () => {
           ) : (
             <Badge
               variant="outline"
-              className="gap-1 text-xs cursor-pointer hover:bg-primary/10"
+              className="gap-1 text-[10px] sm:text-xs cursor-pointer hover:bg-primary/10"
               onClick={() => navigate("/upgrade")}
             >
-              Free · Upgrade to Pro
+              Free · Upgrade
             </Badge>
           )}
           <div className="ml-auto">
-            <Button variant="ghost" size="sm" onClick={signOut} className="gap-2 text-muted-foreground">
+            <Button variant="ghost" size="sm" onClick={signOut} className="gap-1 sm:gap-2 text-muted-foreground h-8 px-2 sm:px-3">
               <LogOut className="h-4 w-4" />
-              Sign out
+              <span className="hidden sm:inline">Sign out</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="relative z-10 max-w-7xl mx-auto px-6 py-4">
-        <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-5">
+      <main className="relative z-10 max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-3 sm:gap-5">
           <aside>
             <ControlPanel onRun={handleRun} loading={loading} isFree={isFree} />
           </aside>
@@ -181,7 +181,7 @@ const Index = () => {
 
             {/* IB Mode Results */}
             {activeMode === "ib" && result && <div className="space-y-3">
-                <div className="flex flex-col md:flex-row gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <IBChart
                   title="IB High Formed First"
                   total={result.highFirst.total}
@@ -231,7 +231,7 @@ const Index = () => {
 
 
                 </div>
-                <div className="flex flex-col md:flex-row gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <MomentumChart
                   title="IB High Formed First"
                   total={momentumResult.highFirst.total}
@@ -285,7 +285,7 @@ const Index = () => {
                   ))}
                 </div>
                 {occResult.tfDirectionStats[occTf] && (
-                  <div className="flex flex-col md:flex-row gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <OCCChart
                       title="Candle 1 Bullish"
                       stats={occResult.tfDirectionStats[occTf].bullishFirst}

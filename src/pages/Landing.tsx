@@ -80,13 +80,13 @@ const Landing = () => {
         {/* Hero Content */}
         <div className="relative z-10 flex-1 flex items-center justify-center px-6">
           <div className="text-center max-w-4xl mx-auto space-y-8">
-            <h1 className="text-5xl md:text-7xl font-bold leading-tight tracking-tight">
+            <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold leading-tight tracking-tight">
               Decode the Market
               <br />
               With{" "}
               <span className="text-primary">IB, Momentum & OCC Data</span>
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
               Spot Initial Balance breakouts, momentum candles & opening candle continuation instantly. Turn raw 5-min data into actionable trading setups.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
@@ -103,9 +103,9 @@ const Landing = () => {
         </div>
 
         {/* Dashboard Preview */}
-        <div className="relative z-10 max-w-5xl mx-auto px-6 pb-20 -mt-8">
-          <div className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-md p-6 shadow-2xl shadow-primary/5">
-            <div className="grid grid-cols-3 gap-4">
+        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pb-12 sm:pb-20 -mt-4 sm:-mt-8">
+          <div className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-md p-4 sm:p-6 shadow-2xl shadow-primary/5">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
               {[
               { label: "IB Breakout Rate", value: "73%", color: "text-emerald-400" },
               { label: "OCC Accuracy", value: "71%", color: "text-primary" },
@@ -113,10 +113,9 @@ const Landing = () => {
               map((stat) =>
               <div
                 key={stat.label}
-                className="rounded-lg border border-border/40 bg-muted/30 p-4 text-center">
-
-                  <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
-                  <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+                className="rounded-lg border border-border/40 bg-muted/30 p-2 sm:p-4 text-center">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1">{stat.label}</p>
+                  <p className={`text-lg sm:text-2xl font-bold ${stat.color}`}>{stat.value}</p>
                 </div>
               )}
             </div>
@@ -125,10 +124,10 @@ const Landing = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 px-6">
+      <section id="features" className="py-16 sm:py-24 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16 space-y-4">
-            <h2 className="text-3xl md:text-4xl font-bold">
+          <div className="text-center mb-10 sm:mb-16 space-y-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">
               Everything You Need for{" "}
               <span className="text-primary">IB, Momentum & OCC Analysis</span>
             </h2>
@@ -155,9 +154,9 @@ const Landing = () => {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="py-24 px-6 border-t border-border/30">
+      <section id="how-it-works" className="py-16 sm:py-24 px-4 sm:px-6 border-t border-border/30">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-10 sm:mb-16">
             Get Started in <span className="text-primary">3 Steps</span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -177,9 +176,9 @@ const Landing = () => {
       </section>
 
       {/* CTA */}
-      <section className="py-24 px-6 border-t border-border/30">
+      <section className="py-16 sm:py-24 px-4 sm:px-6 border-t border-border/30">
         <div className="max-w-3xl mx-auto text-center space-y-6">
-          <h2 className="text-3xl md:text-4xl font-bold">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">
             Ready to decode your <span className="text-primary">edge</span>?
           </h2>
           <p className="text-muted-foreground">
@@ -196,8 +195,8 @@ const Landing = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border/30 px-6 py-8">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+      <footer className="border-t border-border/30 px-4 sm:px-6 py-6 sm:py-8">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <img src={logo} alt="MyOpenEdge" className="h-5 w-5 rounded-full object-cover" />
             <span className="font-semibold text-foreground">MyOpenEdge</span>

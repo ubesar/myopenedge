@@ -53,10 +53,10 @@ const OCCDayChart = ({ date, bars, symbol, timeframes, overallBias, availableDat
   const badge = statusBadge(overallBias);
 
   return (
-    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-4 shadow-lg space-y-3">
+    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 sm:p-4 shadow-lg space-y-3">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           <span className="text-sm font-bold text-card-foreground">{symbol}</span>
           <div className="flex items-center gap-1">
             <button
@@ -96,7 +96,7 @@ const OCCDayChart = ({ date, bars, symbol, timeframes, overallBias, availableDat
       </div>
 
       {/* TF Status Grid */}
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {timeframes.map((tf) => {
           const b = statusBadge(tf.status);
           const c1 = tf.candle1;
@@ -116,7 +116,7 @@ const OCCDayChart = ({ date, bars, symbol, timeframes, overallBias, availableDat
       </div>
 
       {/* Chart */}
-      <div className="h-[360px]">
+      <div className="h-[260px] sm:h-[360px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={displayBars} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,10%,15%)" vertical={false} />

@@ -26,16 +26,16 @@ const MomentumChart = ({ title, total, bullish, bearish, choppy }: MomentumChart
   };
 
   return (
-    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-4 flex-1 min-w-[280px] shadow-lg aspect-square flex flex-col">
-      <h3 className="text-sm font-semibold text-card-foreground mb-0.5">{title}</h3>
-      <p className="text-xs text-muted-foreground mb-2">{total} trading days analyzed</p>
+    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 sm:p-4 flex-1 min-w-0 shadow-lg aspect-auto sm:aspect-square flex flex-col min-h-[240px] sm:min-h-0">
+      <h3 className="text-xs sm:text-sm font-semibold text-card-foreground mb-0.5">{title}</h3>
+      <p className="text-[10px] sm:text-xs text-muted-foreground mb-2">{total} trading days analyzed</p>
       <div className="flex-1">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} barCategoryGap="20%">
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,20%)" vertical={false} />
             <XAxis
               dataKey="name"
-              tick={{ fill: "hsl(0,0%,55%)", fontSize: 13 }}
+              tick={{ fill: "hsl(0,0%,55%)", fontSize: 11 }}
               axisLine={{ stroke: "hsl(0,0%,20%)" }}
               tickLine={false} />
 

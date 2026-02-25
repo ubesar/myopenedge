@@ -106,11 +106,11 @@ const Upgrade = () => {
           </div>
         </nav>
 
-        <section className="flex flex-col items-center justify-center px-6 py-20">
-          <div className="rounded-xl border border-primary/30 bg-card/80 backdrop-blur-sm p-10 max-w-md w-full text-center">
-            <Zap className="h-10 w-10 text-primary mx-auto mb-4" />
-            <h1 className="text-3xl font-bold mb-2">Upgrade to Pro</h1>
-            <p className="text-muted-foreground mb-2">Full access to all IB, Momentum & OCC tools</p>
+        <section className="flex flex-col items-center justify-center px-4 sm:px-6 py-12 sm:py-20">
+          <div className="rounded-xl border border-primary/30 bg-card/80 backdrop-blur-sm p-6 sm:p-10 max-w-md w-full text-center">
+            <Zap className="h-8 w-8 sm:h-10 sm:w-10 text-primary mx-auto mb-3 sm:mb-4" />
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Upgrade to Pro</h1>
+            <p className="text-sm sm:text-base text-muted-foreground mb-2">Full access to all IB, Momentum & OCC tools</p>
             <div className="mb-6">
               <span className="text-5xl font-bold">$3</span>
               <span className="text-muted-foreground">/month</span>
