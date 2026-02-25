@@ -13,10 +13,12 @@ import MomentumChart from "@/components/MomentumChart";
 import MomentumDayChart from "@/components/MomentumDayChart";
 import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const Index = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
+  const { isActive, loading: subLoading } = useSubscription();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [momentumResult, setMomentumResult] = useState<MomentumResult | null>(null);
@@ -27,6 +29,12 @@ const Index = () => {
   // Redirect if not authenticated
   if (!authLoading && !user) {
     navigate("/auth");
+    return null;
+  }
+
+  // Redirect if not subscribed
+  if (!authLoading && !subLoading && user && !isActive) {
+    navigate("/upgrade");
     return null;
   }
 
