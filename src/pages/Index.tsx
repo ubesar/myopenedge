@@ -18,6 +18,19 @@ import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
 import { analyzeOCC, type OCCResult } from "@/lib/occ-analysis";
 import { useSubscription } from "@/hooks/useSubscription";
+import { z } from "zod";
+
+const BarSchema = z.object({
+  datetime: z.string(),
+  open: z.string(),
+  high: z.string(),
+  low: z.string(),
+  close: z.string(),
+}).passthrough();
+
+const TwelveDataResponseSchema = z.object({
+  values: z.array(BarSchema).min(1),
+}).passthrough();
 
 const Index = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -59,13 +72,16 @@ const Index = () => {
         return;
       }
 
-      if (!json.values || json.values.length === 0) {
-        toast.error("No data returned. Check ticker symbol.");
+      const parsed = TwelveDataResponseSchema.safeParse(json);
+      if (!parsed.success) {
+        toast.error("Invalid or empty data returned. Check ticker symbol.");
         return;
       }
 
+      const values = parsed.data.values;
+
       if (mode === "ib") {
-        const analysis = analyzeIB(json.values, ibWindow, maxDays);
+        const analysis = analyzeIB(values as any, ibWindow, maxDays);
         if (analysis.totalDays === 0 && analysis.insideDays === 0) {
           toast.error("Not enough trading days in the data to analyze.");
           return;
@@ -74,7 +90,7 @@ const Index = () => {
         setSelectedDate(analysis.lastDay?.date || "");
         toast.success(`Analyzed ${analysis.highFirst.total + analysis.lowFirst.total} trading days for ${ticker}`);
       } else if (mode === "momentum") {
-        const analysis = analyzeMomentum(json.values, ibWindow, maxDays);
+        const analysis = analyzeMomentum(values as any, ibWindow, maxDays);
         if (analysis.totalDays === 0) {
           toast.error("Not enough trading days in the data to analyze.");
           return;
@@ -84,7 +100,7 @@ const Index = () => {
         toast.success(`Momentum analysis: ${analysis.totalDays} trading days for ${ticker}`);
       } else {
         // OCC mode
-        const analysis = analyzeOCC(json.values, maxDays);
+        const analysis = analyzeOCC(values as any, maxDays);
         if (analysis.totalDays === 0) {
           toast.error("Not enough trading days in the data to analyze.");
           return;

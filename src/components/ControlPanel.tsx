@@ -31,7 +31,7 @@ const DAY_OPTIONS = [
 
 
 const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => {
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem("twelvedata_api_key") || "");
+  const [apiKey, setApiKey] = useState(() => sessionStorage.getItem("twelvedata_api_key") || "");
   const [symbol, setSymbol] = useState("QQQ");
   const [ibWindow, setIbWindow] = useState(isFree ? "60" : "30");
   const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
@@ -47,7 +47,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
 
   useEffect(() => {
     if (apiKey.trim()) {
-      localStorage.setItem("twelvedata_api_key", apiKey.trim());
+      sessionStorage.setItem("twelvedata_api_key", apiKey.trim());
     }
   }, [apiKey]);
 
@@ -110,6 +110,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
           className="bg-muted border-border text-foreground placeholder:text-muted-foreground" />
+        <p className="text-[10px] text-muted-foreground">🔒 Key stored in session only — cleared when browser tab closes</p>
       </div>
 
       <div className="space-y-2">
