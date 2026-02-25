@@ -82,17 +82,17 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
             const currentMode = isFree ? "ib" : mode;
             if (currentMode === "ib") return (
               <>
-                <span className="font-semibold text-foreground/80">IB Analysis</span> — Menghitung range IB (High & Low) dari 5-min bars dalam window yang dipilih. Mendeteksi sisi mana yang terbentuk duluan (High/Low First), lalu scan breakout menggunakan <span className="font-medium text-foreground/70">M15 candle close</span> dari akhir IB sampai 12:00. Hasil: probabilitas Break High / Break Low / Inside Day.
+                <span className="font-semibold text-foreground/80">IB Analysis</span> — Calculates the IB range (High & Low) from 5-min bars within the selected window. Detects which side formed first (High/Low First), then scans for breakouts using <span className="font-medium text-foreground/70">M15 candle close</span> from IB end until 12:00. Output: probability of Break High / Break Low / Inside Day.
               </>
             );
             if (currentMode === "momentum") return (
               <>
-                <span className="font-semibold text-foreground/80">Momentum Candle</span> — Mencari 2 candle M15 berturut-turut dengan warna sama (bullish/bearish) di window 09:30–12:00. Candle pertama harus body ≥50% range, candle kedua ≥30% range. Sinyal pertama menentukan bias hari itu: Bullish, Bearish, atau Choppy.
+                <span className="font-semibold text-foreground/80">Momentum Candle</span> — Scans for 2 consecutive M15 candles with the same color (bullish/bearish) in the 09:30–12:00 window. First candle must have body ≥50% of range, second ≥30%. The first signal determines the day's bias: Bullish, Bearish, or Choppy.
               </>
             );
             return (
               <>
-                <span className="font-semibold text-foreground/80">Opening Candle Continuation</span> — Mengevaluasi 2 candle pertama setelah market open (09:30) secara bersamaan di 4 timeframe: M5, M15, M30, H1. Jika kedua candle <span className="font-medium text-foreground/70">sama-sama hijau → Bullish OCC</span>, sama-sama merah → Bearish OCC, berbeda warna → Failed OCC. Bias keseluruhan ditentukan dari mayoritas 4 TF.
+                <span className="font-semibold text-foreground/80">Opening Candle Continuation</span> — Evaluates the first 2 candles after market open (09:30) simultaneously across 4 timeframes: M5, M15, M30, H1. If both candles are <span className="font-medium text-foreground/70">green → Bullish OCC</span>, both red → Bearish OCC, mixed colors → Failed OCC. Overall bias is determined by the majority of 4 TFs.
               </>
             );
           })()}

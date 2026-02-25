@@ -16,22 +16,22 @@ const SummaryTable = ({ result, symbol }: SummaryTableProps) => {
 
   const highFirstIsLong = highFirstBreakHighPct > highFirstBreakLowPct;
   const highFirstRec = highFirstIsLong
-    ? `Jika IB High terbentuk duluan → cenderung Break IB High (${highFirstBreakHighPct.toFixed(1)}%). Setup: Bias Long setelah IB selesai.`
-    : `Jika IB High terbentuk duluan → cenderung Break IB Low (${highFirstBreakLowPct.toFixed(1)}%). Setup: Bias Short setelah IB selesai.`;
+    ? `When IB High forms first → tends to Break IB High (${highFirstBreakHighPct.toFixed(1)}%). Setup: Long bias after IB ends.`
+    : `When IB High forms first → tends to Break IB Low (${highFirstBreakLowPct.toFixed(1)}%). Setup: Short bias after IB ends.`;
 
   const lowFirstIsLong = lowFirstBreakHighPct > lowFirstBreakLowPct;
   const lowFirstRec = lowFirstIsLong
-    ? `Jika IB Low terbentuk duluan → cenderung Break IB High (${lowFirstBreakHighPct.toFixed(1)}%). Setup: Bias Long setelah IB selesai.`
-    : `Jika IB Low terbentuk duluan → cenderung Break IB Low (${lowFirstBreakLowPct.toFixed(1)}%). Setup: Bias Short setelah IB selesai.`;
+    ? `When IB Low forms first → tends to Break IB High (${lowFirstBreakHighPct.toFixed(1)}%). Setup: Long bias after IB ends.`
+    : `When IB Low forms first → tends to Break IB Low (${lowFirstBreakLowPct.toFixed(1)}%). Setup: Short bias after IB ends.`;
 
   return (
     <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md px-4 py-3 shadow-lg">
       <div className="flex items-center gap-2 mb-1">
         <h3 className="text-sm font-semibold text-card-foreground">
-          📋 Rekomendasi — {symbol}
+          📋 Recommendation — {symbol}
         </h3>
         <span className="text-xs text-muted-foreground">
-          IB {ibLabel} · {totalAnalyzed} hari · <span className="text-yellow-400">{result.insideDays} Inside</span>
+          IB {ibLabel} · {totalAnalyzed} days · <span className="text-yellow-400">{result.insideDays} Inside</span>
         </span>
       </div>
       <div className="flex gap-2">
