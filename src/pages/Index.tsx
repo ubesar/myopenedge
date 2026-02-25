@@ -18,6 +18,7 @@ import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
 import { analyzeOCC, type OCCResult } from "@/lib/occ-analysis";
 import { useSubscription } from "@/hooks/useSubscription";
+import ApiKeyDialog from "@/components/ApiKeyDialog";
 import { z } from "zod";
 
 const BarSchema = z.object({
@@ -119,6 +120,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background relative">
+      <ApiKeyDialog />
       {/* Background Video */}
       <video
         autoPlay
