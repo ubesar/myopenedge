@@ -33,7 +33,11 @@ export interface OCCResult {
   bullishDays: number;
   bearishDays: number;
   failedDays: number;
-  tfStats: Record<string, { total: number; bullish: number; bearish: number; failed: number }>;
+  tfStats: Record<string, {
+    total: number; bullish: number; bearish: number; failed: number;
+    c1BullishTotal: number; c1BullishValid: number;
+    c1BearishTotal: number; c1BearishValid: number;
+  }>;
   allDays: OCCDayData[];
   lastDay: OCCDayData | null;
 }
@@ -146,9 +150,9 @@ export function analyzeOCC(bars: BarData[], maxDays: number = 0): OCCResult {
   }
 
   // TF-level stats
-  const tfStats: Record<string, { total: number; bullish: number; bearish: number; failed: number }> = {};
+  const tfStats: Record<string, { total: number; bullish: number; bearish: number; failed: number; c1BullishTotal: number; c1BullishValid: number; c1BearishTotal: number; c1BearishValid: number }> = {};
   for (const cfg of TF_CONFIGS) {
-    tfStats[cfg.tf] = { total: 0, bullish: 0, bearish: 0, failed: 0 };
+    tfStats[cfg.tf] = { total: 0, bullish: 0, bearish: 0, failed: 0, c1BullishTotal: 0, c1BullishValid: 0, c1BearishTotal: 0, c1BearishValid: 0 };
   }
   for (const day of allDays) {
     for (const tf of day.timeframes) {
@@ -156,6 +160,17 @@ export function analyzeOCC(bars: BarData[], maxDays: number = 0): OCCResult {
       if (s) {
         s.total++;
         s[tf.status]++;
+        if (tf.candle1) {
+          const c1Bullish = tf.candle1.close > tf.candle1.open;
+          const c1Bearish = tf.candle1.close < tf.candle1.open;
+          if (c1Bullish) {
+            s.c1BullishTotal++;
+            if (tf.status === "bullish") s.c1BullishValid++;
+          } else if (c1Bearish) {
+            s.c1BearishTotal++;
+            if (tf.status === "bearish") s.c1BearishValid++;
+          }
+        }
       }
     }
   }
