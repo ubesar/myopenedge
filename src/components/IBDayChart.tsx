@@ -36,9 +36,9 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
   const tickInterval = Math.max(1, Math.floor(displayBars.length / 12));
 
   return (
-    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-4 shadow-lg">
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <div className="flex items-center gap-2 flex-wrap">
+    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 sm:p-4 shadow-lg">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           <span className="text-sm font-bold text-card-foreground">{symbol}</span>
           <div className="flex items-center gap-1">
             <button
@@ -77,7 +77,7 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
           </span>
           <span className="text-xs font-medium px-2 py-0.5 rounded bg-muted text-muted-foreground">M15</span>
         </div>
-        <div className="flex items-center gap-3 text-xs">
+        <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs flex-wrap">
           <span className="flex items-center gap-1">
             <span className="inline-block h-0.5 w-4 bg-blue-400" />
             IB High
@@ -100,7 +100,7 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
           </span>
         </div>
       </div>
-      <div className="h-[360px]">
+      <div className="h-[260px] sm:h-[360px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={displayBars} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,10%,15%)" vertical={false} />

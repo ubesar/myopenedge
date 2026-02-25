@@ -25,16 +25,16 @@ const SummaryTable = ({ result, symbol }: SummaryTableProps) => {
     : `When IB Low forms first → tends to Break IB Low (${lowFirstBreakLowPct.toFixed(1)}%). Setup: Short bias after IB ends.`;
 
   return (
-    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md px-4 py-3 shadow-lg">
-      <div className="flex items-center gap-2 mb-1">
-        <h3 className="text-sm font-semibold text-card-foreground">
+    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md px-3 sm:px-4 py-2.5 sm:py-3 shadow-lg">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+        <h3 className="text-xs sm:text-sm font-semibold text-card-foreground">
           📋 Recommendation — {symbol}
         </h3>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-[10px] sm:text-xs text-muted-foreground">
           IB {ibLabel} · {totalAnalyzed} days · <span className="text-yellow-400">{result.insideDays} Inside</span>
         </span>
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row gap-2">
         <div className={`flex-1 rounded-md border px-3 py-1.5 ${highFirstIsLong ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
           <span className={`text-[10px] font-bold uppercase ${highFirstIsLong ? 'text-emerald-400' : 'text-red-400'}`}>
             {highFirstIsLong ? '▲ LONG' : '▼ SHORT'} — IB High First
