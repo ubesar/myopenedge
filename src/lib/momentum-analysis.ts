@@ -96,10 +96,10 @@ export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, m
     }
     const highFirstFormed = parseDateTime(firstHighTouch).getTime() < parseDateTime(firstLowTouch).getTime();
 
-    // Momentum detection: 09:30-12:00 window, M15 candles
+    // Momentum detection: only within IB window, M15 candles
     const momentumBars = dayBars.filter((b) => {
       const m = getTimeMinutes(parseDateTime(b.datetime));
-      return m >= IB_START && m < NOON;
+      return m >= IB_START && m < ibEnd;
     });
 
     const momentumCandles: CandleBar[] = momentumBars.map(b => ({
@@ -112,12 +112,14 @@ export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, m
 
     const m15 = aggregateToM15(momentumCandles);
 
-    // Scan consecutive M15 pairs
+    // Scan ALL consecutive M15 pairs — all must be valid & same direction
     const signals: MomentumSignal[] = [];
-    let i = 0;
-    while (i < m15.length - 1) {
-      const prev = m15[i];
-      const curr = m15[i + 1];
+    let allValid = m15.length >= 2;
+    let direction: "bullish" | "bearish" | null = null;
+
+    for (let j = 0; j < m15.length - 1 && allValid; j++) {
+      const prev = m15[j];
+      const curr = m15[j + 1];
 
       const prevBody = Math.abs(prev.close - prev.open);
       const prevRange = prev.high - prev.low;
@@ -134,17 +136,22 @@ export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, m
         currBody / currRange >= 0.30 &&
         sameColor
       ) {
+        const pairDirection = prevBullish ? "bullish" : "bearish";
+        if (direction === null) {
+          direction = pairDirection;
+        } else if (direction !== pairDirection) {
+          allValid = false;
+        }
         signals.push({
-          type: prevBullish ? "bullish" : "bearish",
+          type: pairDirection,
           times: [prev.time, curr.time],
         });
-        i += 2; // skip both
       } else {
-        i++;
+        allValid = false;
       }
     }
 
-    const momentum = signals.length > 0 ? signals[0].type : "choppy";
+    const momentum = allValid && direction ? direction : "choppy";
 
     // Full day bars for chart
     const fullDayBars = dayBars.filter((b) => {
