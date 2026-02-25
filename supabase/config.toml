@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.nowpayments-ipn]
 verify_jwt = false
+
+[functions.expire-subscriptions]
+verify_jwt = false
