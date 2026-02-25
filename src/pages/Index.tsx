@@ -300,6 +300,10 @@ const Index = () => {
                       bullish={stats.bullish}
                       bearish={stats.bearish}
                       failed={stats.failed}
+                      c1BullishTotal={stats.c1BullishTotal}
+                      c1BullishValid={stats.c1BullishValid}
+                      c1BearishTotal={stats.c1BearishTotal}
+                      c1BearishValid={stats.c1BearishValid}
                     />
                   ))}
                 </div>
