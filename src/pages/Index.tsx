@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, Crown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import logo from "@/assets/logo10.jpg";
 import ControlPanel, { type AnalysisMode } from "@/components/ControlPanel";
 import IBChart from "@/components/IBChart";
@@ -105,6 +106,11 @@ const Index = () => {
           <img src={logo} alt="MyOpenEdge" className="h-8 w-8 rounded-full object-cover" />
           <h1 className="text-xl font-bold text-foreground tracking-tight">MyOpenEdge</h1>
           <span className="text-xs text-muted-foreground ml-1">​IB & Momentum Analytics</span>
+          {isActive && (
+            <Badge variant="secondary" className="ml-2 gap-1 text-xs bg-primary/15 text-primary border-primary/30">
+              <Crown className="h-3 w-3" /> Pro
+            </Badge>
+          )}
           <div className="ml-auto">
             <Button variant="ghost" size="sm" onClick={signOut} className="gap-2 text-muted-foreground">
               <LogOut className="h-4 w-4" />
