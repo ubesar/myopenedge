@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { BarChart3, Activity, Target, Zap, Shield, TrendingUp, ChevronRight } from "lucide-react";
+import { BarChart3, Activity, Target, Zap, Shield, TrendingUp, ChevronRight, CandlestickChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.jpg";
 
@@ -15,6 +15,11 @@ const features = [
   desc: "Detect momentum signals from consecutive M15 candles with strong body ratios."
 },
 {
+  icon: CandlestickChart,
+  title: "Opening Candle Continuation",
+  desc: "Evaluate the first 2 candles after open across M5, M15, M30 & H1 to determine bullish or bearish bias."
+},
+{
   icon: Target,
   title: "Breakout Probability",
   desc: "View breakout statistics based on IB High First vs Low First for your trading edge."
@@ -25,14 +30,9 @@ const features = [
   desc: "Powered by TwelveData API with 5000 bars of intraday data for deep analysis."
 },
 {
-  icon: Shield,
-  title: "M15 Aggregation",
-  desc: "Automatic aggregation to M15 timeframe for accurate breakout and momentum detection."
-},
-{
   icon: TrendingUp,
   title: "Smart Recommendations",
-  desc: "Daily setup recommendations based on IB and momentum statistical probabilities."
+  desc: "Daily setup recommendations based on IB, Momentum & OCC statistical probabilities."
 }];
 
 
@@ -84,10 +84,10 @@ const Landing = () => {
               Decode the Market
               <br />
               With{" "}
-              <span className="text-primary">IB & Momentum Data</span>
+              <span className="text-primary">IB, Momentum & OCC Data</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Spot Initial Balance breakouts & momentum candles instantly. Turn raw 5-min data into actionable trading setups.
+              Spot Initial Balance breakouts, momentum candles & opening candle continuation instantly. Turn raw 5-min data into actionable trading setups.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Button
@@ -108,7 +108,7 @@ const Landing = () => {
             <div className="grid grid-cols-3 gap-4">
               {[
               { label: "IB Breakout Rate", value: "73%", color: "text-emerald-400" },
-              { label: "Momentum Accuracy", value: "68%", color: "text-primary" },
+              { label: "OCC Accuracy", value: "71%", color: "text-primary" },
               { label: "Trading Days Analyzed", value: "100+", color: "text-amber-400" }].
               map((stat) =>
               <div
@@ -130,10 +130,10 @@ const Landing = () => {
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-3xl md:text-4xl font-bold">
               Everything You Need for{" "}
-              <span className="text-primary">IB & Momentum Analysis</span>
+              <span className="text-primary">IB, Momentum & OCC Analysis</span>
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Professional tools to decode Initial Balance breakouts and momentum candle patterns.
+              Professional tools to decode Initial Balance breakouts, momentum candle patterns & opening candle continuation.
             </p>
           </div>
 
@@ -163,7 +163,7 @@ const Landing = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
             { step: "01", title: "Enter API Key", desc: "Sign up for free at TwelveData and enter your API key." },
-            { step: "02", title: "Select Ticker & Mode", desc: "Choose a stock ticker and analysis mode (IB or Momentum)." },
+            { step: "02", title: "Select Ticker & Mode", desc: "Choose a stock ticker and analysis mode (IB, Momentum, or OCC)." },
             { step: "03", title: "Analyze & Trade", desc: "View breakout statistics and daily setup recommendations." }].
             map((s) =>
             <div key={s.step} className="text-center space-y-3">
@@ -183,7 +183,7 @@ const Landing = () => {
             Ready to decode your <span className="text-primary">edge</span>?
           </h2>
           <p className="text-muted-foreground">
-            Start analyzing IB breakouts and momentum candles with real data. Free.
+            Start analyzing IB breakouts, momentum candles & OCC patterns with real data. Free.
           </p>
           <Button
             size="lg"
@@ -201,7 +201,7 @@ const Landing = () => {
           <div className="flex items-center gap-2">
             <img src={logo} alt="MyOpenEdge" className="h-5 w-5 rounded-full object-cover" />
             <span className="font-semibold text-foreground">MyOpenEdge</span>
-            <span>· IB & Momentum Analytics</span>
+            <span>· IB, Momentum & OCC Analytics</span>
           </div>
           <p>© 2026 MyOpenEdge. All rights reserved.</p>
         </div>
