@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
-import { Loader2, Play, KeyRound, BarChart3, ChevronDown, ChevronUp, ClipboardPaste } from "lucide-react";
+import { Loader2, Play, KeyRound, BarChart3, ChevronDown, ChevronUp, ClipboardPaste, Save, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 export type AnalysisMode = "ib" | "momentum" | "occ";
 
@@ -31,12 +34,32 @@ const DAY_OPTIONS = [
 
 
 const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => {
-  const [apiKey, setApiKey] = useState(() => sessionStorage.getItem("twelvedata_api_key") || "");
+  const { user } = useAuth();
+  const [apiKey, setApiKey] = useState("");
+  const [apiKeyLoaded, setApiKeyLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [symbol, setSymbol] = useState("QQQ");
   const [ibWindow, setIbWindow] = useState(isFree ? "60" : "30");
   const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
   const [mode, setMode] = useState<AnalysisMode>("ib");
   const [showApiKey, setShowApiKey] = useState(false);
+
+  // Load API key from database on mount
+  useEffect(() => {
+    if (!user) return;
+    const loadKey = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("twelvedata_api_key")
+        .eq("user_id", user.id)
+        .single();
+      if (data?.twelvedata_api_key) {
+        setApiKey(data.twelvedata_api_key);
+      }
+      setApiKeyLoaded(true);
+    };
+    loadKey();
+  }, [user]);
 
   // Auto-switch IB window if current selection is invalid for momentum mode
   useEffect(() => {
@@ -45,11 +68,20 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
     }
   }, [mode, ibWindow]);
 
-  useEffect(() => {
-    if (apiKey.trim()) {
-      sessionStorage.setItem("twelvedata_api_key", apiKey.trim());
+  const saveApiKey = async () => {
+    if (!user || !apiKey.trim()) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ twelvedata_api_key: apiKey.trim() } as any)
+      .eq("user_id", user.id);
+    setSaving(false);
+    if (error) {
+      toast.error("Failed to save API key");
+    } else {
+      toast.success("API key saved to your account!");
     }
-  }, [apiKey]);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,8 +155,19 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
           >
             <ClipboardPaste className="h-4 w-4" />
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="shrink-0 h-9 w-9"
+            onClick={saveApiKey}
+            disabled={saving || !apiKey.trim()}
+            title="Save API key to your account"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          </Button>
         </div>
-        <p className="text-[10px] text-muted-foreground">🔒 Key stored in session only — cleared when browser tab closes</p>
+        <p className="text-[10px] text-muted-foreground">☁️ Click <Save className="inline h-3 w-3" /> to save securely to your account</p>
       </div>
 
       <div className="space-y-2">
