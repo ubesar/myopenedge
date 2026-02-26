@@ -26,7 +26,7 @@ const OCCChart = ({ title, stats, color }: OCCChartProps) => {
   const iconColor = color === "emerald" ? "text-emerald-400" : "text-red-400";
 
   return (
-    <div className={`rounded-lg border ${borderColor} ${bgColor} backdrop-blur-md p-3 sm:p-4 flex-1 min-w-0 shadow-lg flex flex-col`}>
+    <div className={`rounded-lg border ${borderColor} ${bgColor} backdrop-blur-md p-3 sm:p-4 flex-1 min-w-0 shadow-lg flex flex-col sm:aspect-square`}>
       <div className="flex items-center gap-2 mb-0.5">
         <span className={`text-base ${iconColor}`}>{color === "emerald" ? "🟢" : "🔴"}</span>
         <h3 className="text-sm font-semibold text-card-foreground">{title}</h3>
