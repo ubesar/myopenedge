@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN twelvedata_api_key text;
