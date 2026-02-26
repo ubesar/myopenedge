@@ -1,0 +1,1 @@
+ALTER TABLE public.daily_notes ADD CONSTRAINT daily_notes_user_id_date_key UNIQUE (user_id, date);
