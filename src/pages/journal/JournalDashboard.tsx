@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Target, TrendingUp, TrendingDown, Activity, Percent, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from 'recharts';
+import { useAccounts } from '@/hooks/useAccounts';
 
 function mapDbToTrade(db: any): Trade {
   return { id: db.id, symbol: db.symbol, side: db.side, qty: db.qty, entryPrice: db.entry_price, exitPrice: db.exit_price, openTime: db.open_time, closeTime: db.close_time, pnlGross: db.pnl_gross, fees: db.fees || 0, pnlNet: db.pnl_net, rMultiple: db.r_multiple ?? undefined, session: db.session ?? undefined, setupTags: db.setup_tags || [], grade: db.grade ?? undefined, source: 'MANUAL', createdAt: db.close_time };
@@ -15,15 +16,19 @@ function mapDbToTrade(db: any): Trade {
 export default function JournalDashboard() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
+  const { selectedAccountId } = useAccounts();
 
   useEffect(() => {
     const fetch = async () => {
-      const { data } = await supabase.from('trades').select('*').order('close_time', { ascending: true });
+      setLoading(true);
+      let query = supabase.from('trades').select('*').order('close_time', { ascending: true });
+      if (selectedAccountId !== 'all') query = query.eq('account_id', selectedAccountId);
+      const { data } = await query;
       if (data) setTrades(data.map(mapDbToTrade));
       setLoading(false);
     };
     fetch();
-  }, []);
+  }, [selectedAccountId]);
 
   const stats = calculateStats(trades);
   const equityCurve = generateEquityCurve(trades);

@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/lib/trading-data';
 import { useToast } from '@/hooks/use-toast';
 import { usePlaybooks } from '@/hooks/usePlaybooks';
+import { useAccounts } from '@/hooks/useAccounts';
 import {
   Select,
   SelectContent,
@@ -50,6 +51,7 @@ interface DbTrade {
   playbook_id: string | null;
   fees: number | null;
   session: string | null;
+  account_id: string | null;
 }
 
 interface Attachment {
@@ -62,6 +64,7 @@ export default function JournalTrades() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { playbooks } = usePlaybooks();
+  const { selectedAccountId } = useAccounts();
   const [searchQuery, setSearchQuery] = useState('');
   const [sideFilter, setSideFilter] = useState<string>('all');
   const [playbookFilter, setPlaybookFilter] = useState<string>('all');
@@ -74,13 +77,16 @@ export default function JournalTrades() {
 
   useEffect(() => {
     fetchTrades();
-  }, []);
+  }, [selectedAccountId]);
 
   const fetchTrades = async () => {
-    const { data } = await supabase
+    setLoading(true);
+    let query = supabase
       .from('trades')
-      .select('id, symbol, side, qty, entry_price, exit_price, open_time, close_time, pnl_net, r_multiple, notes, playbook_id, fees, session')
+      .select('id, symbol, side, qty, entry_price, exit_price, open_time, close_time, pnl_net, r_multiple, notes, playbook_id, fees, session, account_id')
       .order('close_time', { ascending: false });
+    if (selectedAccountId !== 'all') query = query.eq('account_id', selectedAccountId);
+    const { data } = await query;
     if (data) {
       setTrades(data);
       const { data: attachData } = await supabase

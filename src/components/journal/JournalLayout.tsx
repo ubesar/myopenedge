@@ -1,7 +1,9 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAccounts } from '@/hooks/useAccounts';
 import {
   LayoutDashboard, LineChart, Upload, Settings, BookOpen, TrendingUp, Menu, X, ArrowLeft,
 } from 'lucide-react';
@@ -21,7 +23,25 @@ export function JournalLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { accounts, selectedAccountId, setSelectedAccountId } = useAccounts();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const AccountSelector = () => (
+    <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+      <SelectTrigger className="w-full h-8 text-xs bg-[hsl(var(--sidebar-accent))] border-[hsl(var(--sidebar-border))]">
+        <SelectValue placeholder="All Accounts" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All Accounts</SelectItem>
+        {accounts.map(acc => (
+          <SelectItem key={acc.id} value={acc.id}>
+            {acc.name}
+            {acc.is_default && ' ★'}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -32,6 +52,14 @@ export function JournalLayout({ children }: { children: React.ReactNode }) {
             <img src={logo} alt="MyOpenEdge" className="h-8 w-8 rounded-full object-cover" />
             <span className="text-lg font-bold text-[hsl(var(--sidebar-foreground))]">Journal</span>
           </div>
+
+          {/* Account Selector */}
+          {accounts.length > 0 && (
+            <div className="px-3 pt-3">
+              <AccountSelector />
+            </div>
+          )}
+
           <nav className="flex-1 space-y-1 px-3 py-4">
             <button
               onClick={() => navigate('/app')}
@@ -80,9 +108,24 @@ export function JournalLayout({ children }: { children: React.ReactNode }) {
           <img src={logo} alt="MyOpenEdge" className="h-7 w-7 rounded-full object-cover" />
           <span className="text-sm font-bold">Journal</span>
         </div>
-        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
+        <div className="flex items-center gap-2">
+          {accounts.length > 0 && (
+            <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+              <SelectTrigger className="w-32 h-8 text-xs">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Accounts</SelectItem>
+                {accounts.map(acc => (
+                  <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        </div>
       </header>
 
       {mobileMenuOpen && (

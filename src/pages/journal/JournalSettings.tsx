@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/trading-data';
 import { Plus, Edit2, Trash2, Star, Building2, User, Loader2, Shield, Target, TrendingDown, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAccounts } from '@/hooks/useAccounts';
 
 interface Account {
   id: string;
@@ -48,6 +49,7 @@ const TIMEZONES = [
 ];
 
 export default function JournalSettings() {
+  const { refetch: refetchGlobalAccounts } = useAccounts();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -72,6 +74,7 @@ export default function JournalSettings() {
     const { data } = await supabase.from('accounts').select('*').order('is_default', { ascending: false }).order('created_at');
     if (data) setAccounts(data as unknown as Account[]);
     setLoading(false);
+    refetchGlobalAccounts();
   };
 
   const fetchStats = async () => {
