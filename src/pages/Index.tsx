@@ -95,7 +95,34 @@ const Index = () => {
     return null;
   }
 
-  const handleRun = async (apiKey: string, ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => {
+  const API_KEYS = [
+    "db6efce009be434eaf3ff9c262d4e382",
+    "d4b42b548a9c4e6896acd0bd6f2057a6",
+    "446c10963a5e4264bba005212ba1349f",
+    "75c0474c02d441b9adde44e6f50c51c2",
+  ];
+
+  const fetchWithKeyRotation = async (ticker: string) => {
+    for (let i = 0; i < API_KEYS.length; i++) {
+      const key = API_KEYS[i];
+      try {
+        const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(ticker)}&interval=5min&outputsize=5000&apikey=${encodeURIComponent(key)}&format=JSON&timezone=America/New_York`;
+        const res = await fetch(url);
+        const json = await res.json();
+        if (json.status === "error" && (json.message?.includes("quota") || json.message?.includes("limit") || json.code === 429)) {
+          console.log(`API key ${i + 1} exhausted, trying next...`);
+          continue;
+        }
+        return json;
+      } catch {
+        console.log(`API key ${i + 1} failed, trying next...`);
+        continue;
+      }
+    }
+    return { status: "error", message: "All API keys exhausted. Please try again later." };
+  };
+
+  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => {
     setLoading(true);
     setResult(null);
     setMomentumResult(null);
@@ -104,9 +131,7 @@ const Index = () => {
     setActiveMode(mode);
 
     try {
-      const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(ticker)}&interval=5min&outputsize=5000&apikey=${encodeURIComponent(apiKey)}&format=JSON&timezone=America/New_York`;
-      const res = await fetch(url);
-      const json = await res.json();
+      const json = await fetchWithKeyRotation(ticker);
 
       if (json.status === "error") {
         toast.error(json.message || "API error");
@@ -140,7 +165,6 @@ const Index = () => {
         setSelectedDate(analysis.lastDay?.date || "");
         toast.success(`Momentum analysis: ${analysis.totalDays} trading days for ${ticker}`);
       } else {
-        // OCC mode
         const analysis = analyzeOCC(values as any, maxDays);
         if (analysis.totalDays === 0) {
           toast.error("Not enough trading days in the data to analyze.");
@@ -148,7 +172,6 @@ const Index = () => {
         }
         setOccResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
-        
         toast.success(`OCC analysis: ${analysis.totalDays} trading days for ${ticker}`);
       }
     } catch (err: any) {
