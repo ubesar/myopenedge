@@ -16,32 +16,59 @@ export type Database = {
     Tables: {
       accounts: {
         Row: {
+          account_type: string | null
           broker: string | null
+          consistency_enabled: boolean | null
+          consistency_percent: number | null
           created_at: string
           currency: string | null
+          daily_loss_limit: number | null
+          daily_loss_limit_enabled: boolean | null
           id: string
           is_default: boolean | null
+          max_loss_limit: number | null
           name: string
+          profit_target: number | null
+          starting_balance: number | null
+          status: string | null
           timezone: string | null
           user_id: string
         }
         Insert: {
+          account_type?: string | null
           broker?: string | null
+          consistency_enabled?: boolean | null
+          consistency_percent?: number | null
           created_at?: string
           currency?: string | null
+          daily_loss_limit?: number | null
+          daily_loss_limit_enabled?: boolean | null
           id?: string
           is_default?: boolean | null
+          max_loss_limit?: number | null
           name: string
+          profit_target?: number | null
+          starting_balance?: number | null
+          status?: string | null
           timezone?: string | null
           user_id: string
         }
         Update: {
+          account_type?: string | null
           broker?: string | null
+          consistency_enabled?: boolean | null
+          consistency_percent?: number | null
           created_at?: string
           currency?: string | null
+          daily_loss_limit?: number | null
+          daily_loss_limit_enabled?: boolean | null
           id?: string
           is_default?: boolean | null
+          max_loss_limit?: number | null
           name?: string
+          profit_target?: number | null
+          starting_balance?: number | null
+          status?: string | null
           timezone?: string | null
           user_id?: string
         }
