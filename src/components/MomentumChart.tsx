@@ -25,15 +25,9 @@ const MomentumChart = ({ title, total, bullish, bearish, choppy }: MomentumChart
     choppy: "hsl(45,100%,50%)"
   };
 
-  const isHighFirst = title.toLowerCase().includes("high");
-  const borderColor = isHighFirst ? "border-blue-500/30" : "border-orange-500/30";
-  const bgColor = isHighFirst ? "bg-blue-500/5" : "bg-orange-500/5";
-  const icon = isHighFirst ? "🔵" : "🟠";
-
   return (
-    <div className={`rounded-lg border ${borderColor} ${bgColor} backdrop-blur-md p-3 sm:p-4 flex-1 min-w-0 shadow-lg flex flex-col`}>
+    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 sm:p-4 flex-1 min-w-0 shadow-lg flex flex-col">
       <div className="flex items-center gap-2 mb-0.5">
-        <span className="text-base">{icon}</span>
         <h3 className="text-sm font-semibold text-card-foreground">{title}</h3>
       </div>
       <p className="text-xs text-muted-foreground mb-2">{total} trading days</p>
