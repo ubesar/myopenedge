@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { JournalLayout } from '@/components/journal/JournalLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/trading-data';
-import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, X, ArrowRight } from 'lucide-react';
+import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, X, ArrowRight, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 type BrokerFormat = 'auto' | 'tradovate' | 'ninjatrader' | 'tradingview' | 'metatrader' | 'generic';
 
@@ -229,9 +230,37 @@ type Step = 'upload' | 'preview' | 'importing' | 'done';
 
 import { useAccounts } from '@/hooks/useAccounts';
 
+interface ImportBatch {
+  id: string;
+  source: string;
+  file_name: string | null;
+  status: string;
+  rows_count: number | null;
+  created_at: string;
+}
+
 export default function JournalImport() {
-  const { selectedAccountId } = useAccounts();
+  const { accounts, selectedAccountId, setSelectedAccountId } = useAccounts();
   const [step, setStep] = useState<Step>('upload');
+  const [importHistory, setImportHistory] = useState<ImportBatch[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
+  const fetchHistory = useCallback(async () => {
+    const { data } = await supabase.from('import_batches').select('*').order('created_at', { ascending: false }).limit(20);
+    if (data) setImportHistory(data as unknown as ImportBatch[]);
+    setLoadingHistory(false);
+  }, []);
+
+  const handleDeleteBatch = async (batchId: string) => {
+    const { error: tradeErr } = await supabase.from('trades').delete().eq('import_batch_id', batchId);
+    if (tradeErr) { toast.error('Failed to delete trades'); return; }
+    const { error: batchErr } = await supabase.from('import_batches').delete().eq('id', batchId);
+    if (batchErr) { toast.error('Failed to delete batch'); return; }
+    toast.success('Import batch and trades deleted');
+    fetchHistory();
+  };
+
+  useEffect(() => { fetchHistory(); }, [fetchHistory]);
   const [broker, setBroker] = useState<BrokerFormat>('auto');
   const [detectedBroker, setDetectedBroker] = useState<string>('');
   const [fileName, setFileName] = useState('');
@@ -321,6 +350,7 @@ export default function JournalImport() {
     setImporting(false);
     setStep('done');
     toast.success(`Imported ${success} trades`);
+    fetchHistory();
   };
 
   const reset = () => {
@@ -344,25 +374,44 @@ export default function JournalImport() {
         {/* Step 1: Upload */}
         {step === 'upload' && (
           <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Broker Format</CardTitle>
-                <CardDescription>Select your broker or leave auto-detect</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Select value={broker} onValueChange={(v) => setBroker(v as BrokerFormat)}>
-                  <SelectTrigger className="w-full sm:w-64"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="auto">Auto-detect</SelectItem>
-                    <SelectItem value="tradovate">Tradovate</SelectItem>
-                    <SelectItem value="ninjatrader">NinjaTrader</SelectItem>
-                    <SelectItem value="tradingview">TradingView</SelectItem>
-                    <SelectItem value="metatrader">MetaTrader</SelectItem>
-                    <SelectItem value="generic">Generic CSV</SelectItem>
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Account</CardTitle>
+                  <CardDescription>Select target account for import</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+                    <SelectTrigger className="w-full"><SelectValue placeholder="Select account" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Accounts</SelectItem>
+                      {accounts.map(a => (
+                        <SelectItem key={a.id} value={a.id}>{a.name}{a.account_type !== 'personal' ? ` (${a.account_type})` : ''}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Broker Format</CardTitle>
+                  <CardDescription>Select your broker or leave auto-detect</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Select value={broker} onValueChange={(v) => setBroker(v as BrokerFormat)}>
+                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="auto">Auto-detect</SelectItem>
+                      <SelectItem value="tradovate">Tradovate</SelectItem>
+                      <SelectItem value="ninjatrader">NinjaTrader</SelectItem>
+                      <SelectItem value="tradingview">TradingView</SelectItem>
+                      <SelectItem value="metatrader">MetaTrader</SelectItem>
+                      <SelectItem value="generic">Generic CSV</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </CardContent>
+              </Card>
+            </div>
 
             <Card
               className="border-dashed border-2 hover:border-primary/50 transition-colors cursor-pointer"
@@ -388,6 +437,63 @@ export default function JournalImport() {
                   <p><Badge variant="outline" className="mr-2">TradingView</Badge>Strategy report CSV export</p>
                   <p><Badge variant="outline" className="mr-2">Generic</Badge>CSV with columns: symbol, side, qty, entry_price, exit_price, open_time, close_time, pnl_gross, fees</p>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Import History with Delete */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Import History</CardTitle>
+                <CardDescription>Previous imports — delete to remove all trades from that batch</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingHistory ? (
+                  <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+                ) : importHistory.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">No imports yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {importHistory.map(batch => (
+                      <div key={batch.id} className="flex items-center justify-between rounded-md border border-border p-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{batch.file_name || 'Unknown file'}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {batch.source} · {batch.rows_count || 0} trades · {new Date(batch.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Badge variant={batch.status === 'completed' ? 'default' : batch.status === 'partial' ? 'secondary' : 'outline'} className="text-xs">
+                            {batch.status}
+                          </Badge>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Import Batch?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently delete all {batch.rows_count || 0} trades from "{batch.file_name}". This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteBatch(batch.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
