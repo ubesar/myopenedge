@@ -26,7 +26,7 @@ const MomentumChart = ({ title, total, bullish, bearish, choppy }: MomentumChart
   };
 
   return (
-    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 sm:p-4 flex-1 min-w-0 shadow-lg flex flex-col">
+    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 sm:p-4 flex-1 min-w-0 shadow-lg flex flex-col sm:aspect-square">
       <div className="flex items-center gap-2 mb-0.5">
         <h3 className="text-sm font-semibold text-card-foreground">{title}</h3>
       </div>
