@@ -25,11 +25,19 @@ const MomentumChart = ({ title, total, bullish, bearish, choppy }: MomentumChart
     choppy: "hsl(45,100%,50%)"
   };
 
+  const isHighFirst = title.toLowerCase().includes("high");
+  const borderColor = isHighFirst ? "border-blue-500/30" : "border-orange-500/30";
+  const bgColor = isHighFirst ? "bg-blue-500/5" : "bg-orange-500/5";
+  const icon = isHighFirst ? "🔵" : "🟠";
+
   return (
-    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 sm:p-4 flex-1 min-w-0 shadow-lg aspect-auto sm:aspect-square flex flex-col min-h-[240px] sm:min-h-0">
-      <h3 className="text-xs sm:text-sm font-semibold text-card-foreground mb-0.5">{title}</h3>
-      <p className="text-[10px] sm:text-xs text-muted-foreground mb-2">{total} trading days analyzed</p>
-      <div className="flex-1">
+    <div className={`rounded-lg border ${borderColor} ${bgColor} backdrop-blur-md p-3 sm:p-4 flex-1 min-w-0 shadow-lg flex flex-col`}>
+      <div className="flex items-center gap-2 mb-0.5">
+        <span className="text-base">{icon}</span>
+        <h3 className="text-sm font-semibold text-card-foreground">{title}</h3>
+      </div>
+      <p className="text-xs text-muted-foreground mb-2">{total} trading days</p>
+      <div className="flex-1 min-h-[180px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} barCategoryGap="20%">
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,20%)" vertical={false} />

@@ -13,25 +13,32 @@ const IBChart = ({ title, total, breakHigh, breakLow, inside }: IBChartProps) =>
   const lowPct = total > 0 ? breakLow / total * 100 : 0;
   const insidePct = total > 0 ? inside / total * 100 : 0;
 
-  const data = [
-  { name: "Break IB High", value: parseFloat(highPct.toFixed(2)), type: "high" },
-  { name: "Break IB Low", value: parseFloat(lowPct.toFixed(2)), type: "low" },
-  { name: "Inside Day", value: parseFloat(insidePct.toFixed(2)), type: "inside" }];
+  const isHighFirst = title.toLowerCase().includes("high");
+  const borderColor = isHighFirst ? "border-blue-500/30" : "border-orange-500/30";
+  const bgColor = isHighFirst ? "bg-blue-500/5" : "bg-orange-500/5";
+  const icon = isHighFirst ? "🔵" : "🟠";
+  const accentColor = isHighFirst ? "text-blue-400" : "text-orange-400";
 
+  const data = [
+    { name: "Break High", value: parseFloat(highPct.toFixed(2)), type: "high" },
+    { name: "Break Low", value: parseFloat(lowPct.toFixed(2)), type: "low" },
+    { name: "Inside", value: parseFloat(insidePct.toFixed(2)), type: "inside" },
+  ];
 
   const colorMap: Record<string, string> = {
-    high: "hsl(217,91%,60%)",
-    low: "hsl(0,0%,35%)",
-    inside: "hsl(45,100%,50%)"
+    high: "hsl(142,71%,45%)",
+    low: "hsl(0,84%,60%)",
+    inside: "hsl(45,100%,50%)",
   };
 
   return (
-    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 sm:p-4 flex-1 min-w-0 shadow-lg aspect-auto sm:aspect-square flex flex-col min-h-[240px] sm:min-h-0">
-      <h3 className="text-xs sm:text-sm font-semibold text-card-foreground mb-0.5">{title}</h3>
-      <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3">
-        {total} trading days analyzed
-      </p>
-      <div className="flex-1">
+    <div className={`rounded-lg border ${borderColor} ${bgColor} backdrop-blur-md p-3 sm:p-4 flex-1 min-w-0 shadow-lg flex flex-col`}>
+      <div className="flex items-center gap-2 mb-0.5">
+        <span className="text-base">{icon}</span>
+        <h3 className="text-sm font-semibold text-card-foreground">{title}</h3>
+      </div>
+      <p className="text-xs text-muted-foreground mb-2">{total} trading days</p>
+      <div className="flex-1 min-h-[180px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} barCategoryGap="20%">
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,20%)" vertical={false} />
@@ -39,31 +46,45 @@ const IBChart = ({ title, total, breakHigh, breakLow, inside }: IBChartProps) =>
               dataKey="name"
               tick={{ fill: "hsl(0,0%,55%)", fontSize: 11 }}
               axisLine={{ stroke: "hsl(0,0%,20%)" }}
-              tickLine={false} />
-
+              tickLine={false}
+            />
             <YAxis
               domain={[0, 100]}
               tick={{ fill: "hsl(0,0%,55%)", fontSize: 12 }}
               axisLine={false}
               tickLine={false}
-              tickFormatter={(v) => `${v}%`} />
-
-            <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={120}>
-              {data.map((entry, i) =>
-              <Cell key={i} fill={colorMap[entry.type]} />
-              )}
+              tickFormatter={(v) => `${v}%`}
+            />
+            <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={80}>
+              {data.map((entry, i) => (
+                <Cell key={i} fill={colorMap[entry.type]} />
+              ))}
               <LabelList
                 dataKey="value"
                 position="top"
                 formatter={(v: number) => `${v}%`}
-                style={{ fill: "hsl(0,0%,85%)", fontSize: 14, fontWeight: 600 }} />
-
+                style={{ fill: "hsl(0,0%,85%)", fontSize: 13, fontWeight: 600 }}
+              />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </div>);
-
+      <div className="flex gap-2 mt-2">
+        <div className="flex-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1.5 text-center">
+          <div className="text-[10px] text-emerald-400 font-medium">Break High</div>
+          <div className="text-base font-bold text-emerald-400">{breakHigh}</div>
+        </div>
+        <div className="flex-1 rounded-md border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-center">
+          <div className="text-[10px] text-red-400 font-medium">Break Low</div>
+          <div className="text-base font-bold text-red-400">{breakLow}</div>
+        </div>
+        <div className="flex-1 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-2 py-1.5 text-center">
+          <div className="text-[10px] text-yellow-400 font-medium">Inside</div>
+          <div className="text-base font-bold text-yellow-400">{inside}</div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default IBChart;
