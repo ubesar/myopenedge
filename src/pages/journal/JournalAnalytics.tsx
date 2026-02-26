@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { JournalLayout } from '@/components/journal/JournalLayout';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Database } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -38,7 +39,7 @@ import { useAccounts } from '@/hooks/useAccounts';
 
 export default function JournalAnalytics() {
   const { toast } = useToast();
-  const { selectedAccountId } = useAccounts();
+  const { accounts: accountsList, selectedAccountId, setSelectedAccountId } = useAccounts();
   const [loading, setLoading] = useState(true);
   const [loadingDemo, setLoadingDemo] = useState(false);
   const [trades, setTrades] = useState<AnalyticsTrade[]>([]);
@@ -121,7 +122,18 @@ export default function JournalAnalytics() {
   return (
     <JournalLayout>
       <div className="space-y-3 sm:space-y-4">
-        <h1 className="text-xl sm:text-2xl font-bold">Analytics</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl sm:text-2xl font-bold">Analytics</h1>
+          <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+            <SelectTrigger className="w-40 h-9 text-sm"><SelectValue placeholder="All Accounts" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Accounts</SelectItem>
+              {accountsList.map(acc => (
+                <SelectItem key={acc.id} value={acc.id}>{acc.name}{acc.is_default ? ' ★' : ''}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         <AnalyticsFilters filters={filters} onFiltersChange={setFilters} instruments={instruments} accounts={accounts} playbooks={playbooksList} />
 
