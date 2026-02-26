@@ -14,6 +14,7 @@ import MomentumChart from "@/components/MomentumChart";
 import MomentumDayChart from "@/components/MomentumDayChart";
 import OCCChart from "@/components/OCCChart";
 import OCCDayChart from "@/components/OCCDayChart";
+import AIChatAssistant from "@/components/AIChatAssistant";
 import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
 import { analyzeOCC, type OCCResult } from "@/lib/occ-analysis";
@@ -120,6 +121,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background relative">
+      <AIChatAssistant />
       <ApiKeyDialog />
       {/* Background Video */}
       <video
