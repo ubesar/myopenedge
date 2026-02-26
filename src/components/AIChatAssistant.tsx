@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, Bot, User, Loader2 } from "lucide-react";
+import { MessageCircle, X, Send, Bot, User, Loader2, TrendingUp, Target, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -151,13 +151,29 @@ const AIChatAssistant = ({ analysisContext }: AIChatAssistantProps) => {
           {/* Messages */}
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
             {messages.length === 0 && (
-              <div className="text-center text-muted-foreground text-xs mt-8 space-y-2">
+              <div className="text-center text-muted-foreground text-xs mt-6 space-y-3">
                 <Bot className="h-8 w-8 mx-auto opacity-40" />
                 <p>
                   {hasContext
                     ? `I have your ${analysisContext.mode?.toUpperCase()} analysis data for ${analysisContext.symbol}. Ask me for insights!`
                     : "Ask me about IB analysis, momentum patterns, OCC confirmation, or any trading concept."}
                 </p>
+                <div className="flex flex-wrap gap-1.5 justify-center pt-1">
+                  {[
+                    { label: "Analyze bias", icon: TrendingUp, prompt: hasContext ? `Based on the current ${analysisContext.mode?.toUpperCase()} data for ${analysisContext.symbol}, what is the directional bias? Which side has the statistical edge?` : "Explain how to analyze directional bias using IB data." },
+                    { label: "Trading plan", icon: Target, prompt: hasContext ? `Create a trading plan for ${analysisContext.symbol} based on the current ${analysisContext.mode?.toUpperCase()} analysis data. Include entry triggers, stop loss, and targets.` : "How do I create a trading plan using IB and momentum analysis?" },
+                    { label: "Key levels", icon: BarChart3, prompt: hasContext ? `What are the key levels and probabilities I should watch for ${analysisContext.symbol} based on the ${analysisContext.mode?.toUpperCase()} data?` : "What are the key levels to watch in IB analysis?" },
+                  ].map((qp) => (
+                    <button
+                      key={qp.label}
+                      onClick={() => { setInput(qp.prompt); }}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-border/40 bg-muted/30 hover:bg-muted/60 text-[11px] text-card-foreground transition-colors"
+                    >
+                      <qp.icon className="h-3 w-3 text-primary" />
+                      {qp.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             {messages.map((msg, i) => (
