@@ -1,17 +1,14 @@
 import { useState, useEffect } from "react";
-import { Loader2, Play, KeyRound, BarChart3, ChevronDown, ChevronUp, ClipboardPaste, Save, Check } from "lucide-react";
+import { Loader2, Play, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
 
 export type AnalysisMode = "ib" | "momentum" | "occ";
 
 interface ControlPanelProps {
-  onRun: (apiKey: string, symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => void;
+  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => void;
   loading: boolean;
   isFree?: boolean;
 }
@@ -34,32 +31,10 @@ const DAY_OPTIONS = [
 
 
 const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => {
-  const { user } = useAuth();
-  const [apiKey, setApiKey] = useState("");
-  const [apiKeyLoaded, setApiKeyLoaded] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [symbol, setSymbol] = useState("QQQ");
   const [ibWindow, setIbWindow] = useState(isFree ? "60" : "30");
   const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
   const [mode, setMode] = useState<AnalysisMode>("ib");
-  const [showApiKey, setShowApiKey] = useState(false);
-
-  // Load API key from database on mount
-  useEffect(() => {
-    if (!user) return;
-    const loadKey = async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("twelvedata_api_key")
-        .eq("user_id", user.id)
-        .single();
-      if (data?.twelvedata_api_key) {
-        setApiKey(data.twelvedata_api_key);
-      }
-      setApiKeyLoaded(true);
-    };
-    loadKey();
-  }, [user]);
 
   // Auto-switch IB window if current selection is invalid for momentum mode
   useEffect(() => {
@@ -68,25 +43,10 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
     }
   }, [mode, ibWindow]);
 
-  const saveApiKey = async () => {
-    if (!user || !apiKey.trim()) return;
-    setSaving(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ twelvedata_api_key: apiKey.trim() } as any)
-      .eq("user_id", user.id);
-    setSaving(false);
-    if (error) {
-      toast.error("Failed to save API key");
-    } else {
-      toast.success("API key saved to your account!");
-    }
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!apiKey.trim() || !symbol.trim()) return;
-    onRun(apiKey.trim(), symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode);
+    if (!symbol.trim()) return;
+    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode);
   };
 
   return (
@@ -131,39 +91,6 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
         </div>
       </div>
 
-      {!apiKeyLoaded ? (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground py-1">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading API key…
-        </div>
-      ) : !apiKey ? (
-        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-2 text-[11px] text-amber-300 space-y-1.5">
-          <p className="font-medium">⚠️ No API key found</p>
-          <p className="text-muted-foreground">Enter your Twelve Data API key to get started:</p>
-          <div className="flex gap-1.5">
-            <Input
-              type="password"
-              placeholder="Paste API key here"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              className="bg-muted border-border text-foreground placeholder:text-muted-foreground flex-1 h-8 text-xs" />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 px-2.5 text-xs"
-              onClick={saveApiKey}
-              disabled={saving || !apiKey.trim()}
-            >
-              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Save className="h-3.5 w-3.5 mr-1" /> Save</>}
-            </Button>
-          </div>
-          <p className="text-[10px] text-muted-foreground">Get a free key at <a href="https://twelvedata.com" target="_blank" rel="noopener noreferrer" className="underline text-primary">twelvedata.com</a></p>
-        </div>
-      ) : (
-        <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 py-0.5">
-          <Check className="h-3.5 w-3.5" /> API key loaded from cloud
-        </div>
-      )}
 
       <div className="space-y-2">
         <Label htmlFor="symbol" className="text-sm text-muted-foreground">
@@ -218,7 +145,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
         </div>
       )}
 
-      <Button type="submit" disabled={loading || !apiKey.trim()} className="w-full">
+      <Button type="submit" disabled={loading} className="w-full">
         {loading ?
         <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
