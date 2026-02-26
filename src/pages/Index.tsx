@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, Crown } from "lucide-react";
+import { LogOut, Crown, BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import logo from "@/assets/logo10.jpg";
 import ControlPanel, { type AnalysisMode } from "@/components/ControlPanel";
@@ -204,7 +204,11 @@ const Index = () => {
               Free · Upgrade
             </Badge>
           }
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/journal")} className="gap-1 sm:gap-2 text-muted-foreground h-8 px-2 sm:px-3">
+              <BookOpen className="h-4 w-4" />
+              <span className="hidden sm:inline">Journal</span>
+            </Button>
             <Button variant="ghost" size="sm" onClick={signOut} className="gap-1 sm:gap-2 text-muted-foreground h-8 px-2 sm:px-3">
               <LogOut className="h-4 w-4" />
               <span className="hidden sm:inline">Sign out</span>
