@@ -117,8 +117,9 @@ const OCCDayChart = ({ date, bars, symbol, timeframes, overallBias, availableDat
 
       {/* Chart */}
       <div className="h-[260px] sm:h-[360px]">
+        <div style={{ width: `min(100%, ${displayBars.length * 10 + 80}px)`, height: '100%' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={displayBars} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
+          <ComposedChart data={displayBars} barCategoryGap={0} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,10%,15%)" vertical={false} />
             <XAxis
               dataKey="time"
@@ -189,6 +190,7 @@ const OCCDayChart = ({ date, bars, symbol, timeframes, overallBias, availableDat
             />
           </ComposedChart>
         </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );
