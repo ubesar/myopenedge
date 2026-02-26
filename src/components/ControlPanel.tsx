@@ -131,44 +131,39 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="apiKey" className="text-sm text-muted-foreground flex items-center gap-1.5">
-          <KeyRound className="h-3.5 w-3.5" /> Twelve Data API Key
-        </Label>
-        <div className="flex gap-1.5">
-          <Input
-            id="apiKey"
-            type="password"
-            placeholder="Enter your API key"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            className="bg-muted border-border text-foreground placeholder:text-muted-foreground flex-1" />
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="shrink-0 h-9 w-9"
-            onClick={async () => {
-              const text = await navigator.clipboard.readText();
-              if (text) setApiKey(text);
-            }}
-          >
-            <ClipboardPaste className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="shrink-0 h-9 w-9"
-            onClick={saveApiKey}
-            disabled={saving || !apiKey.trim()}
-            title="Save API key to your account"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          </Button>
+      {!apiKeyLoaded ? (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground py-1">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading API key…
         </div>
-        <p className="text-[10px] text-muted-foreground">☁️ Click <Save className="inline h-3 w-3" /> to save securely to your account</p>
-      </div>
+      ) : !apiKey ? (
+        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-2 text-[11px] text-amber-300 space-y-1.5">
+          <p className="font-medium">⚠️ No API key found</p>
+          <p className="text-muted-foreground">Enter your Twelve Data API key to get started:</p>
+          <div className="flex gap-1.5">
+            <Input
+              type="password"
+              placeholder="Paste API key here"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              className="bg-muted border-border text-foreground placeholder:text-muted-foreground flex-1 h-8 text-xs" />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 px-2.5 text-xs"
+              onClick={saveApiKey}
+              disabled={saving || !apiKey.trim()}
+            >
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Save className="h-3.5 w-3.5 mr-1" /> Save</>}
+            </Button>
+          </div>
+          <p className="text-[10px] text-muted-foreground">Get a free key at <a href="https://twelvedata.com" target="_blank" rel="noopener noreferrer" className="underline text-primary">twelvedata.com</a></p>
+        </div>
+      ) : (
+        <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 py-0.5">
+          <Check className="h-3.5 w-3.5" /> API key loaded from cloud
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="symbol" className="text-sm text-muted-foreground">
