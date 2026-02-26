@@ -12,22 +12,24 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    const { messages, analysisContext } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `You are a professional trading analyst AI assistant for the MyOpenEdge platform. You specialize in:
+    let systemPrompt = `You are a professional trading analyst AI assistant for the MyOpenEdge platform. You specialize in:
 
 - Initial Balance (IB) analysis: IB range breakouts, high/low formation patterns
 - Momentum analysis: bullish/bearish/choppy momentum identification after IB
 - OCC (Opening Candle Confirmation) analysis: candle pair validation across timeframes (M5, M15, M30, H1)
 - General market structure, price action, and intraday trading concepts
 
-Keep your answers concise, practical, and focused on actionable trading insights. Use trading terminology appropriately. When discussing IB concepts, reference the IB high/low, break high/low patterns, and inside days. For momentum, discuss directional bias and signal quality. For OCC, explain candle confirmation logic across timeframes.
+Keep your answers concise, practical, and focused on actionable trading insights. Use trading terminology appropriately. Respond in the same language as the user's message.`;
 
-Respond in the same language as the user's message.`;
+    if (analysisContext?.mode && analysisContext?.summary) {
+      systemPrompt += `\n\n## CURRENT ANALYSIS DATA\nThe user is currently viewing ${analysisContext.mode.toUpperCase()} analysis for ${analysisContext.symbol}. Here is the live data:\n\n${analysisContext.summary}\n\nUse this data to provide specific, data-driven insights when the user asks questions. Reference actual numbers and percentages from the data.`;
+    }
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",

@@ -6,9 +6,19 @@ import ReactMarkdown from "react-markdown";
 
 type Message = { role: "user" | "assistant"; content: string };
 
+export interface AnalysisContext {
+  mode: "ib" | "momentum" | "occ" | null;
+  symbol: string;
+  summary: string;
+}
+
+interface AIChatAssistantProps {
+  analysisContext?: AnalysisContext;
+}
+
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
-const AIChatAssistant = () => {
+const AIChatAssistant = ({ analysisContext }: AIChatAssistantProps) => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -40,7 +50,10 @@ const AIChatAssistant = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: allMessages }),
+        body: JSON.stringify({
+          messages: allMessages,
+          analysisContext: analysisContext?.mode ? analysisContext : undefined,
+        }),
       });
 
       if (!resp.ok) {
@@ -101,6 +114,8 @@ const AIChatAssistant = () => {
     }
   };
 
+  const hasContext = analysisContext?.mode;
+
   return (
     <>
       {/* FAB */}
@@ -125,12 +140,24 @@ const AIChatAssistant = () => {
             </button>
           </div>
 
+          {/* Analysis context indicator */}
+          {hasContext && (
+            <div className="px-4 py-1.5 bg-primary/5 border-b border-border/20 text-[10px] text-muted-foreground flex items-center gap-1.5">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+              Analyzing <span className="font-semibold text-card-foreground">{analysisContext.symbol}</span> · {analysisContext.mode?.toUpperCase()} mode
+            </div>
+          )}
+
           {/* Messages */}
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
             {messages.length === 0 && (
               <div className="text-center text-muted-foreground text-xs mt-8 space-y-2">
                 <Bot className="h-8 w-8 mx-auto opacity-40" />
-                <p>Ask me about IB analysis, momentum patterns, OCC confirmation, or any trading concept.</p>
+                <p>
+                  {hasContext
+                    ? `I have your ${analysisContext.mode?.toUpperCase()} analysis data for ${analysisContext.symbol}. Ask me for insights!`
+                    : "Ask me about IB analysis, momentum patterns, OCC confirmation, or any trading concept."}
+                </p>
               </div>
             )}
             {messages.map((msg, i) => (
@@ -183,7 +210,7 @@ const AIChatAssistant = () => {
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about trading analysis..."
+                placeholder={hasContext ? `Ask about ${analysisContext.symbol} ${analysisContext.mode}...` : "Ask about trading analysis..."}
                 className="flex-1 bg-muted/50 border border-border/30 rounded-lg px-3 py-2 text-sm text-card-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
                 disabled={isLoading}
               />

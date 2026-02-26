@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,7 +14,7 @@ import MomentumChart from "@/components/MomentumChart";
 import MomentumDayChart from "@/components/MomentumDayChart";
 import OCCChart from "@/components/OCCChart";
 import OCCDayChart from "@/components/OCCDayChart";
-import AIChatAssistant from "@/components/AIChatAssistant";
+import AIChatAssistant, { type AnalysisContext } from "@/components/AIChatAssistant";
 import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
 import { analyzeOCC, type OCCResult } from "@/lib/occ-analysis";
@@ -48,6 +48,45 @@ const Index = () => {
   const [occTf, setOccTf] = useState("M15");
 
   const isFree = !isActive;
+
+  const analysisContext = useMemo<AnalysisContext>(() => {
+    if (activeMode === "ib" && result) {
+      const hf = result.highFirst;
+      const lf = result.lowFirst;
+      const hfTotal = hf.total || 1;
+      const lfTotal = lf.total || 1;
+      return {
+        mode: "ib",
+        symbol,
+        summary: `Symbol: ${symbol}\nTotal trading days: ${result.totalDays}, Inside days: ${result.insideDays}\n\nIB High Formed First (${hf.total} days):\n- Break High: ${hf.breakHigh} (${(hf.breakHigh/hfTotal*100).toFixed(1)}%)\n- Break Low: ${hf.breakLow} (${(hf.breakLow/hfTotal*100).toFixed(1)}%)\n- Inside: ${hf.inside} (${(hf.inside/hfTotal*100).toFixed(1)}%)\n\nIB Low Formed First (${lf.total} days):\n- Break High: ${lf.breakHigh} (${(lf.breakHigh/lfTotal*100).toFixed(1)}%)\n- Break Low: ${lf.breakLow} (${(lf.breakLow/lfTotal*100).toFixed(1)}%)\n- Inside: ${lf.inside} (${(lf.inside/lfTotal*100).toFixed(1)}%)`,
+      };
+    }
+    if (activeMode === "momentum" && momentumResult) {
+      const hf = momentumResult.highFirst;
+      const lf = momentumResult.lowFirst;
+      const hfT = hf.total || 1;
+      const lfT = lf.total || 1;
+      return {
+        mode: "momentum",
+        symbol,
+        summary: `Symbol: ${symbol}\nTotal trading days: ${momentumResult.totalDays}\n\nHigh Formed First (${hf.total} days):\n- Bullish: ${hf.bullish} (${(hf.bullish/hfT*100).toFixed(1)}%)\n- Bearish: ${hf.bearish} (${(hf.bearish/hfT*100).toFixed(1)}%)\n- Choppy: ${hf.choppy} (${(hf.choppy/hfT*100).toFixed(1)}%)\n\nLow Formed First (${lf.total} days):\n- Bullish: ${lf.bullish} (${(lf.bullish/lfT*100).toFixed(1)}%)\n- Bearish: ${lf.bearish} (${(lf.bearish/lfT*100).toFixed(1)}%)\n- Choppy: ${lf.choppy} (${(lf.choppy/lfT*100).toFixed(1)}%)`,
+      };
+    }
+    if (activeMode === "occ" && occResult) {
+      const tfStats = occResult.tfDirectionStats;
+      let summary = `Symbol: ${symbol}\nTotal trading days: ${occResult.totalDays}\n\nOCC Stats by Timeframe:\n`;
+      for (const tf of ["M5", "M15", "M30", "H1"]) {
+        const s = tfStats[tf];
+        if (s) {
+          const bT = s.bullishFirst.total || 1;
+          const brT = s.bearishFirst.total || 1;
+          summary += `\n${tf}:\n- Candle1 Bullish (${s.bullishFirst.total} days): Valid ${s.bullishFirst.valid} (${(s.bullishFirst.valid/bT*100).toFixed(1)}%), Invalid ${s.bullishFirst.invalid} (${(s.bullishFirst.invalid/bT*100).toFixed(1)}%)\n- Candle1 Bearish (${s.bearishFirst.total} days): Valid ${s.bearishFirst.valid} (${(s.bearishFirst.valid/brT*100).toFixed(1)}%), Invalid ${s.bearishFirst.invalid} (${(s.bearishFirst.invalid/brT*100).toFixed(1)}%)`;
+        }
+      }
+      return { mode: "occ", symbol, summary };
+    }
+    return { mode: null, symbol: "", summary: "" };
+  }, [activeMode, result, momentumResult, occResult, symbol]);
 
 
   // Redirect if not authenticated
@@ -121,7 +160,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background relative">
-      <AIChatAssistant />
+      <AIChatAssistant analysisContext={analysisContext} />
       <ApiKeyDialog />
       {/* Background Video */}
       <video
