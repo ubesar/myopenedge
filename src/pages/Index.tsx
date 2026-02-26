@@ -136,7 +136,7 @@ const Index = () => {
         }
         setResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
-        toast.success(`Analyzed ${analysis.highFirst.total + analysis.lowFirst.total} trading days for ${ticker}`);
+        // Analysis complete — no toast to avoid blocking AI chat button
       } else if (mode === "momentum") {
         const analysis = analyzeMomentum(values as any, ibWindow, maxDays);
         if (analysis.totalDays === 0) {
@@ -145,7 +145,7 @@ const Index = () => {
         }
         setMomentumResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
-        toast.success(`Momentum analysis: ${analysis.totalDays} trading days for ${ticker}`);
+        // Analysis complete — no toast to avoid blocking AI chat button
       } else {
         const analysis = analyzeOCC(values as any, maxDays);
         if (analysis.totalDays === 0) {
@@ -154,7 +154,7 @@ const Index = () => {
         }
         setOccResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
-        toast.success(`OCC analysis: ${analysis.totalDays} trading days for ${ticker}`);
+        // Analysis complete — no toast to avoid blocking AI chat button
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch data");
