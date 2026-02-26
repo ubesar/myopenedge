@@ -45,6 +45,42 @@
     --sidebar-accent-foreground: 210 20% 92%;
     --sidebar-border: 220 14% 14%;
     --sidebar-ring: 213 94% 56%;
+
+    /* Trading tokens */
+    --profit: 160 84% 39%;
+    --profit-foreground: 160 84% 95%;
+    --loss: 0 84% 60%;
+    --loss-foreground: 0 84% 95%;
+
+    --chart-1: 213 94% 56%;
+    --chart-2: 160 84% 39%;
+    --chart-3: 217 91% 60%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 38 92% 50%;
+  }
+}
+
+@layer utilities {
+  .text-profit {
+    color: hsl(var(--profit));
+  }
+  .text-loss {
+    color: hsl(var(--loss));
+  }
+  .bg-profit {
+    background-color: hsl(var(--profit));
+  }
+  .bg-loss {
+    background-color: hsl(var(--loss));
+  }
+  .gradient-profit {
+    background: linear-gradient(135deg, hsl(var(--profit) / 0.2), hsl(var(--profit) / 0.05));
+  }
+  .gradient-loss {
+    background: linear-gradient(135deg, hsl(var(--loss) / 0.2), hsl(var(--loss) / 0.05));
+  }
+  .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
   }
 }
 
