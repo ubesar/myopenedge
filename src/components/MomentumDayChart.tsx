@@ -105,8 +105,9 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
         </div>
       </div>
       <div className="h-[260px] sm:h-[360px]">
+        <div style={{ width: `min(100%, ${displayBars.length * 14 + 80}px)`, height: '100%' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={displayBars} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
+          <ComposedChart data={displayBars} barCategoryGap={0} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,10%,15%)" vertical={false} />
             <XAxis
               dataKey="time"
@@ -150,7 +151,7 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
             <ReferenceLine x="09:30" stroke="hsl(45,90%,50%)" strokeDasharray="4 4" strokeWidth={1} strokeOpacity={0.5} />
             <ReferenceLine x="12:00" stroke="#f87171" strokeDasharray="4 4" strokeWidth={1} strokeOpacity={0.6}
               label={{ value: "12:00", position: "top", fill: "#f87171", fontSize: 10 }} />
-            <Bar dataKey="high" fill="transparent" isAnimationActive={false} barSize={6}
+            <Bar dataKey="high" fill="transparent" isAnimationActive={false} barSize={10}
               shape={(props: any) => {
                 const { x, width, payload } = props;
                 if (!payload) return <rect />;
@@ -190,6 +191,7 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
             />
           </ComposedChart>
         </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );
