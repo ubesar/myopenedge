@@ -256,7 +256,7 @@ const Index = () => {
                   inside={result.lowFirst.inside} />
 
                 </div>
-                <SummaryTable result={result} symbol={symbol} />
+                
                 {result.allDays.length > 0 && (() => {
                 const dayData = result.allDays.find((d) => d.date === selectedDate) || result.allDays[result.allDays.length - 1];
                 return (
