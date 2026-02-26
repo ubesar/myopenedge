@@ -3,6 +3,13 @@ import { ComposedChart, XAxis, YAxis, CartesianGrid, ReferenceLine, ResponsiveCo
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { aggregateToM15, type CandleBar } from "@/lib/m15-aggregation";
 
+interface IBStats {
+  total: number;
+  breakHigh: number;
+  breakLow: number;
+  inside: number;
+}
+
 interface IBDayChartProps {
   date: string;
   bars: CandleBar[];
@@ -15,9 +22,11 @@ interface IBDayChartProps {
   availableDates: string[];
   selectedDate: string;
   onDateChange: (date: string) => void;
+  statsHighFirst: IBStats;
+  statsLowFirst: IBStats;
 }
 
-const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFirstFormed, breakout, availableDates, selectedDate, onDateChange }: IBDayChartProps) => {
+const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFirstFormed, breakout, availableDates, selectedDate, onDateChange, statsHighFirst, statsLowFirst }: IBDayChartProps) => {
   if (bars.length === 0) return null;
 
   const displayBars = aggregateToM15(bars);
@@ -100,8 +109,8 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
           </span>
         </div>
       </div>
-      <div className="h-[260px] sm:h-[360px]">
-        <div style={{ width: `min(100%, ${displayBars.length * 14 + 80}px)`, height: '100%' }}>
+      <div className="flex gap-3 h-[260px] sm:h-[360px]">
+        <div style={{ width: `min(70%, ${displayBars.length * 14 + 80}px)`, height: '100%', flexShrink: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={displayBars} barCategoryGap={0} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,10%,15%)" vertical={false} />
@@ -179,6 +188,54 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
             />
           </ComposedChart>
         </ResponsiveContainer>
+        </div>
+
+        {/* Recommendation Panel */}
+        <div className="flex-1 min-w-[180px] rounded-md border border-border/30 bg-muted/20 p-3 overflow-y-auto hidden sm:block">
+          <div className="text-xs font-bold text-card-foreground mb-2 flex items-center gap-1.5">📋 Recommendation</div>
+          {(() => {
+            const stats = highFirstFormed ? statsHighFirst : statsLowFirst;
+            const t = stats.total || 1;
+            const bhPct = (stats.breakHigh / t * 100).toFixed(1);
+            const blPct = (stats.breakLow / t * 100).toFixed(1);
+            const inPct = (stats.inside / t * 100).toFixed(1);
+            const bias = stats.breakHigh > stats.breakLow ? "Long" : stats.breakLow > stats.breakHigh ? "Short" : "Neutral";
+            const biasColor = bias === "Long" ? "text-emerald-400" : bias === "Short" ? "text-red-400" : "text-muted-foreground";
+            const ibRange = ibHigh - ibLow;
+            return (
+              <div className="space-y-2.5 text-[11px]">
+                <div>
+                  <span className="text-muted-foreground">Today: </span>
+                  <span className="font-semibold text-card-foreground">{highFirstFormed ? "IB High First" : "IB Low First"}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Historical ({stats.total} days):</span>
+                  <div className="mt-1 space-y-0.5">
+                    <div className="flex justify-between"><span className="text-emerald-400">Break High</span><span className="font-medium text-card-foreground">{bhPct}%</span></div>
+                    <div className="flex justify-between"><span className="text-red-400">Break Low</span><span className="font-medium text-card-foreground">{blPct}%</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Inside</span><span className="font-medium text-card-foreground">{inPct}%</span></div>
+                  </div>
+                </div>
+                <div className="border-t border-border/30 pt-2">
+                  <span className="text-muted-foreground">Bias: </span>
+                  <span className={`font-bold ${biasColor}`}>{bias}</span>
+                </div>
+                <div className="border-t border-border/30 pt-2 space-y-0.5">
+                  <div className="text-muted-foreground font-medium">Key Levels</div>
+                  <div className="flex justify-between"><span className="text-blue-400">IB High</span><span className="text-card-foreground">{ibHigh.toFixed(2)}</span></div>
+                  <div className="flex justify-between"><span className="text-green-400">IB 50%</span><span className="text-card-foreground">{((ibHigh + ibLow) / 2).toFixed(2)}</span></div>
+                  <div className="flex justify-between"><span className="text-orange-400">IB Low</span><span className="text-card-foreground">{ibLow.toFixed(2)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">IB Range</span><span className="text-card-foreground">{ibRange.toFixed(2)}</span></div>
+                </div>
+                <div className="border-t border-border/30 pt-2">
+                  <span className="text-muted-foreground">Result: </span>
+                  <span className={`font-semibold ${breakout === 'high' ? 'text-emerald-400' : breakout === 'low' ? 'text-red-400' : 'text-muted-foreground'}`}>
+                    {breakout === 'high' ? 'Broke IB High ✅' : breakout === 'low' ? 'Broke IB Low ✅' : 'Inside Day ⚪'}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

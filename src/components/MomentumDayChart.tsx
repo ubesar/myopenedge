@@ -4,6 +4,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { aggregateToM15, type CandleBar } from "@/lib/m15-aggregation";
 import type { MomentumSignal } from "@/lib/momentum-analysis";
 
+interface MomentumStats {
+  total: number;
+  bullish: number;
+  bearish: number;
+  choppy: number;
+}
+
 interface MomentumDayChartProps {
   date: string;
   bars: CandleBar[];
@@ -13,9 +20,12 @@ interface MomentumDayChartProps {
   availableDates: string[];
   selectedDate: string;
   onDateChange: (date: string) => void;
+  statsHighFirst: MomentumStats;
+  statsLowFirst: MomentumStats;
+  highFirstFormed: boolean;
 }
 
-const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDates, selectedDate, onDateChange }: MomentumDayChartProps) => {
+const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDates, selectedDate, onDateChange, statsHighFirst, statsLowFirst, highFirstFormed }: MomentumDayChartProps) => {
   if (bars.length === 0) return null;
 
   const displayBars = aggregateToM15(bars);
@@ -104,8 +114,8 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
           )}
         </div>
       </div>
-      <div className="h-[260px] sm:h-[360px]">
-        <div style={{ width: `min(100%, ${displayBars.length * 14 + 80}px)`, height: '100%' }}>
+      <div className="flex gap-3 h-[260px] sm:h-[360px]">
+        <div style={{ width: `min(70%, ${displayBars.length * 14 + 80}px)`, height: '100%', flexShrink: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={displayBars} barCategoryGap={0} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,10%,15%)" vertical={false} />
@@ -191,6 +201,59 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
             />
           </ComposedChart>
         </ResponsiveContainer>
+        </div>
+
+        {/* Recommendation Panel */}
+        <div className="flex-1 min-w-[180px] rounded-md border border-border/30 bg-muted/20 p-3 overflow-y-auto hidden sm:block">
+          <div className="text-xs font-bold text-card-foreground mb-2 flex items-center gap-1.5">📋 Recommendation</div>
+          {(() => {
+            const stats = highFirstFormed ? statsHighFirst : statsLowFirst;
+            const t = stats.total || 1;
+            const bullPct = (stats.bullish / t * 100).toFixed(1);
+            const bearPct = (stats.bearish / t * 100).toFixed(1);
+            const chopPct = (stats.choppy / t * 100).toFixed(1);
+            const bias = stats.bullish > stats.bearish ? "Bullish" : stats.bearish > stats.bullish ? "Bearish" : "Neutral";
+            const biasColor = bias === "Bullish" ? "text-emerald-400" : bias === "Bearish" ? "text-red-400" : "text-muted-foreground";
+            return (
+              <div className="space-y-2.5 text-[11px]">
+                <div>
+                  <span className="text-muted-foreground">Today: </span>
+                  <span className="font-semibold text-card-foreground">{highFirstFormed ? "IB High First" : "IB Low First"}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Historical ({stats.total} days):</span>
+                  <div className="mt-1 space-y-0.5">
+                    <div className="flex justify-between"><span className="text-emerald-400">Bullish</span><span className="font-medium text-card-foreground">{bullPct}%</span></div>
+                    <div className="flex justify-between"><span className="text-red-400">Bearish</span><span className="font-medium text-card-foreground">{bearPct}%</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Choppy</span><span className="font-medium text-card-foreground">{chopPct}%</span></div>
+                  </div>
+                </div>
+                <div className="border-t border-border/30 pt-2">
+                  <span className="text-muted-foreground">Bias: </span>
+                  <span className={`font-bold ${biasColor}`}>{bias}</span>
+                </div>
+                <div className="border-t border-border/30 pt-2">
+                  <span className="text-muted-foreground">Signals: </span>
+                  <span className="font-semibold text-card-foreground">{signals.length}</span>
+                  {signals.length > 0 && (
+                    <div className="mt-1 space-y-0.5">
+                      {signals.map((sig, i) => (
+                        <div key={i} className={`text-[10px] ${sig.type === 'bullish' ? 'text-emerald-400' : 'text-red-400'}`}>
+                          {sig.type === 'bullish' ? '🟢' : '🔴'} {sig.type} @ {sig.times[0]}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="border-t border-border/30 pt-2">
+                  <span className="text-muted-foreground">Result: </span>
+                  <span className={`font-semibold ${momentum === 'bullish' ? 'text-emerald-400' : momentum === 'bearish' ? 'text-red-400' : 'text-muted-foreground'}`}>
+                    {momentum === 'bullish' ? '🟢 Bullish' : momentum === 'bearish' ? '🔴 Bearish' : '⚪ Choppy'}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

@@ -13,6 +13,7 @@ interface OCCDayChartProps {
   availableDates: string[];
   selectedDate: string;
   onDateChange: (date: string) => void;
+  tfDirectionStats?: Record<string, { bullishFirst: { total: number; valid: number; invalid: number }; bearishFirst: { total: number; valid: number; invalid: number } }>;
 }
 
 const statusBadge = (status: OCCStatus) => {
@@ -21,7 +22,7 @@ const statusBadge = (status: OCCStatus) => {
   return { text: "⚪ Failed", cls: "bg-yellow-500/15 text-yellow-400" };
 };
 
-const OCCDayChart = ({ date, bars, symbol, timeframes, overallBias, availableDates, selectedDate, onDateChange }: OCCDayChartProps) => {
+const OCCDayChart = ({ date, bars, symbol, timeframes, overallBias, availableDates, selectedDate, onDateChange, tfDirectionStats }: OCCDayChartProps) => {
   if (bars.length === 0) return null;
 
   const displayBars = aggregateBars(bars, 5); // show M5 for OCC
@@ -115,9 +116,9 @@ const OCCDayChart = ({ date, bars, symbol, timeframes, overallBias, availableDat
         })}
       </div>
 
-      {/* Chart */}
-      <div className="h-[260px] sm:h-[360px]">
-        <div style={{ width: `min(100%, ${displayBars.length * 10 + 80}px)`, height: '100%' }}>
+      {/* Chart + Recommendation */}
+      <div className="flex gap-3 h-[260px] sm:h-[360px]">
+        <div style={{ width: `min(70%, ${displayBars.length * 10 + 80}px)`, height: '100%', flexShrink: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={displayBars} barCategoryGap={0} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,10%,15%)" vertical={false} />
@@ -190,6 +191,58 @@ const OCCDayChart = ({ date, bars, symbol, timeframes, overallBias, availableDat
             />
           </ComposedChart>
         </ResponsiveContainer>
+        </div>
+
+        {/* Recommendation Panel */}
+        <div className="flex-1 min-w-[180px] rounded-md border border-border/30 bg-muted/20 p-3 overflow-y-auto hidden sm:block">
+          <div className="text-xs font-bold text-card-foreground mb-2 flex items-center gap-1.5">📋 Recommendation</div>
+          {(() => {
+            const bullishCount = timeframes.filter(tf => tf.status === "bullish").length;
+            const bearishCount = timeframes.filter(tf => tf.status === "bearish").length;
+            const bias = bullishCount > bearishCount ? "Bullish" : bearishCount > bullishCount ? "Bearish" : "Neutral";
+            const biasColor = bias === "Bullish" ? "text-emerald-400" : bias === "Bearish" ? "text-red-400" : "text-muted-foreground";
+            return (
+              <div className="space-y-2.5 text-[11px]">
+                <div>
+                  <span className="text-muted-foreground">Overall: </span>
+                  <span className={`font-bold ${biasColor}`}>{bias}</span>
+                  <span className="text-muted-foreground ml-1">({bullishCount}B / {bearishCount}Br / {timeframes.length - bullishCount - bearishCount}F)</span>
+                </div>
+                <div className="border-t border-border/30 pt-2 space-y-1">
+                  <div className="text-muted-foreground font-medium">TF Breakdown</div>
+                  {timeframes.map((tf) => {
+                    const b = statusBadge(tf.status);
+                    const c1Dir = tf.candle1 && tf.candle1.close >= tf.candle1.open ? "Bullish" : "Bearish";
+                    return (
+                      <div key={tf.tf} className="flex justify-between items-center">
+                        <span style={{ color: tfColors[tf.tf] }} className="font-medium">{tf.tf}</span>
+                        <span className={`text-[10px] ${b.cls} px-1 rounded`}>{b.text}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {tfDirectionStats && (
+                  <div className="border-t border-border/30 pt-2 space-y-1">
+                    <div className="text-muted-foreground font-medium">Historical Valid %</div>
+                    {["M5", "M15", "M30", "H1"].map((tf) => {
+                      const s = tfDirectionStats[tf];
+                      if (!s) return null;
+                      const c1 = timeframes.find(t => t.tf === tf);
+                      const isBullC1 = c1?.candle1 && c1.candle1.close >= c1.candle1.open;
+                      const relevant = isBullC1 ? s.bullishFirst : s.bearishFirst;
+                      const pct = relevant.total > 0 ? (relevant.valid / relevant.total * 100).toFixed(1) : "—";
+                      return (
+                        <div key={tf} className="flex justify-between">
+                          <span className="text-muted-foreground">{tf} ({isBullC1 ? "Bull" : "Bear"} C1)</span>
+                          <span className="text-card-foreground font-medium">{pct}%</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

@@ -271,7 +271,9 @@ const Index = () => {
                     breakout={dayData.breakout}
                     availableDates={result.allDays.map((d) => d.date)}
                     selectedDate={selectedDate || dayData.date}
-                    onDateChange={setSelectedDate} />);
+                    onDateChange={setSelectedDate}
+                    statsHighFirst={result.highFirst}
+                    statsLowFirst={result.lowFirst} />);
 
 
               })()}
@@ -317,7 +319,10 @@ const Index = () => {
                     signals={dayData.signals}
                     availableDates={momentumResult.allDays.map((d) => d.date)}
                     selectedDate={selectedDate || dayData.date}
-                    onDateChange={setSelectedDate} />);
+                    onDateChange={setSelectedDate}
+                    statsHighFirst={momentumResult.highFirst}
+                    statsLowFirst={momentumResult.lowFirst}
+                    highFirstFormed={dayData.highFirstFormed} />);
 
 
               })()}
@@ -369,6 +374,7 @@ const Index = () => {
                       availableDates={occResult.allDays.map((d) => d.date)}
                       selectedDate={selectedDate || dayData.date}
                       onDateChange={setSelectedDate}
+                      tfDirectionStats={occResult.tfDirectionStats}
                     />
                   );
                 })()}
