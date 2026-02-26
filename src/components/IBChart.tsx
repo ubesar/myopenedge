@@ -13,11 +13,8 @@ const IBChart = ({ title, total, breakHigh, breakLow, inside }: IBChartProps) =>
   const lowPct = total > 0 ? breakLow / total * 100 : 0;
   const insidePct = total > 0 ? inside / total * 100 : 0;
 
-  const isHighFirst = title.toLowerCase().includes("high");
-  const borderColor = isHighFirst ? "border-blue-500/30" : "border-orange-500/30";
-  const bgColor = isHighFirst ? "bg-blue-500/5" : "bg-orange-500/5";
-  const icon = isHighFirst ? "🔵" : "🟠";
-  const accentColor = isHighFirst ? "text-blue-400" : "text-orange-400";
+  const borderColor = "border-border/30";
+  const bgColor = "bg-card/40";
 
   const data = [
     { name: "Break High", value: parseFloat(highPct.toFixed(2)), type: "high" },
@@ -34,7 +31,6 @@ const IBChart = ({ title, total, breakHigh, breakLow, inside }: IBChartProps) =>
   return (
     <div className={`rounded-lg border ${borderColor} ${bgColor} backdrop-blur-md p-3 sm:p-4 flex-1 min-w-0 shadow-lg flex flex-col`}>
       <div className="flex items-center gap-2 mb-0.5">
-        <span className="text-base">{icon}</span>
         <h3 className="text-sm font-semibold text-card-foreground">{title}</h3>
       </div>
       <p className="text-xs text-muted-foreground mb-2">{total} trading days</p>
