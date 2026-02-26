@@ -28,11 +28,11 @@ const BarSchema = z.object({
   open: z.string(),
   high: z.string(),
   low: z.string(),
-  close: z.string(),
+  close: z.string()
 }).passthrough();
 
 const TwelveDataResponseSchema = z.object({
-  values: z.array(BarSchema).min(1),
+  values: z.array(BarSchema).min(1)
 }).passthrough();
 
 const Index = () => {
@@ -59,7 +59,7 @@ const Index = () => {
       return {
         mode: "ib",
         symbol,
-        summary: `Symbol: ${symbol}\nTotal trading days: ${result.totalDays}, Inside days: ${result.insideDays}\n\nIB High Formed First (${hf.total} days):\n- Break High: ${hf.breakHigh} (${(hf.breakHigh/hfTotal*100).toFixed(1)}%)\n- Break Low: ${hf.breakLow} (${(hf.breakLow/hfTotal*100).toFixed(1)}%)\n- Inside: ${hf.inside} (${(hf.inside/hfTotal*100).toFixed(1)}%)\n\nIB Low Formed First (${lf.total} days):\n- Break High: ${lf.breakHigh} (${(lf.breakHigh/lfTotal*100).toFixed(1)}%)\n- Break Low: ${lf.breakLow} (${(lf.breakLow/lfTotal*100).toFixed(1)}%)\n- Inside: ${lf.inside} (${(lf.inside/lfTotal*100).toFixed(1)}%)`,
+        summary: `Symbol: ${symbol}\nTotal trading days: ${result.totalDays}, Inside days: ${result.insideDays}\n\nIB High Formed First (${hf.total} days):\n- Break High: ${hf.breakHigh} (${(hf.breakHigh / hfTotal * 100).toFixed(1)}%)\n- Break Low: ${hf.breakLow} (${(hf.breakLow / hfTotal * 100).toFixed(1)}%)\n- Inside: ${hf.inside} (${(hf.inside / hfTotal * 100).toFixed(1)}%)\n\nIB Low Formed First (${lf.total} days):\n- Break High: ${lf.breakHigh} (${(lf.breakHigh / lfTotal * 100).toFixed(1)}%)\n- Break Low: ${lf.breakLow} (${(lf.breakLow / lfTotal * 100).toFixed(1)}%)\n- Inside: ${lf.inside} (${(lf.inside / lfTotal * 100).toFixed(1)}%)`
       };
     }
     if (activeMode === "momentum" && momentumResult) {
@@ -70,7 +70,7 @@ const Index = () => {
       return {
         mode: "momentum",
         symbol,
-        summary: `Symbol: ${symbol}\nTotal trading days: ${momentumResult.totalDays}\n\nHigh Formed First (${hf.total} days):\n- Bullish: ${hf.bullish} (${(hf.bullish/hfT*100).toFixed(1)}%)\n- Bearish: ${hf.bearish} (${(hf.bearish/hfT*100).toFixed(1)}%)\n- Choppy: ${hf.choppy} (${(hf.choppy/hfT*100).toFixed(1)}%)\n\nLow Formed First (${lf.total} days):\n- Bullish: ${lf.bullish} (${(lf.bullish/lfT*100).toFixed(1)}%)\n- Bearish: ${lf.bearish} (${(lf.bearish/lfT*100).toFixed(1)}%)\n- Choppy: ${lf.choppy} (${(lf.choppy/lfT*100).toFixed(1)}%)`,
+        summary: `Symbol: ${symbol}\nTotal trading days: ${momentumResult.totalDays}\n\nHigh Formed First (${hf.total} days):\n- Bullish: ${hf.bullish} (${(hf.bullish / hfT * 100).toFixed(1)}%)\n- Bearish: ${hf.bearish} (${(hf.bearish / hfT * 100).toFixed(1)}%)\n- Choppy: ${hf.choppy} (${(hf.choppy / hfT * 100).toFixed(1)}%)\n\nLow Formed First (${lf.total} days):\n- Bullish: ${lf.bullish} (${(lf.bullish / lfT * 100).toFixed(1)}%)\n- Bearish: ${lf.bearish} (${(lf.bearish / lfT * 100).toFixed(1)}%)\n- Choppy: ${lf.choppy} (${(lf.choppy / lfT * 100).toFixed(1)}%)`
       };
     }
     if (activeMode === "occ" && occResult) {
@@ -81,7 +81,7 @@ const Index = () => {
         if (s) {
           const bT = s.bullishFirst.total || 1;
           const brT = s.bearishFirst.total || 1;
-          summary += `\n${tf}:\n- Candle1 Bullish (${s.bullishFirst.total} days): Valid ${s.bullishFirst.valid} (${(s.bullishFirst.valid/bT*100).toFixed(1)}%), Invalid ${s.bullishFirst.invalid} (${(s.bullishFirst.invalid/bT*100).toFixed(1)}%)\n- Candle1 Bearish (${s.bearishFirst.total} days): Valid ${s.bearishFirst.valid} (${(s.bearishFirst.valid/brT*100).toFixed(1)}%), Invalid ${s.bearishFirst.invalid} (${(s.bearishFirst.invalid/brT*100).toFixed(1)}%)`;
+          summary += `\n${tf}:\n- Candle1 Bullish (${s.bullishFirst.total} days): Valid ${s.bullishFirst.valid} (${(s.bullishFirst.valid / bT * 100).toFixed(1)}%), Invalid ${s.bullishFirst.invalid} (${(s.bullishFirst.invalid / bT * 100).toFixed(1)}%)\n- Candle1 Bearish (${s.bearishFirst.total} days): Valid ${s.bearishFirst.valid} (${(s.bearishFirst.valid / brT * 100).toFixed(1)}%), Invalid ${s.bearishFirst.invalid} (${(s.bearishFirst.invalid / brT * 100).toFixed(1)}%)`;
         }
       }
       return { mode: "occ", symbol, summary };
@@ -98,7 +98,7 @@ const Index = () => {
 
   const fetchMarketData = async (ticker: string) => {
     const { data, error } = await supabase.functions.invoke("twelvedata-proxy", {
-      body: { symbol: ticker },
+      body: { symbol: ticker }
     });
     if (error) throw new Error("Failed to fetch market data");
     return data;
@@ -184,26 +184,26 @@ const Index = () => {
           <img src={logo} alt="MyOpenEdge" className="h-7 w-7 sm:h-8 sm:w-8 rounded-full object-cover" />
           <h1 className="text-base sm:text-xl font-bold text-foreground tracking-tight">MyOpenEdge</h1>
           <span className="text-xs text-muted-foreground ml-1 hidden sm:inline">​IB & Momentum Analytics</span>
-          {isActive ? (
-            <div className="flex items-center gap-2 ml-1 sm:ml-2">
+          {isActive ?
+          <div className="flex items-center gap-2 ml-1 sm:ml-2">
               <Badge variant="secondary" className="gap-1 text-[10px] sm:text-xs bg-primary/15 text-primary border-primary/30">
                 <Crown className="h-3 w-3" /> Pro
               </Badge>
-              {endDate && (
-                <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">
+              {endDate &&
+            <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">
                   exp {new Date(endDate).toLocaleDateString()}
                 </span>
-              )}
-            </div>
-          ) : (
-            <Badge
-              variant="outline"
-              className="gap-1 text-[10px] sm:text-xs cursor-pointer hover:bg-primary/10"
-              onClick={() => navigate("/upgrade")}
-            >
+            }
+            </div> :
+
+          <Badge
+            variant="outline"
+            className="gap-1 text-[10px] sm:text-xs cursor-pointer hover:bg-primary/10"
+            onClick={() => navigate("/upgrade")}>
+
               Free · Upgrade
             </Badge>
-          )}
+          }
           <div className="ml-auto">
             <Button variant="ghost" size="sm" onClick={signOut} className="gap-1 sm:gap-2 text-muted-foreground h-8 px-2 sm:px-3">
               <LogOut className="h-4 w-4" />
@@ -224,7 +224,7 @@ const Index = () => {
             <div className="flex items-center justify-center h-[400px] rounded-lg border border-dashed border-border">
                 <div className="text-center">
                   <img src={logo} className="h-12 w-12 rounded-full object-cover mx-auto mb-4 opacity-40" alt="MyOpenEdge" />
-                  <p className="text-muted-foreground text-sm">Sign up for free at twelvedata.com and enter your API key.
+                  <p className="text-muted-foreground text-sm">Powered by TwelveData API with 5000 bars of intraday data for deep analysis.
 
 
 
@@ -339,50 +339,50 @@ const Index = () => {
             <div className="space-y-3">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs text-muted-foreground">Timeframe:</span>
-                  {["M5", "M15", "M30", "H1"].map((tf) => (
-                    <button
-                      key={tf}
-                      onClick={() => setOccTf(tf)}
-                      className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
-                        occTf === tf
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      }`}
-                    >
+                  {["M5", "M15", "M30", "H1"].map((tf) =>
+                <button
+                  key={tf}
+                  onClick={() => setOccTf(tf)}
+                  className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                  occTf === tf ?
+                  "bg-primary text-primary-foreground" :
+                  "bg-muted text-muted-foreground hover:bg-muted/80"}`
+                  }>
+
                       {tf}
                     </button>
-                  ))}
-                </div>
-                {occResult.tfDirectionStats[occTf] && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <OCCChart
-                      title="Candle 1 Bullish"
-                      stats={occResult.tfDirectionStats[occTf].bullishFirst}
-                      color="emerald"
-                    />
-                    <OCCChart
-                      title="Candle 1 Bearish"
-                      stats={occResult.tfDirectionStats[occTf].bearishFirst}
-                      color="red"
-                    />
-                  </div>
                 )}
+                </div>
+                {occResult.tfDirectionStats[occTf] &&
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <OCCChart
+                  title="Candle 1 Bullish"
+                  stats={occResult.tfDirectionStats[occTf].bullishFirst}
+                  color="emerald" />
+
+                    <OCCChart
+                  title="Candle 1 Bearish"
+                  stats={occResult.tfDirectionStats[occTf].bearishFirst}
+                  color="red" />
+
+                  </div>
+              }
                 {occResult.allDays.length > 0 && (() => {
-                  const dayData = occResult.allDays.find((d) => d.date === selectedDate) || occResult.allDays[occResult.allDays.length - 1];
-                  return (
-                    <OCCDayChart
-                      date={dayData.date}
-                      bars={dayData.bars}
-                      symbol={symbol}
-                      timeframes={dayData.timeframes}
-                      overallBias={dayData.overallBias}
-                      availableDates={occResult.allDays.map((d) => d.date)}
-                      selectedDate={selectedDate || dayData.date}
-                      onDateChange={setSelectedDate}
-                      tfDirectionStats={occResult.tfDirectionStats}
-                    />
-                  );
-                })()}
+                const dayData = occResult.allDays.find((d) => d.date === selectedDate) || occResult.allDays[occResult.allDays.length - 1];
+                return (
+                  <OCCDayChart
+                    date={dayData.date}
+                    bars={dayData.bars}
+                    symbol={symbol}
+                    timeframes={dayData.timeframes}
+                    overallBias={dayData.overallBias}
+                    availableDates={occResult.allDays.map((d) => d.date)}
+                    selectedDate={selectedDate || dayData.date}
+                    onDateChange={setSelectedDate}
+                    tfDirectionStats={occResult.tfDirectionStats} />);
+
+
+              })()}
               </div>
             }
           </section>
