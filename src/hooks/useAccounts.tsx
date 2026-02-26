@@ -38,7 +38,15 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
 
   const fetchAccounts = async () => {
     const { data } = await supabase.from('accounts').select('*').order('is_default', { ascending: false }).order('name');
-    if (data) setAccounts(data as unknown as Account[]);
+    if (data) {
+      const accs = data as unknown as Account[];
+      setAccounts(accs);
+      // Auto-select default account on first load
+      if (selectedAccountId === 'all') {
+        const defaultAcc = accs.find(a => a.is_default);
+        if (defaultAcc) setSelectedAccountId(defaultAcc.id);
+      }
+    }
     setLoading(false);
   };
 
