@@ -227,7 +227,10 @@ function mapRowGeneric(row: string[], headers: string[], mapping: ColumnMapping)
 
 type Step = 'upload' | 'preview' | 'importing' | 'done';
 
+import { useAccounts } from '@/hooks/useAccounts';
+
 export default function JournalImport() {
+  const { selectedAccountId } = useAccounts();
   const [step, setStep] = useState<Step>('upload');
   const [broker, setBroker] = useState<BrokerFormat>('auto');
   const [detectedBroker, setDetectedBroker] = useState<string>('');
@@ -302,6 +305,7 @@ export default function JournalImport() {
         open_time: t.open_time, close_time: t.close_time,
         pnl_gross: t.pnl_gross, fees: t.fees, pnl_net: t.pnl_net,
         source: 'CSV', import_batch_id: batch.id,
+        account_id: selectedAccountId !== 'all' ? selectedAccountId : null,
       }));
       const { error } = await supabase.from('trades').insert(chunk);
       if (error) { errors += chunk.length; } else { success += chunk.length; }

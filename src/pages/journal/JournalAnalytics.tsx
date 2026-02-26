@@ -34,8 +34,11 @@ import {
   generateDemoTrades,
 } from '@/lib/analytics-helpers';
 
+import { useAccounts } from '@/hooks/useAccounts';
+
 export default function JournalAnalytics() {
   const { toast } = useToast();
+  const { selectedAccountId } = useAccounts();
   const [loading, setLoading] = useState(true);
   const [loadingDemo, setLoadingDemo] = useState(false);
   const [trades, setTrades] = useState<AnalyticsTrade[]>([]);
@@ -52,11 +55,14 @@ export default function JournalAnalytics() {
     playbook: 'all',
   });
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [selectedAccountId]);
 
   const fetchData = async () => {
+    setLoading(true);
+    let tradesQuery = supabase.from('trades').select('id, symbol, side, qty, pnl_net, pnl_gross, fees, close_time, open_time, playbook, playbook_id, r_multiple, sl_ticks, tp_ticks, account_id').order('close_time', { ascending: false });
+    if (selectedAccountId !== 'all') tradesQuery = tradesQuery.eq('account_id', selectedAccountId);
     const [tradesRes, accountsRes, playbooksRes] = await Promise.all([
-      supabase.from('trades').select('id, symbol, side, qty, pnl_net, pnl_gross, fees, close_time, open_time, playbook, playbook_id, r_multiple, sl_ticks, tp_ticks, account_id').order('close_time', { ascending: false }),
+      tradesQuery,
       supabase.from('accounts').select('id, name'),
       supabase.from('playbooks').select('id, name, tag'),
     ]);
