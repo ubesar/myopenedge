@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ComposedChart, XAxis, YAxis, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, Bar } from "recharts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { aggregateToM15, type CandleBar } from "@/lib/m15-aggregation";
+import { aggregateBars, type CandleBar } from "@/lib/m15-aggregation";
 import type { MomentumSignal } from "@/lib/momentum-analysis";
 
 interface MomentumStats {
@@ -23,12 +23,14 @@ interface MomentumDayChartProps {
   statsHighFirst: MomentumStats;
   statsLowFirst: MomentumStats;
   highFirstFormed: boolean;
+  selectedTf?: string;
 }
 
-const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDates, selectedDate, onDateChange, statsHighFirst, statsLowFirst, highFirstFormed }: MomentumDayChartProps) => {
+const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDates, selectedDate, onDateChange, statsHighFirst, statsLowFirst, highFirstFormed, selectedTf = "M15" }: MomentumDayChartProps) => {
   if (bars.length === 0) return null;
 
-  const displayBars = aggregateToM15(bars);
+  const tfMinutes = selectedTf === "M5" ? 5 : selectedTf === "M30" ? 30 : selectedTf === "H1" ? 60 : 15;
+  const displayBars = aggregateBars(bars, tfMinutes);
 
   const priceMin = Math.min(...displayBars.map(b => b.low));
   const priceMax = Math.max(...displayBars.map(b => b.high));
@@ -95,7 +97,7 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
               {signals.length} signal(s)
             </span>
           )}
-          <span className="text-xs font-medium px-2 py-0.5 rounded bg-muted text-muted-foreground">M15</span>
+          <span className="text-xs font-medium px-2 py-0.5 rounded bg-muted text-muted-foreground">{selectedTf}</span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs flex-wrap">
           <span className="flex items-center gap-1">
