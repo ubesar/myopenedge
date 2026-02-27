@@ -80,7 +80,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
             );
             if (currentMode === "momentum") return (
               <>
-                <span className="font-semibold text-foreground/80">Momentum Candle</span> — Scans for 2 consecutive M15 candles with the same color (bullish/bearish) in the 09:30–12:00 window. First candle must have body ≥50% of range, second ≥30%. The first signal determines the day's bias: Bullish, Bearish, or Choppy.
+                <span className="font-semibold text-foreground/80">Momentum Candle</span> — Scans for 2 consecutive candles with the same color (bullish/bearish) in the 09:30–12:00 window across <span className="font-medium text-foreground/70">M5, M15, M30, H1</span>. First candle body ≥50% of range, second ≥30%. Overall bias = majority across 4 TFs.
               </>
             );
             if (currentMode === "gapfill") return (

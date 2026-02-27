@@ -50,6 +50,7 @@ const Index = () => {
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
   const [occTf, setOccTf] = useState("M15");
+  const [momentumTf, setMomentumTf] = useState("M15");
 
   const isFree = !isActive;
 
@@ -311,48 +312,56 @@ const Index = () => {
             {/* Momentum Mode Results */}
             {activeMode === "momentum" && momentumResult &&
             <div className="space-y-3">
-                <div className="text-center space-y-1">
-                  
-                  
-
-
-                  
-
-
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs text-muted-foreground">Timeframe:</span>
+                  {["M5", "M15", "M30", "H1"].map((tf) =>
+                    <button
+                      key={tf}
+                      onClick={() => setMomentumTf(tf)}
+                      className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                        momentumTf === tf ?
+                        "bg-primary text-primary-foreground" :
+                        "bg-muted text-muted-foreground hover:bg-muted/80"}`
+                      }>
+                      {tf}
+                    </button>
+                  )}
                 </div>
+                {momentumResult.tfStats[momentumTf] && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <MomentumChart
-                  title="IB High Formed First"
-                  total={momentumResult.highFirst.total}
-                  bullish={momentumResult.highFirst.bullish}
-                  bearish={momentumResult.highFirst.bearish}
-                  choppy={momentumResult.highFirst.choppy} />
-
+                    title="IB High Formed First"
+                    total={momentumResult.tfStats[momentumTf].highFirst.total}
+                    bullish={momentumResult.tfStats[momentumTf].highFirst.bullish}
+                    bearish={momentumResult.tfStats[momentumTf].highFirst.bearish}
+                    choppy={momentumResult.tfStats[momentumTf].highFirst.choppy} />
                   <MomentumChart
-                  title="IB Low Formed First"
-                  total={momentumResult.lowFirst.total}
-                  bullish={momentumResult.lowFirst.bullish}
-                  bearish={momentumResult.lowFirst.bearish}
-                  choppy={momentumResult.lowFirst.choppy} />
-
+                    title="IB Low Formed First"
+                    total={momentumResult.tfStats[momentumTf].lowFirst.total}
+                    bullish={momentumResult.tfStats[momentumTf].lowFirst.bullish}
+                    bearish={momentumResult.tfStats[momentumTf].lowFirst.bearish}
+                    choppy={momentumResult.tfStats[momentumTf].lowFirst.choppy} />
                 </div>
+                )}
                 {momentumResult.allDays.length > 0 && (() => {
                 const dayData = momentumResult.allDays.find((d) => d.date === selectedDate) || momentumResult.allDays[momentumResult.allDays.length - 1];
+                const tfData = dayData.timeframes.find(t => t.tf === momentumTf);
+                const tfStatsHF = momentumResult.tfStats[momentumTf]?.highFirst || { total: 0, bullish: 0, bearish: 0, choppy: 0 };
+                const tfStatsLF = momentumResult.tfStats[momentumTf]?.lowFirst || { total: 0, bullish: 0, bearish: 0, choppy: 0 };
                 return (
                   <MomentumDayChart
                     date={dayData.date}
                     bars={dayData.bars}
                     symbol={symbol}
-                    momentum={dayData.momentum}
-                    signals={dayData.signals}
+                    momentum={tfData?.momentum || dayData.momentum}
+                    signals={tfData?.signals || dayData.signals}
                     availableDates={momentumResult.allDays.map((d) => d.date)}
                     selectedDate={selectedDate || dayData.date}
                     onDateChange={setSelectedDate}
-                    statsHighFirst={momentumResult.highFirst}
-                    statsLowFirst={momentumResult.lowFirst}
-                    highFirstFormed={dayData.highFirstFormed} />);
-
-
+                    statsHighFirst={tfStatsHF}
+                    statsLowFirst={tfStatsLF}
+                    highFirstFormed={dayData.highFirstFormed}
+                    selectedTf={momentumTf} />);
               })()}
               </div>
             }
