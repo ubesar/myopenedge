@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export type AnalysisMode = "ib" | "momentum" | "occ";
+export type AnalysisMode = "ib" | "momentum" | "occ" | "gapfill";
 
 interface ControlPanelProps {
   onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => void;
@@ -66,6 +66,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
             <SelectItem value="ib">Initial Balance (IB)</SelectItem>
             {!isFree && <SelectItem value="momentum">Momentum Candle</SelectItem>}
             {!isFree && <SelectItem value="occ">Opening Candle Continuation</SelectItem>}
+            {!isFree && <SelectItem value="gapfill">Gap Fill Statistics</SelectItem>}
           </SelectContent>
         </Select>
         {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for Momentum analysis</p>}
@@ -80,6 +81,11 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
             if (currentMode === "momentum") return (
               <>
                 <span className="font-semibold text-foreground/80">Momentum Candle</span> — Scans for 2 consecutive M15 candles with the same color (bullish/bearish) in the 09:30–12:00 window. First candle must have body ≥50% of range, second ≥30%. The first signal determines the day's bias: Bullish, Bearish, or Choppy.
+              </>
+            );
+            if (currentMode === "gapfill") return (
+              <>
+                <span className="font-semibold text-foreground/80">Gap Fill Statistics</span> — Compares Today's Open vs Yesterday's Close. A <span className="font-medium text-foreground/70">Gap Up</span> fills if the session Low ≤ PrevClose; a <span className="font-medium text-foreground/70">Gap Down</span> fills if session High ≥ PrevClose. Shows fill probability by gap size (Small/Medium/Large) and day of week.
               </>
             );
             return (
@@ -123,7 +129,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
         {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for more days</p>}
       </div>
 
-      {mode !== "occ" && (
+      {mode !== "occ" && mode !== "gapfill" && (
         <div className="space-y-2">
           <Label className="text-sm text-muted-foreground">IB Window</Label>
           <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => !isFree && setIbWindow(v)} disabled={isFree}>

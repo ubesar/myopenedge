@@ -19,6 +19,8 @@ import AIChatAssistant, { type AnalysisContext } from "@/components/AIChatAssist
 import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
 import { analyzeOCC, type OCCResult } from "@/lib/occ-analysis";
+import { analyzeGapFill, type GapFillResult } from "@/lib/gapfill-analysis";
+import GapFillDashboard from "@/components/GapFillDashboard";
 import { useSubscription } from "@/hooks/useSubscription";
 
 import { z } from "zod";
@@ -43,6 +45,7 @@ const Index = () => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [momentumResult, setMomentumResult] = useState<MomentumResult | null>(null);
   const [occResult, setOccResult] = useState<OCCResult | null>(null);
+  const [gapFillResult, setGapFillResult] = useState<GapFillResult | null>(null);
   const [symbol, setSymbol] = useState("");
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
@@ -86,8 +89,16 @@ const Index = () => {
       }
       return { mode: "occ", symbol, summary };
     }
+    if (activeMode === "gapfill" && gapFillResult) {
+      const s = gapFillResult.stats;
+      return {
+        mode: "gapfill",
+        symbol,
+        summary: `Symbol: ${symbol}\nTotal gap days: ${gapFillResult.totalDays}\nOverall Fill Rate: ${s.overallFillRate.toFixed(1)}%\nGap Up Fill: ${s.gapUpFillRate.toFixed(1)}% (${s.filledGapUp}/${s.totalGapUp})\nGap Down Fill: ${s.gapDownFillRate.toFixed(1)}% (${s.filledGapDown}/${s.totalGapDown})\nBy Size: Small ${s.bySize.small.rate.toFixed(0)}%, Medium ${s.bySize.medium.rate.toFixed(0)}%, Large ${s.bySize.large.rate.toFixed(0)}%`
+      };
+    }
     return { mode: null, symbol: "", summary: "" };
-  }, [activeMode, result, momentumResult, occResult, symbol]);
+  }, [activeMode, result, momentumResult, occResult, gapFillResult, symbol]);
 
 
   // Redirect if not authenticated
@@ -109,6 +120,7 @@ const Index = () => {
     setResult(null);
     setMomentumResult(null);
     setOccResult(null);
+    setGapFillResult(null);
     setSymbol(ticker);
     setActiveMode(mode);
 
@@ -146,7 +158,7 @@ const Index = () => {
         setMomentumResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
         // Analysis complete — no toast to avoid blocking AI chat button
-      } else {
+      } else if (mode === "occ") {
         const analysis = analyzeOCC(values as any, maxDays);
         if (analysis.totalDays === 0) {
           toast.error("Not enough trading days in the data to analyze.");
@@ -154,7 +166,14 @@ const Index = () => {
         }
         setOccResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
-        // Analysis complete — no toast to avoid blocking AI chat button
+      } else if (mode === "gapfill") {
+        const analysis = analyzeGapFill(values as any, maxDays);
+        if (analysis.totalDays === 0) {
+          toast.error("Not enough gap days in the data to analyze.");
+          return;
+        }
+        setGapFillResult(analysis);
+        setSelectedDate(analysis.lastDay?.date || "");
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch data");
@@ -224,7 +243,7 @@ const Index = () => {
           </aside>
 
           <section>
-            {!result && !momentumResult && !occResult && !loading &&
+            {!result && !momentumResult && !occResult && !gapFillResult && !loading &&
             <div className="flex items-center justify-center h-[400px] rounded-lg border border-dashed border-border">
                 <div className="text-center">
                   <img src={logo} className="h-12 w-12 rounded-full object-cover mx-auto mb-4 opacity-40" alt="MyOpenEdge" />
@@ -389,6 +408,11 @@ const Index = () => {
               })()}
               </div>
             }
+
+            {/* Gap Fill Mode Results */}
+            {activeMode === "gapfill" && gapFillResult && (
+              <GapFillDashboard result={gapFillResult} symbol={symbol} />
+            )}
           </section>
         </div>
       </main>
