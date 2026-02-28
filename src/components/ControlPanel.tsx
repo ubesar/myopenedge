@@ -14,7 +14,7 @@ interface ControlPanelProps {
 }
 
 const IB_WINDOWS = [
-{ value: "15", label: "First 15 min (09:30–09:45)", ibOnly: true },
+{ value: "15", label: "First 15 min (09:30–09:45)" },
 { value: "30", label: "First 30 min (09:30–10:00)" },
 { value: "60", label: "First 60 min (09:30–10:30)" },
 { value: "90", label: "First 90 min (09:30–11:00)" }];
@@ -36,12 +36,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
   const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
   const [mode, setMode] = useState<AnalysisMode>("ib");
 
-  // Auto-switch IB window if current selection is invalid for momentum mode
-  useEffect(() => {
-    if (mode === "momentum" && ibWindow === "15") {
-      setIbWindow("30");
-    }
-  }, [mode, ibWindow]);
+  // No longer needed - M15 IB window is now available for all modes
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,9 +134,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
             <SelectContent>
               {isFree
                 ? <SelectItem value="60">First 60 min (09:30–10:30)</SelectItem>
-                : IB_WINDOWS
-                  .filter((w) => mode === "ib" || !w.ibOnly)
-                  .map((w) =>
+                : IB_WINDOWS.map((w) =>
                     <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>
                   )
               }
