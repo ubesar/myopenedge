@@ -169,8 +169,14 @@ function parseTradovateOrders(headers: string[], rows: string[][]): ParsedTrade[
       // Remainder becomes new position
       if (Math.abs(newQty) > 0) {
         pos.qty = newQty;
-        pos.avgPrice = order.price;
-        pos.openTime = order.fillTime;
+        // If remaining position is same direction, keep original avg price
+        if ((newQty > 0 && prevQty > 0) || (newQty < 0 && prevQty < 0)) {
+          // avgPrice stays the same — remaining contracts have the same cost basis
+        } else {
+          // Position reversed — new position starts at closing order's price
+          pos.avgPrice = order.price;
+          pos.openTime = order.fillTime;
+        }
       } else {
         pos.qty = 0;
         pos.avgPrice = 0;
