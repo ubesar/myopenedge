@@ -4,12 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/trading-data';
-import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, X, ArrowRight, Trash2, Bot, Sparkles } from 'lucide-react';
+import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, X, ArrowRight, Trash2, Bot, Sparkles, Camera, Image as ImageIcon, Edit3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
 import ReactMarkdown from 'react-markdown';
 
 type BrokerFormat = 'auto' | 'tradovate' | 'ninjatrader' | 'tradingview' | 'metatrader' | 'generic';
@@ -278,6 +280,12 @@ export default function JournalImport() {
   const [aiAnalysis, setAiAnalysis] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const analysisRef = useRef<HTMLDivElement>(null);
+  const screenshotRef = useRef<HTMLInputElement>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const [screenshotAnalyzing, setScreenshotAnalyzing] = useState(false);
+  const [screenshotSummary, setScreenshotSummary] = useState('');
+  const [screenshotWarnings, setScreenshotWarnings] = useState<string[]>([]);
+  const [editingTradeIdx, setEditingTradeIdx] = useState<number | null>(null);
 
   const runAiAnalysis = useCallback(async (trades: ParsedTrade[], file: string) => {
     setAiAnalysis('');
@@ -352,6 +360,70 @@ export default function JournalImport() {
       setAiLoading(false);
     }
   }, []);
+
+  const handleScreenshot = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) { toast.error('Please upload an image file'); return; }
+    const previewUrl = URL.createObjectURL(file);
+    setScreenshotPreview(previewUrl);
+    setScreenshotAnalyzing(true);
+    setScreenshotSummary('');
+    setScreenshotWarnings([]);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-screenshot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        body: JSON.stringify({ imageBase64: base64, mimeType: file.type }),
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: 'Unknown error' }));
+        toast.error(err.error || 'Screenshot analysis failed');
+        setScreenshotAnalyzing(false);
+        return;
+      }
+      const data = await resp.json();
+      if (data.trades && data.trades.length > 0) {
+        setParsedTrades(data.trades);
+        setDetectedBroker('SCREENSHOT');
+        setFileName(file.name);
+        setScreenshotSummary(data.summary || '');
+        setScreenshotWarnings(data.warnings || []);
+        setStep('preview');
+        toast.success(`AI extracted ${data.trades.length} trades from screenshot`);
+      } else {
+        toast.error('No trades found in screenshot. Try a clearer image.');
+        setScreenshotPreview(null);
+      }
+    } catch (e) {
+      console.error('Screenshot analysis error:', e);
+      toast.error('Screenshot analysis failed');
+      setScreenshotPreview(null);
+    } finally {
+      setScreenshotAnalyzing(false);
+    }
+  }, []);
+
+  const updateParsedTrade = (idx: number, field: keyof ParsedTrade, value: any) => {
+    setParsedTrades(prev => prev.map((t, i) => {
+      if (i !== idx) return t;
+      const updated = { ...t, [field]: value };
+      if (['entry_price', 'exit_price', 'qty', 'side', 'fees'].includes(field)) {
+        const pnlGross = updated.side === 'LONG'
+          ? (updated.exit_price - updated.entry_price) * updated.qty
+          : (updated.entry_price - updated.exit_price) * updated.qty;
+        updated.pnl_gross = Math.round(pnlGross * 100) / 100;
+        updated.pnl_net = Math.round((pnlGross - (updated.fees || 0)) * 100) / 100;
+      }
+      updated.valid = updated.entry_price > 0 && updated.exit_price > 0 && updated.symbol !== 'UNKNOWN';
+      updated.error = !updated.valid ? 'Missing data' : undefined;
+      return updated;
+    }));
+  };
 
   const handleFile = useCallback((file: File) => {
     if (!file.name.endsWith('.csv')) { toast.error('Only CSV files are supported'); return; }
@@ -441,8 +513,10 @@ export default function JournalImport() {
     setStep('upload'); setFileName(''); setParsedTrades([]);
     setImportResult({ success: 0, errors: 0 }); setDetectedBroker('');
     setAiAnalysis(''); setAiLoading(false);
+    setScreenshotPreview(null); setScreenshotSummary(''); setScreenshotWarnings([]);
+    setEditingTradeIdx(null);
     if (fileRef.current) fileRef.current.value = '';
-    if (fileRef.current) fileRef.current.value = '';
+    if (screenshotRef.current) screenshotRef.current.value = '';
   };
 
   const validCount = parsedTrades.filter(t => t.valid).length;
@@ -454,77 +528,125 @@ export default function JournalImport() {
       <div className="space-y-4 sm:space-y-6">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold">Import Center</h1>
-          <p className="text-sm text-muted-foreground">Import trades from CSV exports</p>
+          <p className="text-sm text-muted-foreground">Import trades from CSV or screenshots</p>
         </div>
 
         {/* Step 1: Upload */}
         {step === 'upload' && (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Account</CardTitle>
-                  <CardDescription>Select target account for import</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
-                    <SelectTrigger className="w-full"><SelectValue placeholder="Select account" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Accounts</SelectItem>
-                      {accounts.map(a => (
-                        <SelectItem key={a.id} value={a.id}>{a.name}{a.account_type !== 'personal' ? ` (${a.account_type})` : ''}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Broker Format</CardTitle>
-                  <CardDescription>Select your broker or leave auto-detect</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Select value={broker} onValueChange={(v) => setBroker(v as BrokerFormat)}>
-                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="auto">Auto-detect</SelectItem>
-                      <SelectItem value="tradovate">Tradovate</SelectItem>
-                      <SelectItem value="ninjatrader">NinjaTrader</SelectItem>
-                      <SelectItem value="tradingview">TradingView</SelectItem>
-                      <SelectItem value="metatrader">MetaTrader</SelectItem>
-                      <SelectItem value="generic">Generic CSV</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card
-              className="border-dashed border-2 hover:border-primary/50 transition-colors cursor-pointer"
-              onDragOver={e => e.preventDefault()}
-              onDrop={handleDrop}
-              onClick={() => fileRef.current?.click()}
-            >
-              <CardContent className="py-16 text-center">
-                <Upload className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                <h3 className="text-lg font-semibold mb-1">Drop CSV File Here</h3>
-                <p className="text-sm text-muted-foreground mb-4">or click to browse. Supports Tradovate Orders, NinjaTrader, TradingView, MetaTrader exports.</p>
-                <Button variant="outline" size="sm"><FileText className="h-4 w-4 mr-1" />Browse Files</Button>
-                <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }} />
-              </CardContent>
-            </Card>
-
             <Card>
-              <CardHeader><CardTitle className="text-base">Supported Formats</CardTitle></CardHeader>
-              <CardContent className="space-y-2">
-                <div className="text-sm space-y-1">
-                  <p><Badge variant="outline" className="mr-2">Tradovate</Badge>Orders export — automatically pairs Buy/Sell fills into round-trip trades with P&L calculation</p>
-                  <p><Badge variant="outline" className="mr-2">NinjaTrader</Badge>Trade performance export with entry/exit prices</p>
-                  <p><Badge variant="outline" className="mr-2">TradingView</Badge>Strategy report CSV export</p>
-                  <p><Badge variant="outline" className="mr-2">Generic</Badge>CSV with columns: symbol, side, qty, entry_price, exit_price, open_time, close_time, pnl_gross, fees</p>
-                </div>
+              <CardHeader>
+                <CardTitle>Account</CardTitle>
+                <CardDescription>Select target account for import</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+                  <SelectTrigger className="w-full sm:w-[280px]"><SelectValue placeholder="Select account" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Accounts</SelectItem>
+                    {accounts.map(a => (
+                      <SelectItem key={a.id} value={a.id}>{a.name}{a.account_type !== 'personal' ? ` (${a.account_type})` : ''}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </CardContent>
             </Card>
+
+            <Tabs defaultValue="csv" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="csv" className="gap-2"><FileText className="h-4 w-4" />CSV Import</TabsTrigger>
+                <TabsTrigger value="screenshot" className="gap-2"><Camera className="h-4 w-4" />Screenshot AI</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="csv" className="space-y-4 mt-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Broker Format</CardTitle>
+                    <CardDescription>Select your broker or leave auto-detect</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Select value={broker} onValueChange={(v) => setBroker(v as BrokerFormat)}>
+                      <SelectTrigger className="w-full sm:w-[280px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="auto">Auto-detect</SelectItem>
+                        <SelectItem value="tradovate">Tradovate</SelectItem>
+                        <SelectItem value="ninjatrader">NinjaTrader</SelectItem>
+                        <SelectItem value="tradingview">TradingView</SelectItem>
+                        <SelectItem value="metatrader">MetaTrader</SelectItem>
+                        <SelectItem value="generic">Generic CSV</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </CardContent>
+                </Card>
+                <Card
+                  className="border-dashed border-2 hover:border-primary/50 transition-colors cursor-pointer"
+                  onDragOver={e => e.preventDefault()}
+                  onDrop={handleDrop}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  <CardContent className="py-16 text-center">
+                    <Upload className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                    <h3 className="text-lg font-semibold mb-1">Drop CSV File Here</h3>
+                    <p className="text-sm text-muted-foreground mb-4">or click to browse. Supports Tradovate Orders, NinjaTrader, TradingView, MetaTrader exports.</p>
+                    <Button variant="outline" size="sm"><FileText className="h-4 w-4 mr-1" />Browse Files</Button>
+                    <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }} />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader><CardTitle className="text-base">Supported Formats</CardTitle></CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="text-sm space-y-1">
+                      <p><Badge variant="outline" className="mr-2">Tradovate</Badge>Orders export — auto-pairs Buy/Sell fills into round-trip trades</p>
+                      <p><Badge variant="outline" className="mr-2">NinjaTrader</Badge>Trade performance export</p>
+                      <p><Badge variant="outline" className="mr-2">TradingView</Badge>Strategy report CSV</p>
+                      <p><Badge variant="outline" className="mr-2">Generic</Badge>CSV with: symbol, side, qty, entry_price, exit_price, open_time, close_time, pnl_gross, fees</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="screenshot" className="space-y-4 mt-4">
+                <Card className="border-dashed border-2 hover:border-primary/50 transition-colors">
+                  {screenshotAnalyzing ? (
+                    <CardContent className="py-16 text-center">
+                      <Loader2 className="h-12 w-12 mx-auto animate-spin text-primary mb-4" />
+                      <h3 className="text-lg font-semibold mb-1">AI Analyzing Screenshot...</h3>
+                      <p className="text-sm text-muted-foreground">Extracting trade data from your image</p>
+                    </CardContent>
+                  ) : (
+                    <CardContent
+                      className="py-16 text-center cursor-pointer"
+                      onClick={() => screenshotRef.current?.click()}
+                    >
+                      <Camera className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                      <h3 className="text-lg font-semibold mb-1">Upload Trading Screenshot</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        AI will extract trade data from your screenshot. You can review and edit all values before saving.
+                      </p>
+                      <Button variant="outline" size="sm"><ImageIcon className="h-4 w-4 mr-1" />Browse Images</Button>
+                      <input
+                        ref={screenshotRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/webp"
+                        className="hidden"
+                        onChange={e => { if (e.target.files?.[0]) handleScreenshot(e.target.files[0]); }}
+                      />
+                    </CardContent>
+                  )}
+                </Card>
+                <Card>
+                  <CardHeader><CardTitle className="text-base flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" />How it works</CardTitle></CardHeader>
+                  <CardContent>
+                    <div className="text-sm space-y-2 text-muted-foreground">
+                      <p>1. Upload a screenshot of your trading platform (P&L report, trade history, etc.)</p>
+                      <p>2. AI analyzes the image and extracts trade data (symbol, side, qty, prices, P&L)</p>
+                      <p>3. Review extracted trades — click any value to edit it manually</p>
+                      <p>4. Confirm and import when everything looks correct</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
 
             {/* Import History with Delete */}
             <Card>
@@ -590,7 +712,7 @@ export default function JournalImport() {
           <div className="space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
+                {detectedBroker === 'SCREENSHOT' ? <Camera className="h-5 w-5 text-primary" /> : <FileText className="h-5 w-5 text-primary" />}
                 <span className="font-medium">{fileName}</span>
                 <Badge variant="outline">{detectedBroker.toUpperCase()}</Badge>
                 <Badge variant="secondary">{parsedTrades.length} trades</Badge>
@@ -606,6 +728,38 @@ export default function JournalImport() {
                 </Button>
               </div>
             </div>
+
+            {/* Screenshot summary & warnings */}
+            {detectedBroker === 'SCREENSHOT' && (screenshotSummary || screenshotWarnings.length > 0) && (
+              <Card className="border-primary/30">
+                <CardContent className="p-4 space-y-2">
+                  {screenshotSummary && (
+                    <p className="text-sm flex items-start gap-2"><Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />{screenshotSummary}</p>
+                  )}
+                  {screenshotWarnings.length > 0 && (
+                    <div className="space-y-1">
+                      {screenshotWarnings.map((w, i) => (
+                        <p key={i} className="text-sm text-yellow-500 flex items-start gap-2"><AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />{w}</p>
+                      ))}
+                    </div>
+                  )}
+                  {detectedBroker === 'SCREENSHOT' && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      <Edit3 className="h-3 w-3 inline mr-1" />Click any cell in the table below to edit values before importing
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Screenshot preview */}
+            {screenshotPreview && detectedBroker === 'SCREENSHOT' && (
+              <Card>
+                <CardContent className="p-2">
+                  <img src={screenshotPreview} alt="Trading screenshot" className="w-full max-h-[200px] object-contain rounded-md" />
+                </CardContent>
+              </Card>
+            )}
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <Card><CardContent className="p-3 text-center"><p className="text-xs text-muted-foreground">Total Trades</p><p className="font-mono font-bold text-lg">{parsedTrades.length}</p></CardContent></Card>
@@ -642,15 +796,49 @@ export default function JournalImport() {
                               </div>
                             )}
                           </td>
-                          <td className="px-3 py-2 font-medium">{t.symbol}</td>
-                          <td className="px-3 py-2"><Badge variant={t.side === 'LONG' ? 'default' : 'secondary'} className="text-xs">{t.side}</Badge></td>
-                          <td className="px-3 py-2 text-right font-mono">{t.qty}</td>
-                          <td className="px-3 py-2 text-right font-mono">{t.entry_price.toFixed(2)}</td>
-                          <td className="px-3 py-2 text-right font-mono">{t.exit_price.toFixed(2)}</td>
+                          <td className="px-3 py-2 font-medium">
+                            {editingTradeIdx === i ? (
+                              <Input className="h-7 w-20 text-xs font-mono" value={t.symbol} onChange={e => updateParsedTrade(i, 'symbol', e.target.value)} onBlur={() => setEditingTradeIdx(null)} autoFocus />
+                            ) : (
+                              <span className={cn(detectedBroker === 'SCREENSHOT' && 'cursor-pointer hover:text-primary')} onClick={() => detectedBroker === 'SCREENSHOT' && setEditingTradeIdx(i)}>{t.symbol}</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2">
+                            {detectedBroker === 'SCREENSHOT' ? (
+                              <Select value={t.side} onValueChange={v => updateParsedTrade(i, 'side', v)}>
+                                <SelectTrigger className="h-7 w-[90px] text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="LONG">LONG</SelectItem>
+                                  <SelectItem value="SHORT">SHORT</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <Badge variant={t.side === 'LONG' ? 'default' : 'secondary'} className="text-xs">{t.side}</Badge>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-right font-mono">
+                            {detectedBroker === 'SCREENSHOT' ? (
+                              <Input type="number" className="h-7 w-16 text-xs font-mono text-right" value={t.qty} onChange={e => updateParsedTrade(i, 'qty', parseFloat(e.target.value) || 0)} />
+                            ) : t.qty}
+                          </td>
+                          <td className="px-3 py-2 text-right font-mono">
+                            {detectedBroker === 'SCREENSHOT' ? (
+                              <Input type="number" step="0.01" className="h-7 w-24 text-xs font-mono text-right" value={t.entry_price} onChange={e => updateParsedTrade(i, 'entry_price', parseFloat(e.target.value) || 0)} />
+                            ) : t.entry_price.toFixed(2)}
+                          </td>
+                          <td className="px-3 py-2 text-right font-mono">
+                            {detectedBroker === 'SCREENSHOT' ? (
+                              <Input type="number" step="0.01" className="h-7 w-24 text-xs font-mono text-right" value={t.exit_price} onChange={e => updateParsedTrade(i, 'exit_price', parseFloat(e.target.value) || 0)} />
+                            ) : t.exit_price.toFixed(2)}
+                          </td>
                           <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">{new Date(t.open_time).toLocaleString()}</td>
                           <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">{new Date(t.close_time).toLocaleString()}</td>
                           <td className={cn('px-3 py-2 text-right font-mono font-semibold', t.pnl_net >= 0 ? 'text-profit' : 'text-loss')}>
-                            {t.pnl_net >= 0 ? '+' : ''}{formatCurrency(t.pnl_net)}
+                            {detectedBroker === 'SCREENSHOT' ? (
+                              <Input type="number" step="0.01" className="h-7 w-24 text-xs font-mono text-right" value={t.pnl_net} onChange={e => updateParsedTrade(i, 'pnl_net', parseFloat(e.target.value) || 0)} />
+                            ) : (
+                              <>{t.pnl_net >= 0 ? '+' : ''}{formatCurrency(t.pnl_net)}</>
+                            )}
                           </td>
                         </tr>
                       ))}
