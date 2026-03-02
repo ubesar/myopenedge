@@ -109,7 +109,7 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
           </span>
         </div>
       </div>
-      <div className="flex gap-3 h-[260px] sm:h-[360px]">
+      <div className="flex gap-3 flex-1 min-h-0 h-[200px] sm:h-[260px]">
         <div style={{ width: `min(70%, ${displayBars.length * 14 + 80}px)`, height: '100%', flexShrink: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={displayBars} barCategoryGap={0} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>

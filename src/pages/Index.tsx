@@ -185,7 +185,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="h-screen bg-background relative flex flex-col overflow-hidden">
       <AIChatAssistant analysisContext={analysisContext} />
       
       {/* Background Video */}
@@ -238,17 +238,17 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="relative z-10 max-w-[1600px] mx-auto px-3 sm:px-6 py-3 sm:py-4">
+      <main className="relative z-10 max-w-[1600px] mx-auto px-3 sm:px-6 py-2 sm:py-3 flex-1 overflow-hidden">
         {/* IB Mode: 4-panel grid layout */}
         {activeMode === "ib" && result ? (
-          <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr_220px] gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr_220px] gap-2 sm:gap-3 h-[calc(100vh-64px)]">
             {/* Left: Control Panel (full height) */}
-            <aside className="lg:row-span-2">
+            <aside className="lg:row-span-2 overflow-y-auto">
               <ControlPanel onRun={handleRun} loading={loading} isFree={isFree} />
             </aside>
 
             {/* Center Top: Two square IB charts */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 min-h-0">
               <IBChart
                 title="IB High Formed First"
                 total={result.highFirst.total}
@@ -264,7 +264,7 @@ const Index = () => {
             </div>
 
             {/* Right: Report History (full height) */}
-            <aside className="lg:row-span-2 hidden lg:block">
+            <aside className="lg:row-span-2 hidden lg:flex flex-col min-h-0">
               <IBReportHistory
                 allDays={result.allDays}
                 selectedDate={selectedDate}
@@ -273,6 +273,7 @@ const Index = () => {
             </aside>
 
             {/* Center Bottom: Chart + Recommendation */}
+            <div className="min-h-0 overflow-hidden">
             {result.allDays.length > 0 && (() => {
               const dayData = result.allDays.find((d) => d.date === selectedDate) || result.allDays[result.allDays.length - 1];
               return (
@@ -292,6 +293,7 @@ const Index = () => {
                   statsLowFirst={result.lowFirst} />
               );
             })()}
+            </div>
           </div>
         ) : (
           /* Default 2-column layout for other modes / empty state */
