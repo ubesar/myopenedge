@@ -10,7 +10,8 @@ import logo from "@/assets/logo10.jpg";
 import ControlPanel, { type AnalysisMode } from "@/components/ControlPanel";
 import IBChart from "@/components/IBChart";
 import IBDayChart from "@/components/IBDayChart";
-import IBReportHistory from "@/components/IBReportHistory";
+import AnalysisHistory from "@/components/AnalysisHistory";
+import { useAnalysisHistory, type AnalysisRun } from "@/hooks/useAnalysisHistory";
 import SummaryTable from "@/components/SummaryTable";
 import MomentumChart from "@/components/MomentumChart";
 import MomentumDayChart from "@/components/MomentumDayChart";
@@ -52,8 +53,14 @@ const Index = () => {
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
   const [occTf, setOccTf] = useState("M15");
   const [momentumTf, setMomentumTf] = useState("M15");
+  const [selectedRunId, setSelectedRunId] = useState<string | undefined>();
+  const { runs: historyRuns, addRun, deleteRun } = useAnalysisHistory();
 
   const isFree = !isActive;
+
+  const handleSelectRun = (run: AnalysisRun) => {
+    setSelectedRunId(run.id);
+  };
 
   const analysisContext = useMemo<AnalysisContext>(() => {
     if (activeMode === "ib" && result) {
@@ -150,7 +157,7 @@ const Index = () => {
         }
         setResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
-        // Analysis complete — no toast to avoid blocking AI chat button
+        addRun(mode, ticker, { totalDays: analysis.totalDays, insideDays: analysis.insideDays });
       } else if (mode === "momentum") {
         const analysis = analyzeMomentum(values as any, ibWindow, maxDays);
         if (analysis.totalDays === 0) {
@@ -159,7 +166,7 @@ const Index = () => {
         }
         setMomentumResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
-        // Analysis complete — no toast to avoid blocking AI chat button
+        addRun(mode, ticker, { totalDays: analysis.totalDays });
       } else if (mode === "occ") {
         const analysis = analyzeOCC(values as any, maxDays);
         if (analysis.totalDays === 0) {
@@ -168,6 +175,7 @@ const Index = () => {
         }
         setOccResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
+        addRun(mode, ticker, { totalDays: analysis.totalDays });
       } else if (mode === "gapfill") {
         const analysis = analyzeGapFill(values as any, maxDays);
         if (analysis.totalDays === 0) {
@@ -176,6 +184,7 @@ const Index = () => {
         }
         setGapFillResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
+        addRun(mode, ticker, { totalDays: analysis.totalDays });
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch data");
@@ -265,11 +274,11 @@ const Index = () => {
 
             {/* Right: Report History (full height) */}
             <aside className="lg:row-span-2 hidden lg:block">
-              <IBReportHistory
-                allDays={result.allDays}
-                selectedDate={selectedDate}
-                onDateChange={setSelectedDate}
-                symbol={symbol} />
+              <AnalysisHistory
+                runs={historyRuns}
+                onDelete={deleteRun}
+                onSelect={handleSelectRun}
+                selectedId={selectedRunId} />
             </aside>
 
             {/* Center Bottom: Chart + Recommendation */}
@@ -294,8 +303,8 @@ const Index = () => {
             })()}
           </div>
         ) : (
-          /* Default 2-column layout for other modes / empty state */
-          <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-3 sm:gap-5">
+          /* Default 3-column layout for other modes / empty state */
+          <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr_220px] gap-3 sm:gap-5">
             <aside>
               <ControlPanel onRun={handleRun} loading={loading} isFree={isFree} />
             </aside>
@@ -425,6 +434,15 @@ const Index = () => {
                 <GapFillDashboard result={gapFillResult} symbol={symbol} />
               )}
             </section>
+
+            {/* Right: Report History */}
+            <aside className="hidden lg:block">
+              <AnalysisHistory
+                runs={historyRuns}
+                onDelete={deleteRun}
+                onSelect={handleSelectRun}
+                selectedId={selectedRunId} />
+            </aside>
           </div>
         )}
       </main>

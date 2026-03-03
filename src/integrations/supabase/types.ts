@@ -74,6 +74,33 @@ export type Database = {
         }
         Relationships: []
       }
+      analysis_runs: {
+        Row: {
+          analysis_type: string
+          created_at: string
+          id: string
+          summary: Json
+          symbol: string
+          user_id: string
+        }
+        Insert: {
+          analysis_type: string
+          created_at?: string
+          id?: string
+          summary?: Json
+          symbol: string
+          user_id: string
+        }
+        Update: {
+          analysis_type?: string
+          created_at?: string
+          id?: string
+          summary?: Json
+          symbol?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       attachments: {
         Row: {
           created_at: string
