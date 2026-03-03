@@ -8,7 +8,7 @@ import {
   LayoutDashboard, LineChart, Upload, Settings, BookOpen, TrendingUp, Menu, X, ArrowLeft,
 } from 'lucide-react';
 import { useState } from 'react';
-import logo from '@/assets/logo.jpg';
+import logo from '@/assets/logo.png';
 
 const navItems = [
   { href: '/journal', label: 'Dashboard', icon: LayoutDashboard },

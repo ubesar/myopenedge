@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { LogOut, Crown, BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import logo from "@/assets/logo10.jpg";
+import logo from "@/assets/logo.png";
 import ControlPanel, { type AnalysisMode } from "@/components/ControlPanel";
 import IBChart from "@/components/IBChart";
 import IBDayChart from "@/components/IBDayChart";
