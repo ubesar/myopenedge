@@ -157,7 +157,11 @@ const Index = () => {
         }
         setResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
-        addRun(mode, ticker, { totalDays: analysis.totalDays, insideDays: analysis.insideDays });
+        addRun(mode, ticker, {
+          totalDays: analysis.totalDays, insideDays: analysis.insideDays,
+          ibWindow,
+          highFirst: analysis.highFirst, lowFirst: analysis.lowFirst,
+        });
       } else if (mode === "momentum") {
         const analysis = analyzeMomentum(values as any, ibWindow, maxDays);
         if (analysis.totalDays === 0) {
@@ -166,7 +170,10 @@ const Index = () => {
         }
         setMomentumResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
-        addRun(mode, ticker, { totalDays: analysis.totalDays });
+        addRun(mode, ticker, {
+          totalDays: analysis.totalDays,
+          tfStats: analysis.tfStats,
+        });
       } else if (mode === "occ") {
         const analysis = analyzeOCC(values as any, maxDays);
         if (analysis.totalDays === 0) {
@@ -175,7 +182,10 @@ const Index = () => {
         }
         setOccResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
-        addRun(mode, ticker, { totalDays: analysis.totalDays });
+        addRun(mode, ticker, {
+          totalDays: analysis.totalDays,
+          tfDirectionStats: analysis.tfDirectionStats,
+        });
       } else if (mode === "gapfill") {
         const analysis = analyzeGapFill(values as any, maxDays);
         if (analysis.totalDays === 0) {
@@ -184,7 +194,10 @@ const Index = () => {
         }
         setGapFillResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
-        addRun(mode, ticker, { totalDays: analysis.totalDays });
+        addRun(mode, ticker, {
+          totalDays: analysis.totalDays,
+          stats: analysis.stats,
+        });
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch data");
