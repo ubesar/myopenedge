@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { BarChart3, Activity, Target, Zap, TrendingUp, ChevronRight, CandlestickChart } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/logo.jpg";
+import logo from "@/assets/logo.png";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
