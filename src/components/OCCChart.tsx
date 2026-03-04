@@ -63,14 +63,14 @@ const OCCChart = ({ title, stats, color }: OCCChartProps) => {
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div className="flex gap-2 mt-2">
-        <div className={`flex-1 rounded-md border ${color === "emerald" ? "border-emerald-500/30 bg-emerald-500/10" : "border-red-500/30 bg-red-500/10"} px-2 py-1.5 text-center`}>
-          <div className={`text-[10px] ${iconColor} font-medium`}>Valid</div>
-          <div className={`text-base font-bold ${iconColor}`}>{stats.valid}</div>
+      <div className="flex gap-1 mt-1 shrink-0">
+        <div className={`flex-1 rounded border ${color === "emerald" ? "border-emerald-500/30 bg-emerald-500/10" : "border-red-500/30 bg-red-500/10"} px-1 py-0.5 text-center`}>
+          <div className={`text-[8px] ${iconColor} font-medium`}>Valid</div>
+          <div className={`text-xs font-bold ${iconColor}`}>{stats.valid}</div>
         </div>
-        <div className="flex-1 rounded-md border border-border/30 bg-muted/30 px-2 py-1.5 text-center">
-          <div className="text-[10px] text-muted-foreground font-medium">Invalid</div>
-          <div className="text-base font-bold text-muted-foreground">{stats.invalid}</div>
+        <div className="flex-1 rounded border border-border/30 bg-muted/30 px-1 py-0.5 text-center">
+          <div className="text-[8px] text-muted-foreground font-medium">Invalid</div>
+          <div className="text-xs font-bold text-muted-foreground">{stats.invalid}</div>
         </div>
       </div>
     </div>

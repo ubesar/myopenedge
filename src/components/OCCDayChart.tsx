@@ -54,7 +54,7 @@ const OCCDayChart = ({ date, bars, symbol, timeframes, overallBias, availableDat
   const badge = statusBadge(overallBias);
 
   return (
-    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 sm:p-4 shadow-lg space-y-3">
+    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-2 sm:p-3 shadow-lg h-full flex flex-col gap-1.5">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
@@ -97,7 +97,7 @@ const OCCDayChart = ({ date, bars, symbol, timeframes, overallBias, availableDat
       </div>
 
       {/* TF Status Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 shrink-0">
         {timeframes.map((tf) => {
           const b = statusBadge(tf.status);
           const c1 = tf.candle1;
@@ -117,7 +117,7 @@ const OCCDayChart = ({ date, bars, symbol, timeframes, overallBias, availableDat
       </div>
 
       {/* Chart + Recommendation */}
-      <div className="flex gap-3 h-[260px] sm:h-[360px]">
+      <div className="flex gap-2 flex-1 min-h-0">
         <div style={{ width: `min(70%, ${displayBars.length * 10 + 80}px)`, height: '100%', flexShrink: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={displayBars} barCategoryGap={0} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>

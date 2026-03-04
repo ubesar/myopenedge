@@ -65,18 +65,18 @@ const IBChart = ({ title, total, breakHigh, breakLow, inside }: IBChartProps) =>
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div className="flex gap-2 mt-2">
-        <div className="flex-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1.5 text-center">
-          <div className="text-[10px] text-emerald-400 font-medium">Break High</div>
-          <div className="text-base font-bold text-emerald-400">{breakHigh}</div>
+      <div className="flex gap-1 mt-1 shrink-0">
+        <div className="flex-1 rounded border border-emerald-500/30 bg-emerald-500/10 px-1 py-0.5 text-center">
+          <div className="text-[8px] text-emerald-400 font-medium">Break High</div>
+          <div className="text-xs font-bold text-emerald-400">{breakHigh}</div>
         </div>
-        <div className="flex-1 rounded-md border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-center">
-          <div className="text-[10px] text-red-400 font-medium">Break Low</div>
-          <div className="text-base font-bold text-red-400">{breakLow}</div>
+        <div className="flex-1 rounded border border-red-500/30 bg-red-500/10 px-1 py-0.5 text-center">
+          <div className="text-[8px] text-red-400 font-medium">Break Low</div>
+          <div className="text-xs font-bold text-red-400">{breakLow}</div>
         </div>
-        <div className="flex-1 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-2 py-1.5 text-center">
-          <div className="text-[10px] text-yellow-400 font-medium">Inside</div>
-          <div className="text-base font-bold text-yellow-400">{inside}</div>
+        <div className="flex-1 rounded border border-yellow-500/30 bg-yellow-500/10 px-1 py-0.5 text-center">
+          <div className="text-[8px] text-yellow-400 font-medium">Inside</div>
+          <div className="text-xs font-bold text-yellow-400">{inside}</div>
         </div>
       </div>
     </div>
