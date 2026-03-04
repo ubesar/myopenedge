@@ -31,8 +31,8 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
 
   const displayBars = aggregateToM15(bars);
 
-  const priceMin = Math.min(...displayBars.map(b => b.low));
-  const priceMax = Math.max(...displayBars.map(b => b.high));
+  const priceMin = Math.min(...displayBars.map((b) => b.low));
+  const priceMax = Math.max(...displayBars.map((b) => b.high));
   const padding = (priceMax - priceMin) * 0.05;
   const domainMin = priceMin - padding;
   const domainMax = priceMax + padding;
@@ -45,7 +45,7 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
   const tickInterval = Math.max(1, Math.floor(displayBars.length / 12));
 
   return (
-    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-2 sm:p-3 shadow-lg h-full flex flex-col">
+    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-2 sm:p-3 shadow-lg h-full flex flex-col py-[8px] px-[8px] mx-0 my-[115px]">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           <span className="text-sm font-bold text-card-foreground">{symbol}</span>
@@ -56,8 +56,8 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
                 if (idx > 0) onDateChange(availableDates[idx - 1]);
               }}
               disabled={availableDates.indexOf(selectedDate) <= 0}
-              className="p-0.5 rounded hover:bg-muted disabled:opacity-30"
-            >
+              className="p-0.5 rounded hover:bg-muted disabled:opacity-30">
+              
               <ChevronLeft className="h-4 w-4 text-muted-foreground" />
             </button>
             <Select value={selectedDate} onValueChange={onDateChange}>
@@ -65,9 +65,9 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
-                {[...availableDates].reverse().map((d) => (
-                  <SelectItem key={d} value={d} className="text-xs">{d}</SelectItem>
-                ))}
+                {[...availableDates].reverse().map((d) =>
+                <SelectItem key={d} value={d} className="text-xs">{d}</SelectItem>
+                )}
               </SelectContent>
             </Select>
             <button
@@ -76,8 +76,8 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
                 if (idx < availableDates.length - 1) onDateChange(availableDates[idx + 1]);
               }}
               disabled={availableDates.indexOf(selectedDate) >= availableDates.length - 1}
-              className="p-0.5 rounded hover:bg-muted disabled:opacity-30"
-            >
+              className="p-0.5 rounded hover:bg-muted disabled:opacity-30">
+              
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </button>
           </div>
@@ -115,29 +115,29 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
           <ComposedChart data={displayBars} barCategoryGap={0} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,10%,15%)" vertical={false} />
             <XAxis
-              dataKey="time"
-              tick={{ fill: "hsl(220,10%,45%)", fontSize: 10 }}
-              axisLine={{ stroke: "hsl(220,10%,18%)" }}
-              tickLine={false}
-              interval={tickInterval}
-            />
+                dataKey="time"
+                tick={{ fill: "hsl(220,10%,45%)", fontSize: 10 }}
+                axisLine={{ stroke: "hsl(220,10%,18%)" }}
+                tickLine={false}
+                interval={tickInterval} />
+              
             <YAxis
-              domain={[domainMin, domainMax]}
-              tick={{ fill: "hsl(220,10%,45%)", fontSize: 10 }}
-              axisLine={false}
-              tickLine={false}
-              orientation="right"
-              tickFormatter={(v) => v.toFixed(2)}
-              width={60}
-            />
+                domain={[domainMin, domainMax]}
+                tick={{ fill: "hsl(220,10%,45%)", fontSize: 10 }}
+                axisLine={false}
+                tickLine={false}
+                orientation="right"
+                tickFormatter={(v) => v.toFixed(2)}
+                width={60} />
+              
             <Tooltip
-              content={({ active, payload }) => {
-                if (!active || !payload?.length) return null;
-                const d = payload[0]?.payload as CandleBar;
-                if (!d) return null;
-                const isUp = d.close >= d.open;
-                return (
-                  <div className="rounded-md border border-border bg-[hsl(220,13%,12%)] px-3 py-2 text-xs shadow-lg">
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const d = payload[0]?.payload as CandleBar;
+                  if (!d) return null;
+                  const isUp = d.close >= d.open;
+                  return (
+                    <div className="rounded-md border border-border bg-[hsl(220,13%,12%)] px-3 py-2 text-xs shadow-lg">
                     <div className="text-muted-foreground mb-1">{d.time}</div>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
                       <span className="text-muted-foreground">O</span>
@@ -149,10 +149,10 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
                       <span className="text-muted-foreground">C</span>
                       <span className={`text-right ${isUp ? 'text-emerald-400' : 'text-red-400'}`}>{d.close.toFixed(2)}</span>
                     </div>
-                  </div>
-                );
-              }}
-            />
+                  </div>);
+
+                }} />
+              
             <ReferenceLine y={ibHigh} stroke="#60a5fa" strokeDasharray="6 3" strokeWidth={1.5}
               label={{ value: `IB High ${ibHigh.toFixed(2)}`, position: "left", fill: "#60a5fa", fontSize: 10 }} />
             <ReferenceLine y={ibLow} stroke="#fb923c" strokeDasharray="6 3" strokeWidth={1.5}
@@ -182,10 +182,10 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
                   <g>
                     <line x1={wickX} y1={toY(high)} x2={wickX} y2={toY(low)} stroke={color} strokeWidth={1} />
                     <rect x={x} y={bodyY} width={width} height={bodyHeight} fill={color} stroke={color} strokeWidth={0.5} rx={0.5} />
-                  </g>
-                );
-              }}
-            />
+                  </g>);
+
+              }} />
+              
           </ComposedChart>
         </ResponsiveContainer>
         </div>
@@ -233,13 +233,13 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
                     {breakout === 'high' ? 'Broke IB High ✅' : breakout === 'low' ? 'Broke IB Low ✅' : 'Inside Day ⚪'}
                   </span>
                 </div>
-              </div>
-            );
+              </div>);
+
           })()}
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 export default IBDayChart;
