@@ -32,8 +32,8 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
   const tfMinutes = selectedTf === "M5" ? 5 : selectedTf === "M30" ? 30 : selectedTf === "H1" ? 60 : 15;
   const displayBars = aggregateBars(bars, tfMinutes);
 
-  const priceMin = Math.min(...displayBars.map(b => b.low));
-  const priceMax = Math.max(...displayBars.map(b => b.high));
+  const priceMin = Math.min(...displayBars.map((b) => b.low));
+  const priceMax = Math.max(...displayBars.map((b) => b.high));
   const padding = (priceMax - priceMin) * 0.05;
   const domainMin = priceMin - padding;
   const domainMax = priceMax + padding;
@@ -46,14 +46,14 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
     for (const t of sig.times) highlightSet.add(t);
   }
 
-  const momentumBadge = momentum === "bullish"
-    ? { text: "🟢 Bullish Momentum", cls: "bg-emerald-500/15 text-emerald-400" }
-    : momentum === "bearish"
-    ? { text: "🔴 Bearish Momentum", cls: "bg-red-500/15 text-red-400" }
-    : { text: "⚪ Choppy / No Momentum", cls: "bg-muted text-muted-foreground" };
+  const momentumBadge = momentum === "bullish" ?
+  { text: "🟢 Bullish Momentum", cls: "bg-emerald-500/15 text-emerald-400" } :
+  momentum === "bearish" ?
+  { text: "🔴 Bearish Momentum", cls: "bg-red-500/15 text-red-400" } :
+  { text: "⚪ Choppy / No Momentum", cls: "bg-muted text-muted-foreground" };
 
   return (
-    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-2 sm:p-3 shadow-lg h-full flex flex-col">
+    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-2 sm:p-3 shadow-lg h-full flex flex-col my-[115px]">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           <span className="text-sm font-bold text-card-foreground">{symbol}</span>
@@ -64,8 +64,8 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
                 if (idx > 0) onDateChange(availableDates[idx - 1]);
               }}
               disabled={availableDates.indexOf(selectedDate) <= 0}
-              className="p-0.5 rounded hover:bg-muted disabled:opacity-30"
-            >
+              className="p-0.5 rounded hover:bg-muted disabled:opacity-30">
+              
               <ChevronLeft className="h-4 w-4 text-muted-foreground" />
             </button>
             <Select value={selectedDate} onValueChange={onDateChange}>
@@ -73,9 +73,9 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
-                {[...availableDates].reverse().map((d) => (
-                  <SelectItem key={d} value={d} className="text-xs">{d}</SelectItem>
-                ))}
+                {[...availableDates].reverse().map((d) =>
+                <SelectItem key={d} value={d} className="text-xs">{d}</SelectItem>
+                )}
               </SelectContent>
             </Select>
             <button
@@ -84,19 +84,19 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
                 if (idx < availableDates.length - 1) onDateChange(availableDates[idx + 1]);
               }}
               disabled={availableDates.indexOf(selectedDate) >= availableDates.length - 1}
-              className="p-0.5 rounded hover:bg-muted disabled:opacity-30"
-            >
+              className="p-0.5 rounded hover:bg-muted disabled:opacity-30">
+              
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </button>
           </div>
           <span className={`text-xs font-semibold px-2 py-0.5 rounded ${momentumBadge.cls}`}>
             {momentumBadge.text}
           </span>
-          {signals.length > 0 && (
-            <span className="text-xs font-medium px-2 py-0.5 rounded bg-amber-500/15 text-amber-400">
+          {signals.length > 0 &&
+          <span className="text-xs font-medium px-2 py-0.5 rounded bg-amber-500/15 text-amber-400">
               {signals.length} signal(s)
             </span>
-          )}
+          }
           <span className="text-xs font-medium px-2 py-0.5 rounded bg-muted text-muted-foreground">{selectedTf}</span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs flex-wrap">
@@ -108,12 +108,12 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
             <span className="inline-block h-4 w-0.5 bg-red-400/60" />
             12:00
           </span>
-          {signals.length > 0 && (
-            <span className="flex items-center gap-1">
+          {signals.length > 0 &&
+          <span className="flex items-center gap-1">
               <span className="inline-block h-3 w-3 border border-amber-400 border-dashed rounded-sm" />
               Momentum
             </span>
-          )}
+          }
         </div>
       </div>
       <div className="flex gap-2 flex-1 min-h-0">
@@ -122,29 +122,29 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
           <ComposedChart data={displayBars} barCategoryGap={0} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,10%,15%)" vertical={false} />
             <XAxis
-              dataKey="time"
-              tick={{ fill: "hsl(220,10%,45%)", fontSize: 10 }}
-              axisLine={{ stroke: "hsl(220,10%,18%)" }}
-              tickLine={false}
-              interval={tickInterval}
-            />
+                dataKey="time"
+                tick={{ fill: "hsl(220,10%,45%)", fontSize: 10 }}
+                axisLine={{ stroke: "hsl(220,10%,18%)" }}
+                tickLine={false}
+                interval={tickInterval} />
+              
             <YAxis
-              domain={[domainMin, domainMax]}
-              tick={{ fill: "hsl(220,10%,45%)", fontSize: 10 }}
-              axisLine={false}
-              tickLine={false}
-              orientation="right"
-              tickFormatter={(v) => v.toFixed(2)}
-              width={60}
-            />
+                domain={[domainMin, domainMax]}
+                tick={{ fill: "hsl(220,10%,45%)", fontSize: 10 }}
+                axisLine={false}
+                tickLine={false}
+                orientation="right"
+                tickFormatter={(v) => v.toFixed(2)}
+                width={60} />
+              
             <Tooltip
-              content={({ active, payload }) => {
-                if (!active || !payload?.length) return null;
-                const d = payload[0]?.payload as CandleBar;
-                if (!d) return null;
-                const isUp = d.close >= d.open;
-                return (
-                  <div className="rounded-md border border-border bg-[hsl(220,13%,12%)] px-3 py-2 text-xs shadow-lg">
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const d = payload[0]?.payload as CandleBar;
+                  if (!d) return null;
+                  const isUp = d.close >= d.open;
+                  return (
+                    <div className="rounded-md border border-border bg-[hsl(220,13%,12%)] px-3 py-2 text-xs shadow-lg">
                     <div className="text-muted-foreground mb-1">{d.time}</div>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
                       <span className="text-muted-foreground">O</span>
@@ -156,10 +156,10 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
                       <span className="text-muted-foreground">C</span>
                       <span className={`text-right ${isUp ? 'text-emerald-400' : 'text-red-400'}`}>{d.close.toFixed(2)}</span>
                     </div>
-                  </div>
-                );
-              }}
-            />
+                  </div>);
+
+                }} />
+              
             <ReferenceLine x="09:30" stroke="hsl(45,90%,50%)" strokeDasharray="4 4" strokeWidth={1} strokeOpacity={0.5} />
             <ReferenceLine x="12:00" stroke="#f87171" strokeDasharray="4 4" strokeWidth={1} strokeOpacity={0.6}
               label={{ value: "12:00", position: "top", fill: "#f87171", fontSize: 10 }} />
@@ -182,25 +182,25 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
                 const isHighlighted = highlightSet.has(time);
                 return (
                   <g>
-                    {isHighlighted && (
-                      <rect
-                        x={x - 3}
-                        y={toY(high) - 3}
-                        width={width + 6}
-                        height={toY(low) - toY(high) + 6}
-                        fill="none"
-                        stroke="#fbbf24"
-                        strokeWidth={2}
-                        strokeDasharray="3 2"
-                        rx={2}
-                      />
-                    )}
+                    {isHighlighted &&
+                    <rect
+                      x={x - 3}
+                      y={toY(high) - 3}
+                      width={width + 6}
+                      height={toY(low) - toY(high) + 6}
+                      fill="none"
+                      stroke="#fbbf24"
+                      strokeWidth={2}
+                      strokeDasharray="3 2"
+                      rx={2} />
+
+                    }
                     <line x1={wickX} y1={toY(high)} x2={wickX} y2={toY(low)} stroke={color} strokeWidth={1} />
                     <rect x={x} y={bodyY} width={width} height={bodyHeight} fill={color} stroke={color} strokeWidth={0.5} rx={0.5} />
-                  </g>
-                );
-              }}
-            />
+                  </g>);
+
+              }} />
+              
           </ComposedChart>
         </ResponsiveContainer>
         </div>
@@ -237,15 +237,15 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
                 <div className="border-t border-border/30 pt-2">
                   <span className="text-muted-foreground">Signals: </span>
                   <span className="font-semibold text-card-foreground">{signals.length}</span>
-                  {signals.length > 0 && (
-                    <div className="mt-1 space-y-0.5">
-                      {signals.map((sig, i) => (
-                        <div key={i} className={`text-[10px] ${sig.type === 'bullish' ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {signals.length > 0 &&
+                  <div className="mt-1 space-y-0.5">
+                      {signals.map((sig, i) =>
+                    <div key={i} className={`text-[10px] ${sig.type === 'bullish' ? 'text-emerald-400' : 'text-red-400'}`}>
                           {sig.type === 'bullish' ? '🟢' : '🔴'} {sig.type} @ {sig.times[0]}
                         </div>
-                      ))}
+                    )}
                     </div>
-                  )}
+                  }
                 </div>
                 <div className="border-t border-border/30 pt-2">
                   <span className="text-muted-foreground">Result: </span>
@@ -253,13 +253,13 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
                     {momentum === 'bullish' ? '🟢 Bullish' : momentum === 'bearish' ? '🔴 Bearish' : '⚪ Choppy'}
                   </span>
                 </div>
-              </div>
-            );
+              </div>);
+
           })()}
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 export default MomentumDayChart;
