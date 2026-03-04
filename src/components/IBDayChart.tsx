@@ -45,7 +45,7 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
   const tickInterval = Math.max(1, Math.floor(displayBars.length / 12));
 
   return (
-    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 sm:p-4 shadow-lg">
+    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-2 sm:p-3 shadow-lg h-full flex flex-col">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           <span className="text-sm font-bold text-card-foreground">{symbol}</span>
@@ -109,7 +109,7 @@ const IBDayChart = ({ date, bars, ibHigh, ibLow, symbol, ibWindowMinutes, highFi
           </span>
         </div>
       </div>
-      <div className="flex gap-3 h-[260px] sm:h-[360px]">
+      <div className="flex gap-2 flex-1 min-h-0">
         <div style={{ width: `min(70%, ${displayBars.length * 14 + 80}px)`, height: '100%', flexShrink: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={displayBars} barCategoryGap={0} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
