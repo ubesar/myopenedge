@@ -13,9 +13,6 @@ const IBChart = ({ title, total, breakHigh, breakLow, inside }: IBChartProps) =>
   const lowPct = total > 0 ? breakLow / total * 100 : 0;
   const insidePct = total > 0 ? inside / total * 100 : 0;
 
-  const borderColor = "border-border/30";
-  const bgColor = "bg-card/40";
-
   const data = [
     { name: "Break High", value: parseFloat(highPct.toFixed(2)), type: "high" },
     { name: "Break Low", value: parseFloat(lowPct.toFixed(2)), type: "low" },
@@ -29,38 +26,20 @@ const IBChart = ({ title, total, breakHigh, breakLow, inside }: IBChartProps) =>
   };
 
   return (
-    <div className={`rounded-lg border ${borderColor} ${bgColor} backdrop-blur-md p-3 sm:p-4 flex-1 min-w-0 shadow-lg flex flex-col sm:aspect-square`}>
-      <div className="flex items-center gap-2 mb-0.5">
-        <h3 className="text-sm font-semibold text-card-foreground">{title}</h3>
+    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-2 sm:p-3 min-w-0 shadow-lg flex flex-col aspect-square h-full">
+      <div className="flex items-center gap-1.5 mb-0.5">
+        <h3 className="text-[11px] font-semibold text-card-foreground">{title}</h3>
       </div>
-      <p className="text-xs text-muted-foreground mb-2">{total} trading days</p>
-      <div className="flex-1 min-h-[180px]">
+      <p className="text-[10px] text-muted-foreground mb-1">{total} trading days</p>
+      <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} barCategoryGap="20%">
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,20%)" vertical={false} />
-            <XAxis
-              dataKey="name"
-              tick={{ fill: "hsl(0,0%,55%)", fontSize: 11 }}
-              axisLine={{ stroke: "hsl(0,0%,20%)" }}
-              tickLine={false}
-            />
-            <YAxis
-              domain={[0, 100]}
-              tick={{ fill: "hsl(0,0%,55%)", fontSize: 12 }}
-              axisLine={false}
-              tickLine={false}
-              tickFormatter={(v) => `${v}%`}
-            />
-            <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={80}>
-              {data.map((entry, i) => (
-                <Cell key={i} fill={colorMap[entry.type]} />
-              ))}
-              <LabelList
-                dataKey="value"
-                position="top"
-                formatter={(v: number) => `${v}%`}
-                style={{ fill: "hsl(0,0%,85%)", fontSize: 13, fontWeight: 600 }}
-              />
+            <XAxis dataKey="name" tick={{ fill: "hsl(0,0%,55%)", fontSize: 10 }} axisLine={{ stroke: "hsl(0,0%,20%)" }} tickLine={false} />
+            <YAxis domain={[0, 100]} tick={{ fill: "hsl(0,0%,55%)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
+            <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={60}>
+              {data.map((entry, i) => (<Cell key={i} fill={colorMap[entry.type]} />))}
+              <LabelList dataKey="value" position="top" formatter={(v: number) => `${v}%`} style={{ fill: "hsl(0,0%,85%)", fontSize: 11, fontWeight: 600 }} />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
