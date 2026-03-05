@@ -109,8 +109,6 @@ const Index = () => {
     return { mode: null, symbol: "", summary: "" };
   }, [activeMode, result, momentumResult, occResult, gapFillResult, symbol]);
 
-
-  // Redirect if not authenticated
   if (!authLoading && !user) {
     navigate("/auth");
     return null;
@@ -206,172 +204,166 @@ const Index = () => {
     }
   };
 
+  const hasResults = result || momentumResult || occResult || gapFillResult;
+
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="h-screen flex flex-col overflow-hidden bg-background relative">
       <AIChatAssistant analysisContext={analysisContext} />
       
       {/* Background Video */}
       <video
-        autoPlay
-        loop
-        muted
-        playsInline
+        autoPlay loop muted playsInline
         className="fixed inset-0 w-full h-full object-cover opacity-20 z-0">
-
         <source src="/videos/hero-bg.mp4" type="video/mp4" />
       </video>
       <div className="fixed inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background z-0" />
 
-      <header className="relative z-10 border-b border-border/40 px-3 sm:px-6 py-3 sm:py-4 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto flex items-center gap-2 sm:gap-3 flex-wrap">
-          <img src={logo} alt="MyOpenEdge" className="h-7 w-7 sm:h-8 sm:w-8 rounded-full object-cover" />
-          <h1 className="text-base sm:text-xl font-bold text-foreground tracking-tight">MyOpenEdge</h1>
-          <span className="text-xs text-muted-foreground ml-1 hidden sm:inline">​IB & Momentum Analytics</span>
-          {isActive ?
-          <div className="flex items-center gap-2 ml-1 sm:ml-2">
-              <Badge variant="secondary" className="gap-1 text-[10px] sm:text-xs bg-primary/15 text-primary border-primary/30">
+      {/* Header - compact */}
+      <header className="relative z-10 border-b border-border/40 px-3 sm:px-6 py-2 backdrop-blur-sm shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <img src={logo} alt="MyOpenEdge" className="h-7 w-7 rounded-full object-cover" />
+          <h1 className="text-base font-bold text-foreground tracking-tight">MyOpenEdge</h1>
+          <span className="text-xs text-muted-foreground ml-1 hidden sm:inline">IB & Momentum Analytics</span>
+          {isActive ? (
+            <div className="flex items-center gap-2 ml-1">
+              <Badge variant="secondary" className="gap-1 text-[10px] bg-primary/15 text-primary border-primary/30">
                 <Crown className="h-3 w-3" /> Pro
               </Badge>
-              {endDate &&
-            <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">
+              {endDate && (
+                <span className="text-[10px] text-muted-foreground hidden sm:inline">
                   exp {new Date(endDate).toLocaleDateString()}
                 </span>
-            }
-            </div> :
-
-          <Badge
-            variant="outline"
-            className="gap-1 text-[10px] sm:text-xs cursor-pointer hover:bg-primary/10"
-            onClick={() => navigate("/upgrade")}>
-
+              )}
+            </div>
+          ) : (
+            <Badge
+              variant="outline"
+              className="gap-1 text-[10px] cursor-pointer hover:bg-primary/10"
+              onClick={() => navigate("/upgrade")}>
               Free · Upgrade
             </Badge>
-          }
+          )}
           <div className="ml-auto flex items-center gap-1">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/journal")} className="gap-1 sm:gap-2 text-muted-foreground h-8 px-2 sm:px-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/journal")} className="gap-1 text-muted-foreground h-7 px-2">
               <BookOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">Journal</span>
+              <span className="hidden sm:inline text-xs">Journal</span>
             </Button>
-            <Button variant="ghost" size="sm" onClick={signOut} className="gap-1 sm:gap-2 text-muted-foreground h-8 px-2 sm:px-3">
+            <Button variant="ghost" size="sm" onClick={signOut} className="gap-1 text-muted-foreground h-7 px-2">
               <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Sign out</span>
+              <span className="hidden sm:inline text-xs">Sign out</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="relative z-10 max-w-[1600px] mx-auto px-3 sm:px-6 py-3 sm:py-4">
-        {/* IB Mode: 4-panel grid layout */}
-        {activeMode === "ib" && result ? (
-          <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr_220px] gap-3 sm:gap-4">
-            {/* Left: Control Panel (full height) */}
-            <aside className="lg:row-span-2">
-              <ControlPanel onRun={handleRun} loading={loading} isFree={isFree} />
-            </aside>
+      {/* Main content - fills remaining height, no scroll */}
+      <main className="relative z-10 flex-1 min-h-0 p-2 sm:p-3">
+        <div className="h-full grid grid-cols-1 lg:grid-cols-[240px_1fr_260px] gap-2 sm:gap-3">
+          {/* Left: Control Panel */}
+          <aside className="min-h-0 overflow-y-auto scrollbar-thin">
+            <ControlPanel onRun={handleRun} loading={loading} isFree={isFree} />
+          </aside>
 
-            {/* Center Top: Two square IB charts */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <IBChart
-                title="IB High Formed First"
-                total={result.highFirst.total}
-                breakHigh={result.highFirst.breakHigh}
-                breakLow={result.highFirst.breakLow}
-                inside={result.highFirst.inside} />
-              <IBChart
-                title="IB Low Formed First"
-                total={result.lowFirst.total}
-                breakHigh={result.lowFirst.breakHigh}
-                breakLow={result.lowFirst.breakLow}
-                inside={result.lowFirst.inside} />
-            </div>
+          {/* Center: Results */}
+          <section className="min-h-0 overflow-y-auto scrollbar-thin">
+            {/* Empty state */}
+            {!hasResults && !loading && (
+              <div className="flex items-center justify-center h-full rounded-lg border border-dashed border-border/30">
+                <div className="text-center">
+                  <img src={logo} className="h-12 w-12 rounded-full object-cover mx-auto mb-3 opacity-40" alt="MyOpenEdge" />
+                  <p className="text-muted-foreground text-xs">Powered by TwelveData API with 5000 bars of intraday data.</p>
+                </div>
+              </div>
+            )}
 
-            {/* Right: Report History (full height) */}
-            <aside className="lg:row-span-2 hidden lg:block">
-              <AnalysisHistory
-                runs={historyRuns}
-                onDelete={deleteRun}
-                onSelect={handleSelectRun}
-                selectedId={selectedRunId} />
-            </aside>
+            {/* Loading */}
+            {loading && (
+              <div className="flex items-center justify-center h-full rounded-lg border border-border/20 bg-card/30">
+                <div className="text-center space-y-2">
+                  <div className="h-7 w-7 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+                  <p className="text-muted-foreground text-xs">Analyzing {symbol}…</p>
+                </div>
+              </div>
+            )}
 
-            {/* Center Bottom: Chart + Recommendation */}
-            {result.allDays.length > 0 && (() => {
-              const dayData = result.allDays.find((d) => d.date === selectedDate) || result.allDays[result.allDays.length - 1];
-              return (
-                <IBDayChart
-                  date={dayData.date}
-                  bars={dayData.bars}
-                  ibHigh={dayData.ibHigh}
-                  ibLow={dayData.ibLow}
-                  symbol={symbol}
-                  ibWindowMinutes={result.ibWindowMinutes}
-                  highFirstFormed={dayData.highFirstFormed}
-                  breakout={dayData.breakout}
-                  availableDates={result.allDays.map((d) => d.date)}
-                  selectedDate={selectedDate || dayData.date}
-                  onDateChange={setSelectedDate}
-                  statsHighFirst={result.highFirst}
-                  statsLowFirst={result.lowFirst} />
-              );
-            })()}
-          </div>
-        ) : (
-          /* Default 3-column layout for other modes / empty state */
-          <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr_220px] gap-3 sm:gap-5">
-            <aside>
-              <ControlPanel onRun={handleRun} loading={loading} isFree={isFree} />
-            </aside>
+            {/* IB Mode */}
+            {activeMode === "ib" && result && (
+              <div className="h-full flex flex-col gap-2">
+                {/* Top: Two square IB charts */}
+                <div className="grid grid-cols-2 gap-2" style={{ height: '42%' }}>
+                  <IBChart
+                    title="IB High Formed First"
+                    total={result.highFirst.total}
+                    breakHigh={result.highFirst.breakHigh}
+                    breakLow={result.highFirst.breakLow}
+                    inside={result.highFirst.inside} />
+                  <IBChart
+                    title="IB Low Formed First"
+                    total={result.lowFirst.total}
+                    breakHigh={result.lowFirst.breakHigh}
+                    breakLow={result.lowFirst.breakLow}
+                    inside={result.lowFirst.inside} />
+                </div>
+                {/* Bottom: Day chart */}
+                <div className="flex-1 min-h-0">
+                  {result.allDays.length > 0 && (() => {
+                    const dayData = result.allDays.find((d) => d.date === selectedDate) || result.allDays[result.allDays.length - 1];
+                    return (
+                      <IBDayChart
+                        date={dayData.date}
+                        bars={dayData.bars}
+                        ibHigh={dayData.ibHigh}
+                        ibLow={dayData.ibLow}
+                        symbol={symbol}
+                        ibWindowMinutes={result.ibWindowMinutes}
+                        highFirstFormed={dayData.highFirstFormed}
+                        breakout={dayData.breakout}
+                        availableDates={result.allDays.map((d) => d.date)}
+                        selectedDate={selectedDate || dayData.date}
+                        onDateChange={setSelectedDate}
+                        statsHighFirst={result.highFirst}
+                        statsLowFirst={result.lowFirst} />
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
 
-            <section>
-              {!result && !momentumResult && !occResult && !gapFillResult && !loading &&
-                <div className="flex items-center justify-center h-[400px] rounded-lg border border-dashed border-border">
-                  <div className="text-center">
-                    <img src={logo} className="h-12 w-12 rounded-full object-cover mx-auto mb-4 opacity-40" alt="MyOpenEdge" />
-                    <p className="text-muted-foreground text-sm">Powered by TwelveData API with 5000 bars of intraday data for deep analysis.</p>
+            {/* Momentum Mode */}
+            {activeMode === "momentum" && momentumResult && (
+              <div className="h-full flex flex-col gap-2">
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] text-muted-foreground">TF:</span>
+                  {["M5", "M15", "M30", "H1"].map((tf) => (
+                    <button
+                      key={tf}
+                      onClick={() => setMomentumTf(tf)}
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                        momentumTf === tf
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}>
+                      {tf}
+                    </button>
+                  ))}
+                </div>
+                {momentumResult.tfStats[momentumTf] && (
+                  <div className="grid grid-cols-2 gap-2" style={{ height: '38%' }}>
+                    <MomentumChart
+                      title="IB High Formed First"
+                      total={momentumResult.tfStats[momentumTf].highFirst.total}
+                      bullish={momentumResult.tfStats[momentumTf].highFirst.bullish}
+                      bearish={momentumResult.tfStats[momentumTf].highFirst.bearish}
+                      choppy={momentumResult.tfStats[momentumTf].highFirst.choppy} />
+                    <MomentumChart
+                      title="IB Low Formed First"
+                      total={momentumResult.tfStats[momentumTf].lowFirst.total}
+                      bullish={momentumResult.tfStats[momentumTf].lowFirst.bullish}
+                      bearish={momentumResult.tfStats[momentumTf].lowFirst.bearish}
+                      choppy={momentumResult.tfStats[momentumTf].lowFirst.choppy} />
                   </div>
-                </div>}
-
-              {loading && <div className="flex items-center justify-center h-[400px] rounded-lg border border-border bg-card">
-                  <div className="text-center space-y-3">
-                    <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-                    <p className="text-muted-foreground text-sm">Fetching & analyzing {symbol} data…</p>
-                  </div>
-                </div>}
-
-              {/* Momentum Mode Results */}
-              {activeMode === "momentum" && momentumResult &&
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs text-muted-foreground">Timeframe:</span>
-                    {["M5", "M15", "M30", "H1"].map((tf) =>
-                      <button
-                        key={tf}
-                        onClick={() => setMomentumTf(tf)}
-                        className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
-                          momentumTf === tf ?
-                          "bg-primary text-primary-foreground" :
-                          "bg-muted text-muted-foreground hover:bg-muted/80"}`
-                        }>
-                        {tf}
-                      </button>
-                    )}
-                  </div>
-                  {momentumResult.tfStats[momentumTf] && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <MomentumChart
-                        title="IB High Formed First"
-                        total={momentumResult.tfStats[momentumTf].highFirst.total}
-                        bullish={momentumResult.tfStats[momentumTf].highFirst.bullish}
-                        bearish={momentumResult.tfStats[momentumTf].highFirst.bearish}
-                        choppy={momentumResult.tfStats[momentumTf].highFirst.choppy} />
-                      <MomentumChart
-                        title="IB Low Formed First"
-                        total={momentumResult.tfStats[momentumTf].lowFirst.total}
-                        bullish={momentumResult.tfStats[momentumTf].lowFirst.bullish}
-                        bearish={momentumResult.tfStats[momentumTf].lowFirst.bearish}
-                        choppy={momentumResult.tfStats[momentumTf].lowFirst.choppy} />
-                    </div>
-                  )}
+                )}
+                <div className="flex-1 min-h-0">
                   {momentumResult.allDays.length > 0 && (() => {
                     const dayData = momentumResult.allDays.find((d) => d.date === selectedDate) || momentumResult.allDays[momentumResult.allDays.length - 1];
                     const tfData = dayData.timeframes.find(t => t.tf === momentumTf);
@@ -390,41 +382,44 @@ const Index = () => {
                         statsHighFirst={tfStatsHF}
                         statsLowFirst={tfStatsLF}
                         highFirstFormed={dayData.highFirstFormed}
-                        selectedTf={momentumTf} />);
+                        selectedTf={momentumTf} />
+                    );
                   })()}
                 </div>
-              }
+              </div>
+            )}
 
-              {/* OCC Mode Results */}
-              {activeMode === "occ" && occResult &&
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs text-muted-foreground">Timeframe:</span>
-                    {["M5", "M15", "M30", "H1"].map((tf) =>
-                      <button
-                        key={tf}
-                        onClick={() => setOccTf(tf)}
-                        className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
-                          occTf === tf ?
-                          "bg-primary text-primary-foreground" :
-                          "bg-muted text-muted-foreground hover:bg-muted/80"}`
-                        }>
-                        {tf}
-                      </button>
-                    )}
+            {/* OCC Mode */}
+            {activeMode === "occ" && occResult && (
+              <div className="h-full flex flex-col gap-2">
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] text-muted-foreground">TF:</span>
+                  {["M5", "M15", "M30", "H1"].map((tf) => (
+                    <button
+                      key={tf}
+                      onClick={() => setOccTf(tf)}
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                        occTf === tf
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}>
+                      {tf}
+                    </button>
+                  ))}
+                </div>
+                {occResult.tfDirectionStats[occTf] && (
+                  <div className="grid grid-cols-2 gap-2" style={{ height: '38%' }}>
+                    <OCCChart
+                      title="Candle 1 Bullish"
+                      stats={occResult.tfDirectionStats[occTf].bullishFirst}
+                      color="emerald" />
+                    <OCCChart
+                      title="Candle 1 Bearish"
+                      stats={occResult.tfDirectionStats[occTf].bearishFirst}
+                      color="red" />
                   </div>
-                  {occResult.tfDirectionStats[occTf] &&
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <OCCChart
-                        title="Candle 1 Bullish"
-                        stats={occResult.tfDirectionStats[occTf].bullishFirst}
-                        color="emerald" />
-                      <OCCChart
-                        title="Candle 1 Bearish"
-                        stats={occResult.tfDirectionStats[occTf].bearishFirst}
-                        color="red" />
-                    </div>
-                  }
+                )}
+                <div className="flex-1 min-h-0">
                   {occResult.allDays.length > 0 && (() => {
                     const dayData = occResult.allDays.find((d) => d.date === selectedDate) || occResult.allDays[occResult.allDays.length - 1];
                     return (
@@ -437,30 +432,33 @@ const Index = () => {
                         availableDates={occResult.allDays.map((d) => d.date)}
                         selectedDate={selectedDate || dayData.date}
                         onDateChange={setSelectedDate}
-                        tfDirectionStats={occResult.tfDirectionStats} />);
+                        tfDirectionStats={occResult.tfDirectionStats} />
+                    );
                   })()}
                 </div>
-              }
+              </div>
+            )}
 
-              {/* Gap Fill Mode Results */}
-              {activeMode === "gapfill" && gapFillResult && (
+            {/* Gap Fill Mode */}
+            {activeMode === "gapfill" && gapFillResult && (
+              <div className="h-full overflow-y-auto">
                 <GapFillDashboard result={gapFillResult} symbol={symbol} />
-              )}
-            </section>
+              </div>
+            )}
+          </section>
 
-            {/* Right: Report History */}
-            <aside className="hidden lg:block">
-              <AnalysisHistory
-                runs={historyRuns}
-                onDelete={deleteRun}
-                onSelect={handleSelectRun}
-                selectedId={selectedRunId} />
-            </aside>
-          </div>
-        )}
+          {/* Right: Report History */}
+          <aside className="hidden lg:flex min-h-0">
+            <AnalysisHistory
+              runs={historyRuns.slice(0, 10)}
+              onDelete={deleteRun}
+              onSelect={handleSelectRun}
+              selectedId={selectedRunId} />
+          </aside>
+        </div>
       </main>
-    </div>);
-
+    </div>
+  );
 };
 
 export default Index;
