@@ -288,28 +288,24 @@ const Index = () => {
 
             {/* IB Mode */}
             {activeMode === "ib" && result && (
-              <div className="h-full flex flex-col gap-2">
-                {/* Top: Two square IB charts - use aspect-square with max height */}
-                <div className="grid grid-cols-2 gap-2 shrink-0" style={{ maxHeight: '45%' }}>
-                  <div className="aspect-square max-h-full">
-                    <IBChart
-                      title="IB High Formed First"
-                      total={result.highFirst.total}
-                      breakHigh={result.highFirst.breakHigh}
-                      breakLow={result.highFirst.breakLow}
-                      inside={result.highFirst.inside} />
-                  </div>
-                  <div className="aspect-square max-h-full">
-                    <IBChart
-                      title="IB Low Formed First"
-                      total={result.lowFirst.total}
-                      breakHigh={result.lowFirst.breakHigh}
-                      breakLow={result.lowFirst.breakLow}
-                      inside={result.lowFirst.inside} />
-                  </div>
+              <div className="h-full grid grid-rows-2 gap-2">
+                {/* Top: Two IB charts - 50% height */}
+                <div className="grid grid-cols-2 gap-2 min-h-0">
+                  <IBChart
+                    title="IB High Formed First"
+                    total={result.highFirst.total}
+                    breakHigh={result.highFirst.breakHigh}
+                    breakLow={result.highFirst.breakLow}
+                    inside={result.highFirst.inside} />
+                  <IBChart
+                    title="IB Low Formed First"
+                    total={result.lowFirst.total}
+                    breakHigh={result.lowFirst.breakHigh}
+                    breakLow={result.lowFirst.breakLow}
+                    inside={result.lowFirst.inside} />
                 </div>
-                {/* Bottom: Day chart fills remaining */}
-                <div className="flex-1 min-h-0 overflow-hidden">
+                {/* Bottom: Day chart - 50% height */}
+                <div className="min-h-0 overflow-hidden">
                   {result.allDays.length > 0 && (() => {
                     const dayData = result.allDays.find((d) => d.date === selectedDate) || result.allDays[result.allDays.length - 1];
                     return (
