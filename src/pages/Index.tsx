@@ -258,7 +258,7 @@ const Index = () => {
 
       {/* Main content - fills remaining height, no scroll */}
       <main className="relative z-10 flex-1 min-h-0 p-2 sm:p-3">
-        <div className="h-full grid grid-cols-1 lg:grid-cols-[240px_1fr_260px] gap-2 sm:gap-3">
+        <div className="h-full grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] gap-2 sm:gap-3">
           {/* Left: Control Panel */}
           <aside className="min-h-0 overflow-y-auto scrollbar-thin">
             <ControlPanel onRun={handleRun} loading={loading} isFree={isFree} />
@@ -289,23 +289,27 @@ const Index = () => {
             {/* IB Mode */}
             {activeMode === "ib" && result && (
               <div className="h-full flex flex-col gap-2">
-                {/* Top: Two square IB charts */}
-                <div className="grid grid-cols-2 gap-2" style={{ height: '42%' }}>
-                  <IBChart
-                    title="IB High Formed First"
-                    total={result.highFirst.total}
-                    breakHigh={result.highFirst.breakHigh}
-                    breakLow={result.highFirst.breakLow}
-                    inside={result.highFirst.inside} />
-                  <IBChart
-                    title="IB Low Formed First"
-                    total={result.lowFirst.total}
-                    breakHigh={result.lowFirst.breakHigh}
-                    breakLow={result.lowFirst.breakLow}
-                    inside={result.lowFirst.inside} />
+                {/* Top: Two square IB charts - use aspect-square with max height */}
+                <div className="grid grid-cols-2 gap-2 shrink-0" style={{ maxHeight: '45%' }}>
+                  <div className="aspect-square max-h-full">
+                    <IBChart
+                      title="IB High Formed First"
+                      total={result.highFirst.total}
+                      breakHigh={result.highFirst.breakHigh}
+                      breakLow={result.highFirst.breakLow}
+                      inside={result.highFirst.inside} />
+                  </div>
+                  <div className="aspect-square max-h-full">
+                    <IBChart
+                      title="IB Low Formed First"
+                      total={result.lowFirst.total}
+                      breakHigh={result.lowFirst.breakHigh}
+                      breakLow={result.lowFirst.breakLow}
+                      inside={result.lowFirst.inside} />
+                  </div>
                 </div>
-                {/* Bottom: Day chart */}
-                <div className="flex-1 min-h-0">
+                {/* Bottom: Day chart fills remaining */}
+                <div className="flex-1 min-h-0 overflow-hidden">
                   {result.allDays.length > 0 && (() => {
                     const dayData = result.allDays.find((d) => d.date === selectedDate) || result.allDays[result.allDays.length - 1];
                     return (
