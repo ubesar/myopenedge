@@ -258,7 +258,7 @@ const Index = () => {
 
       {/* Main content - fills remaining height, no scroll */}
       <main className="relative z-10 flex-1 min-h-0 p-2 sm:p-3">
-        <div className="h-full grid grid-cols-1 lg:grid-cols-[240px_1fr_260px] gap-2 sm:gap-3">
+        <div className="h-full grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] gap-2 sm:gap-3">
           {/* Left: Control Panel */}
           <aside className="min-h-0 overflow-y-auto scrollbar-thin">
             <ControlPanel onRun={handleRun} loading={loading} isFree={isFree} />
