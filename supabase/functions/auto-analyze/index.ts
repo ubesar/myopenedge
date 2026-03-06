@@ -218,18 +218,26 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Auth: accept cron secret OR service role
+  // Auth: accept cron secret, service role, or valid user JWT
   const cronSecret = Deno.env.get("CRON_SECRET");
   const authHeader = req.headers.get("Authorization");
   const isAuthorized =
     (cronSecret && authHeader === `Bearer ${cronSecret}`) ||
     (authHeader === `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`);
 
-  // Also allow anon key for manual triggering by admins
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const isAnonCall = authHeader === `Bearer ${anonKey}`;
+  // Also allow authenticated users (for manual trigger from UI)
+  let isUserAuth = false;
+  if (!isAuthorized && authHeader?.startsWith("Bearer ")) {
+    const tempClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data } = await tempClient.auth.getUser();
+    if (data?.user) isUserAuth = true;
+  }
 
-  if (!isAuthorized && !isAnonCall) {
+  if (!isAuthorized && !isUserAuth) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
