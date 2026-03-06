@@ -223,7 +223,8 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get("Authorization");
   const isAuthorized =
     (cronSecret && authHeader === `Bearer ${cronSecret}`) ||
-    (authHeader === `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`);
+    (authHeader === `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`) ||
+    (authHeader === `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`);
 
   // Also allow authenticated users (for manual trigger from UI)
   let isUserAuth = false;
