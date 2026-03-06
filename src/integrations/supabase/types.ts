@@ -14,7 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      auto_analyses: {
+        Row: {
+          ai_insight: string | null
+          analysis_date: string
+          created_at: string
+          ib_results: Json | null
+          id: string
+          momentum_results: Json | null
+          symbol: string
+        }
+        Insert: {
+          ai_insight?: string | null
+          analysis_date: string
+          created_at?: string
+          ib_results?: Json | null
+          id?: string
+          momentum_results?: Json | null
+          symbol?: string
+        }
+        Update: {
+          ai_insight?: string | null
+          analysis_date?: string
+          created_at?: string
+          ib_results?: Json | null
+          id?: string
+          momentum_results?: Json | null
+          symbol?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
