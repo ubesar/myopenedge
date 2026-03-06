@@ -238,7 +238,7 @@ Deno.serve(async (req) => {
     if (data?.user) isUserAuth = true;
   }
 
-  if (!isAuthorized && !isUserAuth) {
+  if (!isAuthorized && !isUserAuth && authHeader) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
