@@ -65,31 +65,6 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
           </SelectContent>
         </Select>
         {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for Momentum analysis</p>}
-        <div className="rounded-md border border-border/20 bg-muted/30 px-2.5 py-2 text-[10px] text-muted-foreground leading-relaxed mt-1">
-          {(() => {
-            const currentMode = isFree ? "ib" : mode;
-            if (currentMode === "ib") return (
-              <>
-                <span className="font-semibold text-foreground/80">IB Analysis</span> — Calculates the IB range (High & Low) from 5-min bars within the selected window. Detects which side formed first (High/Low First), then scans for breakouts using <span className="font-medium text-foreground/70">M15 candle close</span> from IB end until 12:00. Output: probability of Break High / Break Low / Inside Day.
-              </>
-            );
-            if (currentMode === "momentum") return (
-              <>
-                <span className="font-semibold text-foreground/80">Momentum Candle</span> — Scans for 2 consecutive candles with the same color (bullish/bearish) in the 09:30–12:00 window across <span className="font-medium text-foreground/70">M5, M15, M30, H1</span>. First candle body ≥50% of range, second ≥30%. Overall bias = majority across 4 TFs.
-              </>
-            );
-            if (currentMode === "gapfill") return (
-              <>
-                <span className="font-semibold text-foreground/80">Gap Fill Statistics</span> — Compares Today's Open vs Yesterday's Close. A <span className="font-medium text-foreground/70">Gap Up</span> fills if the session Low ≤ PrevClose; a <span className="font-medium text-foreground/70">Gap Down</span> fills if session High ≥ PrevClose. Shows fill probability by gap size (Small/Medium/Large) and day of week.
-              </>
-            );
-            return (
-              <>
-                <span className="font-semibold text-foreground/80">Opening Candle Continuation</span> — Evaluates the first 2 candles after market open (09:30) simultaneously across 4 timeframes: M5, M15, M30, H1. If both candles are <span className="font-medium text-foreground/70">green → Bullish OCC</span>, both red → Bearish OCC, mixed colors → Failed OCC. Overall bias is determined by the majority of 4 TFs.
-              </>
-            );
-          })()}
-        </div>
       </div>
 
 
