@@ -26,12 +26,12 @@ const MomentumChart = ({ title, total, bullish, bearish, choppy }: MomentumChart
   };
 
   return (
-    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 sm:p-4 flex-1 min-w-0 shadow-lg flex flex-col sm:aspect-square">
+    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-2 sm:p-3 min-w-0 shadow-lg flex flex-col h-full">
       <div className="flex items-center gap-2 mb-0.5">
-        <h3 className="text-sm font-semibold text-card-foreground">{title}</h3>
+        <h3 className="text-xs font-semibold text-card-foreground">{title}</h3>
       </div>
-      <p className="text-xs text-muted-foreground mb-2">{total} trading days</p>
-      <div className="flex-1 min-h-[180px]">
+      <p className="text-[10px] text-muted-foreground mb-1">{total} trading days</p>
+      <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} barCategoryGap="20%">
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,20%)" vertical={false} />
