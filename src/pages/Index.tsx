@@ -347,44 +347,46 @@ const Index = () => {
                     </button>
                   ))}
                 </div>
-                {momentumResult.tfStats[momentumTf] && (
-                  <div className="grid grid-cols-2 gap-2" style={{ height: '38%' }}>
-                    <MomentumChart
-                      title="IB High Formed First"
-                      total={momentumResult.tfStats[momentumTf].highFirst.total}
-                      bullish={momentumResult.tfStats[momentumTf].highFirst.bullish}
-                      bearish={momentumResult.tfStats[momentumTf].highFirst.bearish}
-                      choppy={momentumResult.tfStats[momentumTf].highFirst.choppy} />
-                    <MomentumChart
-                      title="IB Low Formed First"
-                      total={momentumResult.tfStats[momentumTf].lowFirst.total}
-                      bullish={momentumResult.tfStats[momentumTf].lowFirst.bullish}
-                      bearish={momentumResult.tfStats[momentumTf].lowFirst.bearish}
-                      choppy={momentumResult.tfStats[momentumTf].lowFirst.choppy} />
+                <div className="flex-1 min-h-0 grid grid-rows-2 gap-2">
+                  {momentumResult.tfStats[momentumTf] && (
+                    <div className="grid grid-cols-2 gap-2 min-h-0">
+                      <MomentumChart
+                        title="IB High Formed First"
+                        total={momentumResult.tfStats[momentumTf].highFirst.total}
+                        bullish={momentumResult.tfStats[momentumTf].highFirst.bullish}
+                        bearish={momentumResult.tfStats[momentumTf].highFirst.bearish}
+                        choppy={momentumResult.tfStats[momentumTf].highFirst.choppy} />
+                      <MomentumChart
+                        title="IB Low Formed First"
+                        total={momentumResult.tfStats[momentumTf].lowFirst.total}
+                        bullish={momentumResult.tfStats[momentumTf].lowFirst.bullish}
+                        bearish={momentumResult.tfStats[momentumTf].lowFirst.bearish}
+                        choppy={momentumResult.tfStats[momentumTf].lowFirst.choppy} />
+                    </div>
+                  )}
+                  <div className="min-h-0 overflow-hidden">
+                    {momentumResult.allDays.length > 0 && (() => {
+                      const dayData = momentumResult.allDays.find((d) => d.date === selectedDate) || momentumResult.allDays[momentumResult.allDays.length - 1];
+                      const tfData = dayData.timeframes.find(t => t.tf === momentumTf);
+                      const tfStatsHF = momentumResult.tfStats[momentumTf]?.highFirst || { total: 0, bullish: 0, bearish: 0, choppy: 0 };
+                      const tfStatsLF = momentumResult.tfStats[momentumTf]?.lowFirst || { total: 0, bullish: 0, bearish: 0, choppy: 0 };
+                      return (
+                        <MomentumDayChart
+                          date={dayData.date}
+                          bars={dayData.bars}
+                          symbol={symbol}
+                          momentum={tfData?.momentum || dayData.momentum}
+                          signals={tfData?.signals || dayData.signals}
+                          availableDates={momentumResult.allDays.map((d) => d.date)}
+                          selectedDate={selectedDate || dayData.date}
+                          onDateChange={setSelectedDate}
+                          statsHighFirst={tfStatsHF}
+                          statsLowFirst={tfStatsLF}
+                          highFirstFormed={dayData.highFirstFormed}
+                          selectedTf={momentumTf} />
+                      );
+                    })()}
                   </div>
-                )}
-                <div className="flex-1 min-h-0">
-                  {momentumResult.allDays.length > 0 && (() => {
-                    const dayData = momentumResult.allDays.find((d) => d.date === selectedDate) || momentumResult.allDays[momentumResult.allDays.length - 1];
-                    const tfData = dayData.timeframes.find(t => t.tf === momentumTf);
-                    const tfStatsHF = momentumResult.tfStats[momentumTf]?.highFirst || { total: 0, bullish: 0, bearish: 0, choppy: 0 };
-                    const tfStatsLF = momentumResult.tfStats[momentumTf]?.lowFirst || { total: 0, bullish: 0, bearish: 0, choppy: 0 };
-                    return (
-                      <MomentumDayChart
-                        date={dayData.date}
-                        bars={dayData.bars}
-                        symbol={symbol}
-                        momentum={tfData?.momentum || dayData.momentum}
-                        signals={tfData?.signals || dayData.signals}
-                        availableDates={momentumResult.allDays.map((d) => d.date)}
-                        selectedDate={selectedDate || dayData.date}
-                        onDateChange={setSelectedDate}
-                        statsHighFirst={tfStatsHF}
-                        statsLowFirst={tfStatsLF}
-                        highFirstFormed={dayData.highFirstFormed}
-                        selectedTf={momentumTf} />
-                    );
-                  })()}
                 </div>
               </div>
             )}
@@ -407,34 +409,36 @@ const Index = () => {
                     </button>
                   ))}
                 </div>
-                {occResult.tfDirectionStats[occTf] && (
-                  <div className="grid grid-cols-2 gap-2" style={{ height: '38%' }}>
-                    <OCCChart
-                      title="Candle 1 Bullish"
-                      stats={occResult.tfDirectionStats[occTf].bullishFirst}
-                      color="emerald" />
-                    <OCCChart
-                      title="Candle 1 Bearish"
-                      stats={occResult.tfDirectionStats[occTf].bearishFirst}
-                      color="red" />
+                <div className="flex-1 min-h-0 grid grid-rows-2 gap-2">
+                  {occResult.tfDirectionStats[occTf] && (
+                    <div className="grid grid-cols-2 gap-2 min-h-0">
+                      <OCCChart
+                        title="Candle 1 Bullish"
+                        stats={occResult.tfDirectionStats[occTf].bullishFirst}
+                        color="emerald" />
+                      <OCCChart
+                        title="Candle 1 Bearish"
+                        stats={occResult.tfDirectionStats[occTf].bearishFirst}
+                        color="red" />
+                    </div>
+                  )}
+                  <div className="min-h-0 overflow-hidden">
+                    {occResult.allDays.length > 0 && (() => {
+                      const dayData = occResult.allDays.find((d) => d.date === selectedDate) || occResult.allDays[occResult.allDays.length - 1];
+                      return (
+                        <OCCDayChart
+                          date={dayData.date}
+                          bars={dayData.bars}
+                          symbol={symbol}
+                          timeframes={dayData.timeframes}
+                          overallBias={dayData.overallBias}
+                          availableDates={occResult.allDays.map((d) => d.date)}
+                          selectedDate={selectedDate || dayData.date}
+                          onDateChange={setSelectedDate}
+                          tfDirectionStats={occResult.tfDirectionStats} />
+                      );
+                    })()}
                   </div>
-                )}
-                <div className="flex-1 min-h-0">
-                  {occResult.allDays.length > 0 && (() => {
-                    const dayData = occResult.allDays.find((d) => d.date === selectedDate) || occResult.allDays[occResult.allDays.length - 1];
-                    return (
-                      <OCCDayChart
-                        date={dayData.date}
-                        bars={dayData.bars}
-                        symbol={symbol}
-                        timeframes={dayData.timeframes}
-                        overallBias={dayData.overallBias}
-                        availableDates={occResult.allDays.map((d) => d.date)}
-                        selectedDate={selectedDate || dayData.date}
-                        onDateChange={setSelectedDate}
-                        tfDirectionStats={occResult.tfDirectionStats} />
-                    );
-                  })()}
                 </div>
               </div>
             )}
