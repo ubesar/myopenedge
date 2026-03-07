@@ -421,7 +421,7 @@ const Index = () => {
                         color="red" />
                     </div>
                   )}
-                  <div className="min-h-0 overflow-hidden">
+                  <div className="min-h-[300px] lg:min-h-0 overflow-hidden">
                     {occResult.allDays.length > 0 && (() => {
                       const dayData = occResult.allDays.find((d) => d.date === selectedDate) || occResult.allDays[occResult.allDays.length - 1];
                       return (
