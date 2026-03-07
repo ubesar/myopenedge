@@ -207,7 +207,7 @@ const Index = () => {
   const hasResults = result || momentumResult || occResult || gapFillResult;
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-background relative">
+    <div className="min-h-screen lg:h-screen flex flex-col lg:overflow-hidden overflow-y-auto bg-background relative">
       <AIChatAssistant analysisContext={analysisContext} />
       
       {/* Background Video */}
@@ -222,8 +222,7 @@ const Index = () => {
       <header className="relative z-10 border-b border-border/40 px-3 sm:px-6 py-2 backdrop-blur-sm shrink-0">
         <div className="flex items-center gap-2 sm:gap-3">
           <img src={logo} alt="MyOpenEdge" className="h-7 w-7 rounded-full object-cover" />
-          <h1 className="text-base font-bold text-foreground tracking-tight">MyOpenEdge</h1>
-          <span className="text-xs text-muted-foreground ml-1 hidden sm:inline">IB & Momentum Analytics</span>
+          <h1 className="text-sm sm:text-base font-bold text-foreground tracking-tight">MyOpenEdge</h1>
           {isActive ? (
             <div className="flex items-center gap-2 ml-1">
               <Badge variant="secondary" className="gap-1 text-[10px] bg-primary/15 text-primary border-primary/30">
