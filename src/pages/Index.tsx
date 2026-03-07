@@ -408,9 +408,9 @@ const Index = () => {
                     </button>
                   ))}
                 </div>
-                <div className="flex-1 min-h-0 grid grid-rows-2 gap-2">
+                <div className="flex-1 min-h-0 grid grid-rows-[auto_1fr] lg:grid-rows-2 gap-2">
                   {occResult.tfDirectionStats[occTf] && (
-                    <div className="grid grid-cols-2 gap-2 min-h-0">
+                    <div className="grid grid-cols-2 gap-2 min-h-[180px]">
                       <OCCChart
                         title="Candle 1 Bullish"
                         stats={occResult.tfDirectionStats[occTf].bullishFirst}
