@@ -287,9 +287,9 @@ const Index = () => {
 
             {/* IB Mode */}
             {activeMode === "ib" && result && (
-              <div className="lg:h-full grid grid-rows-[auto_1fr] lg:grid-rows-2 gap-2">
-                {/* Top: Two IB charts */}
-                <div className="grid grid-cols-2 gap-2 min-h-[180px]">
+              <div className="lg:h-full flex flex-col lg:grid lg:grid-rows-2 gap-2">
+                {/* Stat boxes - stack on mobile, side-by-side on desktop */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <IBChart
                     title="IB High Formed First"
                     total={result.highFirst.total}
@@ -346,9 +346,9 @@ const Index = () => {
                     </button>
                   ))}
                 </div>
-                <div className="flex-1 min-h-0 grid grid-rows-[auto_1fr] lg:grid-rows-2 gap-2">
+                <div className="flex-1 min-h-0 flex flex-col lg:grid lg:grid-rows-2 gap-2">
                   {momentumResult.tfStats[momentumTf] && (
-                    <div className="grid grid-cols-2 gap-2 min-h-[180px]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <MomentumChart
                         title="IB High Formed First"
                         total={momentumResult.tfStats[momentumTf].highFirst.total}
@@ -408,9 +408,9 @@ const Index = () => {
                     </button>
                   ))}
                 </div>
-                <div className="flex-1 min-h-0 grid grid-rows-[auto_1fr] lg:grid-rows-2 gap-2">
+                <div className="flex-1 min-h-0 flex flex-col lg:grid lg:grid-rows-2 gap-2">
                   {occResult.tfDirectionStats[occTf] && (
-                    <div className="grid grid-cols-2 gap-2 min-h-[180px]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <OCCChart
                         title="Candle 1 Bullish"
                         stats={occResult.tfDirectionStats[occTf].bullishFirst}
