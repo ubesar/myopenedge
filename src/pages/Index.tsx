@@ -287,9 +287,9 @@ const Index = () => {
 
             {/* IB Mode */}
             {activeMode === "ib" && result && (
-              <div className="h-full grid grid-rows-2 gap-2">
-                {/* Top: Two IB charts - 50% height */}
-                <div className="grid grid-cols-2 gap-2 min-h-0">
+              <div className="lg:h-full grid grid-rows-[auto_1fr] lg:grid-rows-2 gap-2">
+                {/* Top: Two IB charts */}
+                <div className="grid grid-cols-2 gap-2 min-h-[180px]">
                   <IBChart
                     title="IB High Formed First"
                     total={result.highFirst.total}
