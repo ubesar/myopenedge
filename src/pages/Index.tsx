@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, Crown, FileText } from "lucide-react";
+import { LogOut, Crown, FileText, Bot } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import logo from "@/assets/logo.png";
 import ControlPanel, { type AnalysisMode } from "@/components/ControlPanel";
@@ -244,6 +244,10 @@ const Index = () => {
             </Badge>
           )}
           <div className="ml-auto flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/daily-briefing")} className="gap-1 text-muted-foreground h-7 px-2">
+              <Bot className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Daily AI</span>
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => navigate("/docs")} className="gap-1 text-muted-foreground h-7 px-2">
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline text-xs">Docs</span>
