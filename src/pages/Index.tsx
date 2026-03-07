@@ -303,8 +303,8 @@ const Index = () => {
                     breakLow={result.lowFirst.breakLow}
                     inside={result.lowFirst.inside} />
                 </div>
-                {/* Bottom: Day chart - 50% height */}
-                <div className="min-h-[300px] lg:min-h-0 overflow-hidden">
+                {/* Bottom: Day chart - hidden on mobile */}
+                <div className="hidden lg:block min-h-0 overflow-hidden">
                   {result.allDays.length > 0 && (() => {
                     const dayData = result.allDays.find((d) => d.date === selectedDate) || result.allDays[result.allDays.length - 1];
                     return (
@@ -363,7 +363,7 @@ const Index = () => {
                         choppy={momentumResult.tfStats[momentumTf].lowFirst.choppy} />
                     </div>
                   )}
-                  <div className="min-h-[300px] lg:min-h-0 overflow-hidden">
+                  <div className="hidden lg:block min-h-0 overflow-hidden">
                     {momentumResult.allDays.length > 0 && (() => {
                       const dayData = momentumResult.allDays.find((d) => d.date === selectedDate) || momentumResult.allDays[momentumResult.allDays.length - 1];
                       const tfData = dayData.timeframes.find(t => t.tf === momentumTf);
@@ -421,7 +421,7 @@ const Index = () => {
                         color="red" />
                     </div>
                   )}
-                  <div className="min-h-[300px] lg:min-h-0 overflow-hidden">
+                  <div className="hidden lg:block min-h-0 overflow-hidden">
                     {occResult.allDays.length > 0 && (() => {
                       const dayData = occResult.allDays.find((d) => d.date === selectedDate) || occResult.allDays[occResult.allDays.length - 1];
                       return (
