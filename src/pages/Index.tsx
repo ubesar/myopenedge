@@ -304,7 +304,7 @@ const Index = () => {
                     inside={result.lowFirst.inside} />
                 </div>
                 {/* Bottom: Day chart - 50% height */}
-                <div className="min-h-0 overflow-hidden">
+                <div className="min-h-[300px] lg:min-h-0 overflow-hidden">
                   {result.allDays.length > 0 && (() => {
                     const dayData = result.allDays.find((d) => d.date === selectedDate) || result.allDays[result.allDays.length - 1];
                     return (
@@ -330,7 +330,7 @@ const Index = () => {
 
             {/* Momentum Mode */}
             {activeMode === "momentum" && momentumResult && (
-              <div className="h-full flex flex-col gap-2">
+              <div className="lg:h-full flex flex-col gap-2">
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-[10px] text-muted-foreground">TF:</span>
                   {["M5", "M15", "M30", "H1"].map((tf) => (
@@ -346,9 +346,9 @@ const Index = () => {
                     </button>
                   ))}
                 </div>
-                <div className="flex-1 min-h-0 grid grid-rows-2 gap-2">
+                <div className="flex-1 min-h-0 grid grid-rows-[auto_1fr] lg:grid-rows-2 gap-2">
                   {momentumResult.tfStats[momentumTf] && (
-                    <div className="grid grid-cols-2 gap-2 min-h-0">
+                    <div className="grid grid-cols-2 gap-2 min-h-[180px]">
                       <MomentumChart
                         title="IB High Formed First"
                         total={momentumResult.tfStats[momentumTf].highFirst.total}
@@ -363,7 +363,7 @@ const Index = () => {
                         choppy={momentumResult.tfStats[momentumTf].lowFirst.choppy} />
                     </div>
                   )}
-                  <div className="min-h-0 overflow-hidden">
+                  <div className="min-h-[300px] lg:min-h-0 overflow-hidden">
                     {momentumResult.allDays.length > 0 && (() => {
                       const dayData = momentumResult.allDays.find((d) => d.date === selectedDate) || momentumResult.allDays[momentumResult.allDays.length - 1];
                       const tfData = dayData.timeframes.find(t => t.tf === momentumTf);
@@ -392,7 +392,7 @@ const Index = () => {
 
             {/* OCC Mode */}
             {activeMode === "occ" && occResult && (
-              <div className="h-full flex flex-col gap-2">
+              <div className="lg:h-full flex flex-col gap-2">
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-[10px] text-muted-foreground">TF:</span>
                   {["M5", "M15", "M30", "H1"].map((tf) => (
