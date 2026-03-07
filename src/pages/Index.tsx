@@ -255,16 +255,16 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Main content - fills remaining height, no scroll */}
+      {/* Main content */}
       <main className="relative z-10 flex-1 min-h-0 p-2 sm:p-3">
         <div className="h-full grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] gap-2 sm:gap-3">
           {/* Left: Control Panel */}
-          <aside className="min-h-0 overflow-y-auto scrollbar-thin">
+          <aside className="min-h-0 lg:overflow-y-auto scrollbar-thin">
             <ControlPanel onRun={handleRun} loading={loading} isFree={isFree} />
           </aside>
 
           {/* Center: Results */}
-          <section className="min-h-0 overflow-y-auto scrollbar-thin">
+          <section className="min-h-[50vh] lg:min-h-0 lg:overflow-y-auto scrollbar-thin">
             {/* Empty state */}
             {!hasResults && !loading && (
               <div className="flex items-center justify-center h-full rounded-lg border border-dashed border-border/30">
