@@ -1,4 +1,10 @@
-project_id = "wzyjfwvhvuqstnmuhnpk"
+project_id = "pyffawxowidfqyhxjlvb"
 
-[functions.auto-analyze]
+[functions.create-invoice]
+verify_jwt = false
+
+[functions.nowpayments-ipn]
+verify_jwt = false
+
+[functions.expire-subscriptions]
 verify_jwt = false

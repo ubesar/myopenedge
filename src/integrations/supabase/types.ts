@@ -10,39 +10,460 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.4"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
-      auto_analyses: {
+      accounts: {
         Row: {
-          ai_insight: string | null
-          analysis_date: string
+          account_type: string | null
+          broker: string | null
+          consistency_enabled: boolean | null
+          consistency_percent: number | null
           created_at: string
-          ib_results: Json | null
+          currency: string | null
+          daily_loss_limit: number | null
+          daily_loss_limit_enabled: boolean | null
           id: string
-          momentum_results: Json | null
-          symbol: string
+          is_default: boolean | null
+          max_loss_limit: number | null
+          name: string
+          profit_target: number | null
+          starting_balance: number | null
+          status: string | null
+          timezone: string | null
+          user_id: string
         }
         Insert: {
-          ai_insight?: string | null
-          analysis_date: string
+          account_type?: string | null
+          broker?: string | null
+          consistency_enabled?: boolean | null
+          consistency_percent?: number | null
           created_at?: string
-          ib_results?: Json | null
+          currency?: string | null
+          daily_loss_limit?: number | null
+          daily_loss_limit_enabled?: boolean | null
           id?: string
-          momentum_results?: Json | null
-          symbol?: string
+          is_default?: boolean | null
+          max_loss_limit?: number | null
+          name: string
+          profit_target?: number | null
+          starting_balance?: number | null
+          status?: string | null
+          timezone?: string | null
+          user_id: string
         }
         Update: {
-          ai_insight?: string | null
-          analysis_date?: string
+          account_type?: string | null
+          broker?: string | null
+          consistency_enabled?: boolean | null
+          consistency_percent?: number | null
           created_at?: string
-          ib_results?: Json | null
+          currency?: string | null
+          daily_loss_limit?: number | null
+          daily_loss_limit_enabled?: boolean | null
           id?: string
-          momentum_results?: Json | null
-          symbol?: string
+          is_default?: boolean | null
+          max_loss_limit?: number | null
+          name?: string
+          profit_target?: number | null
+          starting_balance?: number | null
+          status?: string | null
+          timezone?: string | null
+          user_id?: string
         }
         Relationships: []
+      }
+      analysis_runs: {
+        Row: {
+          analysis_type: string
+          created_at: string
+          id: string
+          summary: Json
+          symbol: string
+          user_id: string
+        }
+        Insert: {
+          analysis_type: string
+          created_at?: string
+          id?: string
+          summary?: Json
+          symbol: string
+          user_id: string
+        }
+        Update: {
+          analysis_type?: string
+          created_at?: string
+          id?: string
+          summary?: Json
+          symbol?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      attachments: {
+        Row: {
+          created_at: string
+          file_name: string | null
+          file_type: string | null
+          file_url: string
+          id: string
+          trade_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name?: string | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          trade_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          trade_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attachments_trade_id_fkey"
+            columns: ["trade_id"]
+            isOneToOne: false
+            referencedRelation: "trades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_notes: {
+        Row: {
+          content: string | null
+          created_at: string
+          date: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          date: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      import_batches: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          errors: Json | null
+          file_name: string | null
+          file_url: string | null
+          id: string
+          rows_count: number | null
+          source: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          errors?: Json | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          rows_count?: number | null
+          source: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          errors?: Json | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          rows_count?: number | null
+          source?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      instruments: {
+        Row: {
+          created_at: string
+          id: string
+          name: string | null
+          point_value: number | null
+          symbol: string
+          tick_size: number | null
+          tick_value: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name?: string | null
+          point_value?: number | null
+          symbol: string
+          tick_size?: number | null
+          tick_value?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string | null
+          point_value?: number | null
+          symbol?: string
+          tick_size?: number | null
+          tick_value?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          created_at: string
+          id: string
+          invoice_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invoice_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invoice_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      playbooks: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          tag: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          tag?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          tag?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          default_risk: number | null
+          display_name: string | null
+          email: string | null
+          id: string
+          max_daily_risk: number | null
+          subscription_end_date: string | null
+          subscription_status: string
+          timezone: string | null
+          twelvedata_api_key: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          default_risk?: number | null
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          max_daily_risk?: number | null
+          subscription_end_date?: string | null
+          subscription_status?: string
+          timezone?: string | null
+          twelvedata_api_key?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          default_risk?: number | null
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          max_daily_risk?: number | null
+          subscription_end_date?: string | null
+          subscription_status?: string
+          timezone?: string | null
+          twelvedata_api_key?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      trades: {
+        Row: {
+          account_id: string | null
+          close_time: string
+          confidence_score: number | null
+          created_at: string
+          entry_price: number
+          exit_price: number
+          fees: number | null
+          grade: string | null
+          id: string
+          import_batch_id: string | null
+          instrument_id: string | null
+          notes: string | null
+          open_time: string
+          playbook: string | null
+          playbook_id: string | null
+          pnl_gross: number
+          pnl_net: number
+          qty: number
+          r_multiple: number | null
+          session: string | null
+          setup_tags: string[] | null
+          side: string
+          sl_ticks: number | null
+          source: string
+          symbol: string
+          tp_ticks: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          close_time: string
+          confidence_score?: number | null
+          created_at?: string
+          entry_price: number
+          exit_price: number
+          fees?: number | null
+          grade?: string | null
+          id?: string
+          import_batch_id?: string | null
+          instrument_id?: string | null
+          notes?: string | null
+          open_time: string
+          playbook?: string | null
+          playbook_id?: string | null
+          pnl_gross: number
+          pnl_net: number
+          qty: number
+          r_multiple?: number | null
+          session?: string | null
+          setup_tags?: string[] | null
+          side: string
+          sl_ticks?: number | null
+          source?: string
+          symbol: string
+          tp_ticks?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          close_time?: string
+          confidence_score?: number | null
+          created_at?: string
+          entry_price?: number
+          exit_price?: number
+          fees?: number | null
+          grade?: string | null
+          id?: string
+          import_batch_id?: string | null
+          instrument_id?: string | null
+          notes?: string | null
+          open_time?: string
+          playbook?: string | null
+          playbook_id?: string | null
+          pnl_gross?: number
+          pnl_net?: number
+          qty?: number
+          r_multiple?: number | null
+          session?: string | null
+          setup_tags?: string[] | null
+          side?: string
+          sl_ticks?: number | null
+          source?: string
+          symbol?: string
+          tp_ticks?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trades_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trades_import_batch_id_fkey"
+            columns: ["import_batch_id"]
+            isOneToOne: false
+            referencedRelation: "import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trades_instrument_id_fkey"
+            columns: ["instrument_id"]
+            isOneToOne: false
+            referencedRelation: "instruments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trades_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

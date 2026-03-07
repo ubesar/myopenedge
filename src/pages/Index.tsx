@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, Crown, FileText, Bot } from "lucide-react";
+import { LogOut, Crown, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import logo from "@/assets/logo.png";
 import ControlPanel, { type AnalysisMode } from "@/components/ControlPanel";
@@ -207,7 +207,7 @@ const Index = () => {
   const hasResults = result || momentumResult || occResult || gapFillResult;
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-background relative">
+    <div className="min-h-screen lg:h-screen flex flex-col lg:overflow-hidden overflow-y-auto bg-background relative">
       <AIChatAssistant analysisContext={analysisContext} />
       
       {/* Background Video */}
@@ -222,8 +222,7 @@ const Index = () => {
       <header className="relative z-10 border-b border-border/40 px-3 sm:px-6 py-2 backdrop-blur-sm shrink-0">
         <div className="flex items-center gap-2 sm:gap-3">
           <img src={logo} alt="MyOpenEdge" className="h-7 w-7 rounded-full object-cover" />
-          <h1 className="text-base font-bold text-foreground tracking-tight">MyOpenEdge</h1>
-          <span className="text-xs text-muted-foreground ml-1 hidden sm:inline">IB & Momentum Analytics</span>
+          <h1 className="text-sm sm:text-base font-bold text-foreground tracking-tight">MyOpenEdge</h1>
           {isActive ? (
             <div className="flex items-center gap-2 ml-1">
               <Badge variant="secondary" className="gap-1 text-[10px] bg-primary/15 text-primary border-primary/30">
@@ -244,10 +243,6 @@ const Index = () => {
             </Badge>
           )}
           <div className="ml-auto flex items-center gap-1">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/daily-briefing")} className="gap-1 text-muted-foreground h-7 px-2">
-              <Bot className="h-4 w-4" />
-              <span className="hidden sm:inline text-xs">Daily AI</span>
-            </Button>
             <Button variant="ghost" size="sm" onClick={() => navigate("/docs")} className="gap-1 text-muted-foreground h-7 px-2">
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline text-xs">Docs</span>
@@ -260,16 +255,16 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Main content - fills remaining height, no scroll */}
+      {/* Main content */}
       <main className="relative z-10 flex-1 min-h-0 p-2 sm:p-3">
         <div className="h-full grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] gap-2 sm:gap-3">
           {/* Left: Control Panel */}
-          <aside className="min-h-0 overflow-y-auto scrollbar-thin">
+          <aside className="min-h-0 lg:overflow-y-auto scrollbar-thin">
             <ControlPanel onRun={handleRun} loading={loading} isFree={isFree} />
           </aside>
 
           {/* Center: Results */}
-          <section className="min-h-0 overflow-y-auto scrollbar-thin">
+          <section className="min-h-[50vh] lg:min-h-0 lg:overflow-y-auto scrollbar-thin">
             {/* Empty state */}
             {!hasResults && !loading && (
               <div className="flex items-center justify-center h-full rounded-lg border border-dashed border-border/30">
@@ -292,9 +287,9 @@ const Index = () => {
 
             {/* IB Mode */}
             {activeMode === "ib" && result && (
-              <div className="h-full grid grid-rows-2 gap-2">
-                {/* Top: Two IB charts - 50% height */}
-                <div className="grid grid-cols-2 gap-2 min-h-0">
+              <div className="lg:h-full grid grid-rows-[auto_1fr] lg:grid-rows-2 gap-2">
+                {/* Top: Two IB charts */}
+                <div className="grid grid-cols-2 gap-2 min-h-[180px]">
                   <IBChart
                     title="IB High Formed First"
                     total={result.highFirst.total}
@@ -309,7 +304,7 @@ const Index = () => {
                     inside={result.lowFirst.inside} />
                 </div>
                 {/* Bottom: Day chart - 50% height */}
-                <div className="min-h-0 overflow-hidden">
+                <div className="min-h-[300px] lg:min-h-0 overflow-hidden">
                   {result.allDays.length > 0 && (() => {
                     const dayData = result.allDays.find((d) => d.date === selectedDate) || result.allDays[result.allDays.length - 1];
                     return (
@@ -335,7 +330,7 @@ const Index = () => {
 
             {/* Momentum Mode */}
             {activeMode === "momentum" && momentumResult && (
-              <div className="h-full flex flex-col gap-2">
+              <div className="lg:h-full flex flex-col gap-2">
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-[10px] text-muted-foreground">TF:</span>
                   {["M5", "M15", "M30", "H1"].map((tf) => (
@@ -351,9 +346,9 @@ const Index = () => {
                     </button>
                   ))}
                 </div>
-                <div className="flex-1 min-h-0 grid grid-rows-2 gap-2">
+                <div className="flex-1 min-h-0 grid grid-rows-[auto_1fr] lg:grid-rows-2 gap-2">
                   {momentumResult.tfStats[momentumTf] && (
-                    <div className="grid grid-cols-2 gap-2 min-h-0">
+                    <div className="grid grid-cols-2 gap-2 min-h-[180px]">
                       <MomentumChart
                         title="IB High Formed First"
                         total={momentumResult.tfStats[momentumTf].highFirst.total}
@@ -368,7 +363,7 @@ const Index = () => {
                         choppy={momentumResult.tfStats[momentumTf].lowFirst.choppy} />
                     </div>
                   )}
-                  <div className="min-h-0 overflow-hidden">
+                  <div className="min-h-[300px] lg:min-h-0 overflow-hidden">
                     {momentumResult.allDays.length > 0 && (() => {
                       const dayData = momentumResult.allDays.find((d) => d.date === selectedDate) || momentumResult.allDays[momentumResult.allDays.length - 1];
                       const tfData = dayData.timeframes.find(t => t.tf === momentumTf);
@@ -397,7 +392,7 @@ const Index = () => {
 
             {/* OCC Mode */}
             {activeMode === "occ" && occResult && (
-              <div className="h-full flex flex-col gap-2">
+              <div className="lg:h-full flex flex-col gap-2">
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-[10px] text-muted-foreground">TF:</span>
                   {["M5", "M15", "M30", "H1"].map((tf) => (
@@ -413,9 +408,9 @@ const Index = () => {
                     </button>
                   ))}
                 </div>
-                <div className="flex-1 min-h-0 grid grid-rows-2 gap-2">
+                <div className="flex-1 min-h-0 grid grid-rows-[auto_1fr] lg:grid-rows-2 gap-2">
                   {occResult.tfDirectionStats[occTf] && (
-                    <div className="grid grid-cols-2 gap-2 min-h-0">
+                    <div className="grid grid-cols-2 gap-2 min-h-[180px]">
                       <OCCChart
                         title="Candle 1 Bullish"
                         stats={occResult.tfDirectionStats[occTf].bullishFirst}
@@ -426,7 +421,7 @@ const Index = () => {
                         color="red" />
                     </div>
                   )}
-                  <div className="min-h-0 overflow-hidden">
+                  <div className="min-h-[300px] lg:min-h-0 overflow-hidden">
                     {occResult.allDays.length > 0 && (() => {
                       const dayData = occResult.allDays.find((d) => d.date === selectedDate) || occResult.allDays[occResult.allDays.length - 1];
                       return (

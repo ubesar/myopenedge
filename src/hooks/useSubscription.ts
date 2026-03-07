@@ -16,24 +16,24 @@ export function useSubscription() {
     }
 
     const fetchProfile = async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("profiles")
         .select("subscription_status, subscription_end_date")
         .eq("user_id", user.id)
         .single();
 
       if (data) {
-        const profile = data as { subscription_status: string | null; subscription_end_date: string | null };
+        // Check if subscription is expired
         if (
-          profile.subscription_status === "active" &&
-          profile.subscription_end_date &&
-          new Date(profile.subscription_end_date) < new Date()
+          data.subscription_status === "active" &&
+          data.subscription_end_date &&
+          new Date(data.subscription_end_date) < new Date()
         ) {
           setStatus("expired");
         } else {
-          setStatus(profile.subscription_status || "free");
+          setStatus(data.subscription_status || "free");
         }
-        setEndDate(profile.subscription_end_date);
+        setEndDate(data.subscription_end_date);
       }
       setLoading(false);
     };
