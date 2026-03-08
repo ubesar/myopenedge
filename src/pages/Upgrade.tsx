@@ -56,34 +56,7 @@ const Upgrade = () => {
   }
 
   const handleUpgrade = async () => {
-    setProcessing(true);
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-      if (!token) {
-        toast.error("Please sign in first");
-        return;
-      }
-
-      const res = await supabase.functions.invoke("create-invoice", {
-        body: { origin: window.location.origin },
-      });
-
-      if (res.error) {
-        throw new Error(res.error.message);
-      }
-
-      const { invoice_url } = res.data;
-      if (invoice_url) {
-        window.location.href = invoice_url;
-      } else {
-        throw new Error("No invoice URL returned");
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create payment");
-    } finally {
-      setProcessing(false);
-    }
+    toast.info("Payment integration coming soon. Stay tuned!");
   };
 
   return (
