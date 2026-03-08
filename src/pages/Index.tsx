@@ -85,7 +85,7 @@ const Index = () => {
       const values = parsed.data.values;
 
       if (mode === "ib") {
-        const a = analyzeIB(values as any, ibWindow, maxDays, subreport);
+        const a = analyzeIB(values as any, ibWindow, maxDays);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setResult(a);
         addRun(mode, ticker, { totalDays: a.totalDays, ibWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
