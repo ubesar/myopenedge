@@ -51,6 +51,7 @@ const Index = () => {
   const [occTimeframe, setOccTimeframe] = useState<OCCTimeframe>("M15");
   const [momentumTimeframe, setMomentumTimeframe] = useState<OCCTimeframe>("M15");
   const { runs: historyRuns, addRun, deleteRun } = useAnalysisHistory();
+  const { templates, saveTemplate, deleteTemplate, loading: templateLoading } = useTemplates();
 
   const isFree = !isActive;
 
