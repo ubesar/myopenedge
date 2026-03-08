@@ -79,7 +79,7 @@ const Index = () => {
 
   const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50") => {
     setLoading(true);
-    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null);
+    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null);
     setSymbol(ticker); setActiveMode(mode);
     try {
       const json = await fetchMarketData(ticker);
