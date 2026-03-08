@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import AppNavSidebar from "@/components/AppNavSidebar";
+import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface WatchlistItem {
   id: string;
@@ -34,13 +35,14 @@ interface QuoteData {
 const Watchlist = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [quotes, setQuotes] = useState<Record<string, QuoteData>>({});
   const [newSymbol, setNewSymbol] = useState("");
   const [loading, setLoading] = useState(true);
   const [addingSymbol, setAddingSymbol] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   const fetchItems = useCallback(async () => {
     if (!user) return;
@@ -145,11 +147,13 @@ const Watchlist = () => {
   };
 
   return (
-    <div className="h-screen w-full flex overflow-hidden bg-background">
-      <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+    <div className="h-screen w-full flex flex-col lg:flex-row overflow-hidden bg-background">
+      {isMobile && <MobileHeader onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)} title="watchlist" />}
+      {!isMobile && <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />}
+      {isMobile && <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />}
 
       <main className="flex-1 min-w-0 overflow-y-auto">
-        <div className="max-w-3xl mx-auto p-6 space-y-6">
+        <div className="max-w-3xl mx-auto p-4 lg:p-6 space-y-4 lg:space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>

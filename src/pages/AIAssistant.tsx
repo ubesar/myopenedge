@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Bot, Send, Loader2, TrendingUp, Target, Layers, BookOpen, Share2, Zap, BarChart3, Trash2, Lock, Crown } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import AppNavSidebar from "@/components/AppNavSidebar";
+import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
 import type { AnalysisContext, ConfluenceData } from "@/components/AIChatAssistant";
 
 type Message = { role: "user" | "assistant"; content: string };
@@ -17,10 +18,11 @@ const AIAssistant = () => {
   const { user, loading: authLoading } = useAuth();
   const { isActive, loading: subLoading } = useSubscription();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -136,8 +138,10 @@ const AIAssistant = () => {
 
   if (!isActive) {
     return (
-      <div className="flex h-screen bg-background overflow-hidden">
-        <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      <div className="flex flex-col lg:flex-row h-screen bg-background overflow-hidden">
+        {isMobile && <MobileHeader onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)} title="ai assistant" />}
+        {!isMobile && <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />}
+        {isMobile && <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />}
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="rounded-xl border border-primary/20 bg-card/80 backdrop-blur-sm p-10 text-center max-w-md">
             <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
@@ -196,8 +200,10 @@ const AIAssistant = () => {
   ];
 
   return (
-    <div className="h-screen w-full flex overflow-hidden bg-background">
-      <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+    <div className="h-screen w-full flex flex-col lg:flex-row overflow-hidden bg-background">
+      {isMobile && <MobileHeader onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)} title="ai assistant" />}
+      {!isMobile && <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />}
+      {isMobile && <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />}
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}

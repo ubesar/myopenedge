@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import AppNavSidebar from "@/components/AppNavSidebar";
+import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
 import TradingViewChart from "@/components/TradingViewChart";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const intervals = [
   { label: "1m", value: "1min" },
@@ -18,7 +19,8 @@ const popularSymbols = ["QQQ", "SPY", "AAPL", "TSLA", "NVDA", "AMZN", "MSFT", "M
 const Chart = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
+  const isMobile = useIsMobile();
+  const [collapsed, setCollapsed] = useState(true);
   const [symbol, setSymbol] = useState("QQQ");
   const [symbolInput, setSymbolInput] = useState("QQQ");
   const [interval, setInterval] = useState("5min");
@@ -38,14 +40,17 @@ const Chart = () => {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden" style={{ background: "#131722" }}>
-      <AppNavSidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
+    <div className="flex flex-col lg:flex-row h-screen w-full overflow-hidden" style={{ background: "#131722" }}>
+      {isMobile && (
+        <MobileHeader onMenuToggle={() => setCollapsed(!collapsed)} title="chart" />
+      )}
+      {!isMobile && <AppNavSidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />}
+      {isMobile && <AppNavSidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />}
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Toolbar */}
-        <div className="flex items-center gap-2 px-3 py-1.5 border-b" style={{ borderColor: "rgba(42,46,57,0.5)", background: "#1E222D" }}>
-          {/* Symbol input */}
-          <form onSubmit={handleSymbolSubmit} className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2 px-3 py-1.5 border-b overflow-x-auto" style={{ borderColor: "rgba(42,46,57,0.5)", background: "#1E222D" }}>
+          <form onSubmit={handleSymbolSubmit} className="flex items-center gap-1.5 shrink-0">
             <input
               type="text"
               value={symbolInput}
@@ -55,16 +60,13 @@ const Chart = () => {
             />
           </form>
 
-          {/* Quick symbols */}
-          <div className="flex items-center gap-0.5 ml-1">
+          <div className="flex items-center gap-0.5 ml-1 shrink-0">
             {popularSymbols.map((s) => (
               <button
                 key={s}
                 onClick={() => { setSymbol(s); setSymbolInput(s); }}
-                className={`px-2 py-1 text-[11px] rounded transition-colors ${
-                  symbol === s
-                    ? "text-white"
-                    : "text-[#787B86] hover:text-[#D1D4DC]"
+                className={`px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+                  symbol === s ? "text-white" : "text-gray-500 hover:text-gray-300"
                 }`}
                 style={symbol === s ? { background: "#2962FF" } : {}}
               >
@@ -73,35 +75,29 @@ const Chart = () => {
             ))}
           </div>
 
-          {/* Separator */}
-          <div className="w-px h-5 mx-2" style={{ background: "rgba(42,46,57,0.8)" }} />
+          <div className="h-5 w-px mx-1 shrink-0" style={{ background: "#2A2E39" }} />
 
-          {/* Interval buttons */}
-          <div className="flex items-center gap-0.5">
-            {intervals.map((tf) => (
+          <div className="flex items-center gap-0.5 shrink-0">
+            {intervals.map((i) => (
               <button
-                key={tf.value}
-                onClick={() => setInterval(tf.value)}
-                className={`px-2.5 py-1 text-[12px] rounded transition-colors ${
-                  interval === tf.value
-                    ? "text-white"
-                    : "text-[#787B86] hover:text-[#D1D4DC]"
+                key={i.value}
+                onClick={() => setInterval(i.value)}
+                className={`px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+                  interval === i.value ? "text-white" : "text-gray-500 hover:text-gray-300"
                 }`}
-                style={interval === tf.value ? { background: "#2962FF" } : {}}
+                style={interval === i.value ? { background: "#2962FF" } : {}}
               >
-                {tf.label}
+                {i.label}
               </button>
             ))}
           </div>
 
-          {/* Separator */}
-          <div className="w-px h-5 mx-2" style={{ background: "rgba(42,46,57,0.8)" }} />
+          <div className="h-5 w-px mx-1 shrink-0" style={{ background: "#2A2E39" }} />
 
-          {/* IB Toggle */}
           <button
             onClick={() => setShowIB(!showIB)}
-            className={`px-2.5 py-1 text-[12px] rounded transition-colors ${
-              showIB ? "text-white" : "text-[#787B86] hover:text-[#D1D4DC]"
+            className={`px-2 py-1 rounded text-[11px] font-medium transition-colors shrink-0 ${
+              showIB ? "text-white" : "text-gray-500 hover:text-gray-300"
             }`}
             style={showIB ? { background: "#2962FF" } : {}}
           >
@@ -109,8 +105,7 @@ const Chart = () => {
           </button>
         </div>
 
-        {/* Chart */}
-        <div className="flex-1 min-h-0 h-full">
+        <div className="flex-1 min-h-0">
           <TradingViewChart symbol={symbol} interval={interval} showIB={showIB} />
         </div>
       </div>

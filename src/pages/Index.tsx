@@ -3,15 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { Bookmark, Loader2 } from "lucide-react";
+import { Bookmark, Loader2, SlidersHorizontal, PanelRightOpen } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { type AnalysisMode } from "@/components/ControlPanel";
-import AppNavSidebar from "@/components/AppNavSidebar";
+import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
 import ParameterPanel, { type OCCTimeframe, type MomentumBodyRatio, type OCCBodyRatio } from "@/components/ParameterPanel";
 import RightSidebar from "@/components/RightSidebar";
 import { useTemplates, type TemplateParams } from "@/hooks/useTemplates";
 import ChartCard from "@/components/ChartCard";
 import { useAnalysisHistory, type AnalysisRun } from "@/hooks/useAnalysisHistory";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
@@ -40,6 +41,7 @@ const Index = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { isActive } = useSubscription();
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [momentumResult, setMomentumResult] = useState<MomentumResult | null>(null);
@@ -50,14 +52,17 @@ const Index = () => {
   const [symbol, setSymbol] = useState("");
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
   const [selectedRunId, setSelectedRunId] = useState<string | undefined>();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [occTimeframe, setOccTimeframe] = useState<OCCTimeframe>("M15");
   const [momentumTimeframe, setMomentumTimeframe] = useState<OCCTimeframe>("M15");
   const { runs: historyRuns, addRun, deleteRun } = useAnalysisHistory();
   const { templates, saveTemplate, deleteTemplate, loading: templateLoading } = useTemplates();
 
-  const isFree = !isActive;
+  // Mobile panels
+  const [showParams, setShowParams] = useState(false);
+  const [showRight, setShowRight] = useState(false);
 
+  const isFree = !isActive;
 
   if (!authLoading && !user) return <Navigate to="/auth" replace />;
 
@@ -68,7 +73,6 @@ const Index = () => {
   };
 
   const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50") => {
-    // Server-side enforcement: clamp free-tier parameters regardless of UI bypass
     let effectiveIbWindow = ibWindow;
     let effectiveMaxDays = maxDays;
     let effectiveMode = mode;
@@ -76,12 +80,14 @@ const Index = () => {
     if (isFree) {
       effectiveMaxDays = Math.min(maxDays, 7);
       effectiveIbWindow = Math.min(ibWindow, 60);
-      effectiveMode = "ib"; // Force IB mode for free users
+      effectiveMode = "ib";
     }
 
     setLoading(true);
     setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null);
     setSymbol(ticker); setActiveMode(effectiveMode);
+    // Close mobile param panel after run
+    if (isMobile) setShowParams(false);
     try {
       const json = await fetchMarketData(ticker);
       if (json.status === "error") { toast.error(json.message || "API error"); return; }
@@ -134,7 +140,6 @@ const Index = () => {
     ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "momentum" ? "ny open momentum continuation report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
     : "";
 
-  // Build chart data for each mode
   const renderCharts = () => {
     if (activeMode === "ib" && result) {
       const hf = result.highFirst;
@@ -195,7 +200,6 @@ const Index = () => {
       const lf = stats.lowFirst;
       return (
         <div className="space-y-4">
-          {/* TF toggle bar */}
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] text-muted-foreground font-medium mr-1">TF:</span>
             {(["M5", "M15", "M30", "H1"] as OCCTimeframe[]).map((t) => (
@@ -258,7 +262,6 @@ const Index = () => {
       if (!stats) return null;
       return (
         <div className="space-y-4">
-          {/* TF toggle bar */}
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] text-muted-foreground font-medium mr-1">TF:</span>
             {(["M5", "M15", "M30", "H1"] as OCCTimeframe[]).map((t) => (
@@ -353,30 +356,73 @@ const Index = () => {
   };
 
   return (
-    <div className="h-screen w-full flex overflow-hidden bg-background">
+    <div className="h-screen w-full flex flex-col lg:flex-row overflow-hidden bg-background">
 
-      {/* Column 1: Nav Sidebar */}
-      <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      {/* Mobile Header */}
+      {isMobile && (
+        <MobileHeader
+          onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+          title="reports"
+          actions={
+            <>
+              <button
+                onClick={() => setShowParams(!showParams)}
+                className={`p-1.5 rounded-lg transition-colors ${showParams ? "bg-primary text-primary-foreground" : "hover:bg-accent text-muted-foreground"}`}
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+              </button>
+            </>
+          }
+        />
+      )}
 
-      {/* Column 2: Parameter Panel */}
-      <ParameterPanel
-        onRun={handleRun}
-        loading={loading}
-        isFree={isFree}
-        occTimeframe={occTimeframe}
-        onOccTimeframeChange={setOccTimeframe}
-        templates={templates}
-        onSaveTemplate={saveTemplate}
-        onDeleteTemplate={deleteTemplate}
-        templateLoading={templateLoading}
-      />
+      {/* Column 1: Nav Sidebar — hidden on mobile, shown via drawer */}
+      {!isMobile && (
+        <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      )}
+      {isMobile && (
+        <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      )}
+
+      {/* Column 2: Parameter Panel — sheet on mobile */}
+      {isMobile ? (
+        showParams && (
+          <>
+            <div className="fixed inset-0 z-30 bg-black/50" onClick={() => setShowParams(false)} />
+            <div className="fixed inset-y-0 left-0 z-40 w-[280px] bg-surface border-r border-border shadow-2xl animate-in slide-in-from-left duration-200 overflow-y-auto">
+              <ParameterPanel
+                onRun={handleRun}
+                loading={loading}
+                isFree={isFree}
+                occTimeframe={occTimeframe}
+                onOccTimeframeChange={setOccTimeframe}
+                templates={templates}
+                onSaveTemplate={saveTemplate}
+                onDeleteTemplate={deleteTemplate}
+                templateLoading={templateLoading}
+              />
+            </div>
+          </>
+        )
+      ) : (
+        <ParameterPanel
+          onRun={handleRun}
+          loading={loading}
+          isFree={isFree}
+          occTimeframe={occTimeframe}
+          onOccTimeframeChange={setOccTimeframe}
+          templates={templates}
+          onSaveTemplate={saveTemplate}
+          onDeleteTemplate={deleteTemplate}
+          templateLoading={templateLoading}
+        />
+      )}
 
       {/* Column 3: Main Content */}
-      <main className="flex-1 min-w-0 overflow-y-auto p-6">
-        {/* Header row */}
+      <main className="flex-1 min-w-0 overflow-y-auto p-4 lg:p-6">
         {hasResults && (
-          <div className="flex items-center gap-3 mb-5">
-            <h2 className="text-[15px] text-foreground font-medium lowercase">{reportTitle}</h2>
+          <div className="flex items-center gap-3 mb-5 flex-wrap">
+            <h2 className="text-[14px] lg:text-[15px] text-foreground font-medium lowercase">{reportTitle}</h2>
             <button className="flex items-center gap-1.5 bg-primary text-primary-foreground rounded-lg px-3 py-1 text-[12px] font-medium">
               <Bookmark className="h-3.5 w-3.5" />
               bookmarked
@@ -384,18 +430,25 @@ const Index = () => {
           </div>
         )}
 
-        {/* Empty state */}
         {!hasResults && !loading && (
           <div className="flex items-center justify-center h-full">
-            <div className="border border-dashed border-border rounded-xl p-12 text-center max-w-md">
+            <div className="border border-dashed border-border rounded-xl p-8 lg:p-12 text-center max-w-md">
               <img src={logo} className="h-14 w-14 rounded-full object-cover mx-auto mb-4 opacity-40" alt="" />
               <p className="text-[13px] text-muted-foreground">select a report type and ticker to begin analysis</p>
               <p className="text-[11px] text-muted-foreground mt-1">powered by TwelveData API · 5000 bars intraday</p>
+              {isMobile && (
+                <button
+                  onClick={() => setShowParams(true)}
+                  className="mt-4 flex items-center gap-2 mx-auto bg-primary text-primary-foreground rounded-lg px-4 py-2 text-[12px] font-medium"
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                  open parameters
+                </button>
+              )}
             </div>
           </div>
         )}
 
-        {/* Loading */}
         {loading && (
           <div className="flex items-center justify-center h-full">
             <div className="text-center space-y-3">
@@ -405,12 +458,13 @@ const Index = () => {
           </div>
         )}
 
-        {/* Results — pure bar chart cards only */}
         {hasResults && !loading && renderCharts()}
       </main>
 
-      {/* Column 4: Right Sidebar */}
-      <RightSidebar templates={templates} activeMode={activeMode} />
+      {/* Column 4: Right Sidebar — hidden on mobile */}
+      {!isMobile && (
+        <RightSidebar templates={templates} activeMode={activeMode} />
+      )}
     </div>
   );
 };
