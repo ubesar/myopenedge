@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import AppNavSidebar from "@/components/AppNavSidebar";
+import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface WatchlistItem {
   id: string;
