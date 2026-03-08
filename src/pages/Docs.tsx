@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, BarChart3, Activity, Target, Zap, TrendingUp, CandlestickChart } from "lucide-react";
+import { ArrowLeft, BarChart3, Activity, Target, Zap, TrendingUp, CandlestickChart, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import logo from "@/assets/logo.png";
@@ -16,10 +16,13 @@ export default function Docs() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <img src={logo} alt="MyOpenEdge" className="h-8 w-8 rounded-full object-cover" />
-          <div>
+          <div className="flex-1">
             <h1 className="text-lg font-bold text-foreground">MyOpenEdge Documentation</h1>
             <p className="text-xs text-muted-foreground">v1.0 — Product Requirements</p>
           </div>
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => navigate("/terms_conditions")}>
+            <FileText className="h-3.5 w-3.5" /> Legal
+          </Button>
         </div>
       </header>
 
