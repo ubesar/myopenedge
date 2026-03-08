@@ -52,7 +52,7 @@ const IB_START = 9 * 60 + 30;
 const NOON = 12 * 60;
 const MARKET_CLOSE = 16 * 60;
 
-export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0): AnalysisResult {
+export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0, subreport: IBSubreport = "rejection"): AnalysisResult {
   const ibEnd = IB_START + ibWindowMinutes;
 
   const byDate = new Map<string, BarData[]>();
