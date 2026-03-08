@@ -124,7 +124,7 @@ const PinLock = ({ userId, onUnlock }: PinLockProps) => {
     const confirmStr = digits.join("");
 
     if (pinStr !== confirmStr) {
-      setError("PIN tidak cocok");
+      setError("PINs do not match");
       setConfirmPin([]);
       triggerShake();
       return;
