@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  ChevronLeft, ChevronRight, Rocket, Bot, BarChart3, CandlestickChart,
+  ChevronLeft, ChevronRight, Rocket, Bot, FlaskConical, CandlestickChart,
   TrendingUp, Cpu, Eye, Users,
   Crown, LogOut, Menu, X
 } from "lucide-react";
