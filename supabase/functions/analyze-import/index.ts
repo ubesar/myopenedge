@@ -67,6 +67,24 @@ serve(async (req) => {
     );
   }
 
+  // Rate limiting: 30 requests/hour for Pro users
+  const serviceClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+  const { data: allowed, error: rlError } = await serviceClient.rpc("check_rate_limit", {
+    _user_id: userId,
+    _endpoint: "analyze-import",
+    _max_requests: 30,
+  });
+
+  if (rlError || allowed === false) {
+    return new Response(
+      JSON.stringify({ error: "Rate limit exceeded. Please try again later.", retryAfterMinutes: 60 }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   try {
     const { trades, fileName } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
