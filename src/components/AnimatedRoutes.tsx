@@ -13,6 +13,7 @@ import Watchlist from "@/pages/Watchlist";
 import NotFound from "@/pages/NotFound";
 import TermsConditions from "@/pages/TermsConditions";
 import PaddleLiveGuide from "@/pages/PaddleLiveGuide";
+import ResetPassword from "@/pages/ResetPassword";
 
 const AnimatedRoutes = () => {
   const location = useLocation();
