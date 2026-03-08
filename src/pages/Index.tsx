@@ -73,7 +73,7 @@ const Index = () => {
     return data;
   };
 
-  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => {
+  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, subreport: IBSubreport = "rejection") => {
     setLoading(true);
     setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null);
     setSymbol(ticker); setActiveMode(mode);
