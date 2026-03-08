@@ -4,10 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { AnalysisMode } from "@/components/ControlPanel";
 
+export type OCCTimeframe = "M5" | "M15" | "M30" | "H1";
+
 interface ParameterPanelProps {
   onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => void;
   loading: boolean;
   isFree?: boolean;
+  occTimeframe?: OCCTimeframe;
+  onOccTimeframeChange?: (tf: OCCTimeframe) => void;
 }
 
 const IB_WINDOWS = [
@@ -27,7 +31,14 @@ const DAY_OPTIONS = [
   { value: "120", label: "Last 120 Days" },
 ];
 
-const ParameterPanel = ({ onRun, loading, isFree = false }: ParameterPanelProps) => {
+const TF_OPTIONS = [
+  { value: "M5", label: "M5 (5 min)" },
+  { value: "M15", label: "M15 (15 min)" },
+  { value: "M30", label: "M30 (30 min)" },
+  { value: "H1", label: "H1 (60 min)" },
+];
+
+const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", onOccTimeframeChange }: ParameterPanelProps) => {
   const [symbol, setSymbol] = useState("QQQ");
   const [ibWindow, setIbWindow] = useState(isFree ? "60" : "30");
   const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
@@ -127,6 +138,22 @@ const ParameterPanel = ({ onRun, loading, isFree = false }: ParameterPanelProps)
             </SelectContent>
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for more days</p>}
+
+           {mode === "occ" && (
+            <>
+              <p className="text-[11px] text-muted-foreground">timeframe</p>
+              <Select value={occTimeframe} onValueChange={(v) => onOccTimeframeChange?.(v as OCCTimeframe)}>
+                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TF_OPTIONS.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
+          )}
 
           {mode !== "occ" && mode !== "gapfill" && (
             <>

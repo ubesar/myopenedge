@@ -7,7 +7,7 @@ import { Bookmark, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { type AnalysisMode } from "@/components/ControlPanel";
 import AppNavSidebar from "@/components/AppNavSidebar";
-import ParameterPanel from "@/components/ParameterPanel";
+import ParameterPanel, { type OCCTimeframe } from "@/components/ParameterPanel";
 import RightSidebar from "@/components/RightSidebar";
 import ChartCard from "@/components/ChartCard";
 import { useAnalysisHistory, type AnalysisRun } from "@/hooks/useAnalysisHistory";
@@ -44,6 +44,7 @@ const Index = () => {
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
   const [selectedRunId, setSelectedRunId] = useState<string | undefined>();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [occTimeframe, setOccTimeframe] = useState<OCCTimeframe>("M15");
   const { runs: historyRuns, addRun, deleteRun } = useAnalysisHistory();
 
   const isFree = !isActive;
@@ -216,7 +217,7 @@ const Index = () => {
     }
 
     if (activeMode === "occ" && occResult) {
-      const tf = "M15";
+      const tf = occTimeframe;
       const stats = occResult.tfDirectionStats[tf];
       if (!stats) return null;
       return (
@@ -296,7 +297,7 @@ const Index = () => {
       <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
 
       {/* Column 2: Parameter Panel */}
-      <ParameterPanel onRun={handleRun} loading={loading} isFree={isFree} />
+      <ParameterPanel onRun={handleRun} loading={loading} isFree={isFree} occTimeframe={occTimeframe} onOccTimeframeChange={setOccTimeframe} />
 
       {/* Column 3: Main Content */}
       <main className="flex-1 min-w-0 overflow-y-auto p-6">
