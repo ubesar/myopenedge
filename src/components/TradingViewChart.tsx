@@ -372,7 +372,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
     };
 
     fetchData();
-  }, [symbol, interval, chartReady, showIB]);
+  }, [symbol, interval, chartReady, showIB, showMC]);
 
   const isPositive = ohlc ? ohlc.change >= 0 : true;
 
