@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import AppNavSidebar from "@/components/AppNavSidebar";
+import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
 import type { AnalysisContext, ConfluenceData } from "@/components/AIChatAssistant";
 
 type Message = { role: "user" | "assistant"; content: string };
