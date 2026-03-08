@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   ChevronLeft, ChevronRight, Rocket, Bot, BarChart3, CandlestickChart,
-  TrendingUp, Cpu, Eye, Calculator, Users, MessageCircle,
-  Gift, Crown, LogOut
+  TrendingUp, Cpu, Eye, Calculator, Users,
+  Crown, LogOut
 } from "lucide-react";
 import logo from "@/assets/logo.png";
+import iconX from "@/assets/icon-x.png";
+import iconYt from "@/assets/icon-yt.png";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface AppNavSidebarProps {
