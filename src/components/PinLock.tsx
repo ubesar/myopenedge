@@ -176,9 +176,9 @@ const PinLock = ({ userId, onUnlock }: PinLockProps) => {
   };
 
   const getSubtitle = () => {
-    if (isSettingUp && !isConfirming) return "Buat 4 digit PIN untuk keamanan extra";
-    if (isConfirming) return "Masukkan ulang PIN untuk konfirmasi";
-    return "Masukkan PIN untuk mengakses dashboard";
+    if (isSettingUp && !isConfirming) return "Create a 4-digit PIN for extra security";
+    if (isConfirming) return "Re-enter your PIN to confirm";
+    return "Enter your PIN to access the dashboard";
   };
 
   if (hasPin === null) {
