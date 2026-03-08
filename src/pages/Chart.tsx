@@ -23,7 +23,7 @@ const Chart = () => {
   const [symbolInput, setSymbolInput] = useState("QQQ");
   const [interval, setInterval] = useState("5min");
   const [showIB, setShowIB] = useState(true);
-  const [showMC, setShowMC] = useState(false);
+  const [showMC, setShowMC] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
