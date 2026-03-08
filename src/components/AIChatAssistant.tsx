@@ -187,8 +187,8 @@ const AIChatAssistant = forwardRef<AIChatAssistantHandle, AIChatAssistantProps>(
         label: "Export",
         icon: Share2,
         prompt: hasContext
-          ? `Buat 3 versi ringkasan untuk ${analysisContext?.symbol} ${analysisContext?.mode?.toUpperCase()} data:\n\n1. **JOURNAL** (markdown lengkap dengan semua detail)\n2. **SOCIAL** (format ringkas 2-3 baris untuk sharing di komunitas)\n3. **EA/JSON** (format JSON terstruktur untuk Expert Advisor)`
-          : "Jelaskan format export yang berguna untuk trading journal.",
+          ? `Create 3 summary versions for ${analysisContext?.symbol} ${analysisContext?.mode?.toUpperCase()} data:\n\n1. **JOURNAL** (full markdown with all details)\n2. **SOCIAL** (concise 2-3 line format for sharing in communities)\n3. **EA/JSON** (structured JSON format for Expert Advisor)`
+          : "Explain useful export formats for a trading journal.",
         show: true,
       },
       {
