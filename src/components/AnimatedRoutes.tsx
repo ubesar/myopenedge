@@ -11,6 +11,7 @@ import Algos from "@/pages/Algos";
 import Chart from "@/pages/Chart";
 import NotFound from "@/pages/NotFound";
 import TermsConditions from "@/pages/TermsConditions";
+import PaddleLiveGuide from "@/pages/PaddleLiveGuide";
 
 const AnimatedRoutes = () => {
   const location = useLocation();
