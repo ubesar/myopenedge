@@ -18,7 +18,7 @@ interface TradingViewChartProps {
   showIB?: boolean;
 }
 
-const TradingViewChart = ({ symbol, interval }: TradingViewChartProps) => {
+const TradingViewChart = ({ symbol, interval, showIB = false }: TradingViewChartProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
