@@ -128,7 +128,7 @@ const AIAssistant = () => {
       label: "Pre-Market Briefing",
       icon: Zap,
       description: "Generate a briefing for today's NY Open session",
-      prompt: "Buat pre-market briefing untuk sesi NY Open hari ini. Berdasarkan pola historis, analisis:\n1. Probabilitas Inside Bar berdasarkan pola kemarin\n2. Rata-rata IB range untuk hari ini\n3. Level kunci yang harus diperhatikan\n4. Rekomendasi strategi (trend vs range)",
+      prompt: "Create a pre-market briefing for today's NY Open session. Based on historical patterns, analyze:\n1. Inside Bar probability based on yesterday's pattern\n2. Average IB range for today\n3. Key levels to watch\n4. Strategy recommendation (trend vs range)",
     },
     {
       label: "Bias Analysis",
