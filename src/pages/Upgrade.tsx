@@ -131,10 +131,10 @@ const Upgrade = () => {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing…
                 </>
               ) : (
-                "Pay with Crypto"
+                "Subscribe Now"
               )}
             </Button>
-            <p className="text-xs text-muted-foreground mt-3">Powered by NOWPayments · Crypto payments</p>
+            <p className="text-xs text-muted-foreground mt-3">Secure checkout powered by Paddle</p>
           </div>
         </section>
       </div>

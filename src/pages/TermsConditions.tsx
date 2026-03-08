@@ -66,7 +66,7 @@ export default function TermsConditions() {
               <h2 className="text-xl font-bold">4. Subscription & Payments</h2>
               <ul className="list-disc list-inside text-muted-foreground space-y-2 leading-relaxed">
                 <li>The Service offers both free and paid subscription tiers.</li>
-                <li>Paid subscriptions are billed in cryptocurrency via NOWPayments.</li>
+                <li>Paid subscriptions are billed via Paddle, our merchant of record.</li>
                 <li>Subscription access begins upon confirmed payment and lasts for the specified period.</li>
                 <li>Prices are subject to change with reasonable notice to existing subscribers.</li>
               </ul>
@@ -136,7 +136,7 @@ export default function TermsConditions() {
               <h2 className="text-xl font-bold">2. Eligibility for Refund</h2>
               <p className="text-muted-foreground leading-relaxed">Refunds may be considered under the following circumstances:</p>
               <ul className="list-disc list-inside text-muted-foreground space-y-2 leading-relaxed">
-                <li>Duplicate or accidental payment (verified on-chain).</li>
+                <li>Duplicate or accidental payment (verified by Paddle).</li>
                 <li>Service was completely unavailable for a significant portion of the subscription period due to our fault.</li>
                 <li>Payment was confirmed but access was never granted due to a technical error on our end.</li>
               </ul>
@@ -153,16 +153,16 @@ export default function TermsConditions() {
             </section>
 
             <section className="space-y-3">
-              <h2 className="text-xl font-bold">4. Cryptocurrency Payments</h2>
+              <h2 className="text-xl font-bold">4. Payment Processing</h2>
               <p className="text-muted-foreground leading-relaxed">
-                All payments are processed in cryptocurrency. Due to the nature of blockchain transactions, refunds (if approved) will be issued in the same cryptocurrency at the current market rate, not the original payment value. Network fees for the refund transaction will be deducted from the refund amount.
+                All payments are processed via Paddle, our merchant of record. Refunds (if approved) will be issued to the original payment method. Processing times may vary depending on your payment provider.
               </p>
             </section>
 
             <section className="space-y-3">
               <h2 className="text-xl font-bold">5. How to Request a Refund</h2>
               <p className="text-muted-foreground leading-relaxed">
-                To request a refund, contact us at <span className="text-primary font-medium">support@myopenedge.com</span> within 7 days of payment with your transaction hash and account email. Refund requests are reviewed within 5 business days.
+                To request a refund, contact us at <span className="text-primary font-medium">support@myopenedge.com</span> within 7 days of payment with your order ID and account email. Refund requests are reviewed within 5 business days.
               </p>
             </section>
           </TabsContent>
@@ -174,7 +174,7 @@ export default function TermsConditions() {
               <ul className="list-disc list-inside text-muted-foreground space-y-2 leading-relaxed">
                 <li><strong>Account Information:</strong> Email address and display name provided during registration.</li>
                 <li><strong>Usage Data:</strong> Analysis parameters, saved templates, and trading journal entries you create within the Service.</li>
-                <li><strong>Payment Data:</strong> Cryptocurrency transaction hashes and invoice IDs processed through NOWPayments. We do not store wallet private keys.</li>
+                <li><strong>Payment Data:</strong> Order IDs and transaction records processed through Paddle. We do not store your full payment details — Paddle handles all payment data securely as our merchant of record.</li>
                 <li><strong>Technical Data:</strong> Browser type, device information, and IP address for security and analytics purposes.</li>
               </ul>
             </section>
@@ -201,7 +201,7 @@ export default function TermsConditions() {
               <h2 className="text-xl font-bold">4. Third-Party Services</h2>
               <p className="text-muted-foreground leading-relaxed">We use the following third-party services:</p>
               <ul className="list-disc list-inside text-muted-foreground space-y-2 leading-relaxed">
-                <li><strong>NOWPayments:</strong> For cryptocurrency payment processing.</li>
+                <li><strong>Paddle:</strong> For payment processing as our merchant of record.</li>
                 <li><strong>TwelveData:</strong> For market data used in analysis (data is fetched server-side).</li>
               </ul>
               <p className="text-muted-foreground leading-relaxed">
