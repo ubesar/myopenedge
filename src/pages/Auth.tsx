@@ -38,6 +38,32 @@ const Auth = () => {
     }
   };
 
+  const handleGuestLogin = async () => {
+    setGuestLoading(true);
+    try {
+      const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ensure-guest`;
+      const resp = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || "Failed to prepare guest account");
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      toast.error(err.message || "Guest login failed.");
+    } finally {
+      setGuestLoading(false);
+    }
+  };
+
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
