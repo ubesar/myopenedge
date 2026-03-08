@@ -23,6 +23,26 @@ const Upgrade = () => {
   const { user, loading: authLoading } = useAuth();
   const { isActive, loading: subLoading } = useSubscription();
   const [processing, setProcessing] = useState(false);
+  const [paddle, setPaddle] = useState<Paddle | null>(null);
+
+  useEffect(() => {
+    initializePaddle({
+      environment: "sandbox",
+      token: import.meta.env.VITE_PADDLE_CLIENT_TOKEN,
+      eventCallback: (event) => {
+        if (event.name === "checkout.completed") {
+          toast.success("Payment successful! Your Pro access is being activated...");
+          // Refresh subscription status after a short delay
+          setTimeout(() => window.location.reload(), 3000);
+        }
+        if (event.name === "checkout.closed") {
+          setProcessing(false);
+        }
+      },
+    }).then((p) => {
+      if (p) setPaddle(p);
+    });
+  }, []);
 
   if (!authLoading && !user) {
     navigate("/auth?redirect=/upgrade");
