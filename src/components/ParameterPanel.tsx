@@ -6,12 +6,11 @@ import type { AnalysisMode } from "@/components/ControlPanel";
 
 export type OCCTimeframe = "M5" | "M15" | "M30" | "H1";
 
-export type IBSubreport = "rejection" | "extension";
 export type MomentumBodyRatio = "0.40" | "0.50" | "0.60";
 export type OCCBodyRatio = "0.40" | "0.50" | "0.60";
 
 interface ParameterPanelProps {
-  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, subreport: IBSubreport, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio) => void;
+  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio) => void;
   loading: boolean;
   isFree?: boolean;
   occTimeframe?: OCCTimeframe;
@@ -47,14 +46,13 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
   const [ibWindow, setIbWindow] = useState(isFree ? "60" : "30");
   const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
   const [mode, setMode] = useState<AnalysisMode>("ib");
-  const [subreport, setSubreport] = useState<IBSubreport>("rejection");
   const [bodyRatio, setBodyRatio] = useState<MomentumBodyRatio>("0.50");
   const [occBodyRatio, setOccBodyRatio] = useState<OCCBodyRatio>("0.50");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!symbol.trim()) return;
-    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, subreport, bodyRatio, occBodyRatio);
+    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio);
   };
 
   return (
@@ -98,20 +96,6 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}
 
-          {mode === "ib" && (
-            <>
-              <p className="text-[11px] text-muted-foreground">subreport</p>
-              <Select value={subreport} onValueChange={(v) => setSubreport(v as IBSubreport)}>
-                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="rejection">by rejection</SelectItem>
-                  <SelectItem value="extension">by extension</SelectItem>
-                </SelectContent>
-              </Select>
-            </>
-          )}
 
           {mode === "momentum" && (
             <>

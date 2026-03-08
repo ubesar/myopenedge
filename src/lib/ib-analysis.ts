@@ -20,8 +20,6 @@ export interface LastDayData {
   breakout: "high" | "low" | "inside";
 }
 
-export type IBSubreport = "rejection" | "extension";
-
 interface DirectionStats {
   total: number;
   breakHigh: number;
@@ -33,7 +31,7 @@ export interface AnalysisResult {
   totalDays: number;
   insideDays: number;
   ibWindowMinutes: number;
-  subreport: IBSubreport;
+  
   highFirst: DirectionStats;
   lowFirst: DirectionStats;
   lastDay: LastDayData | null;
@@ -52,7 +50,7 @@ const IB_START = 9 * 60 + 30;
 const NOON = 12 * 60;
 const MARKET_CLOSE = 16 * 60;
 
-export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0, subreport: IBSubreport = "rejection"): AnalysisResult {
+export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0): AnalysisResult {
   const ibEnd = IB_START + ibWindowMinutes;
 
   const byDate = new Map<string, BarData[]>();
@@ -115,21 +113,11 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
 
     let breakout: "high" | "low" | "inside" = "inside";
 
-    if (subreport === "rejection") {
-      // By rejection: M5 candle CLOSE must break IB range
-      for (const bar of postIBBars) {
-        const c = parseFloat(bar.close);
-        if (c > ibHigh) { breakout = "high"; break; }
-        if (c < ibLow) { breakout = "low"; break; }
-      }
-    } else {
-      // By extension: any bar's wick (high/low) penetrates IB range
-      for (const bar of postIBBars) {
-        const h = parseFloat(bar.high);
-        const l = parseFloat(bar.low);
-        if (h > ibHigh) { breakout = "high"; break; }
-        if (l < ibLow) { breakout = "low"; break; }
-      }
+    // By rejection: M5 candle CLOSE must break IB range
+    for (const bar of postIBBars) {
+      const c = parseFloat(bar.close);
+      if (c > ibHigh) { breakout = "high"; break; }
+      if (c < ibLow) { breakout = "low"; break; }
     }
 
     allDayResults.push({ date, ibHigh, ibLow, highFirstFormed, breakout });
@@ -172,7 +160,7 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
     totalDays,
     insideDays,
     ibWindowMinutes,
-    subreport,
+    
     highFirst: {
       total: highFirstDays.length,
       breakHigh: highFirstDays.filter((r) => r.breakout === "high").length,
