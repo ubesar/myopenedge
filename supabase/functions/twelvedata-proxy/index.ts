@@ -72,6 +72,25 @@ Deno.serve(async (req) => {
 
   const isPro = profile?.subscription_status === "active" || profile?.subscription_status === "pro";
 
+  // Rate limiting: use service role client to call security definer function
+  const serviceClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+  const maxRequests = isPro ? 100 : 20; // per hour
+  const { data: allowed, error: rlError } = await serviceClient.rpc("check_rate_limit", {
+    _user_id: userId,
+    _endpoint: "twelvedata-proxy",
+    _max_requests: maxRequests,
+  });
+
+  if (rlError || allowed === false) {
+    return new Response(
+      JSON.stringify({ error: "Rate limit exceeded. Please try again later.", retryAfterMinutes: 60 }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   // Parse request - support both GET query params and POST JSON body
   let symbol: string | null = null;
   let interval = "5min";
