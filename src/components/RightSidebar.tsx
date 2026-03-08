@@ -1,15 +1,4 @@
 import { HelpCircle, PlayCircle, Plus, Filter, TrendingUp } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import type { AnalysisRun } from "@/hooks/useAnalysisHistory";
-import { Badge } from "@/components/ui/badge";
-import { Trash2 } from "lucide-react";
-
-interface RightSidebarProps {
-  runs: AnalysisRun[];
-  onDelete: (id: string) => void;
-  onSelect: (run: AnalysisRun) => void;
-  selectedId?: string;
-}
 
 const bookmarks = [
   "gap fill by size",
