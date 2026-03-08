@@ -6,6 +6,7 @@ const ALLOWED_ORIGINS = [
   "https://www.myopenedge.xyz",
   "https://myopenedge.lovable.app",
   "https://id-preview--c6b96b0f-b08c-4fc5-9451-f9469e1fb477.lovable.app",
+  "https://c6b96b0f-b08c-4fc5-9451-f9469e1fb477.lovableproject.com",
 ];
 
 function getCorsHeaders(origin: string | null) {
