@@ -92,14 +92,28 @@ function evaluateOCC(bars5min: CandleBar[], tfMinutes: number): OCCTimeframeResu
   const c1 = candles[0];
   const c2 = candles[1];
 
+  const c1Range = c1.high - c1.low;
+  const c1Body = Math.abs(c1.close - c1.open);
+  const c1BodyPct = c1Range > 0 ? c1Body / c1Range : 0;
+
+  const c2Range = c2.high - c2.low;
+  const c2Body = Math.abs(c2.close - c2.open);
+  const c2BodyPct = c2Range > 0 ? c2Body / c2Range : 0;
+
   const c1Bullish = c1.close > c1.open;
   const c1Bearish = c1.close < c1.open;
   const c2Bullish = c2.close > c2.open;
   const c2Bearish = c2.close < c2.open;
 
   let status: OCCStatus = "failed";
-  if (c1Bullish && c2Bullish) status = "bullish";
-  else if (c1Bearish && c2Bearish) status = "bearish";
+  // Bullish: C1 green with body ≥70%, C2 green with body ≥25%
+  if (c1Bullish && c1BodyPct >= 0.70 && c2Bullish && c2BodyPct >= 0.25) {
+    status = "bullish";
+  }
+  // Bearish: C1 red with body ≥70%, C2 red with body ≥25%
+  else if (c1Bearish && c1BodyPct >= 0.70 && c2Bearish && c2BodyPct >= 0.25) {
+    status = "bearish";
+  }
 
   return { tf, tfMinutes, candle1: c1, candle2: c2, status };
 }
