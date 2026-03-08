@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   ChevronLeft, ChevronRight, Rocket, Bot, BarChart3, CandlestickChart,
-  TrendingUp, Cpu, Eye, Calculator, BookOpen, Users, MessageCircle,
+  TrendingUp, Cpu, Eye, Calculator, Users, MessageCircle,
   Gift, Crown, LogOut
 } from "lucide-react";
 import logo from "@/assets/logo.png";
