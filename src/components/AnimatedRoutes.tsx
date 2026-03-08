@@ -9,6 +9,7 @@ import Docs from "@/pages/Docs";
 import AIAssistant from "@/pages/AIAssistant";
 import Algos from "@/pages/Algos";
 import Chart from "@/pages/Chart";
+import Watchlist from "@/pages/Watchlist";
 import NotFound from "@/pages/NotFound";
 import TermsConditions from "@/pages/TermsConditions";
 import PaddleLiveGuide from "@/pages/PaddleLiveGuide";
