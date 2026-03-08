@@ -140,7 +140,7 @@ const AIAssistant = () => {
       label: "Confluence Check",
       icon: Layers,
       description: "Cross-check multiple analysis modes",
-      prompt: "Jelaskan konsep confluence dalam trading dan bagaimana cara menggunakan MyOpenEdge untuk mengkonfirmasi sinyal dari IB, Momentum, OCC, dan Inside Bar secara bersamaan. Berikan contoh skenario high-probability vs conflicting signals.",
+      prompt: "Explain the concept of confluence in trading and how to use MyOpenEdge to confirm signals from IB, Momentum, OCC, and Inside Bar simultaneously. Provide examples of high-probability vs conflicting signal scenarios.",
     },
     {
       label: "Trading Plan",
