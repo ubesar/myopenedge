@@ -76,7 +76,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
     });
 
     const candleSeries = chart.addSeries(CandlestickSeries, {
-      upColor: "transparent",
+      upColor: "#26a69a",
       downColor: "#ef5350",
       borderDownColor: "#ef5350",
       borderUpColor: "#26a69a",
