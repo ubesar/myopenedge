@@ -11,7 +11,7 @@ import ParameterPanel, { type OCCTimeframe, type MomentumBodyRatio, type OCCBody
 import RightSidebar from "@/components/RightSidebar";
 import ChartCard from "@/components/ChartCard";
 import { useAnalysisHistory, type AnalysisRun } from "@/hooks/useAnalysisHistory";
-import AIChatAssistant, { type AnalysisContext, type ConfluenceData, type AIChatAssistantHandle } from "@/components/AIChatAssistant";
+
 import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
 import { analyzeOCC, type OCCResult } from "@/lib/occ-analysis";
