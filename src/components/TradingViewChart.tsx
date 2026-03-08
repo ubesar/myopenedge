@@ -318,9 +318,16 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
           }
 
           markers.sort((a, b) => (a.time as number) - (b.time as number));
-          seriesRef.current!.setMarkers(markers as any);
+          if (mcMarkersRef.current) {
+            mcMarkersRef.current.setMarkers([]);
+            mcMarkersRef.current = null;
+          }
+          mcMarkersRef.current = createSeriesMarkers(seriesRef.current!, markers as any);
         } else {
-          seriesRef.current!.setMarkers([]);
+          if (mcMarkersRef.current) {
+            mcMarkersRef.current.setMarkers([]);
+            mcMarkersRef.current = null;
+          }
         }
 
         // Set last bar as OHLC
