@@ -46,6 +46,7 @@ const Index = () => {
   const [occResult, setOccResult] = useState<OCCResult | null>(null);
   const [gapFillResult, setGapFillResult] = useState<GapFillResult | null>(null);
   const [insideBarResult, setInsideBarResult] = useState<InsideBarResult | null>(null);
+  const [outsideDayResult, setOutsideDayResult] = useState<OutsideDayResult | null>(null);
   const [symbol, setSymbol] = useState("");
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
   const [selectedRunId, setSelectedRunId] = useState<string | undefined>();
