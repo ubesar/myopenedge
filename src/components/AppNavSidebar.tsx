@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  ChevronLeft, ChevronRight, Rocket, Bot, BarChart3, CandlestickChart,
+  ChevronLeft, ChevronRight, Rocket, Bot, FlaskConical, CandlestickChart,
   TrendingUp, Cpu, Eye, Users,
   Crown, LogOut, Menu, X
 } from "lucide-react";
@@ -19,7 +19,7 @@ interface AppNavSidebarProps {
 const workspaceItems = [
   { icon: Rocket, label: "get started", href: "/docs" },
   { icon: Bot, label: "ai assistant", href: "/ai-assistant" },
-  { icon: BarChart3, label: "edge lab", href: "/app" },
+  { icon: FlaskConical, label: "edge lab", href: "/app" },
   { icon: CandlestickChart, label: "chart", href: "/chart" },
   { icon: TrendingUp, label: "whats in play", href: null },
   { icon: Cpu, label: "algos", href: "/algos" },
