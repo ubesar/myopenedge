@@ -108,6 +108,11 @@ const Index = () => {
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setGapFillResult(a);
         addRun(mode, ticker, { totalDays: a.totalDays, stats: a.stats });
+      } else if (mode === "insidebar") {
+        const a = analyzeInsideBar(values as any, maxDays);
+        if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+        setInsideBarResult(a);
+        addRun(mode, ticker, { totalDays: a.totalDays, insideBarPct: a.insideBarPct, breakoutPct: a.breakoutPct });
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch data");
