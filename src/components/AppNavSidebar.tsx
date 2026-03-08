@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   ChevronLeft, ChevronRight, Rocket, Bot, BarChart3, CandlestickChart,
-  TrendingUp, Cpu, Eye, Calculator, Users,
+  TrendingUp, Cpu, Eye, Users,
   Crown, LogOut
 } from "lucide-react";
 import logo from "@/assets/logo.png";
@@ -24,7 +24,6 @@ const workspaceItems = [
   { icon: TrendingUp, label: "whats in play", href: null },
   { icon: Cpu, label: "algos", href: "/algos" },
   { icon: Eye, label: "watchlist", href: null },
-  { icon: Calculator, label: "risk calculator", href: null },
 ];
 
 const communityItems = [
