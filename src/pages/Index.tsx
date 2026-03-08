@@ -16,6 +16,8 @@ import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
 import { analyzeOCC, type OCCResult } from "@/lib/occ-analysis";
 import { analyzeGapFill, type GapFillResult } from "@/lib/gapfill-analysis";
+import { analyzeInsideBar, type InsideBarResult } from "@/lib/insidebar-analysis";
+import InsideBarReport from "@/components/InsideBarReport";
 import { useSubscription } from "@/hooks/useSubscription";
 import { z } from "zod";
 
