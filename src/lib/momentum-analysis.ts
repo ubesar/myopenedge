@@ -124,7 +124,7 @@ function getOverallMomentum(timeframes: MomentumTFResult[]): "bullish" | "bearis
   return "choppy";
 }
 
-export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0): MomentumResult {
+export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0, bodyRatio: number = 0.50): MomentumResult {
   const ibEnd = IB_START + ibWindowMinutes;
 
   const byDate = new Map<string, BarData[]>();
