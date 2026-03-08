@@ -71,7 +71,7 @@ const IB_START = 9 * 60 + 30;
 const NOON = 12 * 60;
 const MARKET_CLOSE = 16 * 60;
 
-function detectSignals(candles: CandleBar[]): MomentumSignal[] {
+function detectSignals(candles: CandleBar[], bodyRatio: number = 0.50): MomentumSignal[] {
   const signals: MomentumSignal[] = [];
   let i = 0;
   while (i < candles.length - 1) {
@@ -89,7 +89,7 @@ function detectSignals(candles: CandleBar[]): MomentumSignal[] {
 
     if (
       prevRange > 0 && currRange > 0 &&
-      prevBody / prevRange >= 0.50 &&
+      prevBody / prevRange >= bodyRatio &&
       currBody / currRange >= 0.30 &&
       sameColor
     ) {
