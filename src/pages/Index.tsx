@@ -45,6 +45,7 @@ const Index = () => {
   const [selectedRunId, setSelectedRunId] = useState<string | undefined>();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [occTimeframe, setOccTimeframe] = useState<OCCTimeframe>("M15");
+  const [momentumTimeframe, setMomentumTimeframe] = useState<OCCTimeframe>("M15");
   const { runs: historyRuns, addRun, deleteRun } = useAnalysisHistory();
 
   const isFree = !isActive;
@@ -171,47 +172,66 @@ const Index = () => {
     }
 
     if (activeMode === "momentum" && momentumResult) {
-      const tf = "M15";
+      const tf = momentumTimeframe;
       const stats = momentumResult.tfStats[tf];
       if (!stats) return null;
       const hf = stats.highFirst;
       const lf = stats.lowFirst;
       return (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <ChartCard
-            title="high formed first"
-            subtitle={`${symbol} · momentum · ${tf}`}
-            totalDays={hf.total}
-            bars={[
-              { name: "bullish", value: hf.total > 0 ? (hf.bullish / hf.total * 100) : 0, color: "primary" },
-              { name: "bearish", value: hf.total > 0 ? (hf.bearish / hf.total * 100) : 0, color: "muted" },
-            ]}
-            legendItems={[
-              { label: "bullish", color: "hsl(217,91%,60%)" },
-              { label: "bearish", color: "hsl(240,5%,30%)" },
-            ]}
-            settingsGrid={[
-              { label: "candle timeframe", value: tf },
-              { label: "session", value: "NY open" },
-            ]}
-          />
-          <ChartCard
-            title="low formed first"
-            subtitle={`${symbol} · momentum · ${tf}`}
-            totalDays={lf.total}
-            bars={[
-              { name: "bullish", value: lf.total > 0 ? (lf.bullish / lf.total * 100) : 0, color: "primary" },
-              { name: "bearish", value: lf.total > 0 ? (lf.bearish / lf.total * 100) : 0, color: "muted" },
-            ]}
-            legendItems={[
-              { label: "bullish", color: "hsl(217,91%,60%)" },
-              { label: "bearish", color: "hsl(240,5%,30%)" },
-            ]}
-            settingsGrid={[
-              { label: "candle timeframe", value: tf },
-              { label: "session", value: "NY open" },
-            ]}
-          />
+        <div className="space-y-4">
+          {/* TF toggle bar */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] text-muted-foreground font-medium mr-1">TF:</span>
+            {(["M5", "M15", "M30", "H1"] as OCCTimeframe[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => setMomentumTimeframe(t)}
+                className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+                  momentumTimeframe === t
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <ChartCard
+              title="high formed first"
+              subtitle={`${symbol} · momentum · ${tf}`}
+              totalDays={hf.total}
+              bars={[
+                { name: "bullish", value: hf.total > 0 ? (hf.bullish / hf.total * 100) : 0, color: "primary" },
+                { name: "bearish", value: hf.total > 0 ? (hf.bearish / hf.total * 100) : 0, color: "muted" },
+              ]}
+              legendItems={[
+                { label: "bullish", color: "hsl(217,91%,60%)" },
+                { label: "bearish", color: "hsl(240,5%,30%)" },
+              ]}
+              settingsGrid={[
+                { label: "candle timeframe", value: tf },
+                { label: "session", value: "NY open" },
+              ]}
+            />
+            <ChartCard
+              title="low formed first"
+              subtitle={`${symbol} · momentum · ${tf}`}
+              totalDays={lf.total}
+              bars={[
+                { name: "bullish", value: lf.total > 0 ? (lf.bullish / lf.total * 100) : 0, color: "primary" },
+                { name: "bearish", value: lf.total > 0 ? (lf.bearish / lf.total * 100) : 0, color: "muted" },
+              ]}
+              legendItems={[
+                { label: "bullish", color: "hsl(217,91%,60%)" },
+                { label: "bearish", color: "hsl(240,5%,30%)" },
+              ]}
+              settingsGrid={[
+                { label: "candle timeframe", value: tf },
+                { label: "session", value: "NY open" },
+              ]}
+            />
+          </div>
         </div>
       );
     }
