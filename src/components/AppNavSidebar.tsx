@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  ChevronLeft, ChevronRight, Rocket, Bot, BarChart3, Search,
+  ChevronLeft, ChevronRight, Rocket, Bot, BarChart3, CandlestickChart,
   TrendingUp, Cpu, Eye, Calculator, BookOpen, Users, MessageCircle,
   Gift, Crown, LogOut
 } from "lucide-react";
