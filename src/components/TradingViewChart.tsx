@@ -212,7 +212,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false }: TradingViewChart
           }
 
           const toTs = (dt: string) =>
-            Math.floor(new Date(dt.replace(" ", "T") + "-04:00").getTime() / 1000) as Time;
+            Math.floor(new Date(dt.replace(" ", "T") + "+00:00").getTime() / 1000) as Time;
 
           const lineBaseOpts = { priceScaleId: "right", lastValueVisible: false, crosshairMarkerVisible: false, priceLineVisible: false };
 
