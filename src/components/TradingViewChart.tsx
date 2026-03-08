@@ -71,7 +71,7 @@ const TradingViewChart = ({ symbol, interval }: TradingViewChartProps) => {
       handleScroll: { vertTouchDrag: false },
     });
 
-    const candleSeries = chart.addCandlestickSeries({
+    const candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: "#26a69a",
       downColor: "#ef5350",
       borderDownColor: "#ef5350",
