@@ -157,6 +157,7 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="occ">opening candle continuation</SelectItem>}
               {!isFree && <SelectItem value="gapfill">gap fill statistics</SelectItem>}
               {!isFree && <SelectItem value="insidebar">inside bar</SelectItem>}
+              {!isFree && <SelectItem value="outsideday">outside day</SelectItem>}
             </SelectContent>
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}
