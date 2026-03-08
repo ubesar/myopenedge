@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  ChevronLeft, ChevronRight, Rocket, Bot, BarChart3, Search,
+  ChevronLeft, ChevronRight, Rocket, Bot, BarChart3, CandlestickChart,
   TrendingUp, Cpu, Eye, Calculator, BookOpen, Users, MessageCircle,
   Gift, Crown, LogOut
 } from "lucide-react";
@@ -17,7 +17,7 @@ const workspaceItems = [
   { icon: Rocket, label: "get started", href: "/docs" },
   { icon: Bot, label: "ai assistant", href: "/ai-assistant" },
   { icon: BarChart3, label: "reports", href: "/app" },
-  { icon: Search, label: "screener", href: null },
+  { icon: CandlestickChart, label: "chart", href: "/chart" },
   { icon: TrendingUp, label: "whats in play", href: null },
   { icon: Cpu, label: "algos", href: "/algos" },
   { icon: Eye, label: "watchlist", href: null },
