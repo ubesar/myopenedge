@@ -115,7 +115,7 @@ function getOverallBias(timeframes: OCCTimeframeResult[]): OCCStatus {
   return "failed";
 }
 
-export function analyzeOCC(bars: BarData[], maxDays: number = 0): OCCResult {
+export function analyzeOCC(bars: BarData[], maxDays: number = 0, bodyRatio: number = 0.50): OCCResult {
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
     const date = bar.datetime.split(" ")[0];
