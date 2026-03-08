@@ -160,10 +160,14 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
         }
 
         // Use TwelveData proxy edge function
+        const synthetic = SYNTHETIC_SYMBOLS[symbol];
+        const fetchSymbol = synthetic ? synthetic.source : symbol;
+        const multiplier = synthetic ? synthetic.multiplier : 1;
+
         const baseUrl = import.meta.env.VITE_SUPABASE_URL;
         const outputSize = interval === "1day" ? 365 : 390;
         const res = await fetch(
-          `${baseUrl}/functions/v1/twelvedata-proxy?symbol=${symbol}&interval=${interval}&outputsize=${outputSize}`,
+          `${baseUrl}/functions/v1/twelvedata-proxy?symbol=${fetchSymbol}&interval=${interval}&outputsize=${outputSize}`,
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
 
