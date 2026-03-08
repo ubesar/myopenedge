@@ -80,7 +80,7 @@ const Index = () => {
     }
 
     setLoading(true);
-    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null);
+    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null);
     setSymbol(ticker); setActiveMode(effectiveMode);
     try {
       const json = await fetchMarketData(ticker);
