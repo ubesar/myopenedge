@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   ChevronLeft, ChevronRight, Rocket, Bot, BarChart3, Search,
   TrendingUp, Cpu, Eye, Calculator, BookOpen, Users, MessageCircle,
@@ -15,8 +15,8 @@ interface AppNavSidebarProps {
 
 const workspaceItems = [
   { icon: Rocket, label: "get started", href: "/docs" },
-  { icon: Bot, label: "ai assistant", href: null },
-  { icon: BarChart3, label: "reports", href: "/app", active: true },
+  { icon: Bot, label: "ai assistant", href: "/ai-assistant" },
+  { icon: BarChart3, label: "reports", href: "/app" },
   { icon: Search, label: "screener", href: null },
   { icon: TrendingUp, label: "whats in play", href: null },
   { icon: Cpu, label: "algos", href: null },
@@ -33,6 +33,7 @@ const communityItems = [
 
 const AppNavSidebar = ({ collapsed, onToggle }: AppNavSidebarProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signOut } = useAuth();
 
   return (
@@ -66,11 +67,11 @@ const AppNavSidebar = ({ collapsed, onToggle }: AppNavSidebarProps) => {
                 key={item.label}
                 onClick={() => item.href && navigate(item.href)}
                 className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] transition-colors ${
-                  item.active
+                  item.href && location.pathname === item.href
                     ? "bg-primary text-primary-foreground"
                     : "text-sidebar-foreground hover:text-foreground hover:bg-secondary"
-                } ${!item.href && !item.active ? "opacity-50 cursor-not-allowed" : ""}`}
-                disabled={!item.href && !item.active}
+                } ${!item.href ? "opacity-50 cursor-not-allowed" : ""}`}
+                disabled={!item.href}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
                 {!collapsed && <span>{item.label}</span>}

@@ -6,6 +6,7 @@ import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
 import Upgrade from "@/pages/Upgrade";
 import Docs from "@/pages/Docs";
+import AIAssistant from "@/pages/AIAssistant";
 import NotFound from "@/pages/NotFound";
 
 const AnimatedRoutes = () => {
@@ -17,6 +18,7 @@ const AnimatedRoutes = () => {
         <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
         <Route path="/app" element={<PageTransition><Index /></PageTransition>} />
+        <Route path="/ai-assistant" element={<PageTransition><AIAssistant /></PageTransition>} />
         <Route path="/upgrade" element={<PageTransition><Upgrade /></PageTransition>} />
         <Route path="/docs" element={<PageTransition><Docs /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
