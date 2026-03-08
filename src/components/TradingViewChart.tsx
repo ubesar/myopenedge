@@ -3,6 +3,8 @@ import {
   createChart,
   ColorType,
   CrosshairMode,
+  CandlestickSeries,
+  HistogramSeries,
   type IChartApi,
   type ISeriesApi,
   type CandlestickData,
