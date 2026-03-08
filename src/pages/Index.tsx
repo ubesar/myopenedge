@@ -387,7 +387,7 @@ const Index = () => {
       </main>
 
       {/* Column 4: Right Sidebar */}
-      <RightSidebar />
+      <RightSidebar templates={templates} activeMode={activeMode} />
     </div>
   );
 };
