@@ -31,7 +31,7 @@ export interface AnalysisResult {
   totalDays: number;
   insideDays: number;
   ibWindowMinutes: number;
-  subreport: IBSubreport;
+  
   highFirst: DirectionStats;
   lowFirst: DirectionStats;
   lastDay: LastDayData | null;
