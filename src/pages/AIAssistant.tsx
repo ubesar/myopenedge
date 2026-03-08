@@ -152,7 +152,7 @@ const AIAssistant = () => {
       label: "Journal Template",
       icon: BookOpen,
       description: "Format trades for your journal",
-      prompt: "Tunjukkan template trading journal yang ideal untuk scalper yang menggunakan MyOpenEdge. Sertakan format untuk:\n- Setup entry (ticker, bias, statistical edge)\n- Execution (entry, SL, TP, R:R)\n- Post-trade review (grade, lesson learned)\n- Weekly summary template",
+      prompt: "Show me an ideal trading journal template for scalpers using MyOpenEdge. Include formats for:\n- Setup entry (ticker, bias, statistical edge)\n- Execution (entry, SL, TP, R:R)\n- Post-trade review (grade, lesson learned)\n- Weekly summary template",
     },
     {
       label: "Export Summary",
