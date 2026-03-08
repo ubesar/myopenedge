@@ -107,26 +107,36 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
 
     const highFirstFormed = parseDateTime(firstHighTouch).getTime() < parseDateTime(firstLowTouch).getTime();
 
-    // Post-IB breakout: IB end to 12:00, using M15 CLOSE
+    // Post-IB breakout: IB end to 12:00
     const postIBBars = dayBars.filter((b) => {
       const m = getTimeMinutes(parseDateTime(b.datetime));
       return m >= ibEnd && m < NOON;
     });
 
-    const postIBCandles: CandleBar[] = postIBBars.map(b => ({
-      time: b.datetime.split(" ")[1].slice(0, 5),
-      open: parseFloat(b.open),
-      high: parseFloat(b.high),
-      low: parseFloat(b.low),
-      close: parseFloat(b.close),
-    }));
-
-    const m15Candles = aggregateToM15(postIBCandles);
-
     let breakout: "high" | "low" | "inside" = "inside";
-    for (const candle of m15Candles) {
-      if (candle.close > ibHigh) { breakout = "high"; break; }
-      if (candle.close < ibLow) { breakout = "low"; break; }
+
+    if (subreport === "rejection") {
+      // By rejection: M15 candle CLOSE must break IB range
+      const postIBCandles: CandleBar[] = postIBBars.map(b => ({
+        time: b.datetime.split(" ")[1].slice(0, 5),
+        open: parseFloat(b.open),
+        high: parseFloat(b.high),
+        low: parseFloat(b.low),
+        close: parseFloat(b.close),
+      }));
+      const m15Candles = aggregateToM15(postIBCandles);
+      for (const candle of m15Candles) {
+        if (candle.close > ibHigh) { breakout = "high"; break; }
+        if (candle.close < ibLow) { breakout = "low"; break; }
+      }
+    } else {
+      // By extension: any bar's wick (high/low) penetrates IB range
+      for (const bar of postIBBars) {
+        const h = parseFloat(bar.high);
+        const l = parseFloat(bar.low);
+        if (h > ibHigh) { breakout = "high"; break; }
+        if (l < ibLow) { breakout = "low"; break; }
+      }
     }
 
     allDayResults.push({ date, ibHigh, ibLow, highFirstFormed, breakout });
