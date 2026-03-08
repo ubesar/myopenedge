@@ -155,8 +155,8 @@ const AIChatAssistant = forwardRef<AIChatAssistantHandle, AIChatAssistantProps>(
         label: "Auto Summary",
         icon: Zap,
         prompt: hasContext
-          ? `Berikan ringkasan singkat 3-5 kalimat dari data ${analysisContext?.mode?.toUpperCase()} untuk ${analysisContext?.symbol}. Sertakan: bias arah, confidence level, dan key levels.`
-          : "Jelaskan cara membaca ringkasan analisis IB.",
+          ? `Provide a brief 3-5 sentence summary of the ${analysisContext?.mode?.toUpperCase()} data for ${analysisContext?.symbol}. Include: directional bias, confidence level, and key levels.`
+          : "Explain how to read an IB analysis summary.",
         show: true,
       },
       {
