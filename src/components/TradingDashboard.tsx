@@ -16,7 +16,8 @@ import {
   Lock,
   Settings2,
   ChevronUp,
-  Save
+  Save,
+  Download
 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -282,7 +283,16 @@ const TradingDashboard = ({ user, onLock }: { user: User; onLock?: () => void })
               <span className="text-[11px] text-muted-foreground leading-none mt-0.5 hidden sm:block">{user.email}</span>
             </div>
           </div>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-3">
+            <a
+              href="/downloads/pasticuanlagi.ex5"
+              download="pasticuanlagi.ex5"
+              className="flex items-center gap-1.5 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors px-2.5 py-1.5 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10"
+              title="Download EA"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Download EA</span>
+            </a>
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <Clock className="w-3.5 h-3.5" />
               <span className="font-mono text-[11px] tabular-nums text-foreground/70">{nyTime}</span>
