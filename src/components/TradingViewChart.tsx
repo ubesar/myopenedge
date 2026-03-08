@@ -15,6 +15,7 @@ import {
 interface TradingViewChartProps {
   symbol: string;
   interval: string;
+  showIB?: boolean;
 }
 
 const TradingViewChart = ({ symbol, interval }: TradingViewChartProps) => {
