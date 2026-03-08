@@ -36,8 +36,27 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Parse request
-  const { symbol } = await req.json();
+  // Parse request - support both GET query params and POST JSON body
+  let symbol: string | null = null;
+  let interval = "5min";
+  let outputsize = "5000";
+
+  if (req.method === "GET") {
+    const url = new URL(req.url);
+    symbol = url.searchParams.get("symbol");
+    interval = url.searchParams.get("interval") || "5min";
+    outputsize = url.searchParams.get("outputsize") || "5000";
+  } else {
+    try {
+      const body = await req.json();
+      symbol = body.symbol;
+      interval = body.interval || "5min";
+      outputsize = body.outputsize || "5000";
+    } catch {
+      // Fall through to validation
+    }
+  }
+
   if (!symbol || typeof symbol !== "string") {
     return new Response(JSON.stringify({ error: "Symbol is required" }), {
       status: 400,
@@ -62,7 +81,7 @@ Deno.serve(async (req) => {
   // Try each key with auto-rotation
   for (let i = 0; i < keys.length; i++) {
     try {
-      const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=5min&outputsize=5000&apikey=${encodeURIComponent(keys[i])}&format=JSON&timezone=America/New_York`;
+      const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&outputsize=${encodeURIComponent(outputsize)}&apikey=${encodeURIComponent(keys[i])}&format=JSON&timezone=America/New_York`;
       const res = await fetch(url);
       const json = await res.json();
 
