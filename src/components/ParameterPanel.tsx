@@ -111,6 +111,22 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
             </>
           )}
 
+          {mode === "momentum" && (
+            <>
+              <p className="text-[11px] text-muted-foreground">subreport (candle 1 body)</p>
+              <Select value={bodyRatio} onValueChange={(v) => setBodyRatio(v as MomentumBodyRatio)}>
+                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0.40">body ≥ 40%</SelectItem>
+                  <SelectItem value="0.50">body ≥ 50%</SelectItem>
+                  <SelectItem value="0.60">body ≥ 60%</SelectItem>
+                </SelectContent>
+              </Select>
+            </>
+          )}
+
           <button
             type="button"
             className="w-full flex items-center justify-center gap-1.5 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg px-3 py-2 text-[13px] transition-colors"
