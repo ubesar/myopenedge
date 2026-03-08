@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.expire-subscriptions]
 verify_jwt = false
+
+[functions.get-command]
+verify_jwt = false
+
+[functions.reset-command]
+verify_jwt = false
