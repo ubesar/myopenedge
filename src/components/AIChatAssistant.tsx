@@ -179,8 +179,8 @@ const AIChatAssistant = forwardRef<AIChatAssistantHandle, AIChatAssistantProps>(
         label: "Journal Entry",
         icon: BookOpen,
         prompt: hasContext
-          ? `Format data analisis ${analysisContext?.mode?.toUpperCase()} untuk ${analysisContext?.symbol} ke dalam template trading journal standar dengan format:\n- Tanggal & Ticker\n- Bias: (Long/Short/Neutral)\n- Statistical Edge: (persentase)\n- Setup Grade: (A/B/C berdasarkan probabilitas)\n- Key Levels\n- Risk Management Notes`
-          : "Tunjukkan template trading journal yang ideal untuk scalper.",
+          ? `Format the ${analysisContext?.mode?.toUpperCase()} analysis data for ${analysisContext?.symbol} into a standard trading journal template with format:\n- Date & Ticker\n- Bias: (Long/Short/Neutral)\n- Statistical Edge: (percentage)\n- Setup Grade: (A/B/C based on probability)\n- Key Levels\n- Risk Management Notes`
+          : "Show me an ideal trading journal template for scalpers.",
         show: true,
       },
       {
