@@ -23,7 +23,7 @@ const workspaceItems = [
   { icon: CandlestickChart, label: "chart", href: "/chart" },
   { icon: TrendingUp, label: "whats in play", href: null },
   { icon: Cpu, label: "algos", href: "/algos" },
-  { icon: Eye, label: "watchlist", href: null },
+  { icon: Eye, label: "watchlist", href: "/watchlist" },
 ];
 
 const communityItems = [
