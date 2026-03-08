@@ -42,8 +42,6 @@ const Watchlist = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  if (!authLoading && !user) return <Navigate to="/auth" replace />;
-
   const fetchItems = useCallback(async () => {
     if (!user) return;
     const { data, error } = await supabase
