@@ -190,10 +190,10 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
             ? bar.datetime
             : Math.floor(new Date(bar.datetime.replace(" ", "T") + "+00:00").getTime() / 1000)) as Time;
 
-          const o = parseFloat(bar.open);
-          const h = parseFloat(bar.high);
-          const l = parseFloat(bar.low);
-          const c = parseFloat(bar.close);
+          const o = parseFloat(bar.open) * multiplier;
+          const h = parseFloat(bar.high) * multiplier;
+          const l = parseFloat(bar.low) * multiplier;
+          const c = parseFloat(bar.close) * multiplier;
           const v = bar.volume ? parseFloat(bar.volume) : 0;
 
           candles.push({ time, open: o, high: h, low: l, close: c });
