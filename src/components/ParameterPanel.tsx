@@ -31,7 +31,14 @@ const DAY_OPTIONS = [
   { value: "120", label: "Last 120 Days" },
 ];
 
-const ParameterPanel = ({ onRun, loading, isFree = false }: ParameterPanelProps) => {
+const TF_OPTIONS = [
+  { value: "M5", label: "M5 (5 min)" },
+  { value: "M15", label: "M15 (15 min)" },
+  { value: "M30", label: "M30 (30 min)" },
+  { value: "H1", label: "H1 (60 min)" },
+];
+
+const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", onOccTimeframeChange }: ParameterPanelProps) => {
   const [symbol, setSymbol] = useState("QQQ");
   const [ibWindow, setIbWindow] = useState(isFree ? "60" : "30");
   const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
