@@ -360,7 +360,7 @@ const Index = () => {
 
   return (
     <div className="h-screen w-full flex overflow-hidden bg-background">
-      <AIChatAssistant analysisContext={analysisContext} />
+      <AIChatAssistant ref={chatRef} analysisContext={analysisContext} confluenceData={confluenceData} />
 
       {/* Column 1: Nav Sidebar */}
       <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
