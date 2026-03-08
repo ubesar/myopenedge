@@ -334,6 +334,10 @@ const Index = () => {
       );
     }
 
+    if (activeMode === "insidebar" && insideBarResult) {
+      return <InsideBarReport result={insideBarResult} symbol={symbol} />;
+    }
+
     return null;
   };
 
