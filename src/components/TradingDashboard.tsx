@@ -82,7 +82,7 @@ const TradingDashboard = ({ user, onLock }: { user: User; onLock?: () => void })
   const addMagicNumber = async () => {
     const magic = parseInt(newMagic);
     if (isNaN(magic) || magic <= 0) {
-      toast.error("Magic number harus angka positif");
+      toast.error("Magic number must be a positive number");
       return;
     }
     if (!newAsset.trim()) {
