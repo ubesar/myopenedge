@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   createChart,
   ColorType,
@@ -21,18 +22,14 @@ const TradingViewChart = ({ symbol, interval }: TradingViewChartProps) => {
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeRef = useRef<ISeriesApi<"Histogram"> | null>(null);
+  const [chartReady, setChartReady] = useState(false);
   const [ohlc, setOhlc] = useState<{
     o: number; h: number; l: number; c: number; change: number; changePct: number;
   } | null>(null);
 
-  const initChart = useCallback(() => {
+  // Init chart once on mount
+  useEffect(() => {
     if (!containerRef.current) return;
-
-    // Cleanup previous
-    if (chartRef.current) {
-      chartRef.current.remove();
-      chartRef.current = null;
-    }
 
     const chart = createChart(containerRef.current, {
       layout: {
@@ -118,37 +115,45 @@ const TradingViewChart = ({ symbol, interval }: TradingViewChartProps) => {
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        chart.applyOptions({ width, height });
+        if (width > 0 && height > 0) {
+          chart.applyOptions({ width, height });
+        }
       }
     });
     ro.observe(containerRef.current);
 
+    setChartReady(true);
+
     return () => {
       ro.disconnect();
       chart.remove();
+      chartRef.current = null;
+      seriesRef.current = null;
+      volumeRef.current = null;
+      setChartReady(false);
     };
   }, []);
 
-  // Init chart once
+  // Fetch data when symbol/interval changes AND chart is ready
   useEffect(() => {
-    const cleanup = initChart();
-    return () => cleanup?.();
-  }, [initChart]);
-
-  // Fetch data when symbol/interval changes
-  useEffect(() => {
-    if (!seriesRef.current || !volumeRef.current) return;
+    if (!chartReady || !seriesRef.current || !volumeRef.current) return;
 
     const fetchData = async () => {
       try {
+        // Get user session token
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+        if (!accessToken) {
+          console.error("No auth session");
+          return;
+        }
+
         // Use TwelveData proxy edge function
         const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
         const outputSize = interval === "1day" ? 365 : 390;
         const res = await fetch(
           `${baseUrl}/functions/v1/twelvedata-proxy?symbol=${symbol}&interval=${interval}&outputsize=${outputSize}`,
-          { headers: { Authorization: `Bearer ${anonKey}` } }
+          { headers: { Authorization: `Bearer ${accessToken}` } }
         );
 
         if (!res.ok) throw new Error("Failed to fetch data");
@@ -206,7 +211,7 @@ const TradingViewChart = ({ symbol, interval }: TradingViewChartProps) => {
     };
 
     fetchData();
-  }, [symbol, interval]);
+  }, [symbol, interval, chartReady]);
 
   const isPositive = ohlc ? ohlc.change >= 0 : true;
 

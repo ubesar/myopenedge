@@ -95,7 +95,7 @@ const Chart = () => {
         </div>
 
         {/* Chart */}
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 h-full">
           <TradingViewChart symbol={symbol} interval={interval} />
         </div>
       </div>
