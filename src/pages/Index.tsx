@@ -297,7 +297,7 @@ const Index = () => {
       <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
 
       {/* Column 2: Parameter Panel */}
-      <ParameterPanel onRun={handleRun} loading={loading} isFree={isFree} />
+      <ParameterPanel onRun={handleRun} loading={loading} isFree={isFree} occTimeframe={occTimeframe} onOccTimeframeChange={setOccTimeframe} />
 
       {/* Column 3: Main Content */}
       <main className="flex-1 min-w-0 overflow-y-auto p-6">
