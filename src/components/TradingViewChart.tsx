@@ -17,12 +17,9 @@ interface TradingViewChartProps {
   symbol: string;
   interval: string;
   showIB?: boolean;
-  showMC?: boolean;
 }
 
-const BODY_RATIO = 0.50;
-
-const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: TradingViewChartProps) => {
+const TradingViewChart = ({ symbol, interval, showIB = false }: TradingViewChartProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
