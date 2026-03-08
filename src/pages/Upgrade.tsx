@@ -77,7 +77,16 @@ const Upgrade = () => {
   }
 
   const handleUpgrade = async () => {
-    toast.info("Payment integration coming soon. Stay tuned!");
+    if (!paddle || !user) {
+      toast.error("Checkout not ready. Please try again.");
+      return;
+    }
+    setProcessing(true);
+    paddle.Checkout.open({
+      items: [{ priceId: import.meta.env.VITE_PADDLE_PRICE_ID, quantity: 1 }],
+      customData: { user_id: user.id },
+      customer: { email: user.email || "" },
+    });
   };
 
   return (
