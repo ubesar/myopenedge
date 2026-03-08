@@ -1,45 +1,51 @@
+// --- EXISTING LOGIC PRESERVED --- All hooks, state, handlers, data transformations
 import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { LogOut, Crown, FileText } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import logo from "@/assets/logo.png";
-import ControlPanel, { type AnalysisMode } from "@/components/ControlPanel";
-import IBChart from "@/components/IBChart";
-import IBDayChart from "@/components/IBDayChart";
-import AnalysisHistory from "@/components/AnalysisHistory";
+import { useSubscription } from "@/hooks/useSubscription";
 import { useAnalysisHistory, type AnalysisRun } from "@/hooks/useAnalysisHistory";
-import SummaryTable from "@/components/SummaryTable";
-import MomentumChart from "@/components/MomentumChart";
-import MomentumDayChart from "@/components/MomentumDayChart";
-import OCCChart from "@/components/OCCChart";
-import OCCDayChart from "@/components/OCCDayChart";
-import AIChatAssistant, { type AnalysisContext } from "@/components/AIChatAssistant";
 import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
 import { analyzeOCC, type OCCResult } from "@/lib/occ-analysis";
 import { analyzeGapFill, type GapFillResult } from "@/lib/gapfill-analysis";
+import type { AnalysisMode } from "@/components/ControlPanel";
+import AIChatAssistant, { type AnalysisContext } from "@/components/AIChatAssistant";
 import GapFillDashboard from "@/components/GapFillDashboard";
-import { useSubscription } from "@/hooks/useSubscription";
-
 import { z } from "zod";
 
+// --- NEW UI LAYOUT --- Edgeful-inspired dashboard components
+import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import ParameterPanel from "@/components/dashboard/ParameterPanel";
+import RightPanel from "@/components/dashboard/RightPanel";
+import EdgefulChart from "@/components/dashboard/EdgefulChart";
+import MobileHeader from "@/components/dashboard/MobileHeader";
+import { Bookmark } from "lucide-react";
+
+// --- EXISTING LOGIC PRESERVED --- Zod schemas
 const BarSchema = z.object({
   datetime: z.string(),
   open: z.string(),
   high: z.string(),
   low: z.string(),
-  close: z.string()
+  close: z.string(),
 }).passthrough();
 
 const TwelveDataResponseSchema = z.object({
-  values: z.array(BarSchema).min(1)
+  values: z.array(BarSchema).min(1),
 }).passthrough();
 
+// --- EXISTING LOGIC PRESERVED --- Report title map
+const REPORT_TITLES: Record<AnalysisMode, string> = {
+  ib: "initial balance breakout report",
+  momentum: "ny open momentum continuation report",
+  occ: "opening candle continuation report",
+  gapfill: "gap fill statistics report",
+};
+
 const Index = () => {
+  // --- EXISTING LOGIC PRESERVED --- All state and hooks
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const { isActive, endDate, loading: subLoading } = useSubscription();
@@ -58,10 +64,12 @@ const Index = () => {
 
   const isFree = !isActive;
 
+  // --- EXISTING LOGIC PRESERVED --- Handlers
   const handleSelectRun = (run: AnalysisRun) => {
     setSelectedRunId(run.id);
   };
 
+  // --- EXISTING LOGIC PRESERVED --- Analysis context for AI chat
   const analysisContext = useMemo<AnalysisContext>(() => {
     if (activeMode === "ib" && result) {
       const hf = result.highFirst;
@@ -71,7 +79,7 @@ const Index = () => {
       return {
         mode: "ib",
         symbol,
-        summary: `Symbol: ${symbol}\nTotal trading days: ${result.totalDays}, Inside days: ${result.insideDays}\n\nIB High Formed First (${hf.total} days):\n- Break High: ${hf.breakHigh} (${(hf.breakHigh / hfTotal * 100).toFixed(1)}%)\n- Break Low: ${hf.breakLow} (${(hf.breakLow / hfTotal * 100).toFixed(1)}%)\n- Inside: ${hf.inside} (${(hf.inside / hfTotal * 100).toFixed(1)}%)\n\nIB Low Formed First (${lf.total} days):\n- Break High: ${lf.breakHigh} (${(lf.breakHigh / lfTotal * 100).toFixed(1)}%)\n- Break Low: ${lf.breakLow} (${(lf.breakLow / lfTotal * 100).toFixed(1)}%)\n- Inside: ${lf.inside} (${(lf.inside / lfTotal * 100).toFixed(1)}%)`
+        summary: `Symbol: ${symbol}\nTotal trading days: ${result.totalDays}, Inside days: ${result.insideDays}\n\nIB High Formed First (${hf.total} days):\n- Break High: ${hf.breakHigh} (${((hf.breakHigh / hfTotal) * 100).toFixed(1)}%)\n- Break Low: ${hf.breakLow} (${((hf.breakLow / hfTotal) * 100).toFixed(1)}%)\n- Inside: ${hf.inside} (${((hf.inside / hfTotal) * 100).toFixed(1)}%)\n\nIB Low Formed First (${lf.total} days):\n- Break High: ${lf.breakHigh} (${((lf.breakHigh / lfTotal) * 100).toFixed(1)}%)\n- Break Low: ${lf.breakLow} (${((lf.breakLow / lfTotal) * 100).toFixed(1)}%)\n- Inside: ${lf.inside} (${((lf.inside / lfTotal) * 100).toFixed(1)}%)`,
       };
     }
     if (activeMode === "momentum" && momentumResult) {
@@ -82,7 +90,7 @@ const Index = () => {
       return {
         mode: "momentum",
         symbol,
-        summary: `Symbol: ${symbol}\nTotal trading days: ${momentumResult.totalDays}\n\nHigh Formed First (${hf.total} days):\n- Bullish: ${hf.bullish} (${(hf.bullish / hfT * 100).toFixed(1)}%)\n- Bearish: ${hf.bearish} (${(hf.bearish / hfT * 100).toFixed(1)}%)\n- Choppy: ${hf.choppy} (${(hf.choppy / hfT * 100).toFixed(1)}%)\n\nLow Formed First (${lf.total} days):\n- Bullish: ${lf.bullish} (${(lf.bullish / lfT * 100).toFixed(1)}%)\n- Bearish: ${lf.bearish} (${(lf.bearish / lfT * 100).toFixed(1)}%)\n- Choppy: ${lf.choppy} (${(lf.choppy / lfT * 100).toFixed(1)}%)`
+        summary: `Symbol: ${symbol}\nTotal trading days: ${momentumResult.totalDays}\n\nHigh Formed First (${hf.total} days):\n- Bullish: ${hf.bullish} (${((hf.bullish / hfT) * 100).toFixed(1)}%)\n- Bearish: ${hf.bearish} (${((hf.bearish / hfT) * 100).toFixed(1)}%)\n- Choppy: ${hf.choppy} (${((hf.choppy / hfT) * 100).toFixed(1)}%)\n\nLow Formed First (${lf.total} days):\n- Bullish: ${lf.bullish} (${((lf.bullish / lfT) * 100).toFixed(1)}%)\n- Bearish: ${lf.bearish} (${((lf.bearish / lfT) * 100).toFixed(1)}%)\n- Choppy: ${lf.choppy} (${((lf.choppy / lfT) * 100).toFixed(1)}%)`,
       };
     }
     if (activeMode === "occ" && occResult) {
@@ -93,7 +101,7 @@ const Index = () => {
         if (s) {
           const bT = s.bullishFirst.total || 1;
           const brT = s.bearishFirst.total || 1;
-          summary += `\n${tf}:\n- Candle1 Bullish (${s.bullishFirst.total} days): Valid ${s.bullishFirst.valid} (${(s.bullishFirst.valid / bT * 100).toFixed(1)}%), Invalid ${s.bullishFirst.invalid} (${(s.bullishFirst.invalid / bT * 100).toFixed(1)}%)\n- Candle1 Bearish (${s.bearishFirst.total} days): Valid ${s.bearishFirst.valid} (${(s.bearishFirst.valid / brT * 100).toFixed(1)}%), Invalid ${s.bearishFirst.invalid} (${(s.bearishFirst.invalid / brT * 100).toFixed(1)}%)`;
+          summary += `\n${tf}:\n- Candle1 Bullish (${s.bullishFirst.total} days): Valid ${s.bullishFirst.valid} (${((s.bullishFirst.valid / bT) * 100).toFixed(1)}%), Invalid ${s.bullishFirst.invalid} (${((s.bullishFirst.invalid / bT) * 100).toFixed(1)}%)\n- Candle1 Bearish (${s.bearishFirst.total} days): Valid ${s.bearishFirst.valid} (${((s.bearishFirst.valid / brT) * 100).toFixed(1)}%), Invalid ${s.bearishFirst.invalid} (${((s.bearishFirst.invalid / brT) * 100).toFixed(1)}%)`;
         }
       }
       return { mode: "occ", symbol, summary };
@@ -103,25 +111,28 @@ const Index = () => {
       return {
         mode: "gapfill",
         symbol,
-        summary: `Symbol: ${symbol}\nTotal gap days: ${gapFillResult.totalDays}\nOverall Fill Rate: ${s.overallFillRate.toFixed(1)}%\nGap Up Fill: ${s.gapUpFillRate.toFixed(1)}% (${s.filledGapUp}/${s.totalGapUp})\nGap Down Fill: ${s.gapDownFillRate.toFixed(1)}% (${s.filledGapDown}/${s.totalGapDown})\nBy Size: Small ${s.bySize.small.rate.toFixed(0)}%, Medium ${s.bySize.medium.rate.toFixed(0)}%, Large ${s.bySize.large.rate.toFixed(0)}%`
+        summary: `Symbol: ${symbol}\nTotal gap days: ${gapFillResult.totalDays}\nOverall Fill Rate: ${s.overallFillRate.toFixed(1)}%\nGap Up Fill: ${s.gapUpFillRate.toFixed(1)}% (${s.filledGapUp}/${s.totalGapUp})\nGap Down Fill: ${s.gapDownFillRate.toFixed(1)}% (${s.filledGapDown}/${s.totalGapDown})\nBy Size: Small ${s.bySize.small.rate.toFixed(0)}%, Medium ${s.bySize.medium.rate.toFixed(0)}%, Large ${s.bySize.large.rate.toFixed(0)}%`,
       };
     }
     return { mode: null, symbol: "", summary: "" };
   }, [activeMode, result, momentumResult, occResult, gapFillResult, symbol]);
 
+  // --- EXISTING LOGIC PRESERVED --- Auth guard
   if (!authLoading && !user) {
     navigate("/auth");
     return null;
   }
 
+  // --- EXISTING LOGIC PRESERVED --- API fetch
   const fetchMarketData = async (ticker: string) => {
     const { data, error } = await supabase.functions.invoke("twelvedata-proxy", {
-      body: { symbol: ticker }
+      body: { symbol: ticker },
     });
     if (error) throw new Error("Failed to fetch market data");
     return data;
   };
 
+  // --- EXISTING LOGIC PRESERVED --- Run handler
   const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => {
     setLoading(true);
     setResult(null);
@@ -156,9 +167,11 @@ const Index = () => {
         setResult(analysis);
         setSelectedDate(analysis.lastDay?.date || "");
         addRun(mode, ticker, {
-          totalDays: analysis.totalDays, insideDays: analysis.insideDays,
+          totalDays: analysis.totalDays,
+          insideDays: analysis.insideDays,
           ibWindow,
-          highFirst: analysis.highFirst, lowFirst: analysis.lowFirst,
+          highFirst: analysis.highFirst,
+          lowFirst: analysis.lowFirst,
         });
       } else if (mode === "momentum") {
         const analysis = analyzeMomentum(values as any, ibWindow, maxDays);
@@ -206,260 +219,327 @@ const Index = () => {
 
   const hasResults = result || momentumResult || occResult || gapFillResult;
 
+  // --- NEW UI LAYOUT --- Edgeful-inspired 4-column dashboard
   return (
-    <div className="min-h-screen lg:h-screen flex flex-col lg:overflow-hidden overflow-y-auto bg-background relative">
+    <div className="h-screen w-full flex flex-col lg:flex-row overflow-hidden bg-background">
       <AIChatAssistant analysisContext={analysisContext} />
-      
-      {/* Background Video */}
-      <video
-        autoPlay loop muted playsInline
-        className="fixed inset-0 w-full h-full object-cover opacity-20 z-0">
-        <source src="/videos/hero-bg.mp4" type="video/mp4" />
-      </video>
-      <div className="fixed inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background z-0" />
 
-      {/* Header - compact */}
-      <header className="relative z-10 border-b border-border/40 px-3 sm:px-6 py-2 backdrop-blur-sm shrink-0">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <img src={logo} alt="MyOpenEdge" className="h-7 w-7 rounded-full object-cover" />
-          <h1 className="text-sm sm:text-base font-bold text-foreground tracking-tight">MyOpenEdge</h1>
-          {isActive ? (
-            <div className="flex items-center gap-2 ml-1">
-              <Badge variant="secondary" className="gap-1 text-[10px] bg-primary/15 text-primary border-primary/30">
-                <Crown className="h-3 w-3" /> Pro
-              </Badge>
-              {endDate && (
-                <span className="text-[10px] text-muted-foreground hidden sm:inline">
-                  exp {new Date(endDate).toLocaleDateString()}
-                </span>
+      {/* Mobile Header */}
+      <MobileHeader isActive={isActive} onSignOut={signOut} />
+
+      {/* Far-Left Sidebar (desktop only) */}
+      <DashboardSidebar isActive={isActive} onSignOut={signOut} />
+
+      {/* Left Parameter Panel */}
+      <div className="lg:hidden">
+        <ParameterPanel onRun={handleRun} loading={loading} isFree={isFree} />
+      </div>
+      <div className="hidden lg:block">
+        <ParameterPanel onRun={handleRun} loading={loading} isFree={isFree} />
+      </div>
+
+      {/* Main Content Area */}
+      <main className="flex-1 min-h-0 overflow-y-auto">
+        {/* Content Header */}
+        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border/20 px-4 sm:px-6 py-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-sm sm:text-base font-semibold text-foreground lowercase">
+                {symbol ? `${symbol} — ` : ""}
+                {REPORT_TITLES[activeMode]}
+              </h1>
+              {symbol && (
+                <p className="text-[10px] text-muted-foreground lowercase mt-0.5">
+                  powered by twelvedata api · 5000 bars of intraday data
+                </p>
               )}
             </div>
-          ) : (
-            <Badge
-              variant="outline"
-              className="gap-1 text-[10px] cursor-pointer hover:bg-primary/10"
-              onClick={() => navigate("/upgrade")}>
-              Free · Upgrade
-            </Badge>
-          )}
-          <div className="ml-auto flex items-center gap-1">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/docs")} className="gap-1 text-muted-foreground h-7 px-2">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline text-xs">Docs</span>
-            </Button>
-            <Button variant="ghost" size="sm" onClick={signOut} className="gap-1 text-muted-foreground h-7 px-2">
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline text-xs">Sign out</span>
-            </Button>
+            {hasResults && (
+              <span className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-medium">
+                <Bookmark className="h-3.5 w-3.5" />
+                bookmarked
+              </span>
+            )}
           </div>
         </div>
-      </header>
 
-      {/* Main content */}
-      <main className="relative z-10 flex-1 min-h-0 p-2 sm:p-3">
-        <div className="h-full grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] gap-2 sm:gap-3">
-          {/* Left: Control Panel */}
-          <aside className="min-h-0 lg:overflow-y-auto scrollbar-thin">
-            <ControlPanel onRun={handleRun} loading={loading} isFree={isFree} />
-          </aside>
-
-          {/* Center: Results */}
-          <section className="min-h-[50vh] lg:min-h-0 lg:overflow-y-auto scrollbar-thin">
-            {/* Empty state */}
-            {!hasResults && !loading && (
-              <div className="flex items-center justify-center h-full rounded-lg border border-dashed border-border/30">
-                <div className="text-center">
-                  <img src={logo} className="h-12 w-12 rounded-full object-cover mx-auto mb-3 opacity-40" alt="MyOpenEdge" />
-                  <p className="text-muted-foreground text-xs">Powered by TwelveData API with 5000 bars of intraday data.</p>
+        {/* Content Body */}
+        <div className="p-4 sm:p-6">
+          {/* Empty State */}
+          {!hasResults && !loading && (
+            <div className="flex items-center justify-center h-[60vh]">
+              <div className="text-center">
+                <div className="h-16 w-16 rounded-2xl bg-secondary flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">📊</span>
                 </div>
+                <p className="text-sm text-muted-foreground lowercase">
+                  select a report type and run analysis to get started
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-1 lowercase">
+                  powered by twelvedata api with 5000 bars of intraday data
+                </p>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Loading */}
-            {loading && (
-              <div className="flex items-center justify-center h-full rounded-lg border border-border/20 bg-card/30">
-                <div className="text-center space-y-2">
-                  <div className="h-7 w-7 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-                  <p className="text-muted-foreground text-xs">Analyzing {symbol}…</p>
-                </div>
+          {/* Loading State */}
+          {loading && (
+            <div className="flex items-center justify-center h-[60vh]">
+              <div className="text-center space-y-3">
+                <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-sm text-muted-foreground lowercase">analyzing {symbol}…</p>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* IB Mode */}
-            {activeMode === "ib" && result && (
-              <div className="lg:h-full flex flex-col lg:grid lg:grid-rows-2 gap-2">
-                {/* Stat boxes - stack on mobile, side-by-side on desktop */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <IBChart
-                    title="IB High Formed First"
-                    total={result.highFirst.total}
-                    breakHigh={result.highFirst.breakHigh}
-                    breakLow={result.highFirst.breakLow}
-                    inside={result.highFirst.inside} />
-                  <IBChart
-                    title="IB Low Formed First"
-                    total={result.lowFirst.total}
-                    breakHigh={result.lowFirst.breakHigh}
-                    breakLow={result.lowFirst.breakLow}
-                    inside={result.lowFirst.inside} />
-                </div>
-                {/* Bottom: Day chart - hidden on mobile */}
-                <div className="hidden lg:block min-h-0 overflow-hidden">
-                  {result.allDays.length > 0 && (() => {
-                    const dayData = result.allDays.find((d) => d.date === selectedDate) || result.allDays[result.allDays.length - 1];
-                    return (
-                      <IBDayChart
-                        date={dayData.date}
-                        bars={dayData.bars}
-                        ibHigh={dayData.ibHigh}
-                        ibLow={dayData.ibLow}
-                        symbol={symbol}
-                        ibWindowMinutes={result.ibWindowMinutes}
-                        highFirstFormed={dayData.highFirstFormed}
-                        breakout={dayData.breakout}
-                        availableDates={result.allDays.map((d) => d.date)}
-                        selectedDate={selectedDate || dayData.date}
-                        onDateChange={setSelectedDate}
-                        statsHighFirst={result.highFirst}
-                        statsLowFirst={result.lowFirst} />
-                    );
-                  })()}
-                </div>
+          {/* IB Mode Results */}
+          {activeMode === "ib" && result && (
+            <div className="space-y-4">
+              {/* Timeframe selector - for IB we show info summary */}
+              <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                <span>total days: <span className="text-foreground font-semibold">{result.totalDays}</span></span>
+                <span>•</span>
+                <span>inside days: <span className="text-foreground font-semibold">{result.insideDays}</span></span>
               </div>
-            )}
 
-            {/* Momentum Mode */}
-            {activeMode === "momentum" && momentumResult && (
-              <div className="lg:h-full flex flex-col gap-2">
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-[10px] text-muted-foreground">TF:</span>
-                  {["M5", "M15", "M30", "H1"].map((tf) => (
-                    <button
-                      key={tf}
-                      onClick={() => setMomentumTf(tf)}
-                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                        momentumTf === tf
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      }`}>
-                      {tf}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex-1 min-h-0 flex flex-col lg:grid lg:grid-rows-2 gap-2">
-                  {momentumResult.tfStats[momentumTf] && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <MomentumChart
-                        title="IB High Formed First"
-                        total={momentumResult.tfStats[momentumTf].highFirst.total}
-                        bullish={momentumResult.tfStats[momentumTf].highFirst.bullish}
-                        bearish={momentumResult.tfStats[momentumTf].highFirst.bearish}
-                        choppy={momentumResult.tfStats[momentumTf].highFirst.choppy} />
-                      <MomentumChart
-                        title="IB Low Formed First"
-                        total={momentumResult.tfStats[momentumTf].lowFirst.total}
-                        bullish={momentumResult.tfStats[momentumTf].lowFirst.bullish}
-                        bearish={momentumResult.tfStats[momentumTf].lowFirst.bearish}
-                        choppy={momentumResult.tfStats[momentumTf].lowFirst.choppy} />
-                    </div>
-                  )}
-                  <div className="hidden lg:block min-h-0 overflow-hidden">
-                    {momentumResult.allDays.length > 0 && (() => {
-                      const dayData = momentumResult.allDays.find((d) => d.date === selectedDate) || momentumResult.allDays[momentumResult.allDays.length - 1];
-                      const tfData = dayData.timeframes.find(t => t.tf === momentumTf);
-                      const tfStatsHF = momentumResult.tfStats[momentumTf]?.highFirst || { total: 0, bullish: 0, bearish: 0, choppy: 0 };
-                      const tfStatsLF = momentumResult.tfStats[momentumTf]?.lowFirst || { total: 0, bullish: 0, bearish: 0, choppy: 0 };
-                      return (
-                        <MomentumDayChart
-                          date={dayData.date}
-                          bars={dayData.bars}
-                          symbol={symbol}
-                          momentum={tfData?.momentum || dayData.momentum}
-                          signals={tfData?.signals || dayData.signals}
-                          availableDates={momentumResult.allDays.map((d) => d.date)}
-                          selectedDate={selectedDate || dayData.date}
-                          onDateChange={setSelectedDate}
-                          statsHighFirst={tfStatsHF}
-                          statsLowFirst={tfStatsLF}
-                          highFirstFormed={dayData.highFirstFormed}
-                          selectedTf={momentumTf} />
-                      );
-                    })()}
-                  </div>
-                </div>
+              {/* Two chart cards side by side */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <EdgefulChart
+                  title="IB high formed first"
+                  subtitle={`${result.highFirst.total} trading days`}
+                  bars={[
+                    {
+                      label: "break high",
+                      value: result.highFirst.total > 0 ? (result.highFirst.breakHigh / result.highFirst.total) * 100 : 0,
+                      color: "blue",
+                    },
+                    {
+                      label: "break low",
+                      value: result.highFirst.total > 0 ? (result.highFirst.breakLow / result.highFirst.total) * 100 : 0,
+                      color: "grey",
+                    },
+                    {
+                      label: "inside",
+                      value: result.highFirst.total > 0 ? (result.highFirst.inside / result.highFirst.total) * 100 : 0,
+                      color: "grey",
+                    },
+                  ]}
+                  legend={[
+                    { label: "break high", color: "bg-primary" },
+                    { label: "break low", color: "bg-chart-grey" },
+                  ]}
+                  settingsRows={[
+                    { label: "IB window", value: `${result.ibWindowMinutes} min` },
+                    { label: "candle timeframe", value: "5min" },
+                    { label: "break high", value: `${result.highFirst.breakHigh} days` },
+                    { label: "break low", value: `${result.highFirst.breakLow} days` },
+                  ]}
+                />
+                <EdgefulChart
+                  title="IB low formed first"
+                  subtitle={`${result.lowFirst.total} trading days`}
+                  bars={[
+                    {
+                      label: "break high",
+                      value: result.lowFirst.total > 0 ? (result.lowFirst.breakHigh / result.lowFirst.total) * 100 : 0,
+                      color: "blue",
+                    },
+                    {
+                      label: "break low",
+                      value: result.lowFirst.total > 0 ? (result.lowFirst.breakLow / result.lowFirst.total) * 100 : 0,
+                      color: "grey",
+                    },
+                    {
+                      label: "inside",
+                      value: result.lowFirst.total > 0 ? (result.lowFirst.inside / result.lowFirst.total) * 100 : 0,
+                      color: "grey",
+                    },
+                  ]}
+                  legend={[
+                    { label: "break high", color: "bg-primary" },
+                    { label: "break low", color: "bg-chart-grey" },
+                  ]}
+                  settingsRows={[
+                    { label: "IB window", value: `${result.ibWindowMinutes} min` },
+                    { label: "candle timeframe", value: "5min" },
+                    { label: "break high", value: `${result.lowFirst.breakHigh} days` },
+                    { label: "break low", value: `${result.lowFirst.breakLow} days` },
+                  ]}
+                />
               </div>
-            )}
+            </div>
+          )}
 
-            {/* OCC Mode */}
-            {activeMode === "occ" && occResult && (
-              <div className="lg:h-full flex flex-col gap-2">
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-[10px] text-muted-foreground">TF:</span>
-                  {["M5", "M15", "M30", "H1"].map((tf) => (
-                    <button
-                      key={tf}
-                      onClick={() => setOccTf(tf)}
-                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                        occTf === tf
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      }`}>
-                      {tf}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex-1 min-h-0 flex flex-col lg:grid lg:grid-rows-2 gap-2">
-                  {occResult.tfDirectionStats[occTf] && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <OCCChart
-                        title="Candle 1 Bullish"
-                        stats={occResult.tfDirectionStats[occTf].bullishFirst}
-                        color="emerald" />
-                      <OCCChart
-                        title="Candle 1 Bearish"
-                        stats={occResult.tfDirectionStats[occTf].bearishFirst}
-                        color="red" />
-                    </div>
-                  )}
-                  <div className="hidden lg:block min-h-0 overflow-hidden">
-                    {occResult.allDays.length > 0 && (() => {
-                      const dayData = occResult.allDays.find((d) => d.date === selectedDate) || occResult.allDays[occResult.allDays.length - 1];
-                      return (
-                        <OCCDayChart
-                          date={dayData.date}
-                          bars={dayData.bars}
-                          symbol={symbol}
-                          timeframes={dayData.timeframes}
-                          overallBias={dayData.overallBias}
-                          availableDates={occResult.allDays.map((d) => d.date)}
-                          selectedDate={selectedDate || dayData.date}
-                          onDateChange={setSelectedDate}
-                          tfDirectionStats={occResult.tfDirectionStats} />
-                      );
-                    })()}
-                  </div>
-                </div>
+          {/* Momentum Mode Results */}
+          {activeMode === "momentum" && momentumResult && (
+            <div className="space-y-4">
+              {/* Timeframe selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">timeframe:</span>
+                {["M5", "M15", "M30", "H1"].map((tf) => (
+                  <button
+                    key={tf}
+                    onClick={() => setMomentumTf(tf)}
+                    className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-colors lowercase ${
+                      momentumTf === tf
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {tf}
+                  </button>
+                ))}
+                <span className="ml-3 text-[11px] text-muted-foreground">
+                  total days: <span className="text-foreground font-semibold">{momentumResult.totalDays}</span>
+                </span>
               </div>
-            )}
 
-            {/* Gap Fill Mode */}
-            {activeMode === "gapfill" && gapFillResult && (
-              <div className="h-full overflow-y-auto">
-                <GapFillDashboard result={gapFillResult} symbol={symbol} />
+              {momentumResult.tfStats[momentumTf] && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <EdgefulChart
+                    title="IB high formed first"
+                    subtitle={`${momentumResult.tfStats[momentumTf].highFirst.total} trading days`}
+                    bars={[
+                      {
+                        label: "bullish",
+                        value: momentumResult.tfStats[momentumTf].highFirst.total > 0 ? (momentumResult.tfStats[momentumTf].highFirst.bullish / momentumResult.tfStats[momentumTf].highFirst.total) * 100 : 0,
+                        color: "green",
+                      },
+                      {
+                        label: "bearish",
+                        value: momentumResult.tfStats[momentumTf].highFirst.total > 0 ? (momentumResult.tfStats[momentumTf].highFirst.bearish / momentumResult.tfStats[momentumTf].highFirst.total) * 100 : 0,
+                        color: "red",
+                      },
+                      {
+                        label: "choppy",
+                        value: momentumResult.tfStats[momentumTf].highFirst.total > 0 ? (momentumResult.tfStats[momentumTf].highFirst.choppy / momentumResult.tfStats[momentumTf].highFirst.total) * 100 : 0,
+                        color: "yellow",
+                      },
+                    ]}
+                    legend={[
+                      { label: "bullish", color: "bg-[hsl(142,71%,45%)]" },
+                      { label: "bearish", color: "bg-[hsl(0,84%,60%)]" },
+                      { label: "choppy", color: "bg-[hsl(45,100%,50%)]" },
+                    ]}
+                  />
+                  <EdgefulChart
+                    title="IB low formed first"
+                    subtitle={`${momentumResult.tfStats[momentumTf].lowFirst.total} trading days`}
+                    bars={[
+                      {
+                        label: "bullish",
+                        value: momentumResult.tfStats[momentumTf].lowFirst.total > 0 ? (momentumResult.tfStats[momentumTf].lowFirst.bullish / momentumResult.tfStats[momentumTf].lowFirst.total) * 100 : 0,
+                        color: "green",
+                      },
+                      {
+                        label: "bearish",
+                        value: momentumResult.tfStats[momentumTf].lowFirst.total > 0 ? (momentumResult.tfStats[momentumTf].lowFirst.bearish / momentumResult.tfStats[momentumTf].lowFirst.total) * 100 : 0,
+                        color: "red",
+                      },
+                      {
+                        label: "choppy",
+                        value: momentumResult.tfStats[momentumTf].lowFirst.total > 0 ? (momentumResult.tfStats[momentumTf].lowFirst.choppy / momentumResult.tfStats[momentumTf].lowFirst.total) * 100 : 0,
+                        color: "yellow",
+                      },
+                    ]}
+                    legend={[
+                      { label: "bullish", color: "bg-[hsl(142,71%,45%)]" },
+                      { label: "bearish", color: "bg-[hsl(0,84%,60%)]" },
+                      { label: "choppy", color: "bg-[hsl(45,100%,50%)]" },
+                    ]}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* OCC Mode Results */}
+          {activeMode === "occ" && occResult && (
+            <div className="space-y-4">
+              {/* Timeframe selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">timeframe:</span>
+                {["M5", "M15", "M30", "H1"].map((tf) => (
+                  <button
+                    key={tf}
+                    onClick={() => setOccTf(tf)}
+                    className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-colors lowercase ${
+                      occTf === tf
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {tf}
+                  </button>
+                ))}
+                <span className="ml-3 text-[11px] text-muted-foreground">
+                  total days: <span className="text-foreground font-semibold">{occResult.totalDays}</span>
+                </span>
               </div>
-            )}
-          </section>
 
-          {/* Right: Report History */}
-          <aside className="hidden lg:flex min-h-0">
-            <AnalysisHistory
-              runs={historyRuns.slice(0, 10)}
-              onDelete={deleteRun}
-              onSelect={handleSelectRun}
-              selectedId={selectedRunId} />
-          </aside>
+              {occResult.tfDirectionStats[occTf] && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <EdgefulChart
+                    title="candle 1 bullish"
+                    subtitle={`${occResult.tfDirectionStats[occTf].bullishFirst.total} trading days`}
+                    bars={[
+                      {
+                        label: "valid continuation",
+                        value: occResult.tfDirectionStats[occTf].bullishFirst.total > 0 ? (occResult.tfDirectionStats[occTf].bullishFirst.valid / occResult.tfDirectionStats[occTf].bullishFirst.total) * 100 : 0,
+                        color: "green",
+                      },
+                      {
+                        label: "invalid",
+                        value: occResult.tfDirectionStats[occTf].bullishFirst.total > 0 ? (occResult.tfDirectionStats[occTf].bullishFirst.invalid / occResult.tfDirectionStats[occTf].bullishFirst.total) * 100 : 0,
+                        color: "grey",
+                      },
+                    ]}
+                    legend={[
+                      { label: "valid", color: "bg-[hsl(142,71%,45%)]" },
+                      { label: "invalid", color: "bg-chart-grey" },
+                    ]}
+                  />
+                  <EdgefulChart
+                    title="candle 1 bearish"
+                    subtitle={`${occResult.tfDirectionStats[occTf].bearishFirst.total} trading days`}
+                    bars={[
+                      {
+                        label: "valid continuation",
+                        value: occResult.tfDirectionStats[occTf].bearishFirst.total > 0 ? (occResult.tfDirectionStats[occTf].bearishFirst.valid / occResult.tfDirectionStats[occTf].bearishFirst.total) * 100 : 0,
+                        color: "red",
+                      },
+                      {
+                        label: "invalid",
+                        value: occResult.tfDirectionStats[occTf].bearishFirst.total > 0 ? (occResult.tfDirectionStats[occTf].bearishFirst.invalid / occResult.tfDirectionStats[occTf].bearishFirst.total) * 100 : 0,
+                        color: "grey",
+                      },
+                    ]}
+                    legend={[
+                      { label: "valid", color: "bg-[hsl(0,84%,60%)]" },
+                      { label: "invalid", color: "bg-chart-grey" },
+                    ]}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Gap Fill Mode Results */}
+          {activeMode === "gapfill" && gapFillResult && (
+            <GapFillDashboard result={gapFillResult} symbol={symbol} />
+          )}
         </div>
       </main>
+
+      {/* Right Sidebar (desktop only) */}
+      <RightPanel
+        runs={historyRuns.slice(0, 10)}
+        onDelete={deleteRun}
+        onSelect={handleSelectRun}
+        selectedId={selectedRunId}
+        isActive={isActive}
+        endDate={endDate}
+      />
     </div>
   );
 };
