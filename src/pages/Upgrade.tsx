@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Check, ChevronLeft, Loader2, Zap, Shield } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { initializePaddle, type Paddle } from "@paddle/paddle-js";
 
 const features = [
   "Unlimited IB, Momentum & OCC Analysis",
@@ -22,6 +23,26 @@ const Upgrade = () => {
   const { user, loading: authLoading } = useAuth();
   const { isActive, loading: subLoading } = useSubscription();
   const [processing, setProcessing] = useState(false);
+  const [paddle, setPaddle] = useState<Paddle | null>(null);
+
+  useEffect(() => {
+    initializePaddle({
+      environment: "sandbox",
+      token: import.meta.env.VITE_PADDLE_CLIENT_TOKEN,
+      eventCallback: (event) => {
+        if (event.name === "checkout.completed") {
+          toast.success("Payment successful! Your Pro access is being activated...");
+          // Refresh subscription status after a short delay
+          setTimeout(() => window.location.reload(), 3000);
+        }
+        if (event.name === "checkout.closed") {
+          setProcessing(false);
+        }
+      },
+    }).then((p) => {
+      if (p) setPaddle(p);
+    });
+  }, []);
 
   if (!authLoading && !user) {
     navigate("/auth?redirect=/upgrade");
@@ -56,7 +77,16 @@ const Upgrade = () => {
   }
 
   const handleUpgrade = async () => {
-    toast.info("Payment integration coming soon. Stay tuned!");
+    if (!paddle || !user) {
+      toast.error("Checkout not ready. Please try again.");
+      return;
+    }
+    setProcessing(true);
+    paddle.Checkout.open({
+      items: [{ priceId: import.meta.env.VITE_PADDLE_PRICE_ID, quantity: 1 }],
+      customData: { user_id: user.id },
+      customer: { email: user.email || "" },
+    });
   };
 
   return (
