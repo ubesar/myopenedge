@@ -101,6 +101,48 @@ export type Database = {
         }
         Relationships: []
       }
+      analysis_templates: {
+        Row: {
+          body_ratio: string | null
+          created_at: string | null
+          ib_window: number
+          id: string
+          max_days: number
+          mode: string
+          name: string
+          occ_body_ratio: string | null
+          occ_timeframe: string | null
+          symbol: string
+          user_id: string
+        }
+        Insert: {
+          body_ratio?: string | null
+          created_at?: string | null
+          ib_window?: number
+          id?: string
+          max_days?: number
+          mode?: string
+          name: string
+          occ_body_ratio?: string | null
+          occ_timeframe?: string | null
+          symbol?: string
+          user_id: string
+        }
+        Update: {
+          body_ratio?: string | null
+          created_at?: string | null
+          ib_window?: number
+          id?: string
+          max_days?: number
+          mode?: string
+          name?: string
+          occ_body_ratio?: string | null
+          occ_timeframe?: string | null
+          symbol?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       attachments: {
         Row: {
           created_at: string
