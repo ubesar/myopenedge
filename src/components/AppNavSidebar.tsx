@@ -32,11 +32,14 @@ const communityItems = [
   { icon: null, label: "YouTube", href: "https://www.youtube.com/@ubetrades", img: iconYt },
 ];
 
+const GUEST_EMAIL = "guest@myopenedge.app";
+
 const SidebarContent = ({ collapsed, onToggle, onNavigate }: { collapsed: boolean; onToggle: () => void; onNavigate?: () => void }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signOut } = useAuth();
-  const { isActive } = useSubscription();
+  const { user, signOut } = useAuth();
+  const { isActive, endDate } = useSubscription();
+  const isGuest = user?.email === GUEST_EMAIL;
 
   const handleNav = (href: string) => {
     navigate(href);
