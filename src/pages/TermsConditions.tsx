@@ -136,7 +136,7 @@ export default function TermsConditions() {
               <h2 className="text-xl font-bold">2. Eligibility for Refund</h2>
               <p className="text-muted-foreground leading-relaxed">Refunds may be considered under the following circumstances:</p>
               <ul className="list-disc list-inside text-muted-foreground space-y-2 leading-relaxed">
-                <li>Duplicate or accidental payment (verified on-chain).</li>
+                <li>Duplicate or accidental payment (verified by Paddle).</li>
                 <li>Service was completely unavailable for a significant portion of the subscription period due to our fault.</li>
                 <li>Payment was confirmed but access was never granted due to a technical error on our end.</li>
               </ul>
