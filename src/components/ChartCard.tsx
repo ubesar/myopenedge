@@ -13,7 +13,8 @@ interface ChartCardProps {
   settingsGrid?: { label: string; value: string }[];
 }
 
-const yLabels = [80, 60, 40, 20, 0];
+const MAX_Y = 100;
+const yLabels = [100, 80, 60, 40, 20, 0];
 
 const ChartCard = ({ title, subtitle, totalDays, bars, legendItems, settingsGrid }: ChartCardProps) => {
   return (
@@ -30,9 +31,9 @@ const ChartCard = ({ title, subtitle, totalDays, bars, legendItems, settingsGrid
       </div>
 
       {/* Pure CSS Bar Chart */}
-      <div className="h-[220px] flex">
+      <div className="h-[240px] flex">
         {/* Y-axis labels */}
-        <div className="flex flex-col justify-between pr-2 py-1">
+        <div className="flex flex-col justify-between pr-2">
           {yLabels.map((v) => (
             <span key={v} className="text-[10px] text-muted-foreground leading-none">{v}%</span>
           ))}
@@ -40,29 +41,30 @@ const ChartCard = ({ title, subtitle, totalDays, bars, legendItems, settingsGrid
 
         {/* Chart area */}
         <div className="flex-1 relative border-l border-b border-border">
-          {/* Horizontal grid lines */}
-          {yLabels.slice(0, -1).map((v, i) => (
+          {/* Horizontal grid lines at each Y label */}
+          {yLabels.map((v, i) => (
             <div
               key={v}
-              className="absolute w-full border-t border-border"
+              className="absolute w-full border-t border-border/50"
               style={{ top: `${(i / (yLabels.length - 1)) * 100}%` }}
             />
           ))}
 
           {/* Bars container */}
-          <div className="absolute inset-0 flex items-end justify-center gap-6 px-8 pb-0">
+          <div className="absolute inset-0 flex items-end justify-center gap-8 px-8">
             {bars.map((bar, i) => {
-              const heightPct = Math.min(Math.max(bar.value, 0), 100);
+              const clampedValue = Math.min(Math.max(bar.value, 0), MAX_Y);
+              const heightPercent = (clampedValue / MAX_Y) * 100;
               return (
-                <div key={i} className="flex flex-col items-center" style={{ width: "80px" }}>
+                <div key={i} className="flex flex-col items-center gap-1.5" style={{ width: "90px" }}>
                   <div
                     className={`w-full rounded-t-md relative flex items-center justify-center transition-all duration-500 ${
                       bar.color === "primary" ? "bg-primary" : "bg-chart-grey"
                     }`}
-                    style={{ height: `${(heightPct / 80) * 100}%`, minHeight: heightPct > 0 ? "24px" : "0" }}
+                    style={{ height: `${heightPercent}%`, minHeight: clampedValue > 0 ? "28px" : "0" }}
                   >
-                    {heightPct > 0 && (
-                      <span className="text-[11px] font-semibold text-primary-foreground">
+                    {clampedValue > 0 && (
+                      <span className="text-[12px] font-semibold text-primary-foreground">
                         {bar.value.toFixed(2)}%
                       </span>
                     )}
