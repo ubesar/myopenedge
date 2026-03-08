@@ -201,7 +201,7 @@ export default function TermsConditions() {
               <h2 className="text-xl font-bold">4. Third-Party Services</h2>
               <p className="text-muted-foreground leading-relaxed">We use the following third-party services:</p>
               <ul className="list-disc list-inside text-muted-foreground space-y-2 leading-relaxed">
-                <li><strong>NOWPayments:</strong> For cryptocurrency payment processing.</li>
+                <li><strong>Paddle:</strong> For payment processing as our merchant of record.</li>
                 <li><strong>TwelveData:</strong> For market data used in analysis (data is fetched server-side).</li>
               </ul>
               <p className="text-muted-foreground leading-relaxed">
