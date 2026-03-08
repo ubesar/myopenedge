@@ -114,6 +114,11 @@ const Index = () => {
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setInsideBarResult(a);
         addRun(effectiveMode, ticker, { totalDays: a.totalDays, insideBarPct: a.insideBarPct, breakoutPct: a.breakoutPct });
+      } else if (effectiveMode === "outsideday") {
+        const a = analyzeOutsideDay(values as any, effectiveMaxDays);
+        if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+        setOutsideDayResult(a);
+        addRun(effectiveMode, ticker, { totalDays: a.totalDays, outsidePct: a.outsidePct, bullishContinuationPct: a.bullishContinuationPct, bearishContinuationPct: a.bearishContinuationPct });
       }
 
     } catch (err: any) {
