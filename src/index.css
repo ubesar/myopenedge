@@ -59,6 +59,17 @@
     --chart-3: 217 91% 60%;
     --chart-4: 280 65% 60%;
     --chart-5: 38 92% 50%;
+
+    /* Trading algo colors */
+    --buy: 152 69% 46%;
+    --buy-foreground: 0 0% 100%;
+    --buy-glow: 152 69% 46%;
+    --sell: 358 75% 55%;
+    --sell-foreground: 0 0% 100%;
+    --sell-glow: 358 75% 55%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 5%;
+    --warning-glow: 38 92% 55%;
   }
 }
 
