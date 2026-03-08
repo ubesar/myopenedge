@@ -7,7 +7,7 @@ import { Bookmark, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { type AnalysisMode } from "@/components/ControlPanel";
 import AppNavSidebar from "@/components/AppNavSidebar";
-import ParameterPanel, { type OCCTimeframe, type IBSubreport, type MomentumBodyRatio } from "@/components/ParameterPanel";
+import ParameterPanel, { type OCCTimeframe, type IBSubreport, type MomentumBodyRatio, type OCCBodyRatio } from "@/components/ParameterPanel";
 import RightSidebar from "@/components/RightSidebar";
 import ChartCard from "@/components/ChartCard";
 import { useAnalysisHistory, type AnalysisRun } from "@/hooks/useAnalysisHistory";
