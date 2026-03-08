@@ -63,6 +63,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
             {!isFree && <SelectItem value="occ">Opening Candle Continuation</SelectItem>}
              {!isFree && <SelectItem value="gapfill">Gap Fill Statistics</SelectItem>}
             {!isFree && <SelectItem value="insidebar">Inside Bar</SelectItem>}
+            {!isFree && <SelectItem value="outsideday">Outside Day</SelectItem>}
           </SelectContent>
         </Select>
         {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for Momentum analysis</p>}
