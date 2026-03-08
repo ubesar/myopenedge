@@ -67,11 +67,11 @@ const AppNavSidebar = ({ collapsed, onToggle }: AppNavSidebarProps) => {
                 key={item.label}
                 onClick={() => item.href && navigate(item.href)}
                 className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] transition-colors ${
-                  item.active
+                  item.href && location.pathname === item.href
                     ? "bg-primary text-primary-foreground"
                     : "text-sidebar-foreground hover:text-foreground hover:bg-secondary"
-                } ${!item.href && !item.active ? "opacity-50 cursor-not-allowed" : ""}`}
-                disabled={!item.href && !item.active}
+                } ${!item.href ? "opacity-50 cursor-not-allowed" : ""}`}
+                disabled={!item.href}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
                 {!collapsed && <span>{item.label}</span>}
