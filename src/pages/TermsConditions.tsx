@@ -66,7 +66,7 @@ export default function TermsConditions() {
               <h2 className="text-xl font-bold">4. Subscription & Payments</h2>
               <ul className="list-disc list-inside text-muted-foreground space-y-2 leading-relaxed">
                 <li>The Service offers both free and paid subscription tiers.</li>
-                <li>Paid subscriptions are billed in cryptocurrency via NOWPayments.</li>
+                <li>Paid subscriptions are billed via Paddle, our merchant of record.</li>
                 <li>Subscription access begins upon confirmed payment and lasts for the specified period.</li>
                 <li>Prices are subject to change with reasonable notice to existing subscribers.</li>
               </ul>
