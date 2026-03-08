@@ -9,6 +9,7 @@ import { type AnalysisMode } from "@/components/ControlPanel";
 import AppNavSidebar from "@/components/AppNavSidebar";
 import ParameterPanel, { type OCCTimeframe, type MomentumBodyRatio, type OCCBodyRatio } from "@/components/ParameterPanel";
 import RightSidebar from "@/components/RightSidebar";
+import { useTemplates, type TemplateParams } from "@/hooks/useTemplates";
 import ChartCard from "@/components/ChartCard";
 import { useAnalysisHistory, type AnalysisRun } from "@/hooks/useAnalysisHistory";
 
@@ -50,6 +51,7 @@ const Index = () => {
   const [occTimeframe, setOccTimeframe] = useState<OCCTimeframe>("M15");
   const [momentumTimeframe, setMomentumTimeframe] = useState<OCCTimeframe>("M15");
   const { runs: historyRuns, addRun, deleteRun } = useAnalysisHistory();
+  const { templates, saveTemplate, deleteTemplate, loading: templateLoading } = useTemplates();
 
   const isFree = !isActive;
 
@@ -334,7 +336,17 @@ const Index = () => {
       <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
 
       {/* Column 2: Parameter Panel */}
-      <ParameterPanel onRun={handleRun} loading={loading} isFree={isFree} occTimeframe={occTimeframe} onOccTimeframeChange={setOccTimeframe} />
+      <ParameterPanel
+        onRun={handleRun}
+        loading={loading}
+        isFree={isFree}
+        occTimeframe={occTimeframe}
+        onOccTimeframeChange={setOccTimeframe}
+        templates={templates}
+        onSaveTemplate={saveTemplate}
+        onDeleteTemplate={deleteTemplate}
+        templateLoading={templateLoading}
+      />
 
       {/* Column 3: Main Content */}
       <main className="flex-1 min-w-0 overflow-y-auto p-6">
@@ -375,7 +387,7 @@ const Index = () => {
       </main>
 
       {/* Column 4: Right Sidebar */}
-      <RightSidebar />
+      <RightSidebar templates={templates} activeMode={activeMode} />
     </div>
   );
 };
