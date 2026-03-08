@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export type AnalysisMode = "ib" | "momentum" | "occ" | "gapfill";
+export type AnalysisMode = "ib" | "momentum" | "occ" | "gapfill" | "insidebar";
 
 interface ControlPanelProps {
   onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => void;
@@ -61,7 +61,8 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
             <SelectItem value="ib">Initial Balance (IB)</SelectItem>
             {!isFree && <SelectItem value="momentum">Momentum Candle</SelectItem>}
             {!isFree && <SelectItem value="occ">Opening Candle Continuation</SelectItem>}
-            {!isFree && <SelectItem value="gapfill">Gap Fill Statistics</SelectItem>}
+             {!isFree && <SelectItem value="gapfill">Gap Fill Statistics</SelectItem>}
+            {!isFree && <SelectItem value="insidebar">Inside Bar</SelectItem>}
           </SelectContent>
         </Select>
         {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for Momentum analysis</p>}

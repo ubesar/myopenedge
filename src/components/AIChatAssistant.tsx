@@ -7,7 +7,7 @@ import ReactMarkdown from "react-markdown";
 type Message = { role: "user" | "assistant"; content: string };
 
 export interface AnalysisContext {
-  mode: "ib" | "momentum" | "occ" | "gapfill" | null;
+  mode: "ib" | "momentum" | "occ" | "gapfill" | "insidebar" | null;
   symbol: string;
   summary: string;
 }

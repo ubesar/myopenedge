@@ -16,6 +16,8 @@ import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
 import { analyzeOCC, type OCCResult } from "@/lib/occ-analysis";
 import { analyzeGapFill, type GapFillResult } from "@/lib/gapfill-analysis";
+import { analyzeInsideBar, type InsideBarResult } from "@/lib/insidebar-analysis";
+import InsideBarReport from "@/components/InsideBarReport";
 import { useSubscription } from "@/hooks/useSubscription";
 import { z } from "zod";
 
@@ -40,6 +42,7 @@ const Index = () => {
   const [momentumResult, setMomentumResult] = useState<MomentumResult | null>(null);
   const [occResult, setOccResult] = useState<OCCResult | null>(null);
   const [gapFillResult, setGapFillResult] = useState<GapFillResult | null>(null);
+  const [insideBarResult, setInsideBarResult] = useState<InsideBarResult | null>(null);
   const [symbol, setSymbol] = useState("");
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
   const [selectedRunId, setSelectedRunId] = useState<string | undefined>();
@@ -62,8 +65,9 @@ const Index = () => {
     if (activeMode === "momentum" && momentumResult) return { mode: "momentum", symbol, summary: `Momentum for ${symbol}, ${momentumResult.totalDays} days` };
     if (activeMode === "occ" && occResult) return { mode: "occ", symbol, summary: `OCC for ${symbol}, ${occResult.totalDays} days` };
     if (activeMode === "gapfill" && gapFillResult) return { mode: "gapfill", symbol, summary: `Gap Fill for ${symbol}, ${gapFillResult.totalDays} days` };
+    if (activeMode === "insidebar" && insideBarResult) return { mode: "insidebar", symbol, summary: `Inside Bar for ${symbol}, ${insideBarResult.totalDays} days, ${insideBarResult.breakoutPct.toFixed(1)}% breakout rate` };
     return { mode: null, symbol: "", summary: "" };
-  }, [activeMode, result, momentumResult, occResult, gapFillResult, symbol]);
+  }, [activeMode, result, momentumResult, occResult, gapFillResult, insideBarResult, symbol]);
 
   if (!authLoading && !user) return <Navigate to="/auth" replace />;
 
@@ -75,7 +79,7 @@ const Index = () => {
 
   const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50") => {
     setLoading(true);
-    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null);
+    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null);
     setSymbol(ticker); setActiveMode(mode);
     try {
       const json = await fetchMarketData(ticker);
@@ -104,6 +108,11 @@ const Index = () => {
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setGapFillResult(a);
         addRun(mode, ticker, { totalDays: a.totalDays, stats: a.stats });
+      } else if (mode === "insidebar") {
+        const a = analyzeInsideBar(values as any, maxDays);
+        if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+        setInsideBarResult(a);
+        addRun(mode, ticker, { totalDays: a.totalDays, insideBarPct: a.insideBarPct, breakoutPct: a.breakoutPct });
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch data");
@@ -112,10 +121,10 @@ const Index = () => {
     }
   };
 
-  const hasResults = result || momentumResult || occResult || gapFillResult;
+  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult;
 
   const reportTitle = hasResults
-    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "momentum" ? "ny open momentum continuation report" : activeMode === "occ" ? "opening candle continuation report" : "gap fill statistics report"}`
+    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "momentum" ? "ny open momentum continuation report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : "gap fill statistics report"}`
     : "";
 
   // Build chart data for each mode
@@ -323,6 +332,10 @@ const Index = () => {
           />
         </div>
       );
+    }
+
+    if (activeMode === "insidebar" && insideBarResult) {
+      return <InsideBarReport result={insideBarResult} symbol={symbol} />;
     }
 
     return null;

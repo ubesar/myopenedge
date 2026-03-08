@@ -92,6 +92,7 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
               {!isFree && <SelectItem value="momentum">momentum candle</SelectItem>}
               {!isFree && <SelectItem value="occ">opening candle continuation</SelectItem>}
               {!isFree && <SelectItem value="gapfill">gap fill statistics</SelectItem>}
+              {!isFree && <SelectItem value="insidebar">inside bar</SelectItem>}
             </SelectContent>
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}
@@ -167,7 +168,7 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for more days</p>}
 
 
-          {mode !== "occ" && mode !== "gapfill" && (
+          {mode !== "occ" && mode !== "gapfill" && mode !== "insidebar" && (
             <>
               <p className="text-[11px] text-muted-foreground">IB window</p>
               <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => !isFree && setIbWindow(v)} disabled={isFree}>
