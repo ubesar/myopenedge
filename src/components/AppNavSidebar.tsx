@@ -19,7 +19,7 @@ interface AppNavSidebarProps {
 const workspaceItems = [
   { icon: Rocket, label: "get started", href: "/docs" },
   { icon: Bot, label: "ai assistant", href: "/ai-assistant" },
-  { icon: BarChart3, label: "reports", href: "/app" },
+  { icon: BarChart3, label: "edge lab", href: "/app" },
   { icon: CandlestickChart, label: "chart", href: "/chart" },
   { icon: TrendingUp, label: "whats in play", href: null },
   { icon: Cpu, label: "algos", href: "/algos" },
