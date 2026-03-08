@@ -68,15 +68,10 @@ function getTimeMinutes(dt: Date): number {
 const IB_START = 9 * 60 + 30; // 09:30
 const MARKET_CLOSE = 16 * 60;
 
-function evaluateOCC(bars5min: CandleBar[], tfMinutes: number): OCCTimeframeResult {
+function evaluateOCC(bars5min: CandleBar[], tfMinutes: number, bodyRatio: number = 0.50): OCCTimeframeResult {
   const tf = TF_CONFIGS.find((t) => t.minutes === tfMinutes)?.tf || `M${tfMinutes}`;
 
-  // Aggregate 5-min bars to the target timeframe
-  const aggregated = aggregateBars(bars5min, tfMinutes);
-
-  // We need the first 2 candles starting at 09:30
-  // Filter bars that are within the OCC evaluation window
-  const endMinute = IB_START + tfMinutes * 2; // need 2 candles worth of data
+  const endMinute = IB_START + tfMinutes * 2;
   const relevantBars = bars5min.filter((b) => {
     const [h, m] = b.time.split(":").map(Number);
     const totalMin = h * 60 + m;
@@ -96,8 +91,8 @@ function evaluateOCC(bars5min: CandleBar[], tfMinutes: number): OCCTimeframeResu
   const c1Body = Math.abs(c1.close - c1.open);
   const c1BodyPct = c1Range > 0 ? c1Body / c1Range : 0;
 
-  const c1Bullish = c1.close > c1.open && c1BodyPct >= 0.5;
-  const c1Bearish = c1.close < c1.open && c1BodyPct >= 0.5;
+  const c1Bullish = c1.close > c1.open && c1BodyPct >= bodyRatio;
+  const c1Bearish = c1.close < c1.open && c1BodyPct >= bodyRatio;
   const c2Bullish = c2.close > c2.open;
   const c2Bearish = c2.close < c2.open;
 
