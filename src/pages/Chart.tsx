@@ -12,7 +12,7 @@ const intervals = [
   { label: "1h", value: "1h" },
 ];
 
-const popularSymbols = ["QQQ", "SPY", "AAPL", "TSLA", "NVDA", "GLD", "BTC/USD", "ETH/USD"];
+const popularSymbols = ["QQQ", "GLD", "SPY", "AAPL", "TSLA", "NVDA", "BTC/USD", "ETH/USD"];
 
 const Chart = () => {
   const { user, loading } = useAuth();
