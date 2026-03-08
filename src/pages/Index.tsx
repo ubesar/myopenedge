@@ -65,8 +65,9 @@ const Index = () => {
     if (activeMode === "momentum" && momentumResult) return { mode: "momentum", symbol, summary: `Momentum for ${symbol}, ${momentumResult.totalDays} days` };
     if (activeMode === "occ" && occResult) return { mode: "occ", symbol, summary: `OCC for ${symbol}, ${occResult.totalDays} days` };
     if (activeMode === "gapfill" && gapFillResult) return { mode: "gapfill", symbol, summary: `Gap Fill for ${symbol}, ${gapFillResult.totalDays} days` };
+    if (activeMode === "insidebar" && insideBarResult) return { mode: "insidebar", symbol, summary: `Inside Bar for ${symbol}, ${insideBarResult.totalDays} days, ${insideBarResult.breakoutPct.toFixed(1)}% breakout rate` };
     return { mode: null, symbol: "", summary: "" };
-  }, [activeMode, result, momentumResult, occResult, gapFillResult, symbol]);
+  }, [activeMode, result, momentumResult, occResult, gapFillResult, insideBarResult, symbol]);
 
   if (!authLoading && !user) return <Navigate to="/auth" replace />;
 
