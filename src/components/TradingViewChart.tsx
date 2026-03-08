@@ -24,9 +24,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false }: TradingViewChart
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeRef = useRef<ISeriesApi<"Histogram"> | null>(null);
-  const ibHighSeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
-  const ibLowSeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
-  const ib50SeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
+  const ibSeriesListRef = useRef<ISeriesApi<"Line">[]>([]);
   const [chartReady, setChartReady] = useState(false);
   const [ohlc, setOhlc] = useState<{
     o: number; h: number; l: number; c: number; change: number; changePct: number;
