@@ -157,7 +157,7 @@ const PinLock = ({ userId, onUnlock }: PinLockProps) => {
       .eq("user_id", userId);
 
     if (!dbError) {
-      toast.success("PIN dihapus");
+      toast.success("PIN removed");
       setHasPin(false);
       setIsSettingUp(true);
       setPin([]);
