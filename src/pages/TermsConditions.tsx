@@ -162,7 +162,7 @@ export default function TermsConditions() {
             <section className="space-y-3">
               <h2 className="text-xl font-bold">5. How to Request a Refund</h2>
               <p className="text-muted-foreground leading-relaxed">
-                To request a refund, contact us at <span className="text-primary font-medium">support@myopenedge.com</span> within 7 days of payment with your transaction hash and account email. Refund requests are reviewed within 5 business days.
+                To request a refund, contact us at <span className="text-primary font-medium">support@myopenedge.com</span> within 7 days of payment with your order ID and account email. Refund requests are reviewed within 5 business days.
               </p>
             </section>
           </TabsContent>
