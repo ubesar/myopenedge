@@ -263,7 +263,13 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
           }
         }
 
-        // Momentum Candle markers
+        // Remove old MC line series
+        for (const s of mcSeriesListRef.current) {
+          try { chart.removeSeries(s); } catch {}
+        }
+        mcSeriesListRef.current = [];
+
+        // Momentum Candle: highlight candles + draw level line
         if (showMC && interval !== "1day" && sorted.length > 0) {
           const dayBarsMap: Record<string, typeof sorted> = {};
           for (const bar of sorted) {
@@ -272,18 +278,22 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
             dayBarsMap[date].push(bar);
           }
 
-          const markers: { time: Time; position: string; color: string; shape: string; text: string }[] = [];
+          // Collect MC candle timestamps to recolor
+          const mcTimestamps = new Set<number>();
+          const mcLevels: { date: string; closePrice: number; fromTime: Time; toTime: Time }[] = [];
+
+          const toTs = (dt: string) =>
+            Math.floor(new Date(dt.replace(" ", "T") + "+00:00").getTime() / 1000);
 
           for (const date of Object.keys(dayBarsMap).sort()) {
             const bars = dayBarsMap[date];
-            // Filter morning session 09:30 - 12:00
             const morningBars = bars.filter(b => {
               const t = b.datetime.split(" ")[1];
               return t >= "09:30:00" && t < "12:00:00";
             });
 
-            // Detect consecutive same-color candles with body ratio
-            for (let i = 0; i < morningBars.length - 1; i++) {
+            let foundMC = false;
+            for (let i = 0; i < morningBars.length - 1 && !foundMC; i++) {
               const prev = morningBars[i];
               const curr = morningBars[i + 1];
 
@@ -304,29 +314,44 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
                 cBody / cRange >= 0.30 &&
                 pBull === cBull
               ) {
-                const ts = Math.floor(new Date(curr.datetime.replace(" ", "T") + "+00:00").getTime() / 1000) as Time;
-                markers.push({
-                  time: ts,
-                  position: pBull ? "belowBar" : "aboveBar",
-                  color: pBull ? "#26a69a" : "#ef5350",
-                  shape: pBull ? "arrowUp" : "arrowDown",
-                  text: pBull ? "MC▲" : "MC▼",
+                mcTimestamps.add(toTs(prev.datetime));
+                mcTimestamps.add(toTs(curr.datetime));
+
+                // MC level = close of 2nd candle, extend to end of session
+                const sessionEnd = bars.filter(b => {
+                  const t = b.datetime.split(" ")[1];
+                  return t >= "09:30:00" && t <= "16:00:00";
                 });
-                i++; // skip next
+                const endBar = sessionEnd[sessionEnd.length - 1];
+                if (endBar) {
+                  mcLevels.push({
+                    date,
+                    closePrice: cC,
+                    fromTime: toTs(curr.datetime) as Time,
+                    toTime: toTs(endBar.datetime) as Time,
+                  });
+                }
+                foundMC = true; // only first MC per day
               }
             }
           }
 
-          markers.sort((a, b) => (a.time as number) - (b.time as number));
-          if (mcMarkersRef.current) {
-            mcMarkersRef.current.setMarkers([]);
-            mcMarkersRef.current = null;
-          }
-          mcMarkersRef.current = createSeriesMarkers(seriesRef.current!, markers as any);
-        } else {
-          if (mcMarkersRef.current) {
-            mcMarkersRef.current.setMarkers([]);
-            mcMarkersRef.current = null;
+          // Re-set candle data with MC candles colored magenta
+          const recolored = candles.map((c, idx) => {
+            const ts = c.time as number;
+            if (mcTimestamps.has(ts)) {
+              return { ...c, color: "#FF00FF", borderColor: "#FF00FF", wickColor: "#FF00FF" };
+            }
+            return c;
+          });
+          seriesRef.current!.setData(recolored);
+
+          // Draw cyan MC level lines
+          const lineBaseOpts = { priceScaleId: "right", lastValueVisible: false, crosshairMarkerVisible: false, priceLineVisible: false };
+          for (const mc of mcLevels) {
+            const mcLine = chart.addSeries(LineSeries, { ...lineBaseOpts, color: "#00FFFF", lineWidth: 1, lineStyle: 0, title: "" });
+            mcLine.setData([{ time: mc.fromTime, value: mc.closePrice }, { time: mc.toTime, value: mc.closePrice }]);
+            mcSeriesListRef.current.push(mcLine);
           }
         }
 
