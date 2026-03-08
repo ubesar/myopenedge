@@ -22,6 +22,11 @@ interface TradingViewChartProps {
 
 const BODY_RATIO = 0.50;
 
+const SYNTHETIC_SYMBOLS: Record<string, { source: string; multiplier: number }> = {
+  NQ: { source: "QQQ", multiplier: 42 },
+  GC: { source: "GLD", multiplier: 10.75 },
+};
+
 const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: TradingViewChartProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -155,10 +160,14 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
         }
 
         // Use TwelveData proxy edge function
+        const synthetic = SYNTHETIC_SYMBOLS[symbol];
+        const fetchSymbol = synthetic ? synthetic.source : symbol;
+        const multiplier = synthetic ? synthetic.multiplier : 1;
+
         const baseUrl = import.meta.env.VITE_SUPABASE_URL;
         const outputSize = interval === "1day" ? 365 : 390;
         const res = await fetch(
-          `${baseUrl}/functions/v1/twelvedata-proxy?symbol=${symbol}&interval=${interval}&outputsize=${outputSize}`,
+          `${baseUrl}/functions/v1/twelvedata-proxy?symbol=${fetchSymbol}&interval=${interval}&outputsize=${outputSize}`,
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
 
@@ -181,10 +190,10 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
             ? bar.datetime
             : Math.floor(new Date(bar.datetime.replace(" ", "T") + "+00:00").getTime() / 1000)) as Time;
 
-          const o = parseFloat(bar.open);
-          const h = parseFloat(bar.high);
-          const l = parseFloat(bar.low);
-          const c = parseFloat(bar.close);
+          const o = parseFloat(bar.open) * multiplier;
+          const h = parseFloat(bar.high) * multiplier;
+          const l = parseFloat(bar.low) * multiplier;
+          const c = parseFloat(bar.close) * multiplier;
           const v = bar.volume ? parseFloat(bar.volume) : 0;
 
           candles.push({ time, open: o, high: h, low: l, close: c });
