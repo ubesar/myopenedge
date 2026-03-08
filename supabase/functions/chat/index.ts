@@ -54,7 +54,7 @@ serve(async (req) => {
   const userId = user.id;
 
   // Check subscription status - ONLY PRO users can use chat
-  const { data: profile, error: profileError } = await supabase
+  const { data: profile, error: profileError } = await serviceClient
     .from("profiles")
     .select("subscription_status")
     .eq("user_id", userId)
@@ -78,10 +78,6 @@ serve(async (req) => {
   }
 
   // Rate limiting: 50 requests/hour for Pro users
-  const serviceClient = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  );
   const { data: allowed, error: rlError } = await serviceClient.rpc("check_rate_limit", {
     _user_id: userId,
     _endpoint: "chat",
