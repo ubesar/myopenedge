@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Loader2, Play } from "lucide-react";
+import { Loader2, Play, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -42,23 +42,38 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Custom Templates */}
+      <div>
+        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+          custom templates
+        </h3>
+        <button
+          type="button"
+          className="w-full flex items-center justify-center gap-2 rounded-md border border-border/50 bg-secondary/50 px-3 py-2 text-[11px] text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors lowercase"
+        >
+          <Save className="h-3.5 w-3.5" />
+          save as new template
+        </button>
+      </div>
+
       {/* Reports & Customizations */}
       <div>
-        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">reports & customizations</h3>
-        
+        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+          reports & customizations
+        </h3>
         <div className="space-y-3">
           <div>
-            <label className="text-[11px] text-muted-foreground lowercase mb-1 block">report</label>
+            <label className="text-[11px] text-muted-foreground lowercase mb-1.5 block">report</label>
             <Select value={isFree ? "ib" : mode} onValueChange={(v) => !isFree && setMode(v as AnalysisMode)} disabled={isFree}>
-              <SelectTrigger className="bg-card border-border/50 text-foreground text-xs h-9 rounded-lg lowercase">
+              <SelectTrigger className="bg-secondary/50 border-border/50 text-foreground text-xs h-9 rounded-md lowercase">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ib" className="lowercase">IB: initial balance breakout</SelectItem>
-                {!isFree && <SelectItem value="momentum" className="lowercase">momentum candle</SelectItem>}
-                {!isFree && <SelectItem value="occ" className="lowercase">opening candle continuation</SelectItem>}
-                {!isFree && <SelectItem value="gapfill" className="lowercase">gap fill statistics</SelectItem>}
+              <SelectContent className="bg-card border-border/50">
+                <SelectItem value="ib" className="lowercase text-xs">IB: initial balance breakout</SelectItem>
+                {!isFree && <SelectItem value="momentum" className="lowercase text-xs">momentum candle</SelectItem>}
+                {!isFree && <SelectItem value="occ" className="lowercase text-xs">opening candle continuation</SelectItem>}
+                {!isFree && <SelectItem value="gapfill" className="lowercase text-xs">gap fill statistics</SelectItem>}
               </SelectContent>
             </Select>
             {isFree && <p className="text-[10px] text-muted-foreground mt-1">🔒 upgrade to pro for more reports</p>}
@@ -68,64 +83,83 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
 
       {/* Ticker & Timeframe */}
       <div>
-        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">ticker & timeframe</h3>
-        
+        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+          ticker & timeframe
+        </h3>
         <div className="space-y-3">
           <div>
-            <label className="text-[11px] text-muted-foreground lowercase mb-1 block">asset & ticker</label>
+            <label className="text-[11px] text-muted-foreground lowercase mb-1.5 block">asset & ticker</label>
             <Input
               placeholder="QQQ"
               value={symbol}
               onChange={(e) => setSymbol(e.target.value)}
-              className="bg-card border-border/50 text-foreground placeholder:text-muted-foreground uppercase text-xs h-9 rounded-lg"
+              className="bg-secondary/50 border-border/50 text-foreground placeholder:text-muted-foreground uppercase text-xs h-9 rounded-md"
             />
-          </div>
-
-          <div>
-            <label className="text-[11px] text-muted-foreground lowercase mb-1 block">date range</label>
-            <Select value={isFree ? "7" : maxDays} onValueChange={(v) => !isFree && setMaxDays(v)} disabled={isFree}>
-              <SelectTrigger className="bg-card border-border/50 text-foreground text-xs h-9 rounded-lg lowercase">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {isFree
-                  ? <SelectItem value="7" className="lowercase">last 7 days</SelectItem>
-                  : DAY_OPTIONS.map((d) => <SelectItem key={d.value} value={d.value} className="lowercase">{d.label}</SelectItem>)
-                }
-              </SelectContent>
-            </Select>
-            {isFree && <p className="text-[10px] text-muted-foreground mt-1">🔒 upgrade for more days</p>}
           </div>
 
           {mode !== "occ" && mode !== "gapfill" && (
             <div>
-              <label className="text-[11px] text-muted-foreground lowercase mb-1 block">session / IB window</label>
+              <label className="text-[11px] text-muted-foreground lowercase mb-1.5 block">session / IB window</label>
               <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => !isFree && setIbWindow(v)} disabled={isFree}>
-                <SelectTrigger className="bg-card border-border/50 text-foreground text-xs h-9 rounded-lg lowercase">
+                <SelectTrigger className="bg-secondary/50 border-border/50 text-foreground text-xs h-9 rounded-md lowercase">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-card border-border/50">
                   {isFree
-                    ? <SelectItem value="60" className="lowercase">first 60 min (09:30–10:30)</SelectItem>
-                    : IB_WINDOWS.map((w) => <SelectItem key={w.value} value={w.value} className="lowercase">{w.label}</SelectItem>)
+                    ? <SelectItem value="60" className="lowercase text-xs">first 60 min (09:30–10:30)</SelectItem>
+                    : IB_WINDOWS.map((w) => <SelectItem key={w.value} value={w.value} className="lowercase text-xs">{w.label}</SelectItem>)
                   }
                 </SelectContent>
               </Select>
               {isFree && <p className="text-[10px] text-muted-foreground mt-1">🔒 upgrade for more windows</p>}
             </div>
           )}
+
+          <div>
+            <label className="text-[11px] text-muted-foreground lowercase mb-1.5 block">date range</label>
+            <Select value={isFree ? "7" : maxDays} onValueChange={(v) => !isFree && setMaxDays(v)} disabled={isFree}>
+              <SelectTrigger className="bg-secondary/50 border-border/50 text-foreground text-xs h-9 rounded-md lowercase">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-card border-border/50">
+                {isFree
+                  ? <SelectItem value="7" className="lowercase text-xs">last 7 days</SelectItem>
+                  : DAY_OPTIONS.map((d) => <SelectItem key={d.value} value={d.value} className="lowercase text-xs">{d.label}</SelectItem>)
+                }
+              </SelectContent>
+            </Select>
+            {isFree && <p className="text-[10px] text-muted-foreground mt-1">🔒 upgrade for more days</p>}
+          </div>
+
+          <div>
+            <label className="text-[11px] text-muted-foreground lowercase mb-1.5 block">session</label>
+            <Select defaultValue="rth">
+              <SelectTrigger className="bg-secondary/50 border-border/50 text-foreground text-xs h-9 rounded-md lowercase">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-card border-border/50">
+                <SelectItem value="rth" className="lowercase text-xs">regular trading hours (RTH)</SelectItem>
+                <SelectItem value="eth" className="lowercase text-xs">extended trading hours (ETH)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
-      <Button type="submit" disabled={loading} className="w-full h-9 rounded-lg text-xs font-medium lowercase">
+      {/* Run Button */}
+      <Button
+        type="submit"
+        disabled={loading}
+        className="w-full h-10 rounded-md text-xs font-semibold lowercase bg-primary hover:bg-primary/90"
+      >
         {loading ? (
           <>
-            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             analyzing…
           </>
         ) : (
           <>
-            <Play className="mr-2 h-3.5 w-3.5" />
+            <Play className="mr-2 h-4 w-4" />
             run analysis
           </>
         )}
