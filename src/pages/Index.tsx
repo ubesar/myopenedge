@@ -86,31 +86,31 @@ const Index = () => {
       if (!parsed.success) { toast.error("Invalid or empty data returned."); return; }
       const values = parsed.data.values;
 
-      if (mode === "ib") {
-        const a = analyzeIB(values as any, ibWindow, maxDays);
+      if (effectiveMode === "ib") {
+        const a = analyzeIB(values as any, effectiveIbWindow, effectiveMaxDays);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setResult(a);
-        addRun(mode, ticker, { totalDays: a.totalDays, ibWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
-      } else if (mode === "momentum") {
-        const a = analyzeMomentum(values as any, ibWindow, maxDays, parseFloat(bodyRatio));
+        addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
+      } else if (effectiveMode === "momentum") {
+        const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, parseFloat(bodyRatio));
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setMomentumResult(a);
-        addRun(mode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });
-      } else if (mode === "occ") {
-        const a = analyzeOCC(values as any, maxDays, parseFloat(occBodyRatio));
+        addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });
+      } else if (effectiveMode === "occ") {
+        const a = analyzeOCC(values as any, effectiveMaxDays, parseFloat(occBodyRatio));
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setOccResult(a);
-        addRun(mode, ticker, { totalDays: a.totalDays, tfDirectionStats: a.tfDirectionStats });
-      } else if (mode === "gapfill") {
-        const a = analyzeGapFill(values as any, maxDays);
+        addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfDirectionStats: a.tfDirectionStats });
+      } else if (effectiveMode === "gapfill") {
+        const a = analyzeGapFill(values as any, effectiveMaxDays);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setGapFillResult(a);
-        addRun(mode, ticker, { totalDays: a.totalDays, stats: a.stats });
-      } else if (mode === "insidebar") {
-        const a = analyzeInsideBar(values as any, maxDays);
+        addRun(effectiveMode, ticker, { totalDays: a.totalDays, stats: a.stats });
+      } else if (effectiveMode === "insidebar") {
+        const a = analyzeInsideBar(values as any, effectiveMaxDays);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setInsideBarResult(a);
-        addRun(mode, ticker, { totalDays: a.totalDays, insideBarPct: a.insideBarPct, breakoutPct: a.breakoutPct });
+        addRun(effectiveMode, ticker, { totalDays: a.totalDays, insideBarPct: a.insideBarPct, breakoutPct: a.breakoutPct });
       }
 
     } catch (err: any) {
