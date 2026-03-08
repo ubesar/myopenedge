@@ -137,7 +137,7 @@ const AIChatAssistant = forwardRef<AIChatAssistantHandle, AIChatAssistantProps>(
       if (!context.mode || isLoading) return;
       setOpen(true);
 
-      const autoPrompt = `Analisis baru saja selesai. Berikan ringkasan otomatis dalam 3-5 kalimat: bias arah, tingkat kepercayaan, dan level kunci yang harus diperhatikan. Data: ${context.summary}`;
+      const autoPrompt = `Analysis just completed. Provide an automatic summary in 3-5 sentences: directional bias, confidence level, and key levels to watch. Data: ${context.summary}`;
       const systemMsg: Message = { role: "user", content: autoPrompt };
       setMessages((prev) => [...prev, systemMsg]);
 
@@ -155,48 +155,48 @@ const AIChatAssistant = forwardRef<AIChatAssistantHandle, AIChatAssistantProps>(
         label: "Auto Summary",
         icon: Zap,
         prompt: hasContext
-          ? `Berikan ringkasan singkat 3-5 kalimat dari data ${analysisContext?.mode?.toUpperCase()} untuk ${analysisContext?.symbol}. Sertakan: bias arah, confidence level, dan key levels.`
-          : "Jelaskan cara membaca ringkasan analisis IB.",
+          ? `Provide a brief 3-5 sentence summary of the ${analysisContext?.mode?.toUpperCase()} data for ${analysisContext?.symbol}. Include: directional bias, confidence level, and key levels.`
+          : "Explain how to read an IB analysis summary.",
         show: true,
       },
       {
         label: "Confluence",
         icon: Layers,
         prompt: hasConfluence
-          ? `Lakukan analisis konfluensi dari semua data berikut dan tentukan apakah sinyal ALIGN atau CONFLICT:\n${Object.entries(confluenceData!).map(([mode, d]) => `- ${mode.toUpperCase()}: ${d.summary}`).join("\n")}\n\nJika align, nyatakan ini High Probability Setup. Jika conflict, sarankan untuk sit on hands.`
-          : "Jelaskan konsep confluence dalam trading dan mengapa penting untuk mengkonfirmasi sinyal dari beberapa indikator.",
+          ? `Perform a confluence analysis from all the following data and determine whether signals ALIGN or CONFLICT:\n${Object.entries(confluenceData!).map(([mode, d]) => `- ${mode.toUpperCase()}: ${d.summary}`).join("\n")}\n\nIf aligned, declare this a High Probability Setup. If conflicting, recommend sitting on hands.`
+          : "Explain the concept of confluence in trading and why it's important to confirm signals from multiple indicators.",
         show: true,
       },
       {
         label: "Trade Plan",
         icon: Target,
         prompt: hasContext
-          ? `Buat trading plan untuk ${analysisContext?.symbol} berdasarkan data ${analysisContext?.mode?.toUpperCase()} saat ini. Sertakan: entry trigger, stop loss, target profit, dan R:R ratio. Format untuk trading journal.`
-          : "Bagaimana cara membuat trading plan menggunakan data IB dan momentum?",
+          ? `Create a trading plan for ${analysisContext?.symbol} based on the current ${analysisContext?.mode?.toUpperCase()} data. Include: entry trigger, stop loss, profit target, and R:R ratio. Format for trading journal.`
+          : "How do I create a trading plan using IB and momentum data?",
         show: true,
       },
       {
         label: "Journal Entry",
         icon: BookOpen,
         prompt: hasContext
-          ? `Format data analisis ${analysisContext?.mode?.toUpperCase()} untuk ${analysisContext?.symbol} ke dalam template trading journal standar dengan format:\n- Tanggal & Ticker\n- Bias: (Long/Short/Neutral)\n- Statistical Edge: (persentase)\n- Setup Grade: (A/B/C berdasarkan probabilitas)\n- Key Levels\n- Risk Management Notes`
-          : "Tunjukkan template trading journal yang ideal untuk scalper.",
+          ? `Format the ${analysisContext?.mode?.toUpperCase()} analysis data for ${analysisContext?.symbol} into a standard trading journal template with format:\n- Date & Ticker\n- Bias: (Long/Short/Neutral)\n- Statistical Edge: (percentage)\n- Setup Grade: (A/B/C based on probability)\n- Key Levels\n- Risk Management Notes`
+          : "Show me an ideal trading journal template for scalpers.",
         show: true,
       },
       {
         label: "Export",
         icon: Share2,
         prompt: hasContext
-          ? `Buat 3 versi ringkasan untuk ${analysisContext?.symbol} ${analysisContext?.mode?.toUpperCase()} data:\n\n1. **JOURNAL** (markdown lengkap dengan semua detail)\n2. **SOCIAL** (format ringkas 2-3 baris untuk sharing di komunitas)\n3. **EA/JSON** (format JSON terstruktur untuk Expert Advisor)`
-          : "Jelaskan format export yang berguna untuk trading journal.",
+          ? `Create 3 summary versions for ${analysisContext?.symbol} ${analysisContext?.mode?.toUpperCase()} data:\n\n1. **JOURNAL** (full markdown with all details)\n2. **SOCIAL** (concise 2-3 line format for sharing in communities)\n3. **EA/JSON** (structured JSON format for Expert Advisor)`
+          : "Explain useful export formats for a trading journal.",
         show: true,
       },
       {
         label: "Bias Analysis",
         icon: TrendingUp,
         prompt: hasContext
-          ? `Berdasarkan data ${analysisContext?.mode?.toUpperCase()} untuk ${analysisContext?.symbol}, apa bias arah hari ini? Sisi mana yang punya statistical edge? Berikan persentase spesifik.`
-          : "Jelaskan cara menganalisis bias arah menggunakan data IB.",
+          ? `Based on the ${analysisContext?.mode?.toUpperCase()} data for ${analysisContext?.symbol}, what is today's directional bias? Which side has the statistical edge? Provide specific percentages.`
+          : "Explain how to analyze directional bias using IB data.",
         show: true,
       },
     ];

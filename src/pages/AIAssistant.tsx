@@ -128,37 +128,37 @@ const AIAssistant = () => {
       label: "Pre-Market Briefing",
       icon: Zap,
       description: "Generate a briefing for today's NY Open session",
-      prompt: "Buat pre-market briefing untuk sesi NY Open hari ini. Berdasarkan pola historis, analisis:\n1. Probabilitas Inside Bar berdasarkan pola kemarin\n2. Rata-rata IB range untuk hari ini\n3. Level kunci yang harus diperhatikan\n4. Rekomendasi strategi (trend vs range)",
+      prompt: "Create a pre-market briefing for today's NY Open session. Based on historical patterns, analyze:\n1. Inside Bar probability based on yesterday's pattern\n2. Average IB range for today\n3. Key levels to watch\n4. Strategy recommendation (trend vs range)",
     },
     {
       label: "Bias Analysis",
       icon: TrendingUp,
       description: "Analyze directional bias from historical data",
-      prompt: "Jelaskan cara menganalisis bias arah menggunakan data IB, Momentum, dan OCC. Berikan framework langkah demi langkah yang bisa saya gunakan setiap hari sebelum trading.",
+      prompt: "Explain how to analyze directional bias using IB, Momentum, and OCC data. Provide a step-by-step framework I can use daily before trading.",
     },
     {
       label: "Confluence Check",
       icon: Layers,
       description: "Cross-check multiple analysis modes",
-      prompt: "Jelaskan konsep confluence dalam trading dan bagaimana cara menggunakan MyOpenEdge untuk mengkonfirmasi sinyal dari IB, Momentum, OCC, dan Inside Bar secara bersamaan. Berikan contoh skenario high-probability vs conflicting signals.",
+      prompt: "Explain the concept of confluence in trading and how to use MyOpenEdge to confirm signals from IB, Momentum, OCC, and Inside Bar simultaneously. Provide examples of high-probability vs conflicting signal scenarios.",
     },
     {
       label: "Trading Plan",
       icon: Target,
       description: "Create a structured trading plan",
-      prompt: "Buat template trading plan yang ideal untuk day trader/scalper di sesi NY Open. Sertakan:\n- Pre-market checklist\n- Entry criteria berdasarkan IB/Momentum/OCC\n- Stop loss & target rules\n- Risk management per trade\n- Journaling template",
+      prompt: "Create an ideal trading plan template for a day trader/scalper during the NY Open session. Include:\n- Pre-market checklist\n- Entry criteria based on IB/Momentum/OCC\n- Stop loss & target rules\n- Risk management per trade\n- Journaling template",
     },
     {
       label: "Journal Template",
       icon: BookOpen,
       description: "Format trades for your journal",
-      prompt: "Tunjukkan template trading journal yang ideal untuk scalper yang menggunakan MyOpenEdge. Sertakan format untuk:\n- Setup entry (ticker, bias, statistical edge)\n- Execution (entry, SL, TP, R:R)\n- Post-trade review (grade, lesson learned)\n- Weekly summary template",
+      prompt: "Show me an ideal trading journal template for scalpers using MyOpenEdge. Include formats for:\n- Setup entry (ticker, bias, statistical edge)\n- Execution (entry, SL, TP, R:R)\n- Post-trade review (grade, lesson learned)\n- Weekly summary template",
     },
     {
       label: "Export Summary",
       icon: Share2,
       description: "Generate shareable summaries",
-      prompt: "Jelaskan format export yang tersedia di MyOpenEdge:\n1. JOURNAL format (markdown lengkap)\n2. SOCIAL format (ringkas untuk komunitas/social media)\n3. EA/JSON format (untuk Expert Advisor)\n\nBerikan contoh masing-masing format.",
+      prompt: "Explain the export formats available in MyOpenEdge:\n1. JOURNAL format (full markdown)\n2. SOCIAL format (concise for community/social media)\n3. EA/JSON format (for Expert Advisor)\n\nProvide an example of each format.",
     },
   ];
 

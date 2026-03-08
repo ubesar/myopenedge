@@ -82,11 +82,11 @@ const TradingDashboard = ({ user, onLock }: { user: User; onLock?: () => void })
   const addMagicNumber = async () => {
     const magic = parseInt(newMagic);
     if (isNaN(magic) || magic <= 0) {
-      toast.error("Magic number harus angka positif");
+      toast.error("Magic number must be a positive number");
       return;
     }
     if (!newAsset.trim()) {
-      toast.error("Nama asset harus diisi");
+      toast.error("Asset name is required");
       return;
     }
     const { error } = await supabase.from("ea_control").insert({
@@ -97,7 +97,7 @@ const TradingDashboard = ({ user, onLock }: { user: User; onLock?: () => void })
       is_active: true,
     });
     if (error) {
-      toast.error(error.code === "23505" ? "Magic number sudah ada" : error.message);
+      toast.error(error.code === "23505" ? "Magic number already exists" : error.message);
       return;
     }
     setNewMagic("");

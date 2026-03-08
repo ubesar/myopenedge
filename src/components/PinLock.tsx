@@ -124,7 +124,7 @@ const PinLock = ({ userId, onUnlock }: PinLockProps) => {
     const confirmStr = digits.join("");
 
     if (pinStr !== confirmStr) {
-      setError("PIN tidak cocok");
+      setError("PINs do not match");
       setConfirmPin([]);
       triggerShake();
       return;
@@ -138,12 +138,12 @@ const PinLock = ({ userId, onUnlock }: PinLockProps) => {
       .upsert({ user_id: userId, pin_hash: hashed, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
 
     if (dbError) {
-      toast.error("Gagal menyimpan PIN");
+      toast.error("Failed to save PIN");
       setPin([]);
       setConfirmPin([]);
       setIsConfirming(false);
     } else {
-      toast.success("PIN berhasil dibuat!");
+      toast.success("PIN created successfully!");
       onUnlock();
     }
     setLoading(false);
@@ -157,7 +157,7 @@ const PinLock = ({ userId, onUnlock }: PinLockProps) => {
       .eq("user_id", userId);
 
     if (!dbError) {
-      toast.success("PIN dihapus");
+      toast.success("PIN removed");
       setHasPin(false);
       setIsSettingUp(true);
       setPin([]);
@@ -170,15 +170,15 @@ const PinLock = ({ userId, onUnlock }: PinLockProps) => {
   const currentPin = isConfirming ? confirmPin : pin;
 
   const getTitle = () => {
-    if (isSettingUp && !isConfirming) return "Buat PIN Baru";
-    if (isConfirming) return "Konfirmasi PIN";
-    return "Masukkan PIN";
+    if (isSettingUp && !isConfirming) return "Create New PIN";
+    if (isConfirming) return "Confirm PIN";
+    return "Enter PIN";
   };
 
   const getSubtitle = () => {
-    if (isSettingUp && !isConfirming) return "Buat 4 digit PIN untuk keamanan extra";
-    if (isConfirming) return "Masukkan ulang PIN untuk konfirmasi";
-    return "Masukkan PIN untuk mengakses dashboard";
+    if (isSettingUp && !isConfirming) return "Create a 4-digit PIN for extra security";
+    if (isConfirming) return "Re-enter your PIN to confirm";
+    return "Enter your PIN to access the dashboard";
   };
 
   if (hasPin === null) {
@@ -310,7 +310,7 @@ const PinLock = ({ userId, onUnlock }: PinLockProps) => {
               onClick={onUnlock}
               className="text-xs text-muted-foreground/50 hover:text-foreground transition-colors"
             >
-              Lewati untuk sekarang
+              Skip for now
             </button>
           </div>
         )}
