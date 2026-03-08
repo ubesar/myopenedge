@@ -1,15 +1,15 @@
-import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   ChevronLeft, ChevronRight, Rocket, Bot, BarChart3, CandlestickChart,
   TrendingUp, Cpu, Eye, Users,
-  Crown, LogOut
+  Crown, LogOut, Menu, X
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import iconX from "@/assets/icon-x.png";
 import iconYt from "@/assets/icon-yt.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AppNavSidebarProps {
   collapsed: boolean;
@@ -32,18 +32,19 @@ const communityItems = [
   { icon: null, label: "YouTube", href: "https://www.youtube.com/@ubetrades", img: iconYt },
 ];
 
-const AppNavSidebar = ({ collapsed, onToggle }: AppNavSidebarProps) => {
+const SidebarContent = ({ collapsed, onToggle, onNavigate }: { collapsed: boolean; onToggle: () => void; onNavigate?: () => void }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut } = useAuth();
   const { isActive } = useSubscription();
 
+  const handleNav = (href: string) => {
+    navigate(href);
+    onNavigate?.();
+  };
+
   return (
-    <div
-      className={`h-full flex flex-col border-r border-border bg-sidebar transition-all duration-200 shrink-0 ${
-        collapsed ? "w-[56px]" : "w-[200px]"
-      }`}
-    >
+    <div className="h-full flex flex-col">
       {/* Logo + toggle */}
       <div className="flex items-center gap-2 px-3 py-3 border-b border-border">
         <img src={logo} alt="MyOpenEdge" className="h-7 w-7 rounded-full object-cover shrink-0" />
@@ -67,7 +68,7 @@ const AppNavSidebar = ({ collapsed, onToggle }: AppNavSidebarProps) => {
             {workspaceItems.map((item) => (
               <button
                 key={item.label}
-                onClick={() => item.href && navigate(item.href)}
+                onClick={() => item.href && handleNav(item.href)}
                 className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] transition-colors ${
                   item.href && location.pathname === item.href
                     ? "bg-primary text-primary-foreground"
@@ -133,7 +134,7 @@ const AppNavSidebar = ({ collapsed, onToggle }: AppNavSidebarProps) => {
           </div>
         ) : (
           <button
-            onClick={() => navigate("/upgrade")}
+            onClick={() => handleNav("/upgrade")}
             className="flex items-center gap-2 text-[12px] text-muted-foreground hover:text-primary transition-colors"
             title="Upgrade"
           >
@@ -153,4 +154,61 @@ const AppNavSidebar = ({ collapsed, onToggle }: AppNavSidebarProps) => {
   );
 };
 
+const AppNavSidebar = ({ collapsed, onToggle }: AppNavSidebarProps) => {
+  const isMobile = useIsMobile();
+
+  // Mobile: overlay drawer
+  if (isMobile) {
+    return (
+      <>
+        {/* Hamburger trigger — rendered by parent via MobileHeader */}
+        {!collapsed && (
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              onClick={onToggle}
+            />
+            {/* Drawer */}
+            <div className="fixed inset-y-0 left-0 z-50 w-[240px] bg-sidebar border-r border-border shadow-2xl animate-in slide-in-from-left duration-200">
+              <SidebarContent collapsed={false} onToggle={onToggle} onNavigate={onToggle} />
+            </div>
+          </>
+        )}
+      </>
+    );
+  }
+
+  // Desktop: normal sidebar
+  return (
+    <div
+      className={`h-full flex flex-col border-r border-border bg-sidebar transition-all duration-200 shrink-0 ${
+        collapsed ? "w-[56px]" : "w-[200px]"
+      }`}
+    >
+      <SidebarContent collapsed={collapsed} onToggle={onToggle} />
+    </div>
+  );
+};
+
 export default AppNavSidebar;
+
+/** Mobile header bar with hamburger + optional action buttons */
+export const MobileHeader = ({
+  onMenuToggle,
+  title,
+  actions,
+}: {
+  onMenuToggle: () => void;
+  title?: string;
+  actions?: React.ReactNode;
+}) => (
+  <header className="lg:hidden sticky top-0 z-30 flex items-center gap-2 px-3 py-2 border-b border-border bg-background/95 backdrop-blur-sm">
+    <button onClick={onMenuToggle} className="p-1.5 rounded-lg hover:bg-accent transition-colors">
+      <Menu className="h-5 w-5 text-foreground" />
+    </button>
+    <img src={logo} alt="" className="h-6 w-6 rounded-full object-cover" />
+    {title && <span className="text-[13px] font-semibold text-foreground truncate">{title}</span>}
+    {actions && <div className="ml-auto flex items-center gap-1.5">{actions}</div>}
+  </header>
+);
