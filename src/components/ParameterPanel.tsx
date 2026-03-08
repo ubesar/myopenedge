@@ -168,7 +168,7 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for more days</p>}
 
 
-          {mode !== "occ" && mode !== "gapfill" && (
+          {mode !== "occ" && mode !== "gapfill" && mode !== "insidebar" && (
             <>
               <p className="text-[11px] text-muted-foreground">IB window</p>
               <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => !isFree && setIbWindow(v)} disabled={isFree}>
