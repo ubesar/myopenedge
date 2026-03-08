@@ -83,7 +83,7 @@ const Upgrade = () => {
     }
     setProcessing(true);
     paddle.Checkout.open({
-      items: [{ priceId: import.meta.env.VITE_PADDLE_PRICE_ID, quantity: 1 }],
+      items: [{ priceId: "pro_01kk6rewhc2mvgxrpd7xh5c3w1", quantity: 1 }],
       customData: { user_id: user.id },
       customer: { email: user.email || "" },
     });
