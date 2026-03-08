@@ -24,7 +24,6 @@ const workspaceItems = [
   { icon: TrendingUp, label: "whats in play", href: null },
   { icon: Cpu, label: "algos", href: "/algos" },
   { icon: Eye, label: "watchlist", href: null },
-  { icon: Calculator, label: "risk calculator", href: null },
 ];
 
 const communityItems = [
