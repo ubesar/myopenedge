@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, BarChart3, Activity, Target, Zap, TrendingUp, CandlestickChart } from "lucide-react";
+import { ArrowLeft, BarChart3, Activity, Target, Zap, TrendingUp, CandlestickChart, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import logo from "@/assets/logo.png";
