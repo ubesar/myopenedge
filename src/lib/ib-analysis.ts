@@ -20,12 +20,22 @@ export interface LastDayData {
   breakout: "high" | "low" | "inside";
 }
 
+export type IBSubreport = "rejection" | "extension";
+
+interface DirectionStats {
+  total: number;
+  breakHigh: number;
+  breakLow: number;
+  inside: number;
+}
+
 export interface AnalysisResult {
   totalDays: number;
   insideDays: number;
   ibWindowMinutes: number;
-  highFirst: { total: number; breakHigh: number; breakLow: number; inside: number };
-  lowFirst: { total: number; breakHigh: number; breakLow: number; inside: number };
+  subreport: IBSubreport;
+  highFirst: DirectionStats;
+  lowFirst: DirectionStats;
   lastDay: LastDayData | null;
   allDays: LastDayData[];
 }
