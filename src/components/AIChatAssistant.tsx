@@ -137,7 +137,7 @@ const AIChatAssistant = forwardRef<AIChatAssistantHandle, AIChatAssistantProps>(
       if (!context.mode || isLoading) return;
       setOpen(true);
 
-      const autoPrompt = `Analisis baru saja selesai. Berikan ringkasan otomatis dalam 3-5 kalimat: bias arah, tingkat kepercayaan, dan level kunci yang harus diperhatikan. Data: ${context.summary}`;
+      const autoPrompt = `Analysis just completed. Provide an automatic summary in 3-5 sentences: directional bias, confidence level, and key levels to watch. Data: ${context.summary}`;
       const systemMsg: Message = { role: "user", content: autoPrompt };
       setMessages((prev) => [...prev, systemMsg]);
 
