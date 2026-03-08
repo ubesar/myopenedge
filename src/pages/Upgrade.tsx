@@ -83,7 +83,7 @@ const Upgrade = () => {
     }
     setProcessing(true);
     paddle.Checkout.open({
-      items: [{ priceId: "pro_01kk6rewhc2mvgxrpd7xh5c3w1", quantity: 1 }],
+      items: [{ priceId: "pri_01kk6rkazpp86ckkdf76wtbg9s", quantity: 1 }],
       customData: { user_id: user.id },
       customer: { email: user.email || "" },
     });
