@@ -96,18 +96,21 @@ Deno.serve(async (req) => {
   let symbol: string | null = null;
   let interval = "5min";
   let outputsize = "5000";
+  let endpoint = "time_series"; // default
 
   if (req.method === "GET") {
     const url = new URL(req.url);
     symbol = url.searchParams.get("symbol");
     interval = url.searchParams.get("interval") || "5min";
     outputsize = url.searchParams.get("outputsize") || "5000";
+    endpoint = url.searchParams.get("endpoint") || "time_series";
   } else {
     try {
       const body = await req.json();
       symbol = body.symbol;
       interval = body.interval || "5min";
       outputsize = body.outputsize || "5000";
+      endpoint = body.endpoint || "time_series";
     } catch {
       // Fall through to validation
     }
@@ -120,8 +123,8 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Enforce free-tier limits
-  if (!isPro) {
+  // Enforce free-tier limits (only for time_series)
+  if (!isPro && endpoint === "time_series") {
     outputsize = String(FREE_OUTPUTSIZE);
     interval = FREE_MAX_INTERVAL;
   }
@@ -143,7 +146,12 @@ Deno.serve(async (req) => {
   // Try each key with auto-rotation
   for (let i = 0; i < keys.length; i++) {
     try {
-      const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&outputsize=${encodeURIComponent(outputsize)}&apikey=${encodeURIComponent(keys[i])}&format=JSON&timezone=America/New_York`;
+      let url: string;
+      if (endpoint === "quote") {
+        url = `https://api.twelvedata.com/quote?symbol=${encodeURIComponent(symbol)}&apikey=${encodeURIComponent(keys[i])}&format=JSON`;
+      } else {
+        url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&outputsize=${encodeURIComponent(outputsize)}&apikey=${encodeURIComponent(keys[i])}&format=JSON&timezone=America/New_York`;
+      }
       const res = await fetch(url);
       const json = await res.json();
 
