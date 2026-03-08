@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Loader2, Play, Plus, Bookmark } from "lucide-react";
+import { Loader2, Play, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import type { AnalysisMode } from "@/components/ControlPanel";
+import type { AnalysisTemplate, TemplateParams } from "@/hooks/useTemplates";
 
 export type OCCTimeframe = "M5" | "M15" | "M30" | "H1";
-
 export type MomentumBodyRatio = "0.40" | "0.50" | "0.60";
 export type OCCBodyRatio = "0.40" | "0.50" | "0.60";
 
@@ -15,6 +17,11 @@ interface ParameterPanelProps {
   isFree?: boolean;
   occTimeframe?: OCCTimeframe;
   onOccTimeframeChange?: (tf: OCCTimeframe) => void;
+  templates?: AnalysisTemplate[];
+  onSaveTemplate?: (name: string, params: TemplateParams) => void;
+  onDeleteTemplate?: (id: string) => void;
+  onLoadTemplate?: (params: TemplateParams) => void;
+  templateLoading?: boolean;
 }
 
 const IB_WINDOWS = [
@@ -34,14 +41,10 @@ const DAY_OPTIONS = [
   { value: "120", label: "Last 120 Days" },
 ];
 
-const TF_OPTIONS = [
-  { value: "M5", label: "M5 (5 min)" },
-  { value: "M15", label: "M15 (15 min)" },
-  { value: "M30", label: "M30 (30 min)" },
-  { value: "H1", label: "H1 (60 min)" },
-];
-
-const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", onOccTimeframeChange }: ParameterPanelProps) => {
+const ParameterPanel = ({
+  onRun, loading, isFree = false, occTimeframe = "M15", onOccTimeframeChange,
+  templates = [], onSaveTemplate, onDeleteTemplate, onLoadTemplate, templateLoading = false,
+}: ParameterPanelProps) => {
   const [symbol, setSymbol] = useState("QQQ");
   const [ibWindow, setIbWindow] = useState(isFree ? "60" : "30");
   const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
@@ -49,10 +52,51 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
   const [bodyRatio, setBodyRatio] = useState<MomentumBodyRatio>("0.50");
   const [occBodyRatio, setOccBodyRatio] = useState<OCCBodyRatio>("0.50");
 
+  const [selectedTemplateId, setSelectedTemplateId] = useState("custom");
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!symbol.trim()) return;
     onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio);
+  };
+
+  const handleTemplateSelect = (id: string) => {
+    setSelectedTemplateId(id);
+    if (id === "custom") return;
+    const tpl = templates.find((t) => t.id === id);
+    if (!tpl) return;
+    setMode(tpl.mode as AnalysisMode);
+    setSymbol(tpl.symbol);
+    setIbWindow(String(tpl.ib_window));
+    setMaxDays(String(tpl.max_days));
+    setBodyRatio((tpl.body_ratio || "0.50") as MomentumBodyRatio);
+    setOccBodyRatio((tpl.occ_body_ratio || "0.50") as OCCBodyRatio);
+    onLoadTemplate?.({
+      mode: tpl.mode as AnalysisMode,
+      symbol: tpl.symbol,
+      ibWindow: tpl.ib_window,
+      maxDays: tpl.max_days,
+      bodyRatio: (tpl.body_ratio || "0.50") as MomentumBodyRatio,
+      occBodyRatio: (tpl.occ_body_ratio || "0.50") as OCCBodyRatio,
+      occTimeframe: (tpl.occ_timeframe || "M15") as OCCTimeframe,
+    });
+  };
+
+  const handleSave = () => {
+    if (!templateName.trim()) return;
+    onSaveTemplate?.(templateName.trim(), {
+      mode,
+      symbol: symbol.trim().toUpperCase() || "QQQ",
+      ibWindow: parseInt(ibWindow),
+      maxDays: parseInt(maxDays),
+      bodyRatio,
+      occBodyRatio,
+      occTimeframe,
+    });
+    setTemplateName("");
+    setShowSaveDialog(false);
   };
 
   return (
@@ -62,16 +106,36 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
         {/* Custom Templates */}
         <div className="space-y-2">
           <p className="section-label">custom templates</p>
-          <Select defaultValue="custom">
+          <Select value={selectedTemplateId} onValueChange={handleTemplateSelect}>
             <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
               <SelectValue placeholder="template" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="custom">custom – not saved</SelectItem>
+              {templates.map((t) => (
+                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
+
+          {/* Delete selected template */}
+          {selectedTemplateId !== "custom" && (
+            <button
+              type="button"
+              onClick={() => {
+                onDeleteTemplate?.(selectedTemplateId);
+                setSelectedTemplateId("custom");
+              }}
+              className="w-full flex items-center justify-center gap-1.5 bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg px-3 py-2 text-[13px] transition-colors"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              delete template
+            </button>
+          )}
+
           <button
             type="button"
+            onClick={() => setShowSaveDialog(true)}
             className="w-full flex items-center justify-center gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-3 py-2 text-[13px] font-medium transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
@@ -83,7 +147,7 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
         <div className="space-y-2">
           <p className="section-label">reports & customizations</p>
           <p className="text-[11px] text-muted-foreground">report</p>
-          <Select value={isFree ? "ib" : mode} onValueChange={(v) => !isFree && setMode(v as AnalysisMode)} disabled={isFree}>
+          <Select value={isFree ? "ib" : mode} onValueChange={(v) => { if (!isFree) { setMode(v as AnalysisMode); setSelectedTemplateId("custom"); } }} disabled={isFree}>
             <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
               <SelectValue />
             </SelectTrigger>
@@ -97,11 +161,10 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}
 
-
           {mode === "momentum" && (
             <>
               <p className="text-[11px] text-muted-foreground">subreport (candle 1 body)</p>
-              <Select value={bodyRatio} onValueChange={(v) => setBodyRatio(v as MomentumBodyRatio)}>
+              <Select value={bodyRatio} onValueChange={(v) => { setBodyRatio(v as MomentumBodyRatio); setSelectedTemplateId("custom"); }}>
                 <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
                   <SelectValue />
                 </SelectTrigger>
@@ -117,7 +180,7 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
           {mode === "occ" && (
             <>
               <p className="text-[11px] text-muted-foreground">subreport (candle 1 body)</p>
-              <Select value={occBodyRatio} onValueChange={(v) => setOccBodyRatio(v as OCCBodyRatio)}>
+              <Select value={occBodyRatio} onValueChange={(v) => { setOccBodyRatio(v as OCCBodyRatio); setSelectedTemplateId("custom"); }}>
                 <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
                   <SelectValue />
                 </SelectTrigger>
@@ -147,12 +210,12 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
           <Input
             placeholder="QQQ"
             value={symbol}
-            onChange={(e) => setSymbol(e.target.value)}
+            onChange={(e) => { setSymbol(e.target.value); setSelectedTemplateId("custom"); }}
             className="bg-input border-border text-[13px] text-foreground placeholder:text-muted-foreground uppercase"
           />
 
           <p className="text-[11px] text-muted-foreground">date range</p>
-          <Select value={isFree ? "7" : maxDays} onValueChange={(v) => !isFree && setMaxDays(v)} disabled={isFree}>
+          <Select value={isFree ? "7" : maxDays} onValueChange={(v) => { if (!isFree) { setMaxDays(v); setSelectedTemplateId("custom"); } }} disabled={isFree}>
             <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
               <SelectValue />
             </SelectTrigger>
@@ -167,11 +230,10 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for more days</p>}
 
-
           {mode !== "occ" && mode !== "gapfill" && mode !== "insidebar" && (
             <>
               <p className="text-[11px] text-muted-foreground">IB window</p>
-              <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => !isFree && setIbWindow(v)} disabled={isFree}>
+              <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => { if (!isFree) { setIbWindow(v); setSelectedTemplateId("custom"); } }} disabled={isFree}>
                 <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
                   <SelectValue />
                 </SelectTrigger>
@@ -208,6 +270,33 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
           )}
         </button>
       </form>
+
+      {/* Save Template Dialog */}
+      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <DialogContent className="sm:max-w-[360px]">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Save Template</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-[12px] text-muted-foreground">Nama template</p>
+            <Input
+              placeholder="e.g. QQQ IB 30min"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              className="text-[13px]"
+              autoFocus
+              onKeyDown={(e) => e.key === "Enter" && handleSave()}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Mode: {mode} · {symbol || "QQQ"} · {maxDays === "0" ? "All" : maxDays} days · IB {ibWindow}min
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" size="sm" onClick={() => setShowSaveDialog(false)}>Batal</Button>
+            <Button size="sm" onClick={handleSave} disabled={!templateName.trim() || templateLoading}>Simpan</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

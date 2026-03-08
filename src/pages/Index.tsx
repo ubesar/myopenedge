@@ -9,6 +9,7 @@ import { type AnalysisMode } from "@/components/ControlPanel";
 import AppNavSidebar from "@/components/AppNavSidebar";
 import ParameterPanel, { type OCCTimeframe, type MomentumBodyRatio, type OCCBodyRatio } from "@/components/ParameterPanel";
 import RightSidebar from "@/components/RightSidebar";
+import { useTemplates, type TemplateParams } from "@/hooks/useTemplates";
 import ChartCard from "@/components/ChartCard";
 import { useAnalysisHistory, type AnalysisRun } from "@/hooks/useAnalysisHistory";
 
