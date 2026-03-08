@@ -10,6 +10,7 @@ import AIAssistant from "@/pages/AIAssistant";
 import Algos from "@/pages/Algos";
 import Chart from "@/pages/Chart";
 import NotFound from "@/pages/NotFound";
+import TermsConditions from "@/pages/TermsConditions";
 
 const AnimatedRoutes = () => {
   const location = useLocation();
