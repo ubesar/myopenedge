@@ -217,7 +217,7 @@ const Index = () => {
     }
 
     if (activeMode === "occ" && occResult) {
-      const tf = "M15";
+      const tf = occTimeframe;
       const stats = occResult.tfDirectionStats[tf];
       if (!stats) return null;
       return (
