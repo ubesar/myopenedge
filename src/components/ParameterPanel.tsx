@@ -139,21 +139,6 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for more days</p>}
 
-           {mode === "occ" && (
-            <>
-              <p className="text-[11px] text-muted-foreground">timeframe</p>
-              <Select value={occTimeframe} onValueChange={(v) => onOccTimeframeChange?.(v as OCCTimeframe)}>
-                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TF_OPTIONS.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </>
-          )}
 
           {mode !== "occ" && mode !== "gapfill" && (
             <>
