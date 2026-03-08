@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Check, ChevronLeft, Loader2, Zap, Shield } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { initializePaddle, type Paddle } from "@paddle/paddle-js";
 
 const features = [
   "Unlimited IB, Momentum & OCC Analysis",
