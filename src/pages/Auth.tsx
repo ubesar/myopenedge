@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Mail, Lock, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Mail, Lock, ArrowRight, Eye, EyeOff, Loader2, UserRound } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 const Auth = () => {
@@ -20,6 +20,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -34,6 +35,32 @@ const Auth = () => {
     });
     if (error) {
       toast.error("Google sign-in failed. Please try again.");
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    setGuestLoading(true);
+    try {
+      const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ensure-guest`;
+      const resp = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || "Failed to prepare guest account");
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      toast.error(err.message || "Guest login failed.");
+    } finally {
+      setGuestLoading(false);
     }
   };
 
@@ -153,6 +180,23 @@ const Auth = () => {
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                 </svg>
                 Continue with Google
+              </Button>
+
+              {/* Guest button */}
+              <Button
+                onClick={handleGuestLogin}
+                variant="outline"
+                disabled={guestLoading}
+                className="w-full h-11 gap-3 text-sm font-medium border-border/60 hover:bg-accent/60 transition-colors"
+              >
+                {guestLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <UserRound className="h-4 w-4" />
+                    Continue as Guest
+                  </>
+                )}
               </Button>
 
               {/* Divider */}
