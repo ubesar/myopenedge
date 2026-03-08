@@ -170,9 +170,9 @@ const PinLock = ({ userId, onUnlock }: PinLockProps) => {
   const currentPin = isConfirming ? confirmPin : pin;
 
   const getTitle = () => {
-    if (isSettingUp && !isConfirming) return "Buat PIN Baru";
-    if (isConfirming) return "Konfirmasi PIN";
-    return "Masukkan PIN";
+    if (isSettingUp && !isConfirming) return "Create New PIN";
+    if (isConfirming) return "Confirm PIN";
+    return "Enter PIN";
   };
 
   const getSubtitle = () => {
