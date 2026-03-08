@@ -134,7 +134,7 @@ const AIAssistant = () => {
       label: "Bias Analysis",
       icon: TrendingUp,
       description: "Analyze directional bias from historical data",
-      prompt: "Jelaskan cara menganalisis bias arah menggunakan data IB, Momentum, dan OCC. Berikan framework langkah demi langkah yang bisa saya gunakan setiap hari sebelum trading.",
+      prompt: "Explain how to analyze directional bias using IB, Momentum, and OCC data. Provide a step-by-step framework I can use daily before trading.",
     },
     {
       label: "Confluence Check",
