@@ -182,6 +182,23 @@ const Auth = () => {
                 Continue with Google
               </Button>
 
+              {/* Guest button */}
+              <Button
+                onClick={handleGuestLogin}
+                variant="outline"
+                disabled={guestLoading}
+                className="w-full h-11 gap-3 text-sm font-medium border-border/60 hover:bg-accent/60 transition-colors"
+              >
+                {guestLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <UserRound className="h-4 w-4" />
+                    Continue as Guest
+                  </>
+                )}
+              </Button>
+
               {/* Divider */}
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
