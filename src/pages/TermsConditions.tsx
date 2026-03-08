@@ -174,7 +174,7 @@ export default function TermsConditions() {
               <ul className="list-disc list-inside text-muted-foreground space-y-2 leading-relaxed">
                 <li><strong>Account Information:</strong> Email address and display name provided during registration.</li>
                 <li><strong>Usage Data:</strong> Analysis parameters, saved templates, and trading journal entries you create within the Service.</li>
-                <li><strong>Payment Data:</strong> Cryptocurrency transaction hashes and invoice IDs processed through NOWPayments. We do not store wallet private keys.</li>
+                <li><strong>Payment Data:</strong> Order IDs and transaction records processed through Paddle. We do not store your full payment details — Paddle handles all payment data securely as our merchant of record.</li>
                 <li><strong>Technical Data:</strong> Browser type, device information, and IP address for security and analytics purposes.</li>
               </ul>
             </section>
