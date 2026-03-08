@@ -92,8 +92,12 @@ function evaluateOCC(bars5min: CandleBar[], tfMinutes: number): OCCTimeframeResu
   const c1 = candles[0];
   const c2 = candles[1];
 
-  const c1Bullish = c1.close > c1.open;
-  const c1Bearish = c1.close < c1.open;
+  const c1Range = c1.high - c1.low;
+  const c1Body = Math.abs(c1.close - c1.open);
+  const c1BodyPct = c1Range > 0 ? c1Body / c1Range : 0;
+
+  const c1Bullish = c1.close > c1.open && c1BodyPct >= 0.5;
+  const c1Bearish = c1.close < c1.open && c1BodyPct >= 0.5;
   const c2Bullish = c2.close > c2.open;
   const c2Bearish = c2.close < c2.open;
 
