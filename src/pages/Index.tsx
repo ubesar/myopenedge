@@ -85,8 +85,7 @@ const Index = () => {
   }, [activeMode, result, momentumResult, occResult, gapFillResult, symbol]);
 
   if (!authLoading && !user) {
-    navigate("/auth");
-    return null;
+    return <Navigate to="/auth" replace />;
   }
 
   const fetchMarketData = async (ticker: string) => {
