@@ -199,12 +199,12 @@ const Index = () => {
             subtitle={`${symbol} · momentum · ${tf}`}
             totalDays={lf.total}
             bars={[
-              { name: "hit target first", value: lf.total > 0 ? (lf.bullish / lf.total * 100) : 0, color: "primary" },
-              { name: "hit stoploss first", value: lf.total > 0 ? (lf.bearish / lf.total * 100) : 0, color: "muted" },
+              { name: "bullish", value: lf.total > 0 ? (lf.bullish / lf.total * 100) : 0, color: "primary" },
+              { name: "bearish", value: lf.total > 0 ? (lf.bearish / lf.total * 100) : 0, color: "muted" },
             ]}
             legendItems={[
-              { label: "hit target first", color: "hsl(217,91%,60%)" },
-              { label: "hit stoploss first", color: "hsl(240,5%,30%)" },
+              { label: "bullish", color: "hsl(217,91%,60%)" },
+              { label: "bearish", color: "hsl(240,5%,30%)" },
             ]}
             settingsGrid={[
               { label: "candle timeframe", value: tf },
