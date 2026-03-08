@@ -142,14 +142,20 @@ const TradingViewChart = ({ symbol, interval }: TradingViewChartProps) => {
 
     const fetchData = async () => {
       try {
+        // Get user session token
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+        if (!accessToken) {
+          console.error("No auth session");
+          return;
+        }
+
         // Use TwelveData proxy edge function
         const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
         const outputSize = interval === "1day" ? 365 : 390;
         const res = await fetch(
           `${baseUrl}/functions/v1/twelvedata-proxy?symbol=${symbol}&interval=${interval}&outputsize=${outputSize}`,
-          { headers: { Authorization: `Bearer ${anonKey}` } }
+          { headers: { Authorization: `Bearer ${accessToken}` } }
         );
 
         if (!res.ok) throw new Error("Failed to fetch data");
