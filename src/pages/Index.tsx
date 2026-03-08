@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Navigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -11,7 +11,7 @@ import ParameterPanel, { type OCCTimeframe, type MomentumBodyRatio, type OCCBody
 import RightSidebar from "@/components/RightSidebar";
 import ChartCard from "@/components/ChartCard";
 import { useAnalysisHistory, type AnalysisRun } from "@/hooks/useAnalysisHistory";
-import AIChatAssistant, { type AnalysisContext, type ConfluenceData, type AIChatAssistantHandle } from "@/components/AIChatAssistant";
+
 import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
 import { analyzeOCC, type OCCResult } from "@/lib/occ-analysis";
@@ -50,26 +50,9 @@ const Index = () => {
   const [occTimeframe, setOccTimeframe] = useState<OCCTimeframe>("M15");
   const [momentumTimeframe, setMomentumTimeframe] = useState<OCCTimeframe>("M15");
   const { runs: historyRuns, addRun, deleteRun } = useAnalysisHistory();
-  const chatRef = useRef<AIChatAssistantHandle>(null);
-  const [confluenceData, setConfluenceData] = useState<ConfluenceData>({});
 
   const isFree = !isActive;
 
-  const analysisContext = useMemo<AnalysisContext>(() => {
-    if (activeMode === "ib" && result) {
-      const hf = result.highFirst;
-      const lf = result.lowFirst;
-      return {
-        mode: "ib", symbol,
-        summary: `IB analysis for ${symbol}, ${result.totalDays} days. HF: BH ${hf.total > 0 ? (hf.breakHigh/hf.total*100).toFixed(1) : 0}%, LF: BH ${lf.total > 0 ? (lf.breakHigh/lf.total*100).toFixed(1) : 0}%`
-      };
-    }
-    if (activeMode === "momentum" && momentumResult) return { mode: "momentum", symbol, summary: `Momentum for ${symbol}, ${momentumResult.totalDays} days` };
-    if (activeMode === "occ" && occResult) return { mode: "occ", symbol, summary: `OCC for ${symbol}, ${occResult.totalDays} days` };
-    if (activeMode === "gapfill" && gapFillResult) return { mode: "gapfill", symbol, summary: `Gap Fill for ${symbol}, ${gapFillResult.totalDays} days` };
-    if (activeMode === "insidebar" && insideBarResult) return { mode: "insidebar", symbol, summary: `Inside Bar for ${symbol}, ${insideBarResult.totalDays} days, ${insideBarResult.breakoutPct.toFixed(1)}% breakout rate` };
-    return { mode: null, symbol: "", summary: "" };
-  }, [activeMode, result, momentumResult, occResult, gapFillResult, insideBarResult, symbol]);
 
   if (!authLoading && !user) return <Navigate to="/auth" replace />;
 
@@ -90,47 +73,33 @@ const Index = () => {
       if (!parsed.success) { toast.error("Invalid or empty data returned."); return; }
       const values = parsed.data.values;
 
-      let ctx: AnalysisContext | null = null;
-
       if (mode === "ib") {
         const a = analyzeIB(values as any, ibWindow, maxDays);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setResult(a);
         addRun(mode, ticker, { totalDays: a.totalDays, ibWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
-        const hf = a.highFirst; const lf = a.lowFirst;
-        ctx = { mode: "ib", symbol: ticker, summary: `IB analysis for ${ticker}, ${a.totalDays} days. HF: BH ${hf.total > 0 ? (hf.breakHigh/hf.total*100).toFixed(1) : 0}%, BL ${hf.total > 0 ? (hf.breakLow/hf.total*100).toFixed(1) : 0}%. LF: BH ${lf.total > 0 ? (lf.breakHigh/lf.total*100).toFixed(1) : 0}%, BL ${lf.total > 0 ? (lf.breakLow/lf.total*100).toFixed(1) : 0}%` };
       } else if (mode === "momentum") {
         const a = analyzeMomentum(values as any, ibWindow, maxDays, parseFloat(bodyRatio));
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setMomentumResult(a);
         addRun(mode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });
-        ctx = { mode: "momentum", symbol: ticker, summary: `Momentum for ${ticker}, ${a.totalDays} days analyzed` };
       } else if (mode === "occ") {
         const a = analyzeOCC(values as any, maxDays, parseFloat(occBodyRatio));
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setOccResult(a);
         addRun(mode, ticker, { totalDays: a.totalDays, tfDirectionStats: a.tfDirectionStats });
-        ctx = { mode: "occ", symbol: ticker, summary: `OCC for ${ticker}, ${a.totalDays} days analyzed` };
       } else if (mode === "gapfill") {
         const a = analyzeGapFill(values as any, maxDays);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setGapFillResult(a);
         addRun(mode, ticker, { totalDays: a.totalDays, stats: a.stats });
-        ctx = { mode: "gapfill", symbol: ticker, summary: `Gap Fill for ${ticker}, ${a.totalDays} days. Fill rate: up ${a.stats.gapUpFillRate.toFixed(1)}%, down ${a.stats.gapDownFillRate.toFixed(1)}%` };
       } else if (mode === "insidebar") {
         const a = analyzeInsideBar(values as any, maxDays);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setInsideBarResult(a);
         addRun(mode, ticker, { totalDays: a.totalDays, insideBarPct: a.insideBarPct, breakoutPct: a.breakoutPct });
-        ctx = { mode: "insidebar", symbol: ticker, summary: `Inside Bar for ${ticker}, ${a.totalDays} days, ${a.insideBarPct.toFixed(1)}% inside bar rate, ${a.breakoutPct.toFixed(1)}% breakout rate` };
       }
 
-      // Update confluence data
-      if (ctx) {
-        setConfluenceData(prev => ({ ...prev, [mode]: { symbol: ticker, summary: ctx!.summary } }));
-        // Auto-summary
-        setTimeout(() => chatRef.current?.triggerAutoSummary(ctx!), 500);
-      }
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch data");
     } finally {
@@ -360,7 +329,6 @@ const Index = () => {
 
   return (
     <div className="h-screen w-full flex overflow-hidden bg-background">
-      <AIChatAssistant ref={chatRef} analysisContext={analysisContext} confluenceData={confluenceData} />
 
       {/* Column 1: Nav Sidebar */}
       <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
