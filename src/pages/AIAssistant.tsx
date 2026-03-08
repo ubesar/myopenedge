@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Navigate } from "react-router-dom";
-import { Bot, Send, Loader2, TrendingUp, Target, Layers, BookOpen, Share2, Zap, BarChart3, Trash2 } from "lucide-react";
+import { Navigate, useNavigate } from "react-router-dom";
+import { Bot, Send, Loader2, TrendingUp, Target, Layers, BookOpen, Share2, Zap, BarChart3, Trash2, Lock, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/hooks/useSubscription";
 import AppNavSidebar from "@/components/AppNavSidebar";
 import type { AnalysisContext, ConfluenceData } from "@/components/AIChatAssistant";
 
@@ -14,6 +15,8 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
 const AIAssistant = () => {
   const { user, loading: authLoading } = useAuth();
+  const { isActive, loading: subLoading } = useSubscription();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
