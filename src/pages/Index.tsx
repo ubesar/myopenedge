@@ -90,31 +90,46 @@ const Index = () => {
       if (!parsed.success) { toast.error("Invalid or empty data returned."); return; }
       const values = parsed.data.values;
 
+      let ctx: AnalysisContext | null = null;
+
       if (mode === "ib") {
         const a = analyzeIB(values as any, ibWindow, maxDays);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setResult(a);
         addRun(mode, ticker, { totalDays: a.totalDays, ibWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
+        const hf = a.highFirst; const lf = a.lowFirst;
+        ctx = { mode: "ib", symbol: ticker, summary: `IB analysis for ${ticker}, ${a.totalDays} days. HF: BH ${hf.total > 0 ? (hf.breakHigh/hf.total*100).toFixed(1) : 0}%, BL ${hf.total > 0 ? (hf.breakLow/hf.total*100).toFixed(1) : 0}%. LF: BH ${lf.total > 0 ? (lf.breakHigh/lf.total*100).toFixed(1) : 0}%, BL ${lf.total > 0 ? (lf.breakLow/lf.total*100).toFixed(1) : 0}%` };
       } else if (mode === "momentum") {
         const a = analyzeMomentum(values as any, ibWindow, maxDays, parseFloat(bodyRatio));
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setMomentumResult(a);
         addRun(mode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });
+        ctx = { mode: "momentum", symbol: ticker, summary: `Momentum for ${ticker}, ${a.totalDays} days analyzed` };
       } else if (mode === "occ") {
         const a = analyzeOCC(values as any, maxDays, parseFloat(occBodyRatio));
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setOccResult(a);
         addRun(mode, ticker, { totalDays: a.totalDays, tfDirectionStats: a.tfDirectionStats });
+        ctx = { mode: "occ", symbol: ticker, summary: `OCC for ${ticker}, ${a.totalDays} days analyzed` };
       } else if (mode === "gapfill") {
         const a = analyzeGapFill(values as any, maxDays);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setGapFillResult(a);
         addRun(mode, ticker, { totalDays: a.totalDays, stats: a.stats });
+        ctx = { mode: "gapfill", symbol: ticker, summary: `Gap Fill for ${ticker}, ${a.totalDays} days. Fill rate: up ${a.stats.gapUpFillRate.toFixed(1)}%, down ${a.stats.gapDownFillRate.toFixed(1)}%` };
       } else if (mode === "insidebar") {
         const a = analyzeInsideBar(values as any, maxDays);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setInsideBarResult(a);
         addRun(mode, ticker, { totalDays: a.totalDays, insideBarPct: a.insideBarPct, breakoutPct: a.breakoutPct });
+        ctx = { mode: "insidebar", symbol: ticker, summary: `Inside Bar for ${ticker}, ${a.totalDays} days, ${a.insideBarPct.toFixed(1)}% inside bar rate, ${a.breakoutPct.toFixed(1)}% breakout rate` };
+      }
+
+      // Update confluence data
+      if (ctx) {
+        setConfluenceData(prev => ({ ...prev, [mode]: { symbol: ticker, summary: ctx!.summary } }));
+        // Auto-summary
+        setTimeout(() => chatRef.current?.triggerAutoSummary(ctx!), 500);
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch data");
