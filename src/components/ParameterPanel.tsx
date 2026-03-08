@@ -4,10 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { AnalysisMode } from "@/components/ControlPanel";
 
+export type OCCTimeframe = "M5" | "M15" | "M30" | "H1";
+
 interface ParameterPanelProps {
   onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => void;
   loading: boolean;
   isFree?: boolean;
+  occTimeframe?: OCCTimeframe;
+  onOccTimeframeChange?: (tf: OCCTimeframe) => void;
 }
 
 const IB_WINDOWS = [
