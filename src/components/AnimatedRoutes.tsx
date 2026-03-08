@@ -8,6 +8,7 @@ import Upgrade from "@/pages/Upgrade";
 import Docs from "@/pages/Docs";
 import AIAssistant from "@/pages/AIAssistant";
 import Algos from "@/pages/Algos";
+import Chart from "@/pages/Chart";
 import NotFound from "@/pages/NotFound";
 
 const AnimatedRoutes = () => {
