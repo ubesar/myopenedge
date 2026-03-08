@@ -345,6 +345,10 @@ const Index = () => {
       return <InsideBarReport result={insideBarResult} symbol={symbol} />;
     }
 
+    if (activeMode === "outsideday" && outsideDayResult) {
+      return <OutsideDayReport result={outsideDayResult} symbol={symbol} />;
+    }
+
     return null;
   };
 
