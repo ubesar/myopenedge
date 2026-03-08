@@ -25,7 +25,7 @@ const Chart = () => {
   const [symbolInput, setSymbolInput] = useState("QQQ");
   const [interval, setInterval] = useState("5min");
   const [showIB, setShowIB] = useState(true);
-  
+  const [showMC, setShowMC] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -105,10 +105,20 @@ const Chart = () => {
             IB
           </button>
 
+          <button
+            onClick={() => setShowMC(!showMC)}
+            className={`px-2 py-1 rounded text-[11px] font-medium transition-colors shrink-0 ${
+              showMC ? "text-white" : "text-gray-500 hover:text-gray-300"
+            }`}
+            style={showMC ? { background: "#2962FF" } : {}}
+          >
+            MC
+          </button>
+
         </div>
 
         <div className="flex-1 min-h-0">
-          <TradingViewChart symbol={symbol} interval={interval} showIB={showIB} />
+          <TradingViewChart symbol={symbol} interval={interval} showIB={showIB} showMC={showMC} />
         </div>
       </div>
     </div>
