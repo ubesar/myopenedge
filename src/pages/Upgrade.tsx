@@ -28,7 +28,7 @@ const Upgrade = () => {
   useEffect(() => {
     initializePaddle({
       environment: "sandbox",
-      token: import.meta.env.VITE_PADDLE_CLIENT_TOKEN,
+      token: "test_906ae7bf74bbcaf25341c87dd7f",
       eventCallback: (event) => {
         if (event.name === "checkout.completed") {
           toast.success("Payment successful! Your Pro access is being activated...");
