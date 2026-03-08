@@ -25,18 +25,35 @@ Deno.serve(async (req) => {
       (u) => u.email === GUEST_EMAIL
     );
 
+    let guestUserId: string | null = null;
+
     if (!guestExists) {
-      // Create the guest user with confirmed email
-      const { error: createError } = await supabaseAdmin.auth.admin.createUser({
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email: GUEST_EMAIL,
         password: GUEST_PASSWORD,
         email_confirm: true,
         user_metadata: { full_name: "Guest User" },
       });
 
-      if (createError) {
-        throw createError;
-      }
+      if (createError) throw createError;
+      guestUserId = newUser?.user?.id ?? null;
+    } else {
+      const guest = existingUsers?.users?.find((u) => u.email === GUEST_EMAIL);
+      guestUserId = guest?.id ?? null;
+    }
+
+    // Always refresh guest pro subscription to 1 week from now
+    if (guestUserId) {
+      const oneWeek = new Date();
+      oneWeek.setDate(oneWeek.getDate() + 7);
+
+      await supabaseAdmin
+        .from("profiles")
+        .update({
+          subscription_status: "active",
+          subscription_end_date: oneWeek.toISOString(),
+        })
+        .eq("user_id", guestUserId);
     }
 
     return new Response(
