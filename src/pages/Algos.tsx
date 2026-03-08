@@ -2,17 +2,19 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
-import AppNavSidebar from "@/components/AppNavSidebar";
+import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
 import TradingDashboard from "@/components/TradingDashboard";
 import PinLock from "@/components/PinLock";
 import { Crown, Lock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Algos = () => {
   const { user, loading } = useAuth();
   const { isActive, loading: subLoading } = useSubscription();
   const navigate = useNavigate();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const isMobile = useIsMobile();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [unlocked, setUnlocked] = useState(false);
 
   if (loading || subLoading) {
@@ -30,11 +32,10 @@ const Algos = () => {
 
   if (!isActive) {
     return (
-      <div className="flex h-screen bg-background overflow-hidden">
-        <AppNavSidebar
-          collapsed={sidebarCollapsed}
-          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-        />
+      <div className="flex flex-col lg:flex-row h-screen bg-background overflow-hidden">
+        {isMobile && <MobileHeader onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)} title="algos" />}
+        {!isMobile && <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />}
+        {isMobile && <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />}
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="rounded-xl border border-primary/20 bg-card/80 backdrop-blur-sm p-10 text-center max-w-md">
             <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
@@ -58,11 +59,10 @@ const Algos = () => {
   }
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      <AppNavSidebar
-        collapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-      />
+    <div className="flex flex-col lg:flex-row h-screen bg-background overflow-hidden">
+      {isMobile && <MobileHeader onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)} title="algos" />}
+      {!isMobile && <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />}
+      {isMobile && <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />}
       <div className="flex-1 overflow-auto">
         <TradingDashboard user={user} onLock={() => setUnlocked(false)} />
       </div>
