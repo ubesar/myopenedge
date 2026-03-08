@@ -41,7 +41,7 @@ export function useSubscription() {
     fetchProfile();
   }, [user]);
 
-  const isActive = status === "active";
+  const isActive = status === "active" || status === "pro";
 
   return { status, endDate, loading, isActive };
 }
