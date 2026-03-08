@@ -50,8 +50,6 @@ const Index = () => {
   const [occTimeframe, setOccTimeframe] = useState<OCCTimeframe>("M15");
   const [momentumTimeframe, setMomentumTimeframe] = useState<OCCTimeframe>("M15");
   const { runs: historyRuns, addRun, deleteRun } = useAnalysisHistory();
-  const chatRef = useRef<AIChatAssistantHandle>(null);
-  const [confluenceData, setConfluenceData] = useState<ConfluenceData>({});
 
   const isFree = !isActive;
 
