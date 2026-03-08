@@ -20,8 +20,6 @@ export interface LastDayData {
   breakout: "high" | "low" | "inside";
 }
 
-export type IBSubreport = "rejection" | "extension";
-
 interface DirectionStats {
   total: number;
   breakHigh: number;
