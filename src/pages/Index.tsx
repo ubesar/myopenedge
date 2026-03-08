@@ -336,7 +336,17 @@ const Index = () => {
       <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
 
       {/* Column 2: Parameter Panel */}
-      <ParameterPanel onRun={handleRun} loading={loading} isFree={isFree} occTimeframe={occTimeframe} onOccTimeframeChange={setOccTimeframe} />
+      <ParameterPanel
+        onRun={handleRun}
+        loading={loading}
+        isFree={isFree}
+        occTimeframe={occTimeframe}
+        onOccTimeframeChange={setOccTimeframe}
+        templates={templates}
+        onSaveTemplate={saveTemplate}
+        onDeleteTemplate={deleteTemplate}
+        templateLoading={templateLoading}
+      />
 
       {/* Column 3: Main Content */}
       <main className="flex-1 min-w-0 overflow-y-auto p-6">
