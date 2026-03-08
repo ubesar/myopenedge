@@ -12,7 +12,7 @@ import RightSidebar from "@/components/RightSidebar";
 import ChartCard from "@/components/ChartCard";
 import { useAnalysisHistory, type AnalysisRun } from "@/hooks/useAnalysisHistory";
 import AIChatAssistant, { type AnalysisContext } from "@/components/AIChatAssistant";
-import { analyzeIB, type AnalysisResult, type IBSubreport } from "@/lib/ib-analysis";
+import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
 import { analyzeOCC, type OCCResult } from "@/lib/occ-analysis";
 import { analyzeGapFill, type GapFillResult } from "@/lib/gapfill-analysis";
