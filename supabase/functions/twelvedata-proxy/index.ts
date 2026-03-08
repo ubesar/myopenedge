@@ -1,12 +1,29 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = [
+  "https://myopenedge.xyz",
+  "https://www.myopenedge.xyz",
+  "https://myopenedge.lovable.app",
+  "https://id-preview--c6b96b0f-b08c-4fc5-9451-f9469e1fb477.lovable.app",
+];
+
+function getCorsHeaders(origin: string | null) {
+  const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  };
+}
+
+// Free-tier limits
+const FREE_OUTPUTSIZE = 390; // ~1 day of 5min bars
+const FREE_MAX_INTERVAL = "5min";
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -36,6 +53,25 @@ Deno.serve(async (req) => {
     });
   }
 
+  const userId = claimsData.claims.sub as string;
+
+  // Check subscription status
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("subscription_status")
+    .eq("user_id", userId)
+    .single();
+
+  if (profileError) {
+    console.error("Profile fetch error:", profileError);
+    return new Response(JSON.stringify({ error: "Failed to verify subscription" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const isPro = profile?.subscription_status === "active" || profile?.subscription_status === "pro";
+
   // Parse request - support both GET query params and POST JSON body
   let symbol: string | null = null;
   let interval = "5min";
@@ -62,6 +98,12 @@ Deno.serve(async (req) => {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+  }
+
+  // Enforce free-tier limits
+  if (!isPro) {
+    outputsize = String(FREE_OUTPUTSIZE);
+    interval = FREE_MAX_INTERVAL;
   }
 
   // Load API keys from secret (comma-separated)
