@@ -16,7 +16,8 @@ import {
   Lock,
   Settings2,
   ChevronUp,
-  Save
+  Save,
+  Download
 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
