@@ -20,12 +20,22 @@ export interface LastDayData {
   breakout: "high" | "low" | "inside";
 }
 
+export type IBSubreport = "rejection" | "extension";
+
+interface DirectionStats {
+  total: number;
+  breakHigh: number;
+  breakLow: number;
+  inside: number;
+}
+
 export interface AnalysisResult {
   totalDays: number;
   insideDays: number;
   ibWindowMinutes: number;
-  highFirst: { total: number; breakHigh: number; breakLow: number; inside: number };
-  lowFirst: { total: number; breakHigh: number; breakLow: number; inside: number };
+  subreport: IBSubreport;
+  highFirst: DirectionStats;
+  lowFirst: DirectionStats;
   lastDay: LastDayData | null;
   allDays: LastDayData[];
 }
@@ -42,7 +52,7 @@ const IB_START = 9 * 60 + 30;
 const NOON = 12 * 60;
 const MARKET_CLOSE = 16 * 60;
 
-export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0): AnalysisResult {
+export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0, subreport: IBSubreport = "rejection"): AnalysisResult {
   const ibEnd = IB_START + ibWindowMinutes;
 
   const byDate = new Map<string, BarData[]>();
@@ -97,26 +107,36 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
 
     const highFirstFormed = parseDateTime(firstHighTouch).getTime() < parseDateTime(firstLowTouch).getTime();
 
-    // Post-IB breakout: IB end to 12:00, using M15 CLOSE
+    // Post-IB breakout: IB end to 12:00
     const postIBBars = dayBars.filter((b) => {
       const m = getTimeMinutes(parseDateTime(b.datetime));
       return m >= ibEnd && m < NOON;
     });
 
-    const postIBCandles: CandleBar[] = postIBBars.map(b => ({
-      time: b.datetime.split(" ")[1].slice(0, 5),
-      open: parseFloat(b.open),
-      high: parseFloat(b.high),
-      low: parseFloat(b.low),
-      close: parseFloat(b.close),
-    }));
-
-    const m15Candles = aggregateToM15(postIBCandles);
-
     let breakout: "high" | "low" | "inside" = "inside";
-    for (const candle of m15Candles) {
-      if (candle.close > ibHigh) { breakout = "high"; break; }
-      if (candle.close < ibLow) { breakout = "low"; break; }
+
+    if (subreport === "rejection") {
+      // By rejection: M15 candle CLOSE must break IB range
+      const postIBCandles: CandleBar[] = postIBBars.map(b => ({
+        time: b.datetime.split(" ")[1].slice(0, 5),
+        open: parseFloat(b.open),
+        high: parseFloat(b.high),
+        low: parseFloat(b.low),
+        close: parseFloat(b.close),
+      }));
+      const m15Candles = aggregateToM15(postIBCandles);
+      for (const candle of m15Candles) {
+        if (candle.close > ibHigh) { breakout = "high"; break; }
+        if (candle.close < ibLow) { breakout = "low"; break; }
+      }
+    } else {
+      // By extension: any bar's wick (high/low) penetrates IB range
+      for (const bar of postIBBars) {
+        const h = parseFloat(bar.high);
+        const l = parseFloat(bar.low);
+        if (h > ibHigh) { breakout = "high"; break; }
+        if (l < ibLow) { breakout = "low"; break; }
+      }
     }
 
     allDayResults.push({ date, ibHigh, ibLow, highFirstFormed, breakout });
@@ -159,6 +179,7 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
     totalDays,
     insideDays,
     ibWindowMinutes,
+    subreport,
     highFirst: {
       total: highFirstDays.length,
       breakHigh: highFirstDays.filter((r) => r.breakout === "high").length,

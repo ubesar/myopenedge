@@ -6,8 +6,10 @@ import type { AnalysisMode } from "@/components/ControlPanel";
 
 export type OCCTimeframe = "M5" | "M15" | "M30" | "H1";
 
+export type IBSubreport = "rejection" | "extension";
+
 interface ParameterPanelProps {
-  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => void;
+  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, subreport: IBSubreport) => void;
   loading: boolean;
   isFree?: boolean;
   occTimeframe?: OCCTimeframe;
@@ -43,11 +45,12 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
   const [ibWindow, setIbWindow] = useState(isFree ? "60" : "30");
   const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
   const [mode, setMode] = useState<AnalysisMode>("ib");
+  const [subreport, setSubreport] = useState<IBSubreport>("rejection");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!symbol.trim()) return;
-    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode);
+    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, subreport);
   };
 
   return (
@@ -91,16 +94,20 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}
 
-          <p className="text-[11px] text-muted-foreground">subreport</p>
-          <Select defaultValue="rejection">
-            <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="rejection">by rejection</SelectItem>
-              <SelectItem value="extension">by extension</SelectItem>
-            </SelectContent>
-          </Select>
+          {mode === "ib" && (
+            <>
+              <p className="text-[11px] text-muted-foreground">subreport</p>
+              <Select value={subreport} onValueChange={(v) => setSubreport(v as IBSubreport)}>
+                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="rejection">by rejection</SelectItem>
+                  <SelectItem value="extension">by extension</SelectItem>
+                </SelectContent>
+              </Select>
+            </>
+          )}
 
           <button
             type="button"

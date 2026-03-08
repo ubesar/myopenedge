@@ -7,7 +7,7 @@ import { Bookmark, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { type AnalysisMode } from "@/components/ControlPanel";
 import AppNavSidebar from "@/components/AppNavSidebar";
-import ParameterPanel, { type OCCTimeframe } from "@/components/ParameterPanel";
+import ParameterPanel, { type OCCTimeframe, type IBSubreport } from "@/components/ParameterPanel";
 import RightSidebar from "@/components/RightSidebar";
 import ChartCard from "@/components/ChartCard";
 import { useAnalysisHistory, type AnalysisRun } from "@/hooks/useAnalysisHistory";
@@ -73,7 +73,7 @@ const Index = () => {
     return data;
   };
 
-  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => {
+  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, subreport: IBSubreport = "rejection") => {
     setLoading(true);
     setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null);
     setSymbol(ticker); setActiveMode(mode);
@@ -85,7 +85,7 @@ const Index = () => {
       const values = parsed.data.values;
 
       if (mode === "ib") {
-        const a = analyzeIB(values as any, ibWindow, maxDays);
+        const a = analyzeIB(values as any, ibWindow, maxDays, subreport);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setResult(a);
         addRun(mode, ticker, { totalDays: a.totalDays, ibWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
@@ -115,7 +115,7 @@ const Index = () => {
   const hasResults = result || momentumResult || occResult || gapFillResult;
 
   const reportTitle = hasResults
-    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "momentum" ? "ny open momentum continuation report" : activeMode === "occ" ? "opening candle continuation report" : "gap fill statistics report"}`
+    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? `initial balance breakout ${result?.subreport === "extension" ? "by extension" : "by rejection"} report` : activeMode === "momentum" ? "ny open momentum continuation report" : activeMode === "occ" ? "opening candle continuation report" : "gap fill statistics report"}`
     : "";
 
   // Build chart data for each mode
@@ -142,7 +142,7 @@ const Index = () => {
               { label: "candle timeframe", value: "5min" },
               { label: "IB size", value: "any size" },
               { label: "IB ending zone", value: "all days" },
-              { label: "IB breakout measure", value: "by wick" },
+              { label: "IB breakout measure", value: result.subreport === "extension" ? "by extension (wick)" : "by rejection (M15 close)" },
               { label: "weekdays to use", value: "all days" },
             ]}
           />
@@ -163,7 +163,7 @@ const Index = () => {
               { label: "candle timeframe", value: "5min" },
               { label: "IB size", value: "any size" },
               { label: "IB ending zone", value: "all days" },
-              { label: "IB breakout measure", value: "by wick" },
+              { label: "IB breakout measure", value: result.subreport === "extension" ? "by extension (wick)" : "by rejection (M15 close)" },
               { label: "weekdays to use", value: "all days" },
             ]}
           />
