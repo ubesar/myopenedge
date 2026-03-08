@@ -35,14 +35,14 @@ serve(async (req) => {
     });
   }
 
-  const supabase = createClient(
+  // Use service role client to validate the token (required for ES256 JWTs)
+  const serviceClient = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
-    { global: { headers: { Authorization: authHeader } } }
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
   const token = authHeader.replace("Bearer ", "");
-  const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+  const { data: { user }, error: userError } = await serviceClient.auth.getUser(token);
   if (userError || !user) {
     console.error("JWT validation error:", userError);
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
