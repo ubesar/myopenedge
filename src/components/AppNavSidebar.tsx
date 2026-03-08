@@ -33,6 +33,7 @@ const communityItems = [
 
 const AppNavSidebar = ({ collapsed, onToggle }: AppNavSidebarProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signOut } = useAuth();
 
   return (
