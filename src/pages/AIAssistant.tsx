@@ -201,8 +201,10 @@ const AIAssistant = () => {
   ];
 
   return (
-    <div className="h-screen w-full flex overflow-hidden bg-background">
-      <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+    <div className="h-screen w-full flex flex-col lg:flex-row overflow-hidden bg-background">
+      {isMobile && <MobileHeader onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)} title="ai assistant" />}
+      {!isMobile && <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />}
+      {isMobile && <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />}
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
