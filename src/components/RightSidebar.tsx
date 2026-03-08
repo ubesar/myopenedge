@@ -20,7 +20,7 @@ const typeConfig: Record<string, { label: string; color: string }> = {
   gapfill: { label: "Gap", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
 };
 
-const RightSidebar = ({ runs, onDelete, onSelect, selectedId }: RightSidebarProps) => {
+const RightSidebar = () => {
   return (
     <div className="h-full border-l border-border bg-surface w-[240px] shrink-0 overflow-y-auto">
       <div className="p-4 space-y-5">
