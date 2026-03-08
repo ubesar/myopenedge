@@ -11,6 +11,7 @@ import Algos from "@/pages/Algos";
 import Chart from "@/pages/Chart";
 import NotFound from "@/pages/NotFound";
 import TermsConditions from "@/pages/TermsConditions";
+import PaddleLiveGuide from "@/pages/PaddleLiveGuide";
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -26,6 +27,7 @@ const AnimatedRoutes = () => {
         <Route path="/chart" element={<PageTransition><Chart /></PageTransition>} />
         <Route path="/upgrade" element={<PageTransition><Upgrade /></PageTransition>} />
         <Route path="/docs" element={<PageTransition><Docs /></PageTransition>} />
+        <Route path="/docs/paddle-guide" element={<PageTransition><PaddleLiveGuide /></PageTransition>} />
         <Route path="/terms_conditions" element={<PageTransition><TermsConditions /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
