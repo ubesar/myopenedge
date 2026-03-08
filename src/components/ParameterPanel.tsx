@@ -6,8 +6,10 @@ import type { AnalysisMode } from "@/components/ControlPanel";
 
 export type OCCTimeframe = "M5" | "M15" | "M30" | "H1";
 
+export type IBSubreport = "rejection" | "extension";
+
 interface ParameterPanelProps {
-  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => void;
+  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, subreport: IBSubreport) => void;
   loading: boolean;
   isFree?: boolean;
   occTimeframe?: OCCTimeframe;
