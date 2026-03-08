@@ -76,10 +76,10 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
     });
 
     const candleSeries = chart.addSeries(CandlestickSeries, {
-      upColor: "#089981",
+      upColor: "#1b5e20",
       downColor: "#ef5350",
       borderDownColor: "#ef5350",
-      borderUpColor: "#089981",
+      borderUpColor: "#1b5e20",
       wickDownColor: "#787B86",
       wickUpColor: "#787B86",
     });
