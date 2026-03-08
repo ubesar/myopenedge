@@ -19,7 +19,7 @@ const workspaceItems = [
   { icon: BarChart3, label: "reports", href: "/app" },
   { icon: Search, label: "screener", href: null },
   { icon: TrendingUp, label: "whats in play", href: null },
-  { icon: Cpu, label: "algos", href: null },
+  { icon: Cpu, label: "algos", href: "/algos" },
   { icon: Eye, label: "watchlist", href: null },
   { icon: Calculator, label: "risk calculator", href: null },
 ];

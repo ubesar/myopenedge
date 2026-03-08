@@ -50,6 +50,18 @@ export default {
   			},
   			'chart-blue': 'hsl(var(--chart-blue))',
   			'chart-grey': 'hsl(var(--chart-grey))',
+  			buy: {
+  				DEFAULT: 'hsl(var(--buy))',
+  				foreground: 'hsl(var(--buy-foreground))'
+  			},
+  			sell: {
+  				DEFAULT: 'hsl(var(--sell))',
+  				foreground: 'hsl(var(--sell-foreground))'
+  			},
+  			warning: {
+  				DEFAULT: 'hsl(var(--warning))',
+  				foreground: 'hsl(var(--warning-foreground))'
+  			},
   			sidebar: {
   				DEFAULT: 'hsl(var(--sidebar-background))',
   				foreground: 'hsl(var(--sidebar-foreground))',
