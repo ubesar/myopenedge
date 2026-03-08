@@ -94,16 +94,20 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}
 
-          <p className="text-[11px] text-muted-foreground">subreport</p>
-          <Select defaultValue="rejection">
-            <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="rejection">by rejection</SelectItem>
-              <SelectItem value="extension">by extension</SelectItem>
-            </SelectContent>
-          </Select>
+          {mode === "ib" && (
+            <>
+              <p className="text-[11px] text-muted-foreground">subreport</p>
+              <Select value={subreport} onValueChange={(v) => setSubreport(v as IBSubreport)}>
+                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="rejection">by rejection</SelectItem>
+                  <SelectItem value="extension">by extension</SelectItem>
+                </SelectContent>
+              </Select>
+            </>
+          )}
 
           <button
             type="button"
