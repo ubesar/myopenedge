@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   ChevronLeft, ChevronRight, Rocket, Bot, BarChart3, CandlestickChart,
-  TrendingUp, Cpu, Eye, Calculator, Users, MessageCircle,
-  Gift, Crown, LogOut
+  TrendingUp, Cpu, Eye, Calculator, Users,
+  Crown, LogOut
 } from "lucide-react";
 import logo from "@/assets/logo.png";
+import iconX from "@/assets/icon-x.png";
+import iconYt from "@/assets/icon-yt.png";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface AppNavSidebarProps {
@@ -25,9 +27,9 @@ const workspaceItems = [
 ];
 
 const communityItems = [
-  { icon: Users, label: "refer a friend", href: null },
-  { icon: MessageCircle, label: "X (Twitter)", href: "https://x.com/Ubetrades" },
-  { icon: Gift, label: "YouTube", href: "https://www.youtube.com/@ubetrades" },
+  { icon: Users, label: "refer a friend", href: null, img: null },
+  { icon: null, label: "X (Twitter)", href: "https://x.com/Ubetrades", img: iconX },
+  { icon: null, label: "YouTube", href: "https://www.youtube.com/@ubetrades", img: iconYt },
 ];
 
 const AppNavSidebar = ({ collapsed, onToggle }: AppNavSidebarProps) => {
@@ -84,6 +86,9 @@ const AppNavSidebar = ({ collapsed, onToggle }: AppNavSidebarProps) => {
           {!collapsed && <p className="section-label mb-2">community</p>}
           <div className="space-y-0.5">
             {communityItems.map((item) => {
+              const iconEl = item.img
+                ? <img src={item.img} alt={item.label} className="h-4 w-4 shrink-0 rounded-sm object-contain" />
+                : item.icon ? <item.icon className="h-4 w-4 shrink-0" /> : null;
               const isExternal = item.href?.startsWith("http");
               if (isExternal) {
                 return (
@@ -94,7 +99,7 @@ const AppNavSidebar = ({ collapsed, onToggle }: AppNavSidebarProps) => {
                     rel="noopener noreferrer"
                     className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] text-sidebar-foreground hover:text-foreground hover:bg-secondary transition-colors"
                   >
-                    <item.icon className="h-4 w-4 shrink-0" />
+                    {iconEl}
                     {!collapsed && <span>{item.label}</span>}
                   </a>
                 );
@@ -105,7 +110,7 @@ const AppNavSidebar = ({ collapsed, onToggle }: AppNavSidebarProps) => {
                   className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] text-sidebar-foreground opacity-50 cursor-not-allowed"
                   disabled
                 >
-                  <item.icon className="h-4 w-4 shrink-0" />
+                  {iconEl}
                   {!collapsed && <span>{item.label}</span>}
                 </button>
               );
