@@ -11,20 +11,25 @@ import {
   type ISeriesApi,
   type CandlestickData,
   type Time,
+  createSeriesMarkers,
 } from "lightweight-charts";
 
 interface TradingViewChartProps {
   symbol: string;
   interval: string;
   showIB?: boolean;
+  showMC?: boolean;
 }
 
-const TradingViewChart = ({ symbol, interval, showIB = false }: TradingViewChartProps) => {
+const BODY_RATIO = 0.50;
+
+const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: TradingViewChartProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   const ibSeriesListRef = useRef<ISeriesApi<"Line">[]>([]);
+  const mcMarkersRef = useRef<ReturnType<typeof createSeriesMarkers> | null>(null);
   const [chartReady, setChartReady] = useState(false);
   const [ohlc, setOhlc] = useState<{
     o: number; h: number; l: number; c: number; change: number; changePct: number;
@@ -258,6 +263,73 @@ const TradingViewChart = ({ symbol, interval, showIB = false }: TradingViewChart
           }
         }
 
+        // Momentum Candle markers
+        if (showMC && interval !== "1day" && sorted.length > 0) {
+          const dayBarsMap: Record<string, typeof sorted> = {};
+          for (const bar of sorted) {
+            const date = bar.datetime.split(" ")[0];
+            if (!dayBarsMap[date]) dayBarsMap[date] = [];
+            dayBarsMap[date].push(bar);
+          }
+
+          const markers: { time: Time; position: string; color: string; shape: string; text: string }[] = [];
+
+          for (const date of Object.keys(dayBarsMap).sort()) {
+            const bars = dayBarsMap[date];
+            // Filter morning session 09:30 - 12:00
+            const morningBars = bars.filter(b => {
+              const t = b.datetime.split(" ")[1];
+              return t >= "09:30:00" && t < "12:00:00";
+            });
+
+            // Detect consecutive same-color candles with body ratio
+            for (let i = 0; i < morningBars.length - 1; i++) {
+              const prev = morningBars[i];
+              const curr = morningBars[i + 1];
+
+              const pO = parseFloat(prev.open), pH = parseFloat(prev.high), pL = parseFloat(prev.low), pC = parseFloat(prev.close);
+              const cO = parseFloat(curr.open), cH = parseFloat(curr.high), cL = parseFloat(curr.low), cC = parseFloat(curr.close);
+
+              const pBody = Math.abs(pC - pO);
+              const pRange = pH - pL;
+              const cBody = Math.abs(cC - cO);
+              const cRange = cH - cL;
+
+              const pBull = pC >= pO;
+              const cBull = cC >= cO;
+
+              if (
+                pRange > 0 && cRange > 0 &&
+                pBody / pRange >= BODY_RATIO &&
+                cBody / cRange >= 0.30 &&
+                pBull === cBull
+              ) {
+                const ts = Math.floor(new Date(curr.datetime.replace(" ", "T") + "+00:00").getTime() / 1000) as Time;
+                markers.push({
+                  time: ts,
+                  position: pBull ? "belowBar" : "aboveBar",
+                  color: pBull ? "#26a69a" : "#ef5350",
+                  shape: pBull ? "arrowUp" : "arrowDown",
+                  text: pBull ? "MC▲" : "MC▼",
+                });
+                i++; // skip next
+              }
+            }
+          }
+
+          markers.sort((a, b) => (a.time as number) - (b.time as number));
+          if (mcMarkersRef.current) {
+            mcMarkersRef.current.setMarkers([]);
+            mcMarkersRef.current = null;
+          }
+          mcMarkersRef.current = createSeriesMarkers(seriesRef.current!, markers as any);
+        } else {
+          if (mcMarkersRef.current) {
+            mcMarkersRef.current.setMarkers([]);
+            mcMarkersRef.current = null;
+          }
+        }
+
         // Set last bar as OHLC
         if (candles.length > 0) {
           const last = candles[candles.length - 1];
@@ -278,7 +350,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false }: TradingViewChart
     };
 
     fetchData();
-  }, [symbol, interval, chartReady, showIB]);
+  }, [symbol, interval, chartReady, showIB, showMC]);
 
   const isPositive = ohlc ? ohlc.change >= 0 : true;
 
