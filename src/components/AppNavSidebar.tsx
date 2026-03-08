@@ -27,9 +27,9 @@ const workspaceItems = [
 ];
 
 const communityItems = [
-  { icon: Users, label: "refer a friend", href: null },
-  { icon: MessageCircle, label: "X (Twitter)", href: "https://x.com/Ubetrades" },
-  { icon: Gift, label: "YouTube", href: "https://www.youtube.com/@ubetrades" },
+  { icon: Users, label: "refer a friend", href: null, img: null },
+  { icon: null, label: "X (Twitter)", href: "https://x.com/Ubetrades", img: iconX },
+  { icon: null, label: "YouTube", href: "https://www.youtube.com/@ubetrades", img: iconYt },
 ];
 
 const AppNavSidebar = ({ collapsed, onToggle }: AppNavSidebarProps) => {
