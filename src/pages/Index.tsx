@@ -163,7 +163,7 @@ const Index = () => {
               { label: "candle timeframe", value: "5min" },
               { label: "IB size", value: "any size" },
               { label: "IB ending zone", value: "all days" },
-              { label: "IB breakout measure", value: result.subreport === "extension" ? "by extension (wick)" : "by rejection (M5 close)" },
+              { label: "IB breakout measure", value: "by rejection (M5 close)" },
               { label: "weekdays to use", value: "all days" },
             ]}
           />
