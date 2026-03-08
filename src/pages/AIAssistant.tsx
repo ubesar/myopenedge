@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Bot, Send, Loader2, TrendingUp, Target, Layers, BookOpen, Share2, Zap, BarChart3, Trash2, Lock, Crown } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
