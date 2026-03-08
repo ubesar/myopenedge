@@ -96,6 +96,8 @@ const Watchlist = () => {
     }
   }, [items.length]);
 
+  if (!authLoading && !user) return <Navigate to="/auth" replace />;
+
   const addSymbol = async () => {
     if (!newSymbol.trim() || !user) return;
     const sym = newSymbol.trim().toUpperCase();
