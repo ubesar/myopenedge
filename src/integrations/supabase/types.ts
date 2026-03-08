@@ -166,6 +166,69 @@ export type Database = {
         }
         Relationships: []
       }
+      ea_control: {
+        Row: {
+          asset_name: string
+          breakeven: number
+          created_at: string
+          current_command: string
+          id: string
+          is_active: boolean
+          lot_size: number
+          magic_number: number
+          max_orders: number
+          order_distance: number
+          risk_usd: number
+          rr_ratio: number
+          slippage: number
+          stop_loss: number
+          take_profit: number
+          trailing_stop: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asset_name?: string
+          breakeven?: number
+          created_at?: string
+          current_command?: string
+          id?: string
+          is_active?: boolean
+          lot_size?: number
+          magic_number: number
+          max_orders?: number
+          order_distance?: number
+          risk_usd?: number
+          rr_ratio?: number
+          slippage?: number
+          stop_loss?: number
+          take_profit?: number
+          trailing_stop?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asset_name?: string
+          breakeven?: number
+          created_at?: string
+          current_command?: string
+          id?: string
+          is_active?: boolean
+          lot_size?: number
+          magic_number?: number
+          max_orders?: number
+          order_distance?: number
+          risk_usd?: number
+          rr_ratio?: number
+          slippage?: number
+          stop_loss?: number
+          take_profit?: number
+          trailing_stop?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       import_batches: {
         Row: {
           completed_at: string | null
@@ -464,6 +527,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_pins: {
+        Row: {
+          created_at: string
+          id: string
+          pin_hash: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pin_hash: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pin_hash?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
