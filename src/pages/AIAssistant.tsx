@@ -146,7 +146,7 @@ const AIAssistant = () => {
       label: "Trading Plan",
       icon: Target,
       description: "Create a structured trading plan",
-      prompt: "Buat template trading plan yang ideal untuk day trader/scalper di sesi NY Open. Sertakan:\n- Pre-market checklist\n- Entry criteria berdasarkan IB/Momentum/OCC\n- Stop loss & target rules\n- Risk management per trade\n- Journaling template",
+      prompt: "Create an ideal trading plan template for a day trader/scalper during the NY Open session. Include:\n- Pre-market checklist\n- Entry criteria based on IB/Momentum/OCC\n- Stop loss & target rules\n- Risk management per trade\n- Journaling template",
     },
     {
       label: "Journal Template",
