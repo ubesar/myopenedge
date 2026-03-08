@@ -44,6 +44,7 @@ const Index = () => {
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
   const [selectedRunId, setSelectedRunId] = useState<string | undefined>();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [occTimeframe, setOccTimeframe] = useState<OCCTimeframe>("M15");
   const { runs: historyRuns, addRun, deleteRun } = useAnalysisHistory();
 
   const isFree = !isActive;
