@@ -337,12 +337,7 @@ const Index = () => {
       </main>
 
       {/* Column 4: Right Sidebar */}
-      <RightSidebar
-        runs={historyRuns.slice(0, 10)}
-        onDelete={deleteRun}
-        onSelect={(run) => setSelectedRunId(run.id)}
-        selectedId={selectedRunId}
-      />
+      <RightSidebar />
     </div>
   );
 };
