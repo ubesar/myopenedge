@@ -157,6 +157,7 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="occ">opening candle continuation</SelectItem>}
               {!isFree && <SelectItem value="gapfill">gap fill statistics</SelectItem>}
               {!isFree && <SelectItem value="insidebar">inside bar</SelectItem>}
+              {!isFree && <SelectItem value="outsideday">outside day</SelectItem>}
             </SelectContent>
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}
@@ -230,7 +231,7 @@ const ParameterPanel = ({
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for more days</p>}
 
-          {mode !== "occ" && mode !== "gapfill" && mode !== "insidebar" && (
+          {mode !== "occ" && mode !== "gapfill" && mode !== "insidebar" && mode !== "outsideday" && (
             <>
               <p className="text-[11px] text-muted-foreground">IB window</p>
               <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => { if (!isFree) { setIbWindow(v); setSelectedTemplateId("custom"); } }} disabled={isFree}>
