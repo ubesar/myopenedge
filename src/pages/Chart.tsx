@@ -6,12 +6,10 @@ import TradingViewChart from "@/components/TradingViewChart";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const intervals = [
-  { label: "1m", value: "1min" },
   { label: "5m", value: "5min" },
   { label: "15m", value: "15min" },
+  { label: "30m", value: "30min" },
   { label: "1h", value: "1h" },
-  { label: "4h", value: "4h" },
-  { label: "1D", value: "1day" },
 ];
 
 const popularSymbols = ["QQQ", "SPY", "AAPL", "TSLA", "NVDA", "AMZN", "MSFT", "META"];
