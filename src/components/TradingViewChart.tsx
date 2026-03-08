@@ -6,6 +6,7 @@ import {
   CrosshairMode,
   CandlestickSeries,
   HistogramSeries,
+  LineSeries,
   type IChartApi,
   type ISeriesApi,
   type CandlestickData,
@@ -23,9 +24,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false }: TradingViewChart
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeRef = useRef<ISeriesApi<"Histogram"> | null>(null);
-  const ibHighLineRef = useRef<any>(null);
-  const ibLowLineRef = useRef<any>(null);
-  const ib50LineRef = useRef<any>(null);
+  const ibSeriesListRef = useRef<ISeriesApi<"Line">[]>([]);
   const [chartReady, setChartReady] = useState(false);
   const [ohlc, setOhlc] = useState<{
     o: number; h: number; l: number; c: number; change: number; changePct: number;
@@ -196,64 +195,66 @@ const TradingViewChart = ({ symbol, interval, showIB = false }: TradingViewChart
         seriesRef.current!.setData(candles);
         volumeRef.current!.setData(volumes);
 
-        // Remove old IB price lines
-        const series = seriesRef.current!;
-        try { series.removePriceLine(ibHighLineRef.current!); } catch {}
-        try { series.removePriceLine(ibLowLineRef.current!); } catch {}
-        try { series.removePriceLine(ib50LineRef.current!); } catch {}
-        ibHighLineRef.current = null;
-        ibLowLineRef.current = null;
-        ib50LineRef.current = null;
+        // Remove old IB line series
+        const chart = chartRef.current!;
+        for (const s of ibSeriesListRef.current) {
+          try { chart.removeSeries(s); } catch {}
+        }
+        ibSeriesListRef.current = [];
 
-        // Calculate IB for the most recent trading day (intraday only)
+        // Calculate IB per trading day (intraday only)
         if (showIB && interval !== "1day" && sorted.length > 0) {
-          // Find the latest trading date
-          const latestDatetime = sorted[sorted.length - 1].datetime; // e.g. "2026-03-06 15:55:00"
-          const latestDate = latestDatetime.split(" ")[0]; // "2026-03-06"
-
-          // Filter bars for latest date between 09:30 and 10:30
-          let ibHigh = -Infinity;
-          let ibLow = Infinity;
+          const dayBars: Record<string, typeof sorted> = {};
           for (const bar of sorted) {
-            const [date, time] = bar.datetime.split(" ");
-            if (date !== latestDate) continue;
-            if (time >= "09:30:00" && time < "10:30:00") {
-              const h = parseFloat(bar.high);
-              const l = parseFloat(bar.low);
-              if (h > ibHigh) ibHigh = h;
-              if (l < ibLow) ibLow = l;
-            }
+            const date = bar.datetime.split(" ")[0];
+            if (!dayBars[date]) dayBars[date] = [];
+            dayBars[date].push(bar);
           }
 
-          if (ibHigh !== -Infinity && ibLow !== Infinity) {
+          const toTs = (dt: string) =>
+            Math.floor(new Date(dt.replace(" ", "T") + "-04:00").getTime() / 1000) as Time;
+
+          const lineBaseOpts = { priceScaleId: "right", lastValueVisible: false, crosshairMarkerVisible: false, priceLineVisible: false };
+
+          for (const date of Object.keys(dayBars).sort()) {
+            const bars = dayBars[date];
+            let ibHigh = -Infinity;
+            let ibLow = Infinity;
+            for (const bar of bars) {
+              const time = bar.datetime.split(" ")[1];
+              if (time >= "09:30:00" && time < "10:30:00") {
+                const h = parseFloat(bar.high);
+                const l = parseFloat(bar.low);
+                if (h > ibHigh) ibHigh = h;
+                if (l < ibLow) ibLow = l;
+              }
+            }
+            if (ibHigh === -Infinity || ibLow === Infinity) continue;
             const ib50 = (ibHigh + ibLow) / 2;
 
-            ibHighLineRef.current = series.createPriceLine({
-              price: ibHigh,
-              color: "#FFFFFF",
-              lineWidth: 1,
-              lineStyle: 0, // Solid
-              axisLabelVisible: true,
-              title: "IB High",
+            const sessionBars = bars.filter(b => {
+              const t = b.datetime.split(" ")[1];
+              return t >= "09:30:00" && t <= "16:00:00";
             });
+            if (sessionBars.length < 2) continue;
 
-            ibLowLineRef.current = series.createPriceLine({
-              price: ibLow,
-              color: "#FFFFFF",
-              lineWidth: 1,
-              lineStyle: 0,
-              axisLabelVisible: true,
-              title: "IB Low",
-            });
+            const startTime = toTs(sessionBars[0].datetime);
+            const endTime = toTs(sessionBars[sessionBars.length - 1].datetime);
 
-            ib50LineRef.current = series.createPriceLine({
-              price: ib50,
-              color: "#00BFFF",
-              lineWidth: 1,
-              lineStyle: 2, // Dashed
-              axisLabelVisible: true,
-              title: "IB 50",
-            });
+            // IB High line for this day
+            const highSeries = chart.addSeries(LineSeries, { ...lineBaseOpts, color: "#FFFFFF", lineWidth: 1, lineStyle: 0, title: "" });
+            highSeries.setData([{ time: startTime, value: ibHigh }, { time: endTime, value: ibHigh }]);
+            ibSeriesListRef.current.push(highSeries);
+
+            // IB Low line for this day
+            const lowSeries = chart.addSeries(LineSeries, { ...lineBaseOpts, color: "#FFFFFF", lineWidth: 1, lineStyle: 0, title: "" });
+            lowSeries.setData([{ time: startTime, value: ibLow }, { time: endTime, value: ibLow }]);
+            ibSeriesListRef.current.push(lowSeries);
+
+            // IB 50 line for this day
+            const midSeries = chart.addSeries(LineSeries, { ...lineBaseOpts, color: "#00BFFF", lineWidth: 1, lineStyle: 2, title: "" });
+            midSeries.setData([{ time: startTime, value: ib50 }, { time: endTime, value: ib50 }]);
+            ibSeriesListRef.current.push(midSeries);
           }
         }
 
