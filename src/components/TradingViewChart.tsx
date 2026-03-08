@@ -17,14 +17,18 @@ interface TradingViewChartProps {
   symbol: string;
   interval: string;
   showIB?: boolean;
+  showMC?: boolean;
 }
 
-const TradingViewChart = ({ symbol, interval, showIB = false }: TradingViewChartProps) => {
+const BODY_RATIO = 0.50;
+
+const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: TradingViewChartProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   const ibSeriesListRef = useRef<ISeriesApi<"Line">[]>([]);
+  const mcSeriesListRef = useRef<ISeriesApi<"Line">[]>([]);
   const [chartReady, setChartReady] = useState(false);
   const [ohlc, setOhlc] = useState<{
     o: number; h: number; l: number; c: number; change: number; changePct: number;
