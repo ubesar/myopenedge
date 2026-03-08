@@ -86,7 +86,7 @@ const TradingDashboard = ({ user, onLock }: { user: User; onLock?: () => void })
       return;
     }
     if (!newAsset.trim()) {
-      toast.error("Nama asset harus diisi");
+      toast.error("Asset name is required");
       return;
     }
     const { error } = await supabase.from("ea_control").insert({
