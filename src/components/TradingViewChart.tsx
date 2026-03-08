@@ -193,6 +193,67 @@ const TradingViewChart = ({ symbol, interval, showIB = false }: TradingViewChart
         seriesRef.current!.setData(candles);
         volumeRef.current!.setData(volumes);
 
+        // Remove old IB price lines
+        const series = seriesRef.current!;
+        try { series.removePriceLine(ibHighLineRef.current!); } catch {}
+        try { series.removePriceLine(ibLowLineRef.current!); } catch {}
+        try { series.removePriceLine(ib50LineRef.current!); } catch {}
+        ibHighLineRef.current = null;
+        ibLowLineRef.current = null;
+        ib50LineRef.current = null;
+
+        // Calculate IB for the most recent trading day (intraday only)
+        if (showIB && interval !== "1day" && sorted.length > 0) {
+          // Find the latest trading date
+          const latestDatetime = sorted[sorted.length - 1].datetime; // e.g. "2026-03-06 15:55:00"
+          const latestDate = latestDatetime.split(" ")[0]; // "2026-03-06"
+
+          // Filter bars for latest date between 09:30 and 10:30
+          let ibHigh = -Infinity;
+          let ibLow = Infinity;
+          for (const bar of sorted) {
+            const [date, time] = bar.datetime.split(" ");
+            if (date !== latestDate) continue;
+            if (time >= "09:30:00" && time < "10:30:00") {
+              const h = parseFloat(bar.high);
+              const l = parseFloat(bar.low);
+              if (h > ibHigh) ibHigh = h;
+              if (l < ibLow) ibLow = l;
+            }
+          }
+
+          if (ibHigh !== -Infinity && ibLow !== Infinity) {
+            const ib50 = (ibHigh + ibLow) / 2;
+
+            ibHighLineRef.current = series.createPriceLine({
+              price: ibHigh,
+              color: "#FFFFFF",
+              lineWidth: 1,
+              lineStyle: 0, // Solid
+              axisLabelVisible: true,
+              title: "IB High",
+            });
+
+            ibLowLineRef.current = series.createPriceLine({
+              price: ibLow,
+              color: "#FFFFFF",
+              lineWidth: 1,
+              lineStyle: 0,
+              axisLabelVisible: true,
+              title: "IB Low",
+            });
+
+            ib50LineRef.current = series.createPriceLine({
+              price: ib50,
+              color: "#00BFFF",
+              lineWidth: 1,
+              lineStyle: 2, // Dashed
+              axisLabelVisible: true,
+              title: "IB 50",
+            });
+          }
+        }
+
         // Set last bar as OHLC
         if (candles.length > 0) {
           const last = candles[candles.length - 1];
