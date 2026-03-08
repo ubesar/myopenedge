@@ -53,21 +53,6 @@ const Index = () => {
 
   const isFree = !isActive;
 
-  const analysisContext = useMemo<AnalysisContext>(() => {
-    if (activeMode === "ib" && result) {
-      const hf = result.highFirst;
-      const lf = result.lowFirst;
-      return {
-        mode: "ib", symbol,
-        summary: `IB analysis for ${symbol}, ${result.totalDays} days. HF: BH ${hf.total > 0 ? (hf.breakHigh/hf.total*100).toFixed(1) : 0}%, LF: BH ${lf.total > 0 ? (lf.breakHigh/lf.total*100).toFixed(1) : 0}%`
-      };
-    }
-    if (activeMode === "momentum" && momentumResult) return { mode: "momentum", symbol, summary: `Momentum for ${symbol}, ${momentumResult.totalDays} days` };
-    if (activeMode === "occ" && occResult) return { mode: "occ", symbol, summary: `OCC for ${symbol}, ${occResult.totalDays} days` };
-    if (activeMode === "gapfill" && gapFillResult) return { mode: "gapfill", symbol, summary: `Gap Fill for ${symbol}, ${gapFillResult.totalDays} days` };
-    if (activeMode === "insidebar" && insideBarResult) return { mode: "insidebar", symbol, summary: `Inside Bar for ${symbol}, ${insideBarResult.totalDays} days, ${insideBarResult.breakoutPct.toFixed(1)}% breakout rate` };
-    return { mode: null, symbol: "", summary: "" };
-  }, [activeMode, result, momentumResult, occResult, gapFillResult, insideBarResult, symbol]);
 
   if (!authLoading && !user) return <Navigate to="/auth" replace />;
 
