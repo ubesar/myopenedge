@@ -80,7 +80,7 @@ const TradingViewChart = ({ symbol, interval }: TradingViewChartProps) => {
       wickUpColor: "#26a69a",
     });
 
-    const volumeSeries = chart.addHistogramSeries({
+    const volumeSeries = chart.addSeries(HistogramSeries, {
       priceFormat: { type: "volume" },
       priceScaleId: "",
     });
