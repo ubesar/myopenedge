@@ -6,7 +6,6 @@ import type { AnalysisMode } from "@/components/ControlPanel";
 
 export type OCCTimeframe = "M5" | "M15" | "M30" | "H1";
 
-export type IBSubreport = "rejection" | "extension";
 export type MomentumBodyRatio = "0.40" | "0.50" | "0.60";
 export type OCCBodyRatio = "0.40" | "0.50" | "0.60";
 
