@@ -6,6 +6,7 @@ import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
 import Upgrade from "@/pages/Upgrade";
 import Docs from "@/pages/Docs";
+import AIAssistant from "@/pages/AIAssistant";
 import NotFound from "@/pages/NotFound";
 
 const AnimatedRoutes = () => {
