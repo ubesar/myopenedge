@@ -170,9 +170,10 @@ const TradingViewChart = ({ symbol, interval }: TradingViewChartProps) => {
         const sorted = [...json.values].reverse();
 
         for (const bar of sorted) {
+          // lightweight-charts needs unix timestamp for intraday
           const time = (interval === "1day"
             ? bar.datetime
-            : bar.datetime.replace(" ", "T") + ":00") as Time;
+            : Math.floor(new Date(bar.datetime.replace(" ", "T") + "-04:00").getTime() / 1000)) as Time;
 
           const o = parseFloat(bar.open);
           const h = parseFloat(bar.high);
