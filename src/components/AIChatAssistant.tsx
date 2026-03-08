@@ -171,8 +171,8 @@ const AIChatAssistant = forwardRef<AIChatAssistantHandle, AIChatAssistantProps>(
         label: "Trade Plan",
         icon: Target,
         prompt: hasContext
-          ? `Buat trading plan untuk ${analysisContext?.symbol} berdasarkan data ${analysisContext?.mode?.toUpperCase()} saat ini. Sertakan: entry trigger, stop loss, target profit, dan R:R ratio. Format untuk trading journal.`
-          : "Bagaimana cara membuat trading plan menggunakan data IB dan momentum?",
+          ? `Create a trading plan for ${analysisContext?.symbol} based on the current ${analysisContext?.mode?.toUpperCase()} data. Include: entry trigger, stop loss, profit target, and R:R ratio. Format for trading journal.`
+          : "How do I create a trading plan using IB and momentum data?",
         show: true,
       },
       {
