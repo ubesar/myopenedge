@@ -105,10 +105,10 @@ function detectSignals(candles: CandleBar[], bodyRatio: number = 0.50): Momentum
   return signals;
 }
 
-function evaluateMomentumTF(momentumBars5min: CandleBar[], tfMinutes: number): MomentumTFResult {
+function evaluateMomentumTF(momentumBars5min: CandleBar[], tfMinutes: number, bodyRatio: number): MomentumTFResult {
   const tf = TF_CONFIGS.find(t => t.minutes === tfMinutes)?.tf || `M${tfMinutes}`;
   const candles = aggregateBars(momentumBars5min, tfMinutes);
-  const signals = detectSignals(candles);
+  const signals = detectSignals(candles, bodyRatio);
   const momentum = signals.length > 0 ? signals[0].type : "choppy";
   return { tf, tfMinutes, momentum, signals };
 }
