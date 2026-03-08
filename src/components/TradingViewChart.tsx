@@ -197,13 +197,13 @@ const TradingViewChart = ({ symbol, interval, showIB = false }: TradingViewChart
 
         // Remove old IB line series
         const chart = chartRef.current!;
-        if (ibHighSeriesRef.current) { chart.removeSeries(ibHighSeriesRef.current); ibHighSeriesRef.current = null; }
-        if (ibLowSeriesRef.current) { chart.removeSeries(ibLowSeriesRef.current); ibLowSeriesRef.current = null; }
-        if (ib50SeriesRef.current) { chart.removeSeries(ib50SeriesRef.current); ib50SeriesRef.current = null; }
+        for (const s of ibSeriesListRef.current) {
+          try { chart.removeSeries(s); } catch {}
+        }
+        ibSeriesListRef.current = [];
 
         // Calculate IB per trading day (intraday only)
         if (showIB && interval !== "1day" && sorted.length > 0) {
-          // Group bars by date
           const dayBars: Record<string, typeof sorted> = {};
           for (const bar of sorted) {
             const date = bar.datetime.split(" ")[0];
@@ -211,13 +211,13 @@ const TradingViewChart = ({ symbol, interval, showIB = false }: TradingViewChart
             dayBars[date].push(bar);
           }
 
-          const ibHighData: { time: Time; value: number }[] = [];
-          const ibLowData: { time: Time; value: number }[] = [];
-          const ib50Data: { time: Time; value: number }[] = [];
+          const toTs = (dt: string) =>
+            Math.floor(new Date(dt.replace(" ", "T") + "-04:00").getTime() / 1000) as Time;
+
+          const lineBaseOpts = { priceScaleId: "right", lastValueVisible: false, crosshairMarkerVisible: false, priceLineVisible: false };
 
           for (const date of Object.keys(dayBars).sort()) {
             const bars = dayBars[date];
-            // Find IB: first 60 min (09:30 - 10:30)
             let ibHigh = -Infinity;
             let ibLow = Infinity;
             for (const bar of bars) {
@@ -230,57 +230,31 @@ const TradingViewChart = ({ symbol, interval, showIB = false }: TradingViewChart
               }
             }
             if (ibHigh === -Infinity || ibLow === Infinity) continue;
-
             const ib50 = (ibHigh + ibLow) / 2;
 
-            // Find session open and close bars for this day (09:30 - 16:00)
             const sessionBars = bars.filter(b => {
               const t = b.datetime.split(" ")[1];
               return t >= "09:30:00" && t <= "16:00:00";
             });
             if (sessionBars.length < 2) continue;
 
-            const toTs = (dt: string) =>
-              Math.floor(new Date(dt.replace(" ", "T") + "-04:00").getTime() / 1000) as Time;
-
             const startTime = toTs(sessionBars[0].datetime);
             const endTime = toTs(sessionBars[sessionBars.length - 1].datetime);
 
+            // IB High line for this day
+            const highSeries = chart.addSeries(LineSeries, { ...lineBaseOpts, color: "#FFFFFF", lineWidth: 1, lineStyle: 0, title: "" });
+            highSeries.setData([{ time: startTime, value: ibHigh }, { time: endTime, value: ibHigh }]);
+            ibSeriesListRef.current.push(highSeries);
 
-            ibHighData.push({ time: startTime, value: ibHigh }, { time: endTime, value: ibHigh });
-            ibLowData.push({ time: startTime, value: ibLow }, { time: endTime, value: ibLow });
-            ib50Data.push({ time: startTime, value: ib50 }, { time: endTime, value: ib50 });
-          }
+            // IB Low line for this day
+            const lowSeries = chart.addSeries(LineSeries, { ...lineBaseOpts, color: "#FFFFFF", lineWidth: 1, lineStyle: 0, title: "" });
+            lowSeries.setData([{ time: startTime, value: ibLow }, { time: endTime, value: ibLow }]);
+            ibSeriesListRef.current.push(lowSeries);
 
-          if (ibHighData.length > 0) {
-            const lineOpts = { priceScaleId: "right", lastValueVisible: false, crosshairMarkerVisible: false };
-
-            ibHighSeriesRef.current = chart.addSeries(LineSeries, {
-              ...lineOpts,
-              color: "#FFFFFF",
-              lineWidth: 1,
-              lineStyle: 0,
-              title: "IB High",
-            });
-            ibHighSeriesRef.current.setData(ibHighData);
-
-            ibLowSeriesRef.current = chart.addSeries(LineSeries, {
-              ...lineOpts,
-              color: "#FFFFFF",
-              lineWidth: 1,
-              lineStyle: 0,
-              title: "IB Low",
-            });
-            ibLowSeriesRef.current.setData(ibLowData);
-
-            ib50SeriesRef.current = chart.addSeries(LineSeries, {
-              ...lineOpts,
-              color: "#00BFFF",
-              lineWidth: 1,
-              lineStyle: 2,
-              title: "IB 50",
-            });
-            ib50SeriesRef.current.setData(ib50Data);
+            // IB 50 line for this day
+            const midSeries = chart.addSeries(LineSeries, { ...lineBaseOpts, color: "#00BFFF", lineWidth: 1, lineStyle: 2, title: "" });
+            midSeries.setData([{ time: startTime, value: ib50 }, { time: endTime, value: ib50 }]);
+            ibSeriesListRef.current.push(midSeries);
           }
         }
 
