@@ -155,7 +155,7 @@ export default function TermsConditions() {
             <section className="space-y-3">
               <h2 className="text-xl font-bold">4. Cryptocurrency Payments</h2>
               <p className="text-muted-foreground leading-relaxed">
-                All payments are processed in cryptocurrency. Due to the nature of blockchain transactions, refunds (if approved) will be issued in the same cryptocurrency at the current market rate, not the original payment value. Network fees for the refund transaction will be deducted from the refund amount.
+                All payments are processed via Paddle, our merchant of record. Refunds (if approved) will be issued to the original payment method. Processing times may vary depending on your payment provider.
               </p>
             </section>
 
