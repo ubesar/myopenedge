@@ -11,7 +11,6 @@ import {
   type ISeriesApi,
   type CandlestickData,
   type Time,
-  createSeriesMarkers,
 } from "lightweight-charts";
 
 interface TradingViewChartProps {
