@@ -57,16 +57,17 @@ const ChartCard = ({ title, subtitle, totalDays, bars, legendItems, settingsGrid
               {bars.map((bar, i) => {
                 const clampedValue = Math.min(Math.max(bar.value, 0), MAX_Y);
                 const heightPercent = (clampedValue / MAX_Y) * 100;
+                const showInsideLabel = heightPercent >= 14;
                 return (
                   <div key={i} className="flex flex-col items-center" style={{ width: "90px" }}>
                     <div
                       className={`w-full rounded-t-md relative flex items-center justify-center transition-all duration-500 ${
                         bar.color === "primary" ? "bg-primary" : "bg-chart-grey"
                       }`}
-                      style={{ height: `${heightPercent}%`, minHeight: clampedValue > 0 ? "28px" : "0" }}
+                      style={{ height: `${heightPercent}%` }}
                     >
                       {clampedValue > 0 && (
-                        <span className="text-[12px] font-semibold text-primary-foreground">
+                        <span className={`text-[12px] font-semibold text-primary-foreground ${showInsideLabel ? "" : "absolute -top-5"}`}>
                           {bar.value.toFixed(2)}%
                         </span>
                       )}
