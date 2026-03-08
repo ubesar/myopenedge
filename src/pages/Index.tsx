@@ -18,7 +18,9 @@ import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
 import { analyzeOCC, type OCCResult } from "@/lib/occ-analysis";
 import { analyzeGapFill, type GapFillResult } from "@/lib/gapfill-analysis";
 import { analyzeInsideBar, type InsideBarResult } from "@/lib/insidebar-analysis";
+import { analyzeOutsideDay, type OutsideDayResult } from "@/lib/outsideday-analysis";
 import InsideBarReport from "@/components/InsideBarReport";
+import OutsideDayReport from "@/components/OutsideDayReport";
 import { useSubscription } from "@/hooks/useSubscription";
 import { z } from "zod";
 
