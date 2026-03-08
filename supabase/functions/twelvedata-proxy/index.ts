@@ -146,7 +146,12 @@ Deno.serve(async (req) => {
   // Try each key with auto-rotation
   for (let i = 0; i < keys.length; i++) {
     try {
-      const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&outputsize=${encodeURIComponent(outputsize)}&apikey=${encodeURIComponent(keys[i])}&format=JSON&timezone=America/New_York`;
+      let url: string;
+      if (endpoint === "quote") {
+        url = `https://api.twelvedata.com/quote?symbol=${encodeURIComponent(symbol)}&apikey=${encodeURIComponent(keys[i])}&format=JSON`;
+      } else {
+        url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&outputsize=${encodeURIComponent(outputsize)}&apikey=${encodeURIComponent(keys[i])}&format=JSON&timezone=America/New_York`;
+      }
       const res = await fetch(url);
       const json = await res.json();
 
