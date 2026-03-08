@@ -26,12 +26,12 @@ const OCCChart = ({ title, stats, color }: OCCChartProps) => {
   const iconColor = color === "emerald" ? "text-emerald-400" : "text-red-400";
 
   return (
-    <div className={`rounded-lg border ${borderColor} ${bgColor} backdrop-blur-md p-3 sm:p-3 min-w-0 shadow-lg flex flex-col h-full min-h-[220px] sm:min-h-0`}>
+    <div className={`rounded-lg border ${borderColor} ${bgColor} backdrop-blur-md p-2 sm:p-3 min-w-0 shadow-lg flex flex-col h-full`}>
       <div className="flex items-center gap-2 mb-0.5">
         <span className={`text-sm ${iconColor}`}>{color === "emerald" ? "🟢" : "🔴"}</span>
-        <h3 className="text-sm sm:text-xs font-semibold text-card-foreground">{title}</h3>
+        <h3 className="text-xs font-semibold text-card-foreground">{title}</h3>
       </div>
-      <p className="text-xs sm:text-[10px] text-muted-foreground mb-1">{stats.total} days</p>
+      <p className="text-[10px] text-muted-foreground mb-1">{stats.total} days</p>
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} barCategoryGap="30%">
@@ -63,14 +63,14 @@ const OCCChart = ({ title, stats, color }: OCCChartProps) => {
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div className="flex gap-2 mt-1.5 shrink-0">
-        <div className={`flex-1 rounded border ${color === "emerald" ? "border-emerald-500/30 bg-emerald-500/10" : "border-red-500/30 bg-red-500/10"} px-2 py-1.5 text-center`}>
-          <div className={`text-[10px] sm:text-[9px] ${iconColor} font-medium`}>Valid</div>
-          <div className={`text-base sm:text-sm font-bold ${iconColor}`}>{stats.valid}</div>
+      <div className="flex gap-1.5 mt-1 shrink-0">
+        <div className={`flex-1 rounded border ${color === "emerald" ? "border-emerald-500/30 bg-emerald-500/10" : "border-red-500/30 bg-red-500/10"} px-1.5 py-1 text-center`}>
+          <div className={`text-[9px] ${iconColor} font-medium`}>Valid</div>
+          <div className={`text-sm font-bold ${iconColor}`}>{stats.valid}</div>
         </div>
-        <div className="flex-1 rounded border border-border/30 bg-muted/30 px-2 py-1.5 text-center">
-          <div className="text-[10px] sm:text-[9px] text-muted-foreground font-medium">Invalid</div>
-          <div className="text-base sm:text-sm font-bold text-muted-foreground">{stats.invalid}</div>
+        <div className="flex-1 rounded border border-border/30 bg-muted/30 px-1.5 py-1 text-center">
+          <div className="text-[9px] text-muted-foreground font-medium">Invalid</div>
+          <div className="text-sm font-bold text-muted-foreground">{stats.invalid}</div>
         </div>
       </div>
     </div>
