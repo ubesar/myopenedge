@@ -55,53 +55,6 @@ const RightSidebar = () => {
           </div>
         </div>
 
-        {/* Report History */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="section-label">report history</p>
-            <span className="text-[10px] text-muted-foreground">{runs.length}</span>
-          </div>
-          <div className="space-y-1">
-            {runs.length === 0 && (
-              <p className="text-[11px] text-muted-foreground py-2">no runs yet</p>
-            )}
-            {runs.map((run) => {
-              const cfg = typeConfig[run.analysis_type] || { label: run.analysis_type, color: "bg-muted text-muted-foreground" };
-              const isSelected = run.id === selectedId;
-              const time = new Date(run.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-              return (
-                <button
-                  key={run.id}
-                  onClick={() => onSelect(run)}
-                  className={`w-full text-left rounded-lg border px-2.5 py-1.5 text-[11px] group transition-colors ${
-                    isSelected
-                      ? "border-primary/40 bg-primary/10"
-                      : "border-border bg-card hover:bg-secondary"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <Badge variant="outline" className={`text-[9px] px-1 py-0 h-4 ${cfg.color}`}>
-                        {cfg.label}
-                      </Badge>
-                      <span className="font-medium text-foreground">{run.symbol}</span>
-                    </div>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onDelete(run.id); }}
-                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between mt-0.5 text-[10px] text-muted-foreground">
-                    <span>{run.summary?.totalDays ?? "—"} days</span>
-                    <span>{time}</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
 
         {/* Bookmarks */}
         <div className="space-y-2">
