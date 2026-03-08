@@ -262,8 +262,97 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
           }
         }
 
+        // Remove old MC line series
+        for (const s of mcSeriesListRef.current) {
+          try { chart.removeSeries(s); } catch {}
+        }
+        mcSeriesListRef.current = [];
 
-        // Set last bar as OHLC
+        // Momentum Candle: highlight candles + draw level line
+        if (showMC && interval !== "1day" && sorted.length > 0) {
+          const dayBarsMap: Record<string, typeof sorted> = {};
+          for (const bar of sorted) {
+            const date = bar.datetime.split(" ")[0];
+            if (!dayBarsMap[date]) dayBarsMap[date] = [];
+            dayBarsMap[date].push(bar);
+          }
+
+          const mcTimestamps = new Map<number, boolean>(); // timestamp -> isBullish
+          const mcLevels: { closePrice: number; fromTime: Time; toTime: Time }[] = [];
+
+          const toTs = (dt: string) =>
+            Math.floor(new Date(dt.replace(" ", "T") + "+00:00").getTime() / 1000);
+
+          for (const date of Object.keys(dayBarsMap).sort()) {
+            const bars = dayBarsMap[date];
+            const morningBars = bars.filter(b => {
+              const t = b.datetime.split(" ")[1];
+              return t >= "09:30:00" && t < "12:00:00";
+            });
+
+            let foundMC = false;
+            for (let i = 0; i < morningBars.length - 1 && !foundMC; i++) {
+              const prev = morningBars[i];
+              const curr = morningBars[i + 1];
+
+              const pO = parseFloat(prev.open), pH = parseFloat(prev.high), pL = parseFloat(prev.low), pC = parseFloat(prev.close);
+              const cO = parseFloat(curr.open), cH = parseFloat(curr.high), cL = parseFloat(curr.low), cC = parseFloat(curr.close);
+
+              const pBody = Math.abs(pC - pO);
+              const pRange = pH - pL;
+              const cBody = Math.abs(cC - cO);
+              const cRange = cH - cL;
+
+              const pBull = pC >= pO;
+              const cBull = cC >= cO;
+
+              if (
+                pRange > 0 && cRange > 0 &&
+                pBody / pRange >= BODY_RATIO &&
+                cBody / cRange >= 0.30 &&
+                pBull === cBull
+              ) {
+                mcTimestamps.set(toTs(prev.datetime), pBull);
+                mcTimestamps.set(toTs(curr.datetime), pBull);
+
+                const sessionEnd = bars.filter(b => {
+                  const t = b.datetime.split(" ")[1];
+                  return t >= "09:30:00" && t <= "16:00:00";
+                });
+                const endBar = sessionEnd[sessionEnd.length - 1];
+                if (endBar) {
+                  mcLevels.push({
+                    closePrice: cC,
+                    fromTime: toTs(curr.datetime) as Time,
+                    toTime: toTs(endBar.datetime) as Time,
+                  });
+                }
+                foundMC = true;
+              }
+            }
+          }
+
+          // Re-set candle data with MC candles colored
+          const recolored = candles.map((c) => {
+            const ts = c.time as number;
+            if (mcTimestamps.has(ts)) {
+              const isBull = mcTimestamps.get(ts)!;
+              const color = isBull ? "#00FF66" : "#FF00FF";
+              return { ...c, color, borderColor: color, wickColor: color };
+            }
+            return c;
+          });
+          seriesRef.current!.setData(recolored);
+
+          // Draw MC level lines (cyan)
+          const lineBaseOpts = { priceScaleId: "right", lastValueVisible: false, crosshairMarkerVisible: false, priceLineVisible: false };
+          for (const mc of mcLevels) {
+            const mcLine = chart.addSeries(LineSeries, { ...lineBaseOpts, color: "#00FFFF", lineWidth: 1, lineStyle: 0, title: "" });
+            mcLine.setData([{ time: mc.fromTime, value: mc.closePrice }, { time: mc.toTime, value: mc.closePrice }]);
+            mcSeriesListRef.current.push(mcLine);
+          }
+        }
+
         if (candles.length > 0) {
           const last = candles[candles.length - 1];
           setOhlc({
