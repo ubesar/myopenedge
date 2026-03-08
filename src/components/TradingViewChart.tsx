@@ -248,14 +248,6 @@ const TradingViewChart = ({ symbol, interval, showIB = false }: TradingViewChart
             const startTime = toTs(sessionBars[0].datetime);
             const endTime = toTs(sessionBars[sessionBars.length - 1].datetime);
 
-            // Add NaN gap before each day segment (except first)
-            if (ibHighData.length > 0) {
-              // gap point 1 second after previous end
-              const gapTime = ((ibHighData[ibHighData.length - 1].time as number) + 1) as Time;
-              ibHighData.push({ time: gapTime, value: NaN });
-              ibLowData.push({ time: gapTime, value: NaN });
-              ib50Data.push({ time: gapTime, value: NaN });
-            }
 
             ibHighData.push({ time: startTime, value: ibHigh }, { time: endTime, value: ibHigh });
             ibLowData.push({ time: startTime, value: ibLow }, { time: endTime, value: ibLow });
