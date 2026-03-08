@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   createChart,
@@ -22,18 +22,14 @@ const TradingViewChart = ({ symbol, interval }: TradingViewChartProps) => {
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeRef = useRef<ISeriesApi<"Histogram"> | null>(null);
+  const [chartReady, setChartReady] = useState(false);
   const [ohlc, setOhlc] = useState<{
     o: number; h: number; l: number; c: number; change: number; changePct: number;
   } | null>(null);
 
-  const initChart = useCallback(() => {
+  // Init chart once on mount
+  useEffect(() => {
     if (!containerRef.current) return;
-
-    // Cleanup previous
-    if (chartRef.current) {
-      chartRef.current.remove();
-      chartRef.current = null;
-    }
 
     const chart = createChart(containerRef.current, {
       layout: {
@@ -119,26 +115,28 @@ const TradingViewChart = ({ symbol, interval }: TradingViewChartProps) => {
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        chart.applyOptions({ width, height });
+        if (width > 0 && height > 0) {
+          chart.applyOptions({ width, height });
+        }
       }
     });
     ro.observe(containerRef.current);
 
+    setChartReady(true);
+
     return () => {
       ro.disconnect();
       chart.remove();
+      chartRef.current = null;
+      seriesRef.current = null;
+      volumeRef.current = null;
+      setChartReady(false);
     };
   }, []);
 
-  // Init chart once
+  // Fetch data when symbol/interval changes AND chart is ready
   useEffect(() => {
-    const cleanup = initChart();
-    return () => cleanup?.();
-  }, [initChart]);
-
-  // Fetch data when symbol/interval changes
-  useEffect(() => {
-    if (!seriesRef.current || !volumeRef.current) return;
+    if (!chartReady || !seriesRef.current || !volumeRef.current) return;
 
     const fetchData = async () => {
       try {
@@ -213,7 +211,7 @@ const TradingViewChart = ({ symbol, interval }: TradingViewChartProps) => {
     };
 
     fetchData();
-  }, [symbol, interval]);
+  }, [symbol, interval, chartReady]);
 
   const isPositive = ohlc ? ohlc.change >= 0 : true;
 
