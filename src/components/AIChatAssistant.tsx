@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { MessageCircle, X, Send, Bot, User, Loader2, TrendingUp, Target, BarChart3, Layers, BookOpen, Share2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
