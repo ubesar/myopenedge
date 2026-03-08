@@ -76,8 +76,8 @@ const TradingViewChart = ({ symbol, interval, showIB = false }: TradingViewChart
       downColor: "#ef5350",
       borderDownColor: "#ef5350",
       borderUpColor: "#1b5e20",
-      wickDownColor: "#787B86",
-      wickUpColor: "#787B86",
+      wickDownColor: "#363A45",
+      wickUpColor: "#363A45",
     });
 
     const volumeSeries = chart.addSeries(HistogramSeries, {
