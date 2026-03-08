@@ -176,7 +176,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false }: TradingViewChart
           // lightweight-charts needs unix timestamp for intraday
           const time = (interval === "1day"
             ? bar.datetime
-            : Math.floor(new Date(bar.datetime.replace(" ", "T") + "-04:00").getTime() / 1000)) as Time;
+            : Math.floor(new Date(bar.datetime.replace(" ", "T") + "+00:00").getTime() / 1000)) as Time;
 
           const o = parseFloat(bar.open);
           const h = parseFloat(bar.high);
