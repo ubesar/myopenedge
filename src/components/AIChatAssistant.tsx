@@ -163,8 +163,8 @@ const AIChatAssistant = forwardRef<AIChatAssistantHandle, AIChatAssistantProps>(
         label: "Confluence",
         icon: Layers,
         prompt: hasConfluence
-          ? `Lakukan analisis konfluensi dari semua data berikut dan tentukan apakah sinyal ALIGN atau CONFLICT:\n${Object.entries(confluenceData!).map(([mode, d]) => `- ${mode.toUpperCase()}: ${d.summary}`).join("\n")}\n\nJika align, nyatakan ini High Probability Setup. Jika conflict, sarankan untuk sit on hands.`
-          : "Jelaskan konsep confluence dalam trading dan mengapa penting untuk mengkonfirmasi sinyal dari beberapa indikator.",
+          ? `Perform a confluence analysis from all the following data and determine whether signals ALIGN or CONFLICT:\n${Object.entries(confluenceData!).map(([mode, d]) => `- ${mode.toUpperCase()}: ${d.summary}`).join("\n")}\n\nIf aligned, declare this a High Probability Setup. If conflicting, recommend sitting on hands.`
+          : "Explain the concept of confluence in trading and why it's important to confirm signals from multiple indicators.",
         show: true,
       },
       {
