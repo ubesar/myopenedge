@@ -92,6 +92,7 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
               {!isFree && <SelectItem value="momentum">momentum candle</SelectItem>}
               {!isFree && <SelectItem value="occ">opening candle continuation</SelectItem>}
               {!isFree && <SelectItem value="gapfill">gap fill statistics</SelectItem>}
+              {!isFree && <SelectItem value="insidebar">inside bar</SelectItem>}
             </SelectContent>
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}
