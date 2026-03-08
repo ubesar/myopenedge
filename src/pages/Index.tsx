@@ -108,12 +108,6 @@ const Index = () => {
         ctx = { mode: "insidebar", symbol: ticker, summary: `Inside Bar for ${ticker}, ${a.totalDays} days, ${a.insideBarPct.toFixed(1)}% inside bar rate, ${a.breakoutPct.toFixed(1)}% breakout rate` };
       }
 
-      // Update confluence data
-      if (ctx) {
-        setConfluenceData(prev => ({ ...prev, [mode]: { symbol: ticker, summary: ctx!.summary } }));
-        // Auto-summary
-        setTimeout(() => chatRef.current?.triggerAutoSummary(ctx!), 500);
-      }
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch data");
     } finally {
