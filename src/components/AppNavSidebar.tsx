@@ -83,16 +83,33 @@ const AppNavSidebar = ({ collapsed, onToggle }: AppNavSidebarProps) => {
         <div className="px-3">
           {!collapsed && <p className="section-label mb-2">community</p>}
           <div className="space-y-0.5">
-            {communityItems.map((item) => (
-              <button
-                key={item.label}
-                className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] text-sidebar-foreground opacity-50 cursor-not-allowed"
-                disabled
-              >
-                <item.icon className="h-4 w-4 shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
-              </button>
-            ))}
+            {communityItems.map((item) => {
+              const isExternal = item.href?.startsWith("http");
+              if (isExternal) {
+                return (
+                  <a
+                    key={item.label}
+                    href={item.href!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] text-sidebar-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    {!collapsed && <span>{item.label}</span>}
+                  </a>
+                );
+              }
+              return (
+                <button
+                  key={item.label}
+                  className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] text-sidebar-foreground opacity-50 cursor-not-allowed"
+                  disabled
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  {!collapsed && <span>{item.label}</span>}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
