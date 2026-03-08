@@ -37,6 +37,7 @@ const AppNavSidebar = ({ collapsed, onToggle }: AppNavSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut } = useAuth();
+  const { isActive } = useSubscription();
 
   return (
     <div
