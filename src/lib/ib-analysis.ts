@@ -113,21 +113,11 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
 
     let breakout: "high" | "low" | "inside" = "inside";
 
-    if (subreport === "rejection") {
-      // By rejection: M5 candle CLOSE must break IB range
-      for (const bar of postIBBars) {
-        const c = parseFloat(bar.close);
-        if (c > ibHigh) { breakout = "high"; break; }
-        if (c < ibLow) { breakout = "low"; break; }
-      }
-    } else {
-      // By extension: any bar's wick (high/low) penetrates IB range
-      for (const bar of postIBBars) {
-        const h = parseFloat(bar.high);
-        const l = parseFloat(bar.low);
-        if (h > ibHigh) { breakout = "high"; break; }
-        if (l < ibLow) { breakout = "low"; break; }
-      }
+    // By rejection: M5 candle CLOSE must break IB range
+    for (const bar of postIBBars) {
+      const c = parseFloat(bar.close);
+      if (c > ibHigh) { breakout = "high"; break; }
+      if (c < ibLow) { breakout = "low"; break; }
     }
 
     allDayResults.push({ date, ibHigh, ibLow, highFirstFormed, breakout });
