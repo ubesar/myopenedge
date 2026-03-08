@@ -22,6 +22,11 @@ interface TradingViewChartProps {
 
 const BODY_RATIO = 0.50;
 
+const SYNTHETIC_SYMBOLS: Record<string, { source: string; multiplier: number }> = {
+  NQ: { source: "QQQ", multiplier: 42 },
+  GC: { source: "GLD", multiplier: 10.75 },
+};
+
 const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: TradingViewChartProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
