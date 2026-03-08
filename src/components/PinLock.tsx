@@ -143,7 +143,7 @@ const PinLock = ({ userId, onUnlock }: PinLockProps) => {
       setConfirmPin([]);
       setIsConfirming(false);
     } else {
-      toast.success("PIN berhasil dibuat!");
+      toast.success("PIN created successfully!");
       onUnlock();
     }
     setLoading(false);
