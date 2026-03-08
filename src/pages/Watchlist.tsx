@@ -147,11 +147,13 @@ const Watchlist = () => {
   };
 
   return (
-    <div className="h-screen w-full flex overflow-hidden bg-background">
-      <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+    <div className="h-screen w-full flex flex-col lg:flex-row overflow-hidden bg-background">
+      {isMobile && <MobileHeader onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)} title="watchlist" />}
+      {!isMobile && <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />}
+      {isMobile && <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />}
 
       <main className="flex-1 min-w-0 overflow-y-auto">
-        <div className="max-w-3xl mx-auto p-6 space-y-6">
+        <div className="max-w-3xl mx-auto p-4 lg:p-6 space-y-4 lg:space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
