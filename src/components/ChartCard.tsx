@@ -31,47 +31,59 @@ const ChartCard = ({ title, subtitle, totalDays, bars, legendItems, settingsGrid
       </div>
 
       {/* Pure CSS Bar Chart */}
-      <div className="h-[240px] flex">
+      <div className="flex">
         {/* Y-axis labels */}
-        <div className="flex flex-col justify-between pr-2">
+        <div className="flex flex-col justify-between pr-2 h-[220px]">
           {yLabels.map((v) => (
             <span key={v} className="text-[10px] text-muted-foreground leading-none">{v}%</span>
           ))}
         </div>
 
-        {/* Chart area */}
-        <div className="flex-1 relative border-l border-b border-border">
-          {/* Horizontal grid lines at each Y label */}
-          {yLabels.map((v, i) => (
-            <div
-              key={v}
-              className="absolute w-full border-t border-border/50"
-              style={{ top: `${(i / (yLabels.length - 1)) * 100}%` }}
-            />
-          ))}
+        {/* Chart area + x-axis */}
+        <div className="flex-1 flex flex-col">
+          {/* Chart area */}
+          <div className="relative border-l border-b border-border h-[220px]">
+            {/* Horizontal grid lines */}
+            {yLabels.map((v, i) => (
+              <div
+                key={v}
+                className="absolute w-full border-t border-border/50"
+                style={{ top: `${(i / (yLabels.length - 1)) * 100}%` }}
+              />
+            ))}
 
-          {/* Bars container */}
-          <div className="absolute inset-0 flex items-end justify-center gap-8 px-8">
-            {bars.map((bar, i) => {
-              const clampedValue = Math.min(Math.max(bar.value, 0), MAX_Y);
-              const heightPercent = (clampedValue / MAX_Y) * 100;
-              return (
-                <div key={i} className="flex flex-col items-center gap-1.5" style={{ width: "90px" }}>
-                  <div
-                    className={`w-full rounded-t-md relative flex items-center justify-center transition-all duration-500 ${
-                      bar.color === "primary" ? "bg-primary" : "bg-chart-grey"
-                    }`}
-                    style={{ height: `${heightPercent}%`, minHeight: clampedValue > 0 ? "28px" : "0" }}
-                  >
-                    {clampedValue > 0 && (
-                      <span className="text-[12px] font-semibold text-primary-foreground">
-                        {bar.value.toFixed(2)}%
-                      </span>
-                    )}
+            {/* Bars container */}
+            <div className="absolute inset-0 flex items-end justify-center gap-8 px-8">
+              {bars.map((bar, i) => {
+                const clampedValue = Math.min(Math.max(bar.value, 0), MAX_Y);
+                const heightPercent = (clampedValue / MAX_Y) * 100;
+                return (
+                  <div key={i} className="flex flex-col items-center" style={{ width: "90px" }}>
+                    <div
+                      className={`w-full rounded-t-md relative flex items-center justify-center transition-all duration-500 ${
+                        bar.color === "primary" ? "bg-primary" : "bg-chart-grey"
+                      }`}
+                      style={{ height: `${heightPercent}%`, minHeight: clampedValue > 0 ? "28px" : "0" }}
+                    >
+                      {clampedValue > 0 && (
+                        <span className="text-[12px] font-semibold text-primary-foreground">
+                          {bar.value.toFixed(2)}%
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+          </div>
+
+          {/* X-axis labels */}
+          <div className="flex items-start justify-center gap-8 px-8 mt-2">
+            {bars.map((bar, i) => (
+              <span key={i} className="text-[10px] text-muted-foreground text-center lowercase" style={{ width: "90px" }}>
+                {bar.name}
+              </span>
+            ))}
           </div>
         </div>
       </div>
