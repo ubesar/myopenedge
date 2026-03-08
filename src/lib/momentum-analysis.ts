@@ -185,7 +185,7 @@ export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, m
     }));
 
     // Evaluate all 4 timeframes
-    const timeframes = TF_CONFIGS.map(cfg => evaluateMomentumTF(momentumBars5min, cfg.minutes));
+    const timeframes = TF_CONFIGS.map(cfg => evaluateMomentumTF(momentumBars5min, cfg.minutes, bodyRatio));
     const momentum = getOverallMomentum(timeframes);
 
     // Keep first signal set for backward compat
