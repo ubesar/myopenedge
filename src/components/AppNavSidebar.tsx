@@ -126,7 +126,23 @@ const SidebarContent = ({ collapsed, onToggle, onNavigate }: { collapsed: boolea
 
       {/* Bottom actions */}
       <div className="border-t border-border px-3 py-2 flex items-center gap-2">
-        {isActive ? (
+        {isGuest && isActive ? (
+          <div className="flex items-center gap-2 text-[12px] font-semibold" title="Guest Trial">
+            <Crown className="h-4 w-4 text-amber-500" />
+            {!collapsed && (
+              <div className="flex flex-col">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 text-[11px] font-bold tracking-wide uppercase">
+                  Guest Trial
+                </span>
+                {endDate && (
+                  <span className="text-[10px] text-muted-foreground mt-0.5 px-1">
+                    ends {new Date(endDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        ) : isActive ? (
           <div className="flex items-center gap-2 text-[12px] text-primary font-semibold" title="Pro Member">
             <Crown className="h-4 w-4 text-primary" />
             {!collapsed && (
