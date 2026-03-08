@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Navigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -11,7 +11,7 @@ import ParameterPanel, { type OCCTimeframe, type MomentumBodyRatio, type OCCBody
 import RightSidebar from "@/components/RightSidebar";
 import ChartCard from "@/components/ChartCard";
 import { useAnalysisHistory, type AnalysisRun } from "@/hooks/useAnalysisHistory";
-import AIChatAssistant, { type AnalysisContext } from "@/components/AIChatAssistant";
+import AIChatAssistant, { type AnalysisContext, type ConfluenceData, type AIChatAssistantHandle } from "@/components/AIChatAssistant";
 import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
 import { analyzeOCC, type OCCResult } from "@/lib/occ-analysis";
