@@ -221,33 +221,52 @@ const Index = () => {
       const stats = occResult.tfDirectionStats[tf];
       if (!stats) return null;
       return (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <ChartCard
-            title="candle 1 bullish"
-            subtitle={`${symbol} · OCC · ${tf}`}
-            totalDays={stats.bullishFirst.total}
-            bars={[
-              { name: "valid continuation", value: stats.bullishFirst.total > 0 ? (stats.bullishFirst.valid / stats.bullishFirst.total * 100) : 0, color: "primary" },
-              { name: "failed continuation", value: stats.bullishFirst.total > 0 ? (stats.bullishFirst.invalid / stats.bullishFirst.total * 100) : 0, color: "muted" },
-            ]}
-            legendItems={[
-              { label: "valid continuation", color: "hsl(217,91%,60%)" },
-              { label: "failed continuation", color: "hsl(240,5%,30%)" },
-            ]}
-          />
-          <ChartCard
-            title="candle 1 bearish"
-            subtitle={`${symbol} · OCC · ${tf}`}
-            totalDays={stats.bearishFirst.total}
-            bars={[
-              { name: "valid continuation", value: stats.bearishFirst.total > 0 ? (stats.bearishFirst.valid / stats.bearishFirst.total * 100) : 0, color: "primary" },
-              { name: "failed continuation", value: stats.bearishFirst.total > 0 ? (stats.bearishFirst.invalid / stats.bearishFirst.total * 100) : 0, color: "muted" },
-            ]}
-            legendItems={[
-              { label: "valid continuation", color: "hsl(217,91%,60%)" },
-              { label: "failed continuation", color: "hsl(240,5%,30%)" },
-            ]}
-          />
+        <div className="space-y-4">
+          {/* TF toggle bar */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] text-muted-foreground font-medium mr-1">TF:</span>
+            {(["M5", "M15", "M30", "H1"] as OCCTimeframe[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => setOccTimeframe(t)}
+                className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+                  occTimeframe === t
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <ChartCard
+              title="candle 1 bullish"
+              subtitle={`${symbol} · OCC · ${tf}`}
+              totalDays={stats.bullishFirst.total}
+              bars={[
+                { name: "valid continuation", value: stats.bullishFirst.total > 0 ? (stats.bullishFirst.valid / stats.bullishFirst.total * 100) : 0, color: "primary" },
+                { name: "failed continuation", value: stats.bullishFirst.total > 0 ? (stats.bullishFirst.invalid / stats.bullishFirst.total * 100) : 0, color: "muted" },
+              ]}
+              legendItems={[
+                { label: "valid continuation", color: "hsl(217,91%,60%)" },
+                { label: "failed continuation", color: "hsl(240,5%,30%)" },
+              ]}
+            />
+            <ChartCard
+              title="candle 1 bearish"
+              subtitle={`${symbol} · OCC · ${tf}`}
+              totalDays={stats.bearishFirst.total}
+              bars={[
+                { name: "valid continuation", value: stats.bearishFirst.total > 0 ? (stats.bearishFirst.valid / stats.bearishFirst.total * 100) : 0, color: "primary" },
+                { name: "failed continuation", value: stats.bearishFirst.total > 0 ? (stats.bearishFirst.invalid / stats.bearishFirst.total * 100) : 0, color: "muted" },
+              ]}
+              legendItems={[
+                { label: "valid continuation", color: "hsl(217,91%,60%)" },
+                { label: "failed continuation", color: "hsl(240,5%,30%)" },
+              ]}
+            />
+          </div>
         </div>
       );
     }
