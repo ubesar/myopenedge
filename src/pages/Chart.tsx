@@ -22,6 +22,7 @@ const Chart = () => {
   const [symbol, setSymbol] = useState("QQQ");
   const [symbolInput, setSymbolInput] = useState("QQQ");
   const [interval, setInterval] = useState("5min");
+  const [showIB, setShowIB] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -92,11 +93,25 @@ const Chart = () => {
               </button>
             ))}
           </div>
+
+          {/* Separator */}
+          <div className="w-px h-5 mx-2" style={{ background: "rgba(42,46,57,0.8)" }} />
+
+          {/* IB Toggle */}
+          <button
+            onClick={() => setShowIB(!showIB)}
+            className={`px-2.5 py-1 text-[12px] rounded transition-colors ${
+              showIB ? "text-white" : "text-[#787B86] hover:text-[#D1D4DC]"
+            }`}
+            style={showIB ? { background: "#2962FF" } : {}}
+          >
+            IB
+          </button>
         </div>
 
         {/* Chart */}
         <div className="flex-1 min-h-0 h-full">
-          <TradingViewChart symbol={symbol} interval={interval} />
+          <TradingViewChart symbol={symbol} interval={interval} showIB={showIB} />
         </div>
       </div>
     </div>
