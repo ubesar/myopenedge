@@ -197,64 +197,100 @@ const TradingViewChart = ({ symbol, interval, showIB = false }: TradingViewChart
         seriesRef.current!.setData(candles);
         volumeRef.current!.setData(volumes);
 
-        // Remove old IB price lines
-        const series = seriesRef.current!;
-        try { series.removePriceLine(ibHighLineRef.current!); } catch {}
-        try { series.removePriceLine(ibLowLineRef.current!); } catch {}
-        try { series.removePriceLine(ib50LineRef.current!); } catch {}
-        ibHighLineRef.current = null;
-        ibLowLineRef.current = null;
-        ib50LineRef.current = null;
+        // Remove old IB line series
+        const chart = chartRef.current!;
+        if (ibHighSeriesRef.current) { chart.removeSeries(ibHighSeriesRef.current); ibHighSeriesRef.current = null; }
+        if (ibLowSeriesRef.current) { chart.removeSeries(ibLowSeriesRef.current); ibLowSeriesRef.current = null; }
+        if (ib50SeriesRef.current) { chart.removeSeries(ib50SeriesRef.current); ib50SeriesRef.current = null; }
 
-        // Calculate IB for the most recent trading day (intraday only)
+        // Calculate IB per trading day (intraday only)
         if (showIB && interval !== "1day" && sorted.length > 0) {
-          // Find the latest trading date
-          const latestDatetime = sorted[sorted.length - 1].datetime; // e.g. "2026-03-06 15:55:00"
-          const latestDate = latestDatetime.split(" ")[0]; // "2026-03-06"
-
-          // Filter bars for latest date between 09:30 and 10:30
-          let ibHigh = -Infinity;
-          let ibLow = Infinity;
+          // Group bars by date
+          const dayBars: Record<string, typeof sorted> = {};
           for (const bar of sorted) {
-            const [date, time] = bar.datetime.split(" ");
-            if (date !== latestDate) continue;
-            if (time >= "09:30:00" && time < "10:30:00") {
-              const h = parseFloat(bar.high);
-              const l = parseFloat(bar.low);
-              if (h > ibHigh) ibHigh = h;
-              if (l < ibLow) ibLow = l;
-            }
+            const date = bar.datetime.split(" ")[0];
+            if (!dayBars[date]) dayBars[date] = [];
+            dayBars[date].push(bar);
           }
 
-          if (ibHigh !== -Infinity && ibLow !== Infinity) {
+          const ibHighData: { time: Time; value: number }[] = [];
+          const ibLowData: { time: Time; value: number }[] = [];
+          const ib50Data: { time: Time; value: number }[] = [];
+
+          for (const date of Object.keys(dayBars).sort()) {
+            const bars = dayBars[date];
+            // Find IB: first 60 min (09:30 - 10:30)
+            let ibHigh = -Infinity;
+            let ibLow = Infinity;
+            for (const bar of bars) {
+              const time = bar.datetime.split(" ")[1];
+              if (time >= "09:30:00" && time < "10:30:00") {
+                const h = parseFloat(bar.high);
+                const l = parseFloat(bar.low);
+                if (h > ibHigh) ibHigh = h;
+                if (l < ibLow) ibLow = l;
+              }
+            }
+            if (ibHigh === -Infinity || ibLow === Infinity) continue;
+
             const ib50 = (ibHigh + ibLow) / 2;
 
-            ibHighLineRef.current = series.createPriceLine({
-              price: ibHigh,
-              color: "#FFFFFF",
-              lineWidth: 1,
-              lineStyle: 0, // Solid
-              axisLabelVisible: true,
-              title: "IB High",
+            // Find session open and close bars for this day (09:30 - 16:00)
+            const sessionBars = bars.filter(b => {
+              const t = b.datetime.split(" ")[1];
+              return t >= "09:30:00" && t <= "16:00:00";
             });
+            if (sessionBars.length < 2) continue;
 
-            ibLowLineRef.current = series.createPriceLine({
-              price: ibLow,
+            const toTs = (dt: string) =>
+              Math.floor(new Date(dt.replace(" ", "T") + "-04:00").getTime() / 1000) as Time;
+
+            const startTime = toTs(sessionBars[0].datetime);
+            const endTime = toTs(sessionBars[sessionBars.length - 1].datetime);
+
+            // Add NaN gap before each day segment (except first)
+            if (ibHighData.length > 0) {
+              // gap point 1 second after previous end
+              const gapTime = ((ibHighData[ibHighData.length - 1].time as number) + 1) as Time;
+              ibHighData.push({ time: gapTime, value: NaN });
+              ibLowData.push({ time: gapTime, value: NaN });
+              ib50Data.push({ time: gapTime, value: NaN });
+            }
+
+            ibHighData.push({ time: startTime, value: ibHigh }, { time: endTime, value: ibHigh });
+            ibLowData.push({ time: startTime, value: ibLow }, { time: endTime, value: ibLow });
+            ib50Data.push({ time: startTime, value: ib50 }, { time: endTime, value: ib50 });
+          }
+
+          if (ibHighData.length > 0) {
+            const lineOpts = { priceScaleId: "right", lastValueVisible: false, crosshairMarkerVisible: false };
+
+            ibHighSeriesRef.current = chart.addSeries(LineSeries, {
+              ...lineOpts,
               color: "#FFFFFF",
               lineWidth: 1,
               lineStyle: 0,
-              axisLabelVisible: true,
+              title: "IB High",
+            });
+            ibHighSeriesRef.current.setData(ibHighData);
+
+            ibLowSeriesRef.current = chart.addSeries(LineSeries, {
+              ...lineOpts,
+              color: "#FFFFFF",
+              lineWidth: 1,
+              lineStyle: 0,
               title: "IB Low",
             });
+            ibLowSeriesRef.current.setData(ibLowData);
 
-            ib50LineRef.current = series.createPriceLine({
-              price: ib50,
+            ib50SeriesRef.current = chart.addSeries(LineSeries, {
+              ...lineOpts,
               color: "#00BFFF",
               lineWidth: 1,
-              lineStyle: 2, // Dashed
-              axisLabelVisible: true,
+              lineStyle: 2,
               title: "IB 50",
             });
+            ib50SeriesRef.current.setData(ib50Data);
           }
         }
 
