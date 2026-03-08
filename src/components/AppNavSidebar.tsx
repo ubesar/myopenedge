@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   ChevronLeft, ChevronRight, Rocket, Bot, BarChart3, Search,
   TrendingUp, Cpu, Eye, Calculator, BookOpen, Users, MessageCircle,
