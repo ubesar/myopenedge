@@ -310,7 +310,7 @@ const PinLock = ({ userId, onUnlock }: PinLockProps) => {
               onClick={onUnlock}
               className="text-xs text-muted-foreground/50 hover:text-foreground transition-colors"
             >
-              Lewati untuk sekarang
+              Skip for now
             </button>
           </div>
         )}

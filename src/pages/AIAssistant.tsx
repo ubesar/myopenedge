@@ -158,7 +158,7 @@ const AIAssistant = () => {
       label: "Export Summary",
       icon: Share2,
       description: "Generate shareable summaries",
-      prompt: "Jelaskan format export yang tersedia di MyOpenEdge:\n1. JOURNAL format (markdown lengkap)\n2. SOCIAL format (ringkas untuk komunitas/social media)\n3. EA/JSON format (untuk Expert Advisor)\n\nBerikan contoh masing-masing format.",
+      prompt: "Explain the export formats available in MyOpenEdge:\n1. JOURNAL format (full markdown)\n2. SOCIAL format (concise for community/social media)\n3. EA/JSON format (for Expert Advisor)\n\nProvide an example of each format.",
     },
   ];
 

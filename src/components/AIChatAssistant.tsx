@@ -195,8 +195,8 @@ const AIChatAssistant = forwardRef<AIChatAssistantHandle, AIChatAssistantProps>(
         label: "Bias Analysis",
         icon: TrendingUp,
         prompt: hasContext
-          ? `Berdasarkan data ${analysisContext?.mode?.toUpperCase()} untuk ${analysisContext?.symbol}, apa bias arah hari ini? Sisi mana yang punya statistical edge? Berikan persentase spesifik.`
-          : "Jelaskan cara menganalisis bias arah menggunakan data IB.",
+          ? `Based on the ${analysisContext?.mode?.toUpperCase()} data for ${analysisContext?.symbol}, what is today's directional bias? Which side has the statistical edge? Provide specific percentages.`
+          : "Explain how to analyze directional bias using IB data.",
         show: true,
       },
     ];

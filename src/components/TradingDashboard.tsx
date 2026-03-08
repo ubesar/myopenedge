@@ -97,7 +97,7 @@ const TradingDashboard = ({ user, onLock }: { user: User; onLock?: () => void })
       is_active: true,
     });
     if (error) {
-      toast.error(error.code === "23505" ? "Magic number sudah ada" : error.message);
+      toast.error(error.code === "23505" ? "Magic number already exists" : error.message);
       return;
     }
     setNewMagic("");
