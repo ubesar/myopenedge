@@ -20,6 +20,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
