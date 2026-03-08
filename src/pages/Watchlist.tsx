@@ -35,13 +35,14 @@ interface QuoteData {
 const Watchlist = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [quotes, setQuotes] = useState<Record<string, QuoteData>>({});
   const [newSymbol, setNewSymbol] = useState("");
   const [loading, setLoading] = useState(true);
   const [addingSymbol, setAddingSymbol] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   const fetchItems = useCallback(async () => {
     if (!user) return;
