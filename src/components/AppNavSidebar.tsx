@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   ChevronLeft, ChevronRight, Rocket, Bot, BarChart3, CandlestickChart,
-  TrendingUp, Cpu, Eye, Calculator, BookOpen, Users, MessageCircle,
+  TrendingUp, Cpu, Eye, Calculator, Users, MessageCircle,
   Gift, Crown, LogOut
 } from "lucide-react";
 import logo from "@/assets/logo.png";
@@ -25,10 +25,9 @@ const workspaceItems = [
 ];
 
 const communityItems = [
-  { icon: BookOpen, label: "blog", href: null },
   { icon: Users, label: "refer a friend", href: null },
-  { icon: MessageCircle, label: "discord", href: null },
-  { icon: Gift, label: "free resources", href: null },
+  { icon: MessageCircle, label: "X (Twitter)", href: "https://x.com/Ubetrades" },
+  { icon: Gift, label: "YouTube", href: "https://www.youtube.com/@ubetrades" },
 ];
 
 const AppNavSidebar = ({ collapsed, onToggle }: AppNavSidebarProps) => {
@@ -84,16 +83,33 @@ const AppNavSidebar = ({ collapsed, onToggle }: AppNavSidebarProps) => {
         <div className="px-3">
           {!collapsed && <p className="section-label mb-2">community</p>}
           <div className="space-y-0.5">
-            {communityItems.map((item) => (
-              <button
-                key={item.label}
-                className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] text-sidebar-foreground opacity-50 cursor-not-allowed"
-                disabled
-              >
-                <item.icon className="h-4 w-4 shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
-              </button>
-            ))}
+            {communityItems.map((item) => {
+              const isExternal = item.href?.startsWith("http");
+              if (isExternal) {
+                return (
+                  <a
+                    key={item.label}
+                    href={item.href!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] text-sidebar-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    {!collapsed && <span>{item.label}</span>}
+                  </a>
+                );
+              }
+              return (
+                <button
+                  key={item.label}
+                  className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[13px] text-sidebar-foreground opacity-50 cursor-not-allowed"
+                  disabled
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  {!collapsed && <span>{item.label}</span>}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
