@@ -229,7 +229,10 @@ const AIChatAssistant = forwardRef<AIChatAssistantHandle, AIChatAssistantProps>(
             {/* Header */}
             <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30 bg-muted/30">
               <Bot className="h-5 w-5 text-primary" />
-              <span className="text-sm font-semibold text-card-foreground flex-1">AI Trading Assistant</span>
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-semibold text-card-foreground block">AI Trading Assistant</span>
+                <span className="text-[9px] text-primary/80 font-medium">⚡ Gemini 3 Flash</span>
+              </div>
               {hasConfluence && (
                 <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
                   {Object.keys(confluenceData!).length} modes

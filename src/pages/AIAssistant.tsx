@@ -224,7 +224,10 @@ const AIAssistant = () => {
           </div>
           <div className="flex-1">
             <h1 className="text-sm font-semibold text-foreground">AI Trading Assistant</h1>
-            <p className="text-[11px] text-muted-foreground">Quantitative analysis · Risk management · Trade planning</p>
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] text-muted-foreground">Quantitative analysis · Risk management · Trade planning</p>
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium border border-primary/20">⚡ Gemini 3 Flash</span>
+            </div>
           </div>
           {messages.length > 0 && (
             <Button
