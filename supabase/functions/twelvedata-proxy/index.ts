@@ -123,8 +123,8 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Enforce free-tier limits
-  if (!isPro) {
+  // Enforce free-tier limits (only for time_series)
+  if (!isPro && endpoint === "time_series") {
     outputsize = String(FREE_OUTPUTSIZE);
     interval = FREE_MAX_INTERVAL;
   }
