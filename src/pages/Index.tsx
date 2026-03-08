@@ -7,7 +7,7 @@ import { Bookmark, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { type AnalysisMode } from "@/components/ControlPanel";
 import AppNavSidebar from "@/components/AppNavSidebar";
-import ParameterPanel, { type OCCTimeframe, type IBSubreport } from "@/components/ParameterPanel";
+import ParameterPanel, { type OCCTimeframe, type IBSubreport, type MomentumBodyRatio } from "@/components/ParameterPanel";
 import RightSidebar from "@/components/RightSidebar";
 import ChartCard from "@/components/ChartCard";
 import { useAnalysisHistory, type AnalysisRun } from "@/hooks/useAnalysisHistory";
@@ -73,7 +73,7 @@ const Index = () => {
     return data;
   };
 
-  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, subreport: IBSubreport = "rejection") => {
+  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, subreport: IBSubreport = "rejection", bodyRatio: MomentumBodyRatio = "0.50") => {
     setLoading(true);
     setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null);
     setSymbol(ticker); setActiveMode(mode);
@@ -90,7 +90,7 @@ const Index = () => {
         setResult(a);
         addRun(mode, ticker, { totalDays: a.totalDays, ibWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
       } else if (mode === "momentum") {
-        const a = analyzeMomentum(values as any, ibWindow, maxDays);
+        const a = analyzeMomentum(values as any, ibWindow, maxDays, parseFloat(bodyRatio));
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setMomentumResult(a);
         addRun(mode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });

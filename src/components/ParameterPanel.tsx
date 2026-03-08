@@ -7,9 +7,10 @@ import type { AnalysisMode } from "@/components/ControlPanel";
 export type OCCTimeframe = "M5" | "M15" | "M30" | "H1";
 
 export type IBSubreport = "rejection" | "extension";
+export type MomentumBodyRatio = "0.40" | "0.50" | "0.60";
 
 interface ParameterPanelProps {
-  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, subreport: IBSubreport) => void;
+  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, subreport: IBSubreport, bodyRatio: MomentumBodyRatio) => void;
   loading: boolean;
   isFree?: boolean;
   occTimeframe?: OCCTimeframe;
@@ -46,11 +47,12 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
   const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
   const [mode, setMode] = useState<AnalysisMode>("ib");
   const [subreport, setSubreport] = useState<IBSubreport>("rejection");
+  const [bodyRatio, setBodyRatio] = useState<MomentumBodyRatio>("0.50");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!symbol.trim()) return;
-    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, subreport);
+    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, subreport, bodyRatio);
   };
 
   return (
@@ -104,6 +106,22 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
                 <SelectContent>
                   <SelectItem value="rejection">by rejection</SelectItem>
                   <SelectItem value="extension">by extension</SelectItem>
+                </SelectContent>
+              </Select>
+            </>
+          )}
+
+          {mode === "momentum" && (
+            <>
+              <p className="text-[11px] text-muted-foreground">subreport (candle 1 body)</p>
+              <Select value={bodyRatio} onValueChange={(v) => setBodyRatio(v as MomentumBodyRatio)}>
+                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0.40">body ≥ 40%</SelectItem>
+                  <SelectItem value="0.50">body ≥ 50%</SelectItem>
+                  <SelectItem value="0.60">body ≥ 60%</SelectItem>
                 </SelectContent>
               </Select>
             </>
