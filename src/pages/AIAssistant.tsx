@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Navigate } from "react-router-dom";
-import { Bot, Send, Loader2, TrendingUp, Target, Layers, BookOpen, Share2, Zap, BarChart3, Trash2 } from "lucide-react";
+import { Navigate, useNavigate } from "react-router-dom";
+import { Bot, Send, Loader2, TrendingUp, Target, Layers, BookOpen, Share2, Zap, BarChart3, Trash2, Lock, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/hooks/useSubscription";
 import AppNavSidebar from "@/components/AppNavSidebar";
 import type { AnalysisContext, ConfluenceData } from "@/components/AIChatAssistant";
 
@@ -14,6 +15,8 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
 const AIAssistant = () => {
   const { user, loading: authLoading } = useAuth();
+  const { isActive, loading: subLoading } = useSubscription();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -121,7 +124,37 @@ const AIAssistant = () => {
     inputRef.current?.focus();
   };
 
-  if (!authLoading && !user) return <Navigate to="/auth" replace />;
+  if (authLoading || subLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) return <Navigate to="/auth" replace />;
+
+  if (!isActive) {
+    return (
+      <div className="flex h-screen bg-background overflow-hidden">
+        <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="rounded-xl border border-primary/20 bg-card/80 backdrop-blur-sm p-10 text-center max-w-md">
+            <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+              <Lock className="h-7 w-7 text-primary" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Pro Feature</h2>
+            <p className="text-muted-foreground mb-6 text-sm">
+              AI Trading Assistant is exclusively available for Pro members. Upgrade to get full access.
+            </p>
+            <Button onClick={() => navigate("/upgrade")} size="lg" className="gap-2">
+              <Crown className="h-4 w-4" /> Upgrade to Pro
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const quickActions = [
     {
