@@ -123,14 +123,25 @@ const AppNavSidebar = ({ collapsed, onToggle }: AppNavSidebarProps) => {
 
       {/* Bottom actions */}
       <div className="border-t border-border px-3 py-2 flex items-center gap-2">
-        <button
-          onClick={() => navigate("/upgrade")}
-          className="flex items-center gap-2 text-[12px] text-muted-foreground hover:text-primary transition-colors"
-          title="Upgrade"
-        >
-          <Crown className="h-4 w-4" />
-          {!collapsed && <span>upgrade</span>}
-        </button>
+        {isActive ? (
+          <div className="flex items-center gap-2 text-[12px] text-primary font-semibold" title="Pro Member">
+            <Crown className="h-4 w-4 text-primary" />
+            {!collapsed && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/15 text-primary text-[11px] font-bold tracking-wide uppercase">
+                Pro
+              </span>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={() => navigate("/upgrade")}
+            className="flex items-center gap-2 text-[12px] text-muted-foreground hover:text-primary transition-colors"
+            title="Upgrade"
+          >
+            <Crown className="h-4 w-4" />
+            {!collapsed && <span>upgrade</span>}
+          </button>
+        )}
         <button
           onClick={signOut}
           className="ml-auto text-muted-foreground hover:text-foreground transition-colors"
