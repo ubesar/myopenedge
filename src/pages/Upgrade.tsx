@@ -28,7 +28,7 @@ const Upgrade = () => {
   useEffect(() => {
     initializePaddle({
       environment: "sandbox",
-      token: import.meta.env.VITE_PADDLE_CLIENT_TOKEN,
+      token: "test_906ae7bf74bbcaf25341c87dd7f",
       eventCallback: (event) => {
         if (event.name === "checkout.completed") {
           toast.success("Payment successful! Your Pro access is being activated...");
@@ -83,7 +83,7 @@ const Upgrade = () => {
     }
     setProcessing(true);
     paddle.Checkout.open({
-      items: [{ priceId: import.meta.env.VITE_PADDLE_PRICE_ID, quantity: 1 }],
+      items: [{ priceId: "pro_01kk6rewhc2mvgxrpd7xh5c3w1", quantity: 1 }],
       customData: { user_id: user.id },
       customer: { email: user.email || "" },
     });
