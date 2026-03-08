@@ -138,7 +138,7 @@ const PinLock = ({ userId, onUnlock }: PinLockProps) => {
       .upsert({ user_id: userId, pin_hash: hashed, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
 
     if (dbError) {
-      toast.error("Gagal menyimpan PIN");
+      toast.error("Failed to save PIN");
       setPin([]);
       setConfirmPin([]);
       setIsConfirming(false);
