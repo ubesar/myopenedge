@@ -412,7 +412,6 @@ export type Database = {
           subscription_end_date: string | null
           subscription_status: string
           timezone: string | null
-          twelvedata_api_key: string | null
           updated_at: string
           user_id: string
         }
@@ -427,7 +426,6 @@ export type Database = {
           subscription_end_date?: string | null
           subscription_status?: string
           timezone?: string | null
-          twelvedata_api_key?: string | null
           updated_at?: string
           user_id: string
         }
@@ -442,7 +440,6 @@ export type Database = {
           subscription_end_date?: string | null
           subscription_status?: string
           timezone?: string | null
-          twelvedata_api_key?: string | null
           updated_at?: string
           user_id?: string
         }
