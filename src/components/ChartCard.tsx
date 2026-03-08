@@ -13,61 +13,63 @@ interface ChartCardProps {
   settingsGrid?: { label: string; value: string }[];
 }
 
-const MAX_Y = 100;
-const yLabels = [100, 80, 60, 40, 20, 0];
+const CHART_HEIGHT = 200;
+const yLabels = ["100%", "80%", "60%", "40%", "20%", "0%"];
 
 const ChartCard = ({ title, subtitle, totalDays, bars, legendItems, settingsGrid }: ChartCardProps) => {
   return (
-    <div className="bg-card border border-border rounded-xl p-5 flex flex-col">
+    <div className="flex-1 border border-border rounded-xl bg-card overflow-hidden">
       {/* Header */}
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <h3 className="text-[14px] font-medium text-foreground lowercase">{title}</h3>
-          {subtitle && <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>}
+      <div className="px-5 pt-4 pb-3 border-b border-border">
+        <div className="flex items-start justify-between">
+          <div>
+            <h4 className="text-[13px] font-semibold text-foreground lowercase">{title}</h4>
+            {subtitle && <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>}
+          </div>
+          <span className="bg-secondary text-secondary-foreground rounded-full px-2.5 py-0.5 text-[11px] font-medium">
+            {totalDays} days
+          </span>
         </div>
-        <span className="bg-secondary text-secondary-foreground rounded-full px-2.5 py-0.5 text-[11px] font-medium">
-          {totalDays} days
-        </span>
       </div>
 
-      {/* Pure CSS Bar Chart */}
-      <div className="flex">
-        {/* Y-axis labels */}
-        <div className="flex flex-col justify-between pr-2 h-[220px]">
-          {yLabels.map((v) => (
-            <span key={v} className="text-[10px] text-muted-foreground leading-none">{v}%</span>
-          ))}
-        </div>
-
-        {/* Chart area + x-axis */}
-        <div className="flex-1 flex flex-col">
-          {/* Chart area */}
-          <div className="relative border-l border-b border-border h-[220px]">
-            {/* Horizontal grid lines */}
-            {yLabels.map((v, i) => (
-              <div
-                key={v}
-                className="absolute w-full border-t border-border/50"
-                style={{ top: `${(i / (yLabels.length - 1)) * 100}%` }}
-              />
+      {/* Chart */}
+      <div className="px-5 py-5">
+        <div className="flex items-end gap-0">
+          {/* Y axis */}
+          <div className="flex flex-col justify-between pr-2 text-[10px] text-muted-foreground pb-1" style={{ height: `${CHART_HEIGHT}px` }}>
+            {yLabels.map((l) => (
+              <span key={l}>{l}</span>
             ))}
+          </div>
 
-            {/* Bars container */}
-            <div className="absolute inset-0 flex items-end justify-center gap-8 px-8">
+          {/* Bars area */}
+          <div className="flex-1 relative">
+            {/* Grid lines */}
+            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+              {yLabels.map((_, i) => (
+                <div key={i} className="border-b border-border/50" />
+              ))}
+            </div>
+
+            {/* Bars */}
+            <div className="relative flex items-end justify-center gap-8" style={{ height: `${CHART_HEIGHT}px` }}>
               {bars.map((bar, i) => {
-                const clampedValue = Math.min(Math.max(bar.value, 0), MAX_Y);
-                const heightPercent = (clampedValue / MAX_Y) * 100;
-                const showInsideLabel = heightPercent >= 14;
+                // Map value (0-100%) to pixel height within CHART_HEIGHT
+                const clampedValue = Math.min(Math.max(bar.value, 0), 100);
+                const barHeight = Math.max((clampedValue / 100) * CHART_HEIGHT, clampedValue > 0 ? 4 : 0);
+                const showInsideLabel = barHeight >= 28;
                 return (
-                  <div key={i} className="flex flex-col items-center" style={{ width: "90px" }}>
+                  <div key={i} className="flex flex-col items-center gap-1" style={{ width: "90px" }}>
                     <div
-                      className={`w-full rounded-t-md relative flex items-center justify-center transition-all duration-500 ${
-                        bar.color === "primary" ? "bg-primary" : "bg-chart-grey"
+                      className={`w-full rounded-t-md flex items-end justify-center pb-2 text-[12px] font-semibold transition-all duration-500 ${
+                        bar.color === "primary"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-chart-grey text-muted-foreground"
                       }`}
-                      style={{ height: `${heightPercent}%` }}
+                      style={{ height: `${barHeight}px` }}
                     >
                       {clampedValue > 0 && (
-                        <span className={`text-[12px] font-semibold text-primary-foreground ${showInsideLabel ? "" : "absolute -top-5"}`}>
+                        <span className={showInsideLabel ? "" : "relative -top-5"}>
                           {bar.value.toFixed(2)}%
                         </span>
                       )}
@@ -77,39 +79,39 @@ const ChartCard = ({ title, subtitle, totalDays, bars, legendItems, settingsGrid
               })}
             </div>
           </div>
-
-          {/* X-axis labels */}
-          <div className="flex items-start justify-center gap-8 px-8 mt-2">
-            {bars.map((bar, i) => (
-              <span key={i} className="text-[10px] text-muted-foreground text-center lowercase" style={{ width: "90px" }}>
-                {bar.name}
-              </span>
-            ))}
-          </div>
         </div>
-      </div>
 
-      {/* Legend */}
-      {legendItems && legendItems.length > 0 && (
-        <div className="flex items-center gap-5 mt-3">
-          {legendItems.map((item) => (
-            <div key={item.label} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-              {item.label}
-            </div>
+        {/* X-axis labels */}
+        <div className="flex items-start justify-center gap-8 ml-8 mt-2">
+          {bars.map((bar, i) => (
+            <span key={i} className="text-[10px] text-muted-foreground text-center lowercase" style={{ width: "90px" }}>
+              {bar.name}
+            </span>
           ))}
         </div>
-      )}
 
-      {/* Settings grid */}
+        {/* Legend */}
+        {legendItems && legendItems.length > 0 && (
+          <div className="flex items-center justify-center gap-6 mt-4 text-[11px]">
+            {legendItems.map((item) => (
+              <div key={item.label} className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                <span className="text-muted-foreground">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Custom Settings */}
       {settingsGrid && settingsGrid.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-border">
-          <p className="section-label mb-2">custom settings</p>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
+        <div className="border-t border-border px-5 py-3">
+          <h5 className="text-[11px] text-muted-foreground mb-2 uppercase tracking-wider">custom settings</h5>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
             {settingsGrid.map((s) => (
-              <div key={s.label} className="text-[11px]">
-                <span className="text-muted-foreground">{s.label}: </span>
-                <span className="text-foreground font-medium">{s.value}</span>
+              <div key={s.label} className="flex justify-between">
+                <span className="text-muted-foreground">{s.label}:</span>
+                <span className="text-primary font-medium">{s.value}</span>
               </div>
             ))}
           </div>
