@@ -7,9 +7,10 @@ import type { AnalysisMode } from "@/components/ControlPanel";
 export type OCCTimeframe = "M5" | "M15" | "M30" | "H1";
 
 export type IBSubreport = "rejection" | "extension";
+export type MomentumBodyRatio = "0.40" | "0.50" | "0.60";
 
 interface ParameterPanelProps {
-  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, subreport: IBSubreport) => void;
+  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, subreport: IBSubreport, bodyRatio: MomentumBodyRatio) => void;
   loading: boolean;
   isFree?: boolean;
   occTimeframe?: OCCTimeframe;
