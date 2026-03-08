@@ -46,14 +46,13 @@ const ParameterPanel = ({ onRun, loading, isFree = false, occTimeframe = "M15", 
   const [ibWindow, setIbWindow] = useState(isFree ? "60" : "30");
   const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
   const [mode, setMode] = useState<AnalysisMode>("ib");
-  const [subreport, setSubreport] = useState<IBSubreport>("rejection");
   const [bodyRatio, setBodyRatio] = useState<MomentumBodyRatio>("0.50");
   const [occBodyRatio, setOccBodyRatio] = useState<OCCBodyRatio>("0.50");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!symbol.trim()) return;
-    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, subreport, bodyRatio, occBodyRatio);
+    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio);
   };
 
   return (
