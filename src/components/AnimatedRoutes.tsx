@@ -32,6 +32,7 @@ const AnimatedRoutes = () => {
         <Route path="/docs" element={<PageTransition><Docs /></PageTransition>} />
         <Route path="/docs/paddle-guide" element={<PageTransition><PaddleLiveGuide /></PageTransition>} />
         <Route path="/terms_conditions" element={<PageTransition><TermsConditions /></PageTransition>} />
+        <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>
