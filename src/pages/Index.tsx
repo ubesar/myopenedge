@@ -55,6 +55,7 @@ const Index = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [occTimeframe, setOccTimeframe] = useState<OCCTimeframe>("M15");
   const [momentumTimeframe, setMomentumTimeframe] = useState<OCCTimeframe>("M15");
+  const [analysisMaxDays, setAnalysisMaxDays] = useState<number>(0);
   const { runs: historyRuns, addRun, deleteRun } = useAnalysisHistory();
   const { templates, saveTemplate, deleteTemplate, loading: templateLoading } = useTemplates();
 
@@ -85,7 +86,7 @@ const Index = () => {
 
     setLoading(true);
     setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null);
-    setSymbol(ticker); setActiveMode(effectiveMode);
+    setSymbol(ticker); setActiveMode(effectiveMode); setAnalysisMaxDays(effectiveMaxDays);
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
     try {
@@ -162,7 +163,7 @@ const Index = () => {
               { label: "IB timeframe", value: `${result.ibWindowMinutes} min` },
               { label: "candle timeframe", value: "5min" },
               { label: "IB size", value: "any size" },
-              { label: "IB ending zone", value: "all days" },
+              { label: "date range", value: analysisMaxDays === 0 ? "all days" : `last ${analysisMaxDays} days` },
               { label: "IB breakout measure", value: "by rejection (M5 close)" },
               { label: "weekdays to use", value: "all days" },
             ]}
@@ -183,7 +184,7 @@ const Index = () => {
               { label: "IB timeframe", value: `${result.ibWindowMinutes} min` },
               { label: "candle timeframe", value: "5min" },
               { label: "IB size", value: "any size" },
-              { label: "IB ending zone", value: "all days" },
+              { label: "date range", value: analysisMaxDays === 0 ? "all days" : `last ${analysisMaxDays} days` },
               { label: "IB breakout measure", value: "by rejection (M5 close)" },
               { label: "weekdays to use", value: "all days" },
             ]}
@@ -232,6 +233,7 @@ const Index = () => {
               settingsGrid={[
                 { label: "candle timeframe", value: tf },
                 { label: "session", value: "NY open" },
+                { label: "date range", value: analysisMaxDays === 0 ? "all days" : `last ${analysisMaxDays} days` },
               ]}
             />
             <ChartCard
@@ -249,6 +251,7 @@ const Index = () => {
               settingsGrid={[
                 { label: "candle timeframe", value: tf },
                 { label: "session", value: "NY open" },
+                { label: "date range", value: analysisMaxDays === 0 ? "all days" : `last ${analysisMaxDays} days` },
               ]}
             />
           </div>
@@ -291,6 +294,10 @@ const Index = () => {
                 { label: "valid continuation", color: "hsl(217,91%,60%)" },
                 { label: "failed continuation", color: "hsl(240,5%,30%)" },
               ]}
+              settingsGrid={[
+                { label: "candle timeframe", value: tf },
+                { label: "date range", value: analysisMaxDays === 0 ? "all days" : `last ${analysisMaxDays} days` },
+              ]}
             />
             <ChartCard
               title="candle 1 bearish"
@@ -303,6 +310,10 @@ const Index = () => {
               legendItems={[
                 { label: "valid continuation", color: "hsl(217,91%,60%)" },
                 { label: "failed continuation", color: "hsl(240,5%,30%)" },
+              ]}
+              settingsGrid={[
+                { label: "candle timeframe", value: tf },
+                { label: "date range", value: analysisMaxDays === 0 ? "all days" : `last ${analysisMaxDays} days` },
               ]}
             />
           </div>
