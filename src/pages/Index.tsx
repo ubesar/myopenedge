@@ -251,6 +251,7 @@ const Index = () => {
               settingsGrid={[
                 { label: "candle timeframe", value: tf },
                 { label: "session", value: "NY open" },
+                { label: "date range", value: analysisMaxDays === 0 ? "all days" : `last ${analysisMaxDays} days` },
               ]}
             />
           </div>
