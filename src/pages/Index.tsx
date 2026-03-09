@@ -86,7 +86,7 @@ const Index = () => {
 
     setLoading(true);
     setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null);
-    setSymbol(ticker); setActiveMode(effectiveMode);
+    setSymbol(ticker); setActiveMode(effectiveMode); setAnalysisMaxDays(effectiveMaxDays);
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
     try {
