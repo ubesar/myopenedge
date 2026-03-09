@@ -184,7 +184,7 @@ const Index = () => {
               { label: "IB timeframe", value: `${result.ibWindowMinutes} min` },
               { label: "candle timeframe", value: "5min" },
               { label: "IB size", value: "any size" },
-              { label: "IB ending zone", value: "all days" },
+              { label: "date range", value: analysisMaxDays === 0 ? "all days" : `last ${analysisMaxDays} days` },
               { label: "IB breakout measure", value: "by rejection (M5 close)" },
               { label: "weekdays to use", value: "all days" },
             ]}
