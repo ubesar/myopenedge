@@ -139,6 +139,7 @@ const Upgrade = () => {
               )}
             </Button>
             <p className="text-xs text-muted-foreground mt-3">Secure checkout powered by Paddle</p>
+            <MidtransCheckout />
           </div>
         </section>
       </div>
