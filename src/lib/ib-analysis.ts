@@ -20,20 +20,12 @@ export interface LastDayData {
   breakout: "high" | "low" | "inside";
 }
 
-interface DirectionStats {
-  total: number;
-  breakHigh: number;
-  breakLow: number;
-  inside: number;
-}
-
 export interface AnalysisResult {
   totalDays: number;
   insideDays: number;
   ibWindowMinutes: number;
-  
-  highFirst: DirectionStats;
-  lowFirst: DirectionStats;
+  highFirst: { total: number; breakHigh: number; breakLow: number; inside: number };
+  lowFirst: { total: number; breakHigh: number; breakLow: number; inside: number };
   lastDay: LastDayData | null;
   allDays: LastDayData[];
 }
@@ -105,19 +97,26 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
 
     const highFirstFormed = parseDateTime(firstHighTouch).getTime() < parseDateTime(firstLowTouch).getTime();
 
-    // Post-IB breakout: IB end to 12:00
+    // Post-IB breakout: IB end to 12:00, using M15 CLOSE
     const postIBBars = dayBars.filter((b) => {
       const m = getTimeMinutes(parseDateTime(b.datetime));
       return m >= ibEnd && m < NOON;
     });
 
-    let breakout: "high" | "low" | "inside" = "inside";
+    const postIBCandles: CandleBar[] = postIBBars.map(b => ({
+      time: b.datetime.split(" ")[1].slice(0, 5),
+      open: parseFloat(b.open),
+      high: parseFloat(b.high),
+      low: parseFloat(b.low),
+      close: parseFloat(b.close),
+    }));
 
-    // By rejection: M5 candle CLOSE must break IB range
-    for (const bar of postIBBars) {
-      const c = parseFloat(bar.close);
-      if (c > ibHigh) { breakout = "high"; break; }
-      if (c < ibLow) { breakout = "low"; break; }
+    const m15Candles = aggregateToM15(postIBCandles);
+
+    let breakout: "high" | "low" | "inside" = "inside";
+    for (const candle of m15Candles) {
+      if (candle.close > ibHigh) { breakout = "high"; break; }
+      if (candle.close < ibLow) { breakout = "low"; break; }
     }
 
     allDayResults.push({ date, ibHigh, ibLow, highFirstFormed, breakout });
@@ -160,7 +159,6 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
     totalDays,
     insideDays,
     ibWindowMinutes,
-    
     highFirst: {
       total: highFirstDays.length,
       breakHigh: highFirstDays.filter((r) => r.breakout === "high").length,

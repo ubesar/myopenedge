@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Check, ChevronLeft, Loader2, Zap, Shield } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
-import { initializePaddle, type Paddle } from "@paddle/paddle-js";
-import { MidtransCheckout } from "@/components/MidtransCheckout";
 
 const features = [
   "Unlimited IB, Momentum & OCC Analysis",
@@ -24,26 +22,6 @@ const Upgrade = () => {
   const { user, loading: authLoading } = useAuth();
   const { isActive, loading: subLoading } = useSubscription();
   const [processing, setProcessing] = useState(false);
-  const [paddle, setPaddle] = useState<Paddle | null>(null);
-
-  useEffect(() => {
-    initializePaddle({
-      environment: "sandbox",
-      token: "test_906ae7bf74bbcaf25341c87dd7f",
-      eventCallback: (event) => {
-        if (event.name === "checkout.completed") {
-          toast.success("Payment successful! Your Pro access is being activated...");
-          // Refresh subscription status after a short delay
-          setTimeout(() => window.location.reload(), 3000);
-        }
-        if (event.name === "checkout.closed") {
-          setProcessing(false);
-        }
-      },
-    }).then((p) => {
-      if (p) setPaddle(p);
-    });
-  }, []);
 
   if (!authLoading && !user) {
     navigate("/auth?redirect=/upgrade");
@@ -78,16 +56,34 @@ const Upgrade = () => {
   }
 
   const handleUpgrade = async () => {
-    if (!paddle || !user) {
-      toast.error("Checkout not ready. Please try again.");
-      return;
-    }
     setProcessing(true);
-    paddle.Checkout.open({
-      items: [{ priceId: "pri_01kk6rkazpp86ckkdf76wtbg9s", quantity: 1 }],
-      customData: { user_id: user.id },
-      customer: { email: user.email || "" },
-    });
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) {
+        toast.error("Please sign in first");
+        return;
+      }
+
+      const res = await supabase.functions.invoke("create-invoice", {
+        body: { origin: window.location.origin },
+      });
+
+      if (res.error) {
+        throw new Error(res.error.message);
+      }
+
+      const { invoice_url } = res.data;
+      if (invoice_url) {
+        window.location.href = invoice_url;
+      } else {
+        throw new Error("No invoice URL returned");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create payment");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   return (
@@ -135,11 +131,10 @@ const Upgrade = () => {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing…
                 </>
               ) : (
-                "Subscribe Now"
+                "Pay with Crypto"
               )}
             </Button>
-            <p className="text-xs text-muted-foreground mt-3">Secure checkout powered by Paddle</p>
-            <MidtransCheckout />
+            <p className="text-xs text-muted-foreground mt-3">Powered by NOWPayments · Crypto payments</p>
           </div>
         </section>
       </div>

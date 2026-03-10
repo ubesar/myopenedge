@@ -68,10 +68,15 @@ function getTimeMinutes(dt: Date): number {
 const IB_START = 9 * 60 + 30; // 09:30
 const MARKET_CLOSE = 16 * 60;
 
-function evaluateOCC(bars5min: CandleBar[], tfMinutes: number, bodyRatio: number = 0.50): OCCTimeframeResult {
+function evaluateOCC(bars5min: CandleBar[], tfMinutes: number): OCCTimeframeResult {
   const tf = TF_CONFIGS.find((t) => t.minutes === tfMinutes)?.tf || `M${tfMinutes}`;
 
-  const endMinute = IB_START + tfMinutes * 2;
+  // Aggregate 5-min bars to the target timeframe
+  const aggregated = aggregateBars(bars5min, tfMinutes);
+
+  // We need the first 2 candles starting at 09:30
+  // Filter bars that are within the OCC evaluation window
+  const endMinute = IB_START + tfMinutes * 2; // need 2 candles worth of data
   const relevantBars = bars5min.filter((b) => {
     const [h, m] = b.time.split(":").map(Number);
     const totalMin = h * 60 + m;
@@ -87,12 +92,8 @@ function evaluateOCC(bars5min: CandleBar[], tfMinutes: number, bodyRatio: number
   const c1 = candles[0];
   const c2 = candles[1];
 
-  const c1Range = c1.high - c1.low;
-  const c1Body = Math.abs(c1.close - c1.open);
-  const c1BodyPct = c1Range > 0 ? c1Body / c1Range : 0;
-
-  const c1Bullish = c1.close > c1.open && c1BodyPct >= bodyRatio;
-  const c1Bearish = c1.close < c1.open && c1BodyPct >= bodyRatio;
+  const c1Bullish = c1.close > c1.open;
+  const c1Bearish = c1.close < c1.open;
   const c2Bullish = c2.close > c2.open;
   const c2Bearish = c2.close < c2.open;
 
@@ -115,7 +116,7 @@ function getOverallBias(timeframes: OCCTimeframeResult[]): OCCStatus {
   return "failed";
 }
 
-export function analyzeOCC(bars: BarData[], maxDays: number = 0, bodyRatio: number = 0.50): OCCResult {
+export function analyzeOCC(bars: BarData[], maxDays: number = 0): OCCResult {
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
     const date = bar.datetime.split(" ")[0];
@@ -150,7 +151,7 @@ export function analyzeOCC(bars: BarData[], maxDays: number = 0, bodyRatio: numb
       close: parseFloat(b.close),
     }));
 
-    const timeframes = TF_CONFIGS.map((cfg) => evaluateOCC(bars5min, cfg.minutes, bodyRatio));
+    const timeframes = TF_CONFIGS.map((cfg) => evaluateOCC(bars5min, cfg.minutes));
     const overallBias = getOverallBias(timeframes);
 
     allDays.push({ date, bars: bars5min, timeframes, overallBias });

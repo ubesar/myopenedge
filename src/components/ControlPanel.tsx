@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export type AnalysisMode = "ib" | "momentum" | "occ" | "gapfill" | "insidebar" | "outsideday";
+export type AnalysisMode = "ib" | "momentum" | "occ" | "gapfill";
 
 interface ControlPanelProps {
   onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => void;
@@ -61,9 +61,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
             <SelectItem value="ib">Initial Balance (IB)</SelectItem>
             {!isFree && <SelectItem value="momentum">Momentum Candle</SelectItem>}
             {!isFree && <SelectItem value="occ">Opening Candle Continuation</SelectItem>}
-             {!isFree && <SelectItem value="gapfill">Gap Fill Statistics</SelectItem>}
-            {!isFree && <SelectItem value="insidebar">Inside Bar</SelectItem>}
-            {!isFree && <SelectItem value="outsideday">Outside Day</SelectItem>}
+            {!isFree && <SelectItem value="gapfill">Gap Fill Statistics</SelectItem>}
           </SelectContent>
         </Select>
         {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for Momentum analysis</p>}
@@ -101,7 +99,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
         {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for more days</p>}
       </div>
 
-      {mode !== "occ" && mode !== "gapfill" && mode !== "insidebar" && mode !== "outsideday" && (
+      {mode !== "occ" && mode !== "gapfill" && (
         <div className="space-y-2">
           <Label className="text-sm text-muted-foreground">IB Window</Label>
           <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => !isFree && setIbWindow(v)} disabled={isFree}>
