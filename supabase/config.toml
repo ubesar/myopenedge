@@ -2,3 +2,6 @@ project_id = "wzyjfwvhvuqstnmuhnpk"
 
 [functions.auto-analyze]
 verify_jwt = false
+
+[functions.midtrans-notification]
+verify_jwt = false
