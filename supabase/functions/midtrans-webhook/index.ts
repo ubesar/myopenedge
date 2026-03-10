@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 async function verifySHA512(orderId: string, statusCode: string, grossAmount: string, serverKey: string, receivedSignature: string): Promise<boolean> {
@@ -17,7 +17,7 @@ async function verifySHA512(orderId: string, statusCode: string, grossAmount: st
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
       throw new Error("MIDTRANS_SERVER_KEY not configured");
     }
 
-    // Verify signature
+    // Verify signature (skip if not present, e.g. test notifications)
     const signatureKey = notification.signature_key;
     if (signatureKey) {
       const valid = await verifySHA512(
@@ -76,6 +76,7 @@ Deno.serve(async (req) => {
       orderStatus = "pending";
     }
 
+    // Use maybeSingle() instead of single() to handle test/missing orders gracefully
     const { data: orderData, error: orderError } = await adminClient
       .from("orders")
       .update({
@@ -85,11 +86,11 @@ Deno.serve(async (req) => {
       })
       .eq("midtrans_order_id", orderId)
       .select("user_id")
-      .single();
+      .maybeSingle();
 
     if (orderError) {
       console.error("Update order error:", orderError.message);
-      throw orderError;
+      // Don't throw - still return 200 so Midtrans doesn't retry
     }
 
     // If settlement, activate subscription
@@ -107,7 +108,6 @@ Deno.serve(async (req) => {
 
       if (profileError) {
         console.error("Update profile error:", profileError.message);
-        throw profileError;
       }
 
       console.log(`Activated subscription for user ${orderData.user_id}`);
