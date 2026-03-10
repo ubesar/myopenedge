@@ -370,26 +370,74 @@ export type Database = {
         }
         Relationships: []
       }
+      midtrans_webhook_logs: {
+        Row: {
+          created_at: string | null
+          id: string
+          order_id: string | null
+          payment_type: string | null
+          raw_payload: Json | null
+          transaction_status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          order_id?: string | null
+          payment_type?: string | null
+          raw_payload?: Json | null
+          transaction_status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          order_id?: string | null
+          payment_type?: string | null
+          raw_payload?: Json | null
+          transaction_status?: string | null
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
+          amount: number | null
           created_at: string
+          currency: string | null
           id: string
           invoice_id: string | null
+          midtrans_order_id: string | null
+          payment_method: string | null
+          payment_type: string | null
+          snap_token: string | null
           status: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
+          amount?: number | null
           created_at?: string
+          currency?: string | null
           id?: string
           invoice_id?: string | null
+          midtrans_order_id?: string | null
+          payment_method?: string | null
+          payment_type?: string | null
+          snap_token?: string | null
           status?: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
+          amount?: number | null
           created_at?: string
+          currency?: string | null
           id?: string
           invoice_id?: string | null
+          midtrans_order_id?: string | null
+          payment_method?: string | null
+          payment_type?: string | null
+          snap_token?: string | null
           status?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []

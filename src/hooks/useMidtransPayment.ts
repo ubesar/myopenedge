@@ -48,12 +48,13 @@ export function useMidtransPayment() {
 
   const pollStatus = useCallback(
     async (midtransOrderId: string): Promise<string | null> => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("orders")
         .select("status")
-        .eq("midtrans_order_id" as any, midtransOrderId)
-        .single();
-      return (data as any)?.status || null;
+        .eq("midtrans_order_id" as any, midtransOrderId as any)
+        .maybeSingle();
+      if (error || !data) return null;
+      return (data as any).status || null;
     },
     []
   );
