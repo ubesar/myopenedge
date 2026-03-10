@@ -51,9 +51,9 @@ export function useMidtransPayment() {
       const { data } = await supabase
         .from("orders")
         .select("status")
-        .eq("midtrans_order_id", midtransOrderId)
+        .eq("midtrans_order_id" as any, midtransOrderId)
         .single();
-      return data?.status || null;
+      return (data as any)?.status || null;
     },
     []
   );
