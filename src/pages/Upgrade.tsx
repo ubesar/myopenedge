@@ -39,28 +39,32 @@ const Upgrade = () => {
 
   // Load Midtrans Snap JS
   useEffect(() => {
-    const clientKey = import.meta.env.VITE_MIDTRANS_CLIENT_KEY;
-    if (!clientKey) return;
+    const loadSnap = async () => {
+      const existingScript = document.getElementById("midtrans-snap");
+      if (existingScript) {
+        setSnapReady(true);
+        return;
+      }
 
-    const existingScript = document.getElementById("midtrans-snap");
-    if (existingScript) {
-      setSnapReady(true);
-      return;
-    }
+      try {
+        const res = await supabase.functions.invoke("midtrans-config");
+        if (res.error || !res.data?.client_key) return;
 
-    const isProduction = !clientKey.startsWith("SB-");
-    const script = document.createElement("script");
-    script.id = "midtrans-snap";
-    script.src = isProduction
-      ? "https://app.midtrans.com/snap/snap.js"
-      : "https://app.sandbox.midtrans.com/snap/snap.js";
-    script.setAttribute("data-client-key", clientKey);
-    script.onload = () => setSnapReady(true);
-    document.head.appendChild(script);
-
-    return () => {
-      // Don't remove - keep loaded
+        const { client_key, is_production } = res.data;
+        const script = document.createElement("script");
+        script.id = "midtrans-snap";
+        script.src = is_production
+          ? "https://app.midtrans.com/snap/snap.js"
+          : "https://app.sandbox.midtrans.com/snap/snap.js";
+        script.setAttribute("data-client-key", client_key);
+        script.onload = () => setSnapReady(true);
+        document.head.appendChild(script);
+      } catch (err) {
+        console.error("Failed to load Midtrans config:", err);
+      }
     };
+
+    loadSnap();
   }, []);
 
   if (!authLoading && !user) {
