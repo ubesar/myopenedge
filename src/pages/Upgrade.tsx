@@ -8,6 +8,7 @@ import { Check, ChevronLeft, Loader2, Zap, Shield } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { initializePaddle, type Paddle } from "@paddle/paddle-js";
+import { MidtransCheckout } from "@/components/MidtransCheckout";
 
 const features = [
   "Unlimited IB, Momentum & OCC Analysis",
@@ -138,6 +139,7 @@ const Upgrade = () => {
               )}
             </Button>
             <p className="text-xs text-muted-foreground mt-3">Secure checkout powered by Paddle</p>
+            <MidtransCheckout />
           </div>
         </section>
       </div>
