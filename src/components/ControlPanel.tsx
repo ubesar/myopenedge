@@ -22,12 +22,10 @@ const IB_WINDOWS = [
 
 const DAY_OPTIONS = [
 { value: "0", label: "All Days" },
-{ value: "7", label: "Last 7 Days" },
-{ value: "15", label: "Last 15 Days" },
-{ value: "30", label: "Last 30 Days" },
-{ value: "60", label: "Last 60 Days" },
-{ value: "90", label: "Last 90 Days" },
-{ value: "120", label: "Last 120 Days" }];
+{ value: "22", label: "1 Month" },
+{ value: "66", label: "3 Months" },
+{ value: "132", label: "6 Months" },
+{ value: "252", label: "12 Months" }];
 
 
 const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => {

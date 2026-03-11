@@ -67,7 +67,7 @@ const ParameterPanel = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!symbol.trim()) return;
-    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio);
+    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio, weekdays);
   };
 
   const handleTemplateSelect = (id: string) => {
