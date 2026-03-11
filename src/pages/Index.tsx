@@ -102,7 +102,7 @@ const Index = () => {
         setResult(a);
         addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
       } else if (effectiveMode === "momentum") {
-        const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, parseFloat(bodyRatio));
+        const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, parseFloat(bodyRatio), weekdays);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setMomentumResult(a);
         addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });
