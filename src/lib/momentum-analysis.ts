@@ -124,7 +124,7 @@ function getOverallMomentum(timeframes: MomentumTFResult[]): "bullish" | "bearis
   return "choppy";
 }
 
-export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0, bodyRatio: number = 0.50): MomentumResult {
+export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0, bodyRatio: number = 0.50, weekdays: number[] = [1,2,3,4,5]): MomentumResult {
   const ibEnd = IB_START + ibWindowMinutes;
 
   const byDate = new Map<string, BarData[]>();
@@ -138,6 +138,10 @@ export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, m
   if (maxDays > 0) {
     dates = dates.slice(-maxDays);
   }
+  dates = dates.filter(d => {
+    const day = new Date(d + "T12:00:00").getDay();
+    return weekdays.includes(day);
+  });
 
   const allDays: MomentumDayData[] = [];
 

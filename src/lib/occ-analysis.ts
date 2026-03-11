@@ -115,7 +115,7 @@ function getOverallBias(timeframes: OCCTimeframeResult[]): OCCStatus {
   return "failed";
 }
 
-export function analyzeOCC(bars: BarData[], maxDays: number = 0, bodyRatio: number = 0.50): OCCResult {
+export function analyzeOCC(bars: BarData[], maxDays: number = 0, bodyRatio: number = 0.50, weekdays: number[] = [1,2,3,4,5]): OCCResult {
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
     const date = bar.datetime.split(" ")[0];
@@ -127,6 +127,10 @@ export function analyzeOCC(bars: BarData[], maxDays: number = 0, bodyRatio: numb
   if (maxDays > 0) {
     dates = dates.slice(-maxDays);
   }
+  dates = dates.filter(d => {
+    const day = new Date(d + "T12:00:00").getDay();
+    return weekdays.includes(day);
+  });
 
   const allDays: OCCDayData[] = [];
 

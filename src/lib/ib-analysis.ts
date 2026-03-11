@@ -50,7 +50,7 @@ const IB_START = 9 * 60 + 30;
 const NOON = 12 * 60;
 const MARKET_CLOSE = 16 * 60;
 
-export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0): AnalysisResult {
+export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0, weekdays: number[] = [1,2,3,4,5]): AnalysisResult {
   const ibEnd = IB_START + ibWindowMinutes;
 
   const byDate = new Map<string, BarData[]>();
@@ -64,6 +64,11 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
   if (maxDays > 0) {
     dates = dates.slice(-maxDays);
   }
+  // Filter by weekdays
+  dates = dates.filter(d => {
+    const day = new Date(d + "T12:00:00").getDay(); // 0=Sun,1=Mon,...5=Fri
+    return weekdays.includes(day);
+  });
 
   interface DayResult {
     date: string;
