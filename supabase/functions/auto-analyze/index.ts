@@ -260,7 +260,10 @@ Deno.serve(async (req) => {
     let marketData: any = null;
     for (const key of keys) {
       try {
-        const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(SYMBOL)}&interval=5min&outputsize=5000&apikey=${encodeURIComponent(key)}&format=JSON&timezone=America/New_York`;
+        const now = new Date();
+        const endDate = now.toISOString().split("T")[0];
+        const startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split("T")[0];
+        const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(SYMBOL)}&interval=5min&start_date=${startDate}&end_date=${endDate}&apikey=${encodeURIComponent(key)}&format=JSON&timezone=America/New_York`;
         const res = await fetch(url);
         const json = await res.json();
         if (json.status === "error" && (json.message?.includes("quota") || json.message?.includes("limit") || json.code === 429)) {
