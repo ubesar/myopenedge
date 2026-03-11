@@ -27,7 +27,8 @@ const DAY_OPTIONS = [
 { value: "30", label: "Last 30 Days" },
 { value: "60", label: "Last 60 Days" },
 { value: "90", label: "Last 90 Days" },
-{ value: "120", label: "Last 120 Days" }];
+{ value: "120", label: "Last 120 Days" },
+{ value: "365", label: "Last 12 Months" }];
 
 
 const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => {
