@@ -79,7 +79,7 @@ const Index = () => {
     let effectiveMode = mode;
 
     if (isFree) {
-      effectiveMaxDays = Math.min(maxDays, 7);
+      effectiveMaxDays = Math.min(maxDays, 22);
       effectiveIbWindow = Math.min(ibWindow, 60);
       effectiveMode = "ib";
     }
