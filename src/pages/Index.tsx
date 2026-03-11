@@ -66,6 +66,19 @@ const Index = () => {
 
   const isFree = !isActive;
 
+  const DAY_NAMES_SHORT = ["", "Mon", "Tue", "Wed", "Thu", "Fri"];
+  const formatDateRange = (days: number) => {
+    if (days === 0) return "all days";
+    if (days <= 22) return "1 month";
+    if (days <= 66) return "3 months";
+    if (days <= 132) return "6 months";
+    return "12 months";
+  };
+  const formatWeekdays = (wd: number[]) => {
+    if (wd.length === 5) return "all days";
+    return wd.map(d => DAY_NAMES_SHORT[d]).join(", ");
+  };
+
   if (!authLoading && !user) return <Navigate to="/auth" replace />;
 
   const fetchMarketData = async (ticker: string) => {
