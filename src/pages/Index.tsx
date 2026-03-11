@@ -177,9 +177,9 @@ const Index = () => {
               { label: "IB timeframe", value: `${result.ibWindowMinutes} min` },
               { label: "candle timeframe", value: "5min" },
               { label: "IB size", value: "any size" },
-              { label: "date range", value: analysisMaxDays === 0 ? "all days" : `last ${analysisMaxDays} days` },
+              { label: "date range", value: formatDateRange(analysisMaxDays) },
               { label: "IB breakout measure", value: "by rejection (M5 close)" },
-              { label: "weekdays to use", value: "all days" },
+              { label: "weekdays to use", value: formatWeekdays(analysisWeekdays) },
             ]}
           />
           <ChartCard
