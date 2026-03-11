@@ -312,7 +312,7 @@ Deno.serve(async (req) => {
           messages: [
             {
               role: "system",
-              content: `You are an elite quantitative trading analyst for MyOpenEdge. Analyze the following pre-market statistical data for ${SYMBOL} and provide a concise daily briefing. Include:
+              content: `You are an elite quantitative trading analyst for MyOpenEdge. Analyze the following pre-market statistical data for ${SYMBOL} covering the last 12 months and provide a concise daily briefing. Include:
 1. **IB Bias**: Which direction has the statistical edge based on IB breakout probabilities across M15/M30/H1?
 2. **Momentum Bias**: What do the momentum candle statistics suggest across timeframes?
 3. **Confluence**: Do IB and Momentum agree? Rate the setup quality (High/Medium/Low).
