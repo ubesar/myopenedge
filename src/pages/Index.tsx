@@ -97,7 +97,7 @@ const Index = () => {
       const values = parsed.data.values;
 
       if (effectiveMode === "ib") {
-        const a = analyzeIB(values as any, effectiveIbWindow, effectiveMaxDays);
+        const a = analyzeIB(values as any, effectiveIbWindow, effectiveMaxDays, weekdays);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setResult(a);
         addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
