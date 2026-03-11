@@ -6,6 +6,66 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// Fetch a single batch from TwelveData with key rotation
+async function fetchBatch(
+  symbol: string,
+  startDate: string,
+  endDate: string,
+  keys: string[]
+): Promise<any[]> {
+  for (const key of keys) {
+    try {
+      const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=5min&start_date=${startDate}&end_date=${endDate}&outputsize=5000&apikey=${encodeURIComponent(key)}&format=JSON&timezone=America/New_York`;
+      const res = await fetch(url);
+      const json = await res.json();
+
+      if (
+        json.status === "error" &&
+        (json.message?.includes("quota") ||
+          json.message?.includes("limit") ||
+          json.code === 429)
+      ) {
+        console.log(`API key exhausted for batch ${startDate}→${endDate}, trying next...`);
+        continue;
+      }
+
+      if (json.values && json.values.length > 0) {
+        return json.values;
+      }
+      return [];
+    } catch (err) {
+      console.log(`API key failed for batch ${startDate}→${endDate}: ${err}`);
+      continue;
+    }
+  }
+  return [];
+}
+
+// Generate 6 date ranges of ~2 months each covering 12 months
+function generateDateRanges(): { start: string; end: string }[] {
+  const now = new Date();
+  const ranges: { start: string; end: string }[] = [];
+
+  for (let i = 0; i < 6; i++) {
+    const endDate = new Date(now);
+    endDate.setMonth(endDate.getMonth() - i * 2);
+
+    const startDate = new Date(now);
+    startDate.setMonth(startDate.getMonth() - (i + 1) * 2);
+    // Add 1 day to start to avoid overlap (except first batch)
+    if (i > 0) {
+      startDate.setDate(startDate.getDate() + 1);
+    }
+
+    ranges.push({
+      start: startDate.toISOString().split("T")[0],
+      end: endDate.toISOString().split("T")[0],
+    });
+  }
+
+  return ranges;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -26,10 +86,8 @@ Deno.serve(async (req) => {
     { global: { headers: { Authorization: authHeader } } }
   );
 
-  const token = authHeader.replace("Bearer ", "");
-  const { data: claimsData, error: claimsError } =
-    await supabase.auth.getClaims(token);
-  if (claimsError || !claimsData?.claims) {
+  const { data } = await supabase.auth.getUser();
+  if (!data?.user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -45,57 +103,55 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Load API keys from secret (comma-separated)
+  // Load API keys
   const keysRaw = Deno.env.get("TWELVEDATA_API_KEYS") || "";
   const keys = keysRaw.split(",").map((k) => k.trim()).filter(Boolean);
 
   if (keys.length === 0) {
     return new Response(
       JSON.stringify({ error: "No API keys configured" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  // Try each key with auto-rotation
-  for (let i = 0; i < keys.length; i++) {
-    try {
-      const now = new Date();
-      const endDate = now.toISOString().split("T")[0];
-      const startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split("T")[0];
-      const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=5min&start_date=${startDate}&end_date=${endDate}&apikey=${encodeURIComponent(keys[i])}&format=JSON&timezone=America/New_York`;
-      const res = await fetch(url);
-      const json = await res.json();
+  try {
+    // Fetch 6 batches of 2 months each
+    const ranges = generateDateRanges();
+    const allValues: any[] = [];
+    const seen = new Set<string>();
 
-      // If quota exceeded, try next key
-      if (
-        json.status === "error" &&
-        (json.message?.includes("quota") ||
-          json.message?.includes("limit") ||
-          json.code === 429)
-      ) {
-        console.log(`API key ${i + 1} exhausted, trying next...`);
-        continue;
+    for (const range of ranges) {
+      const batch = await fetchBatch(symbol, range.start, range.end, keys);
+      for (const bar of batch) {
+        // Deduplicate by datetime
+        if (!seen.has(bar.datetime)) {
+          seen.add(bar.datetime);
+          allValues.push(bar);
+        }
       }
-
-      return new Response(JSON.stringify(json), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    } catch (err) {
-      console.log(`API key ${i + 1} failed: ${err}`);
-      continue;
     }
+
+    // Sort descending by datetime (newest first, matching TwelveData default)
+    allValues.sort((a, b) => b.datetime.localeCompare(a.datetime));
+
+    return new Response(
+      JSON.stringify({
+        meta: {
+          symbol: symbol.toUpperCase(),
+          interval: "5min",
+          currency: "USD",
+          exchange_timezone: "America/New_York",
+          type: "ETF",
+        },
+        values: allValues,
+        status: "ok",
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: (err as Error).message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
-
-  return new Response(
-    JSON.stringify({
-      status: "error",
-      message: "All API keys exhausted. Please try again later.",
-    }),
-    {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    }
-  );
 });

@@ -250,37 +250,59 @@ Deno.serve(async (req) => {
     const MAX_DAYS = 0; // 0 = use all available data (12 months)
     const IB_WINDOWS = [15, 30, 60]; // M15, M30, H1
 
-    // 1. Fetch data from TwelveData
+    // 1. Fetch data from TwelveData (6 batches × 2 months = 12 months)
     const keysRaw = Deno.env.get("TWELVEDATA_API_KEYS") || "";
     const keys = keysRaw.split(",").map((k) => k.trim()).filter(Boolean);
     if (keys.length === 0) {
       throw new Error("No TWELVEDATA_API_KEYS configured");
     }
 
-    let marketData: any = null;
-    for (const key of keys) {
-      try {
-        const now = new Date();
-        const endDate = now.toISOString().split("T")[0];
-        const startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split("T")[0];
-        const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(SYMBOL)}&interval=5min&start_date=${startDate}&end_date=${endDate}&apikey=${encodeURIComponent(key)}&format=JSON&timezone=America/New_York`;
-        const res = await fetch(url);
-        const json = await res.json();
-        if (json.status === "error" && (json.message?.includes("quota") || json.message?.includes("limit") || json.code === 429)) {
-          continue;
-        }
-        if (json.values && json.values.length > 0) {
-          marketData = json;
+    const now = new Date();
+    const allBars: Bar[] = [];
+    const seen = new Set<string>();
+
+    for (let batch = 0; batch < 6; batch++) {
+      const batchEnd = new Date(now);
+      batchEnd.setMonth(batchEnd.getMonth() - batch * 2);
+      const batchStart = new Date(now);
+      batchStart.setMonth(batchStart.getMonth() - (batch + 1) * 2);
+      if (batch > 0) batchStart.setDate(batchStart.getDate() + 1);
+
+      const startStr = batchStart.toISOString().split("T")[0];
+      const endStr = batchEnd.toISOString().split("T")[0];
+
+      let fetched = false;
+      for (const key of keys) {
+        try {
+          const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(SYMBOL)}&interval=5min&start_date=${startStr}&end_date=${endStr}&outputsize=5000&apikey=${encodeURIComponent(key)}&format=JSON&timezone=America/New_York`;
+          const res = await fetch(url);
+          const json = await res.json();
+          if (json.status === "error" && (json.message?.includes("quota") || json.message?.includes("limit") || json.code === 429)) {
+            continue;
+          }
+          if (json.values && json.values.length > 0) {
+            for (const bar of json.values) {
+              if (!seen.has(bar.datetime)) {
+                seen.add(bar.datetime);
+                allBars.push(bar);
+              }
+            }
+          }
+          fetched = true;
           break;
-        }
-      } catch { continue; }
+        } catch { continue; }
+      }
+      if (!fetched) {
+        console.log(`Batch ${batch + 1} (${startStr}→${endStr}) failed, skipping...`);
+      }
     }
 
-    if (!marketData || !marketData.values) {
+    if (allBars.length === 0) {
       throw new Error("Failed to fetch market data from TwelveData");
     }
 
-    const bars: Bar[] = marketData.values;
+    console.log(`Fetched ${allBars.length} total bars across 12 months`);
+    const bars: Bar[] = allBars;
 
     // 2. Run IB analysis for each window
     const ibResults: Record<string, any> = {};
