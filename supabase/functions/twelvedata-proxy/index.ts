@@ -62,7 +62,10 @@ Deno.serve(async (req) => {
   // Try each key with auto-rotation
   for (let i = 0; i < keys.length; i++) {
     try {
-      const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=5min&outputsize=5000&apikey=${encodeURIComponent(keys[i])}&format=JSON&timezone=America/New_York`;
+      const now = new Date();
+      const endDate = now.toISOString().split("T")[0];
+      const startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split("T")[0];
+      const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=5min&start_date=${startDate}&end_date=${endDate}&apikey=${encodeURIComponent(keys[i])}&format=JSON&timezone=America/New_York`;
       const res = await fetch(url);
       const json = await res.json();
 
