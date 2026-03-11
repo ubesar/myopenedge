@@ -56,6 +56,7 @@ const Index = () => {
   const [occTimeframe, setOccTimeframe] = useState<OCCTimeframe>("M15");
   const [momentumTimeframe, setMomentumTimeframe] = useState<OCCTimeframe>("M15");
   const [analysisMaxDays, setAnalysisMaxDays] = useState<number>(0);
+  const [analysisWeekdays, setAnalysisWeekdays] = useState<number[]>([1,2,3,4,5]);
   const { runs: historyRuns, addRun, deleteRun } = useAnalysisHistory();
   const { templates, saveTemplate, deleteTemplate, loading: templateLoading } = useTemplates();
 
