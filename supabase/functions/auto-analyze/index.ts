@@ -305,7 +305,7 @@ Deno.serve(async (req) => {
     const bars: Bar[] = allBars;
     }
 
-    const bars: Bar[] = marketData.values;
+    // Bars already populated above via pagination
 
     // 2. Run IB analysis for each window
     const ibResults: Record<string, any> = {};
