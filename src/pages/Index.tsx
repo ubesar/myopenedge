@@ -73,7 +73,7 @@ const Index = () => {
     return data;
   };
 
-  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50") => {
+  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50", weekdays: number[] = [1,2,3,4,5]) => {
     let effectiveIbWindow = ibWindow;
     let effectiveMaxDays = maxDays;
     let effectiveMode = mode;
