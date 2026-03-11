@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export type AnalysisMode = "ib" | "momentum" | "occ" | "gapfill";
+export type AnalysisMode = "ib" | "momentum" | "occ" | "gapfill" | "insidebar" | "outsideday";
 
 interface ControlPanelProps {
   onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => void;
@@ -22,18 +22,16 @@ const IB_WINDOWS = [
 
 const DAY_OPTIONS = [
 { value: "0", label: "All Days" },
-{ value: "7", label: "Last 7 Days" },
-{ value: "15", label: "Last 15 Days" },
-{ value: "30", label: "Last 30 Days" },
-{ value: "60", label: "Last 60 Days" },
-{ value: "90", label: "Last 90 Days" },
-{ value: "120", label: "Last 120 Days" }];
+{ value: "22", label: "1 Month" },
+{ value: "66", label: "3 Months" },
+{ value: "132", label: "6 Months" },
+{ value: "252", label: "12 Months" }];
 
 
 const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => {
   const [symbol, setSymbol] = useState("QQQ");
   const [ibWindow, setIbWindow] = useState(isFree ? "60" : "30");
-  const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
+  const [maxDays, setMaxDays] = useState(isFree ? "22" : "22");
   const [mode, setMode] = useState<AnalysisMode>("ib");
 
   // No longer needed - M15 IB window is now available for all modes
@@ -61,7 +59,9 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
             <SelectItem value="ib">Initial Balance (IB)</SelectItem>
             {!isFree && <SelectItem value="momentum">Momentum Candle</SelectItem>}
             {!isFree && <SelectItem value="occ">Opening Candle Continuation</SelectItem>}
-            {!isFree && <SelectItem value="gapfill">Gap Fill Statistics</SelectItem>}
+             {!isFree && <SelectItem value="gapfill">Gap Fill Statistics</SelectItem>}
+            {!isFree && <SelectItem value="insidebar">Inside Bar</SelectItem>}
+            {!isFree && <SelectItem value="outsideday">Outside Day</SelectItem>}
           </SelectContent>
         </Select>
         {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for Momentum analysis</p>}
@@ -89,7 +89,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
           </SelectTrigger>
           <SelectContent>
             {isFree
-              ? <SelectItem value="7">Last 7 Days</SelectItem>
+              ? <SelectItem value="22">1 Month</SelectItem>
               : DAY_OPTIONS.map((d) =>
                 <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
               )
@@ -99,7 +99,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
         {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for more days</p>}
       </div>
 
-      {mode !== "occ" && mode !== "gapfill" && (
+      {mode !== "occ" && mode !== "gapfill" && mode !== "insidebar" && mode !== "outsideday" && (
         <div className="space-y-2">
           <Label className="text-sm text-muted-foreground">IB Window</Label>
           <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => !isFree && setIbWindow(v)} disabled={isFree}>

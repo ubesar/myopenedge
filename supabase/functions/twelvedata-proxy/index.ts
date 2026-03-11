@@ -1,12 +1,30 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = [
+  "https://myopenedge.xyz",
+  "https://www.myopenedge.xyz",
+  "https://myopenedge.lovable.app",
+  "https://id-preview--c6b96b0f-b08c-4fc5-9451-f9469e1fb477.lovable.app",
+  "https://c6b96b0f-b08c-4fc5-9451-f9469e1fb477.lovableproject.com",
+];
+
+function getCorsHeaders(origin: string | null) {
+  const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  };
+}
+
+// Free-tier limits
+const FREE_OUTPUTSIZE = 390; // ~1 day of 5min bars
+const FREE_MAX_INTERVAL = "5min";
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -36,13 +54,79 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Parse request
-  const { symbol } = await req.json();
+  const userId = claimsData.claims.sub as string;
+
+  // Check subscription status
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("subscription_status")
+    .eq("user_id", userId)
+    .single();
+
+  if (profileError) {
+    console.error("Profile fetch error:", profileError);
+    return new Response(JSON.stringify({ error: "Failed to verify subscription" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const isPro = profile?.subscription_status === "active" || profile?.subscription_status === "pro";
+
+  // Rate limiting: use service role client to call security definer function
+  const serviceClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+  const maxRequests = isPro ? 100 : 20; // per hour
+  const { data: allowed, error: rlError } = await serviceClient.rpc("check_rate_limit", {
+    _user_id: userId,
+    _endpoint: "twelvedata-proxy",
+    _max_requests: maxRequests,
+  });
+
+  if (rlError || allowed === false) {
+    return new Response(
+      JSON.stringify({ error: "Rate limit exceeded. Please try again later.", retryAfterMinutes: 60 }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // Parse request - support both GET query params and POST JSON body
+  let symbol: string | null = null;
+  let interval = "5min";
+  let outputsize = "5000";
+  let endpoint = "time_series"; // default
+
+  if (req.method === "GET") {
+    const url = new URL(req.url);
+    symbol = url.searchParams.get("symbol");
+    interval = url.searchParams.get("interval") || "5min";
+    outputsize = url.searchParams.get("outputsize") || "5000";
+    endpoint = url.searchParams.get("endpoint") || "time_series";
+  } else {
+    try {
+      const body = await req.json();
+      symbol = body.symbol;
+      interval = body.interval || "5min";
+      outputsize = body.outputsize || "5000";
+      endpoint = body.endpoint || "time_series";
+    } catch {
+      // Fall through to validation
+    }
+  }
+
   if (!symbol || typeof symbol !== "string") {
     return new Response(JSON.stringify({ error: "Symbol is required" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+  }
+
+  // Enforce free-tier limits (only for time_series)
+  if (!isPro && endpoint === "time_series") {
+    outputsize = String(FREE_OUTPUTSIZE);
+    interval = FREE_MAX_INTERVAL;
   }
 
   // Load API keys from secret (comma-separated)
@@ -62,7 +146,12 @@ Deno.serve(async (req) => {
   // Try each key with auto-rotation
   for (let i = 0; i < keys.length; i++) {
     try {
-      const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=5min&outputsize=5000&apikey=${encodeURIComponent(keys[i])}&format=JSON&timezone=America/New_York`;
+      let url: string;
+      if (endpoint === "quote") {
+        url = `https://api.twelvedata.com/quote?symbol=${encodeURIComponent(symbol)}&apikey=${encodeURIComponent(keys[i])}&format=JSON`;
+      } else {
+        url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&outputsize=${encodeURIComponent(outputsize)}&apikey=${encodeURIComponent(keys[i])}&format=JSON&timezone=America/New_York`;
+      }
       const res = await fetch(url);
       const json = await res.json();
 
