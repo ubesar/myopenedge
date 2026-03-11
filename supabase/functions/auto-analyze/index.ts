@@ -377,7 +377,7 @@ Be precise, data-driven, and reference actual percentages. Use markdown formatti
 });
 
 function buildSummaryForAI(symbol: string, ibResults: Record<string, any>, momentumResults: Record<string, any>): string {
-  let summary = `## ${symbol} Pre-Market Analysis (Last 15 Trading Days)\n\n`;
+  let summary = `## ${symbol} Pre-Market Analysis (Last 12 Months)\n\n`;
 
   summary += "### IB Breakout Probabilities (Last 12 Months)\n";
   for (const [tf, data] of Object.entries(ibResults)) {
