@@ -247,7 +247,7 @@ Deno.serve(async (req) => {
 
   try {
     const SYMBOL = "QQQ";
-    const MAX_DAYS = 15;
+    const MAX_DAYS = 0; // 0 = use all available data (12 months)
     const IB_WINDOWS = [15, 30, 60]; // M15, M30, H1
 
     // 1. Fetch data from TwelveData
