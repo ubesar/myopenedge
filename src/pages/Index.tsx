@@ -175,7 +175,7 @@ const Index = () => {
             ]}
             settingsGrid={[
               { label: "IB timeframe", value: `${result.ibWindowMinutes} min` },
-              { label: "candle timeframe", value: "5min" },
+              { label: "candle timeframe", value: "15min" },
               { label: "IB size", value: "any size" },
               { label: "date range", value: formatDateRange(analysisMaxDays) },
               { label: "IB breakout measure", value: "by rejection (M5 close)" },
