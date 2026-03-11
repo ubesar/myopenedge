@@ -101,14 +101,24 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
       if (l < ibLow) ibLow = l;
     }
 
+    // Aggregate IB bars to M15 for determining which extreme formed first (the "tell")
+    const ibCandleBars: CandleBar[] = ibBars.map(b => ({
+      time: b.datetime.split(" ")[1].slice(0, 5),
+      open: parseFloat(b.open),
+      high: parseFloat(b.high),
+      low: parseFloat(b.low),
+      close: parseFloat(b.close),
+    }));
+    const ib15 = aggregateToM15(ibCandleBars);
+
     let firstHighTouch = "";
     let firstLowTouch = "";
-    for (const bar of ibBars) {
-      if (!firstHighTouch && parseFloat(bar.high) >= ibHigh) firstHighTouch = bar.datetime;
-      if (!firstLowTouch && parseFloat(bar.low) <= ibLow) firstLowTouch = bar.datetime;
+    for (const bar of ib15) {
+      if (!firstHighTouch && bar.high >= ibHigh) firstHighTouch = bar.time;
+      if (!firstLowTouch && bar.low <= ibLow) firstLowTouch = bar.time;
     }
 
-    const highFirstFormed = parseDateTime(firstHighTouch).getTime() < parseDateTime(firstLowTouch).getTime();
+    const highFirstFormed = firstHighTouch <= firstLowTouch;
 
     // Post-IB breakout: IB end to 12:00
     const postIBBars = dayBars.filter((b) => {
