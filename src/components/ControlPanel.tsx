@@ -89,7 +89,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
           </SelectTrigger>
           <SelectContent>
             {isFree
-              ? <SelectItem value="7">Last 7 Days</SelectItem>
+              ? <SelectItem value="22">1 Month</SelectItem>
               : DAY_OPTIONS.map((d) =>
                 <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
               )
