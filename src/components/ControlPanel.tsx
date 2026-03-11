@@ -31,7 +31,7 @@ const DAY_OPTIONS = [
 const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => {
   const [symbol, setSymbol] = useState("QQQ");
   const [ibWindow, setIbWindow] = useState(isFree ? "60" : "30");
-  const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
+  const [maxDays, setMaxDays] = useState(isFree ? "22" : "22");
   const [mode, setMode] = useState<AnalysisMode>("ib");
 
   // No longer needed - M15 IB window is now available for all modes
