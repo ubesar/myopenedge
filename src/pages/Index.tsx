@@ -107,7 +107,7 @@ const Index = () => {
         setMomentumResult(a);
         addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });
       } else if (effectiveMode === "occ") {
-        const a = analyzeOCC(values as any, effectiveMaxDays, parseFloat(occBodyRatio));
+        const a = analyzeOCC(values as any, effectiveMaxDays, parseFloat(occBodyRatio), weekdays);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setOccResult(a);
         addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfDirectionStats: a.tfDirectionStats });
