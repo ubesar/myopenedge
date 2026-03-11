@@ -303,9 +303,6 @@ Deno.serve(async (req) => {
 
     console.log(`Fetched ${allBars.length} total bars across 12 months`);
     const bars: Bar[] = allBars;
-    }
-
-    // Bars already populated above via pagination
 
     // 2. Run IB analysis for each window
     const ibResults: Record<string, any> = {};
