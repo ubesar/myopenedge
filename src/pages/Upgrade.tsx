@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Check, ChevronLeft, Loader2, Zap, Shield } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
-import { initializePaddle, type Paddle } from "@paddle/paddle-js";
-import { MidtransCheckout } from "@/components/MidtransCheckout";
 
 const features = [
   "Unlimited IB, Momentum & OCC Analysis",
@@ -19,30 +17,54 @@ const features = [
   "Priority support",
 ];
 
+declare global {
+  interface Window {
+    snap: {
+      pay: (token: string, options: {
+        onSuccess: (result: any) => void;
+        onPending: (result: any) => void;
+        onError: (result: any) => void;
+        onClose: () => void;
+      }) => void;
+    };
+  }
+}
+
 const Upgrade = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { isActive, loading: subLoading } = useSubscription();
   const [processing, setProcessing] = useState(false);
-  const [paddle, setPaddle] = useState<Paddle | null>(null);
+  const [snapReady, setSnapReady] = useState(false);
 
+  // Load Midtrans Snap JS
   useEffect(() => {
-    initializePaddle({
-      environment: "sandbox",
-      token: "test_906ae7bf74bbcaf25341c87dd7f",
-      eventCallback: (event) => {
-        if (event.name === "checkout.completed") {
-          toast.success("Payment successful! Your Pro access is being activated...");
-          // Refresh subscription status after a short delay
-          setTimeout(() => window.location.reload(), 3000);
-        }
-        if (event.name === "checkout.closed") {
-          setProcessing(false);
-        }
-      },
-    }).then((p) => {
-      if (p) setPaddle(p);
-    });
+    const loadSnap = async () => {
+      const existingScript = document.getElementById("midtrans-snap");
+      if (existingScript) {
+        setSnapReady(true);
+        return;
+      }
+
+      try {
+        const res = await supabase.functions.invoke("midtrans-config");
+        if (res.error || !res.data?.client_key) return;
+
+        const { client_key, is_production } = res.data;
+        const script = document.createElement("script");
+        script.id = "midtrans-snap";
+        script.src = is_production
+          ? "https://app.midtrans.com/snap/snap.js"
+          : "https://app.sandbox.midtrans.com/snap/snap.js";
+        script.setAttribute("data-client-key", client_key);
+        script.onload = () => setSnapReady(true);
+        document.head.appendChild(script);
+      } catch (err) {
+        console.error("Failed to load Midtrans config:", err);
+      }
+    };
+
+    loadSnap();
   }, []);
 
   if (!authLoading && !user) {
@@ -78,16 +100,43 @@ const Upgrade = () => {
   }
 
   const handleUpgrade = async () => {
-    if (!paddle || !user) {
-      toast.error("Checkout not ready. Please try again.");
-      return;
-    }
     setProcessing(true);
-    paddle.Checkout.open({
-      items: [{ priceId: "pri_01kk6rkazpp86ckkdf76wtbg9s", quantity: 1 }],
-      customData: { user_id: user.id },
-      customer: { email: user.email || "" },
-    });
+    try {
+      const res = await supabase.functions.invoke("create-midtrans-transaction", {
+        body: { origin: window.location.origin },
+      });
+
+      if (res.error) throw new Error(res.error.message);
+
+      const { snap_token, redirect_url } = res.data;
+
+      if (snap_token && snapReady && window.snap) {
+        window.snap.pay(snap_token, {
+          onSuccess: () => {
+            toast.success("Pembayaran berhasil! Subscription aktif.");
+            navigate("/app?payment=success");
+          },
+          onPending: () => {
+            toast.info("Pembayaran pending. Silakan selesaikan pembayaran.");
+          },
+          onError: (result: any) => {
+            console.error("Payment error:", result);
+            toast.error("Pembayaran gagal. Silakan coba lagi.");
+          },
+          onClose: () => {
+            toast.info("Pembayaran dibatalkan.");
+          },
+        });
+      } else if (redirect_url) {
+        window.location.href = redirect_url;
+      } else {
+        throw new Error("No payment method available");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Gagal membuat pembayaran");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   return (
@@ -116,8 +165,8 @@ const Upgrade = () => {
             <h1 className="text-2xl sm:text-3xl font-bold mb-2">Upgrade to Pro</h1>
             <p className="text-sm sm:text-base text-muted-foreground mb-2">Full access to all IB, Momentum & OCC tools</p>
             <div className="mb-6">
-              <span className="text-5xl font-bold">$3</span>
-              <span className="text-muted-foreground">/month</span>
+              <span className="text-5xl font-bold">Rp 50K</span>
+              <span className="text-muted-foreground">/bulan</span>
             </div>
 
             <ul className="space-y-3 mb-8 text-left">
@@ -135,11 +184,10 @@ const Upgrade = () => {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing…
                 </>
               ) : (
-                "Subscribe Now"
+                "Bayar Sekarang"
               )}
             </Button>
-            <p className="text-xs text-muted-foreground mt-3">Secure checkout powered by Paddle</p>
-            <MidtransCheckout />
+            <p className="text-xs text-muted-foreground mt-3">Powered by Midtrans · Semua metode pembayaran</p>
           </div>
         </section>
       </div>
