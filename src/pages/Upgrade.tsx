@@ -2,20 +2,19 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Check, ChevronLeft, Loader2, Zap, Shield } from "lucide-react";
-import { toast } from "sonner";
 import logo from "@/assets/logo.png";
-import { initializePaddle, type Paddle } from "@paddle/paddle-js";
 import { MidtransCheckout } from "@/components/MidtransCheckout";
 
 const features = [
   "Unlimited IB, Momentum & OCC Analysis",
-  "Unlimited tickers",
-  "5000 bars intraday data",
-  "Breakout Probability Stats",
-  "Daily Setup Recommendations",
+  "6 analysis report types",
+  "Up to 12 months historical data",
+  "Weekday filtering & custom templates",
+  "AI chart analysis assistant",
+  "Breakout probability statistics",
+  "Daily setup recommendations",
   "Priority support",
 ];
 
@@ -23,27 +22,6 @@ const Upgrade = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { isActive, loading: subLoading } = useSubscription();
-  const [processing, setProcessing] = useState(false);
-  const [paddle, setPaddle] = useState<Paddle | null>(null);
-
-  useEffect(() => {
-    initializePaddle({
-      environment: "sandbox",
-      token: "test_906ae7bf74bbcaf25341c87dd7f",
-      eventCallback: (event) => {
-        if (event.name === "checkout.completed") {
-          toast.success("Payment successful! Your Pro access is being activated...");
-          // Refresh subscription status after a short delay
-          setTimeout(() => window.location.reload(), 3000);
-        }
-        if (event.name === "checkout.closed") {
-          setProcessing(false);
-        }
-      },
-    }).then((p) => {
-      if (p) setPaddle(p);
-    });
-  }, []);
 
   if (!authLoading && !user) {
     navigate("/auth?redirect=/upgrade");
@@ -77,19 +55,6 @@ const Upgrade = () => {
     );
   }
 
-  const handleUpgrade = async () => {
-    if (!paddle || !user) {
-      toast.error("Checkout not ready. Please try again.");
-      return;
-    }
-    setProcessing(true);
-    paddle.Checkout.open({
-      items: [{ priceId: "pri_01kk6rkazpp86ckkdf76wtbg9s", quantity: 1 }],
-      customData: { user_id: user.id },
-      customer: { email: user.email || "" },
-    });
-  };
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       <video autoPlay loop muted playsInline className="fixed inset-0 w-full h-full object-cover opacity-20 z-0">
@@ -114,10 +79,11 @@ const Upgrade = () => {
           <div className="rounded-xl border border-primary/30 bg-card/80 backdrop-blur-sm p-6 sm:p-10 max-w-md w-full text-center">
             <Zap className="h-8 w-8 sm:h-10 sm:w-10 text-primary mx-auto mb-3 sm:mb-4" />
             <h1 className="text-2xl sm:text-3xl font-bold mb-2">Upgrade to Pro</h1>
-            <p className="text-sm sm:text-base text-muted-foreground mb-2">Full access to all IB, Momentum & OCC tools</p>
+            <p className="text-sm sm:text-base text-muted-foreground mb-2">Full access to all analysis tools</p>
             <div className="mb-6">
-              <span className="text-5xl font-bold">$3</span>
-              <span className="text-muted-foreground">/month</span>
+              <span className="text-lg text-muted-foreground mr-1">Rp</span>
+              <span className="text-5xl font-bold">49.000</span>
+              <span className="text-muted-foreground">/bulan</span>
             </div>
 
             <ul className="space-y-3 mb-8 text-left">
@@ -129,16 +95,6 @@ const Upgrade = () => {
               ))}
             </ul>
 
-            <Button onClick={handleUpgrade} disabled={processing} className="w-full" size="lg">
-              {processing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing…
-                </>
-              ) : (
-                "Subscribe Now"
-              )}
-            </Button>
-            <p className="text-xs text-muted-foreground mt-3">Secure checkout powered by Paddle</p>
             <MidtransCheckout />
           </div>
         </section>
