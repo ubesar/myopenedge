@@ -97,6 +97,7 @@ Deno.serve(async (req) => {
   let interval = "5min";
   let outputsize = "5000";
   let endpoint = "time_series"; // default
+  let end_date: string | null = null;
 
   if (req.method === "GET") {
     const url = new URL(req.url);
@@ -104,6 +105,7 @@ Deno.serve(async (req) => {
     interval = url.searchParams.get("interval") || "5min";
     outputsize = url.searchParams.get("outputsize") || "5000";
     endpoint = url.searchParams.get("endpoint") || "time_series";
+    end_date = url.searchParams.get("end_date");
   } else {
     try {
       const body = await req.json();
@@ -111,6 +113,7 @@ Deno.serve(async (req) => {
       interval = body.interval || "5min";
       outputsize = body.outputsize || "5000";
       endpoint = body.endpoint || "time_series";
+      end_date = body.end_date || null;
     } catch {
       // Fall through to validation
     }
