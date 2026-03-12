@@ -98,6 +98,7 @@ Deno.serve(async (req) => {
   let outputsize = "5000";
   let endpoint = "time_series"; // default
   let end_date: string | null = null;
+  let key_index: number | null = null; // round-robin key selection
 
   if (req.method === "GET") {
     const url = new URL(req.url);
@@ -106,6 +107,8 @@ Deno.serve(async (req) => {
     outputsize = url.searchParams.get("outputsize") || "5000";
     endpoint = url.searchParams.get("endpoint") || "time_series";
     end_date = url.searchParams.get("end_date");
+    const ki = url.searchParams.get("key_index");
+    if (ki !== null) key_index = parseInt(ki, 10);
   } else {
     try {
       const body = await req.json();
@@ -114,6 +117,7 @@ Deno.serve(async (req) => {
       outputsize = body.outputsize || "5000";
       endpoint = body.endpoint || "time_series";
       end_date = body.end_date || null;
+      if (body.key_index !== undefined && body.key_index !== null) key_index = Number(body.key_index);
     } catch {
       // Fall through to validation
     }
