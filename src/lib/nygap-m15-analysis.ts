@@ -147,6 +147,7 @@ export function analyzeNYGapM15(
       gapType,
       gapSize,
       gapPercent,
+      gapCategory,
       m15Direction,
     });
   }
