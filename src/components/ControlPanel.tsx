@@ -36,6 +36,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
   const [ibWindow, setIbWindow] = useState(isFree ? "60" : "30");
   const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
   const [mode, setMode] = useState<AnalysisMode>("ib");
+  const [minGapSize, setMinGapSize] = useState("");
 
   // No longer needed - M15 IB window is now available for all modes
 
