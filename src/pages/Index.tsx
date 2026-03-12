@@ -476,6 +476,13 @@ const Index = () => {
                 <GapFillDashboard result={gapFillResult} symbol={symbol} />
               </div>
             )}
+
+            {/* NY Gap M15 Mode */}
+            {activeMode === "nygap" && nyGapResult && (
+              <div className="h-full overflow-y-auto">
+                <NYGapM15Dashboard result={nyGapResult} symbol={symbol} />
+              </div>
+            )}
           </section>
 
           {/* Right: Report History */}
