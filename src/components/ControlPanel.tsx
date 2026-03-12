@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export type AnalysisMode = "ib" | "momentum" | "occ" | "gapfill" | "nygap";
 
 interface ControlPanelProps {
-  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, minGapSize?: number) => void;
+  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => void;
   loading: boolean;
   isFree?: boolean;
 }
@@ -36,14 +36,13 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
   const [ibWindow, setIbWindow] = useState(isFree ? "60" : "30");
   const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
   const [mode, setMode] = useState<AnalysisMode>("ib");
-  const [minGapSize, setMinGapSize] = useState("");
 
   // No longer needed - M15 IB window is now available for all modes
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!symbol.trim()) return;
-    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, minGapSize ? parseFloat(minGapSize) : undefined);
+    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode);
   };
 
   return (
@@ -101,21 +100,6 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
         </Select>
         {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for more days</p>}
       </div>
-
-      {mode === "nygap" && (
-        <div className="space-y-2">
-          <Label className="text-sm text-muted-foreground">Min. Gap Size (points)</Label>
-          <Input
-            placeholder="0 (no filter)"
-            value={minGapSize}
-            onChange={(e) => setMinGapSize(e.target.value)}
-            type="number"
-            step="0.01"
-            min="0"
-            className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
-          />
-        </div>
-      )}
 
       {mode !== "occ" && mode !== "gapfill" && mode !== "nygap" && (
         <div className="space-y-2">

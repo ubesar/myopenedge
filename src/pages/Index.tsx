@@ -133,7 +133,7 @@ const Index = () => {
     return data;
   };
 
-  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, minGapSize?: number) => {
+  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => {
     setLoading(true);
     setResult(null);
     setMomentumResult(null);
@@ -209,7 +209,7 @@ const Index = () => {
           stats: analysis.stats,
         });
       } else if (mode === "nygap") {
-        const analysis = analyzeNYGapM15(values as any, maxDays, minGapSize);
+        const analysis = analyzeNYGapM15(values as any, maxDays);
         if (analysis.allDays.length === 0) {
           toast.error("Not enough gap days in the data to analyze.");
           return;
