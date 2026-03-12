@@ -2,7 +2,8 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { TrendingUp, TrendingDown, CalendarDays, ArrowUpDown } from "lucide-react";
-import type { NYGapM15Result, NYGapM15Day } from "@/lib/nygap-m15-analysis";
+import type { NYGapM15Result, NYGapM15Day, GapCategory } from "@/lib/nygap-m15-analysis";
+import { GAP_CATEGORIES } from "@/lib/nygap-m15-analysis";
 
 interface Props {
   result: NYGapM15Result;
@@ -87,13 +88,47 @@ function DonutChart({ title, bullish, bearish, bullishPct, bearishPct, total }: 
   );
 }
 
-type SortKey = "date" | "gapType" | "gapSize" | "m15Direction";
+function computeStats(days: NYGapM15Day[]) {
+  const gapUps = days.filter((d) => d.gapType === "Gap Up");
+  const gapDowns = days.filter((d) => d.gapType === "Gap Down");
+  const guBullish = gapUps.filter((d) => d.m15Direction === "Bullish").length;
+  const guBearish = gapUps.filter((d) => d.m15Direction === "Bearish").length;
+  const gdBullish = gapDowns.filter((d) => d.m15Direction === "Bullish").length;
+  const gdBearish = gapDowns.filter((d) => d.m15Direction === "Bearish").length;
+
+  return {
+    totalDays: days.length,
+    gapUpDays: gapUps.length,
+    gapDownDays: gapDowns.length,
+    gapUp: {
+      bullish: guBullish,
+      bearish: guBearish,
+      bullishPct: gapUps.length > 0 ? (guBullish / gapUps.length) * 100 : 0,
+      bearishPct: gapUps.length > 0 ? (guBearish / gapUps.length) * 100 : 0,
+    },
+    gapDown: {
+      bullish: gdBullish,
+      bearish: gdBearish,
+      bullishPct: gapDowns.length > 0 ? (gdBullish / gapDowns.length) * 100 : 0,
+      bearishPct: gapDowns.length > 0 ? (gdBearish / gapDowns.length) * 100 : 0,
+    },
+  };
+}
+
+type SortKey = "date" | "gapType" | "gapSize" | "gapCategory" | "m15Direction";
 type SortDir = "asc" | "desc";
 
 const NYGapM15Dashboard = ({ result, symbol }: Props) => {
-  const { stats, allDays } = result;
+  const [selectedCategory, setSelectedCategory] = useState<GapCategory | "all">("all");
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  const filteredDays = useMemo(() => {
+    if (selectedCategory === "all") return result.allDays;
+    return result.allDays.filter((d) => d.gapCategory === selectedCategory);
+  }, [result.allDays, selectedCategory]);
+
+  const stats = useMemo(() => computeStats(filteredDays), [filteredDays]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -105,19 +140,33 @@ const NYGapM15Dashboard = ({ result, symbol }: Props) => {
   };
 
   const sortedDays = useMemo(() => {
-    const sorted = [...allDays];
+    const sorted = [...filteredDays];
     sorted.sort((a, b) => {
       let cmp = 0;
       switch (sortKey) {
         case "date": cmp = a.date.localeCompare(b.date); break;
         case "gapType": cmp = a.gapType.localeCompare(b.gapType); break;
         case "gapSize": cmp = a.gapSize - b.gapSize; break;
+        case "gapCategory": cmp = a.gapCategory.localeCompare(b.gapCategory); break;
         case "m15Direction": cmp = a.m15Direction.localeCompare(b.m15Direction); break;
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
     return sorted;
-  }, [allDays, sortKey, sortDir]);
+  }, [filteredDays, sortKey, sortDir]);
+
+  // Day of week stats from filtered data
+  const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const byDayOfWeek = useMemo(() => {
+    return [1, 2, 3, 4, 5].map((dow) => {
+      const subset = filteredDays.filter((d) => d.dayOfWeek === dow);
+      return {
+        day: DAY_NAMES[dow],
+        bullish: subset.filter((d) => d.m15Direction === "Bullish").length,
+        bearish: subset.filter((d) => d.m15Direction === "Bearish").length,
+      };
+    });
+  }, [filteredDays]);
 
   const SortHeader = ({ label, k }: { label: string; k: SortKey }) => (
     <th
@@ -133,6 +182,44 @@ const NYGapM15Dashboard = ({ result, symbol }: Props) => {
 
   return (
     <div className="space-y-3">
+      {/* Gap Size % Filter */}
+      <Card className="bg-card/60 border-border/30">
+        <CardHeader className="pb-1 pt-3 px-3">
+          <CardTitle className="text-xs font-medium text-muted-foreground">Gap Size (%) Filter</CardTitle>
+        </CardHeader>
+        <CardContent className="px-3 pb-3">
+          <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
+            <button
+              onClick={() => setSelectedCategory("all")}
+              className={`px-2 py-1.5 rounded-full text-[10px] font-medium transition-all ${
+                selectedCategory === "all"
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+              }`}
+            >
+              All
+            </button>
+            {GAP_CATEGORIES.map((cat) => {
+              const count = result.allDays.filter((d) => d.gapCategory === cat).length;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-1.5 py-1.5 rounded-full text-[10px] font-medium transition-all ${
+                    selectedCategory === cat
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                  }`}
+                >
+                  <span className="block">{cat}</span>
+                  <span className="block text-[8px] opacity-70">({count})</span>
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-2">
         <Card className="bg-card/60 border-border/30">
@@ -191,7 +278,7 @@ const NYGapM15Dashboard = ({ result, symbol }: Props) => {
         </CardHeader>
         <CardContent className="px-3 pb-3">
           <div className="grid grid-cols-5 gap-1.5">
-            {stats.byDayOfWeek.map((d) => {
+            {byDayOfWeek.map((d) => {
               const total = d.bullish + d.bearish;
               const bullPct = total > 0 ? (d.bullish / total) * 100 : 0;
               return (
@@ -216,7 +303,14 @@ const NYGapM15Dashboard = ({ result, symbol }: Props) => {
       {/* Historical Data Table */}
       <Card className="bg-card/60 border-border/30">
         <CardHeader className="pb-1 pt-3 px-3">
-          <CardTitle className="text-xs font-medium text-muted-foreground">Historical Log — {symbol}</CardTitle>
+          <CardTitle className="text-xs font-medium text-muted-foreground">
+            Historical Log — {symbol}
+            {selectedCategory !== "all" && (
+              <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[9px]">
+                {selectedCategory}
+              </span>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent className="px-3 pb-3">
           <div className="max-h-[300px] overflow-y-auto scrollbar-thin">
@@ -227,7 +321,8 @@ const NYGapM15Dashboard = ({ result, symbol }: Props) => {
                   <th className="px-2 py-1.5 text-right text-[10px] font-medium text-muted-foreground">Prev Close</th>
                   <th className="px-2 py-1.5 text-right text-[10px] font-medium text-muted-foreground">NY Open</th>
                   <SortHeader label="Gap Type" k="gapType" />
-                  <SortHeader label="Gap Size" k="gapSize" />
+                  <SortHeader label="Gap %" k="gapSize" />
+                  <SortHeader label="Category" k="gapCategory" />
                   <th className="px-2 py-1.5 text-right text-[10px] font-medium text-muted-foreground">M15 Close</th>
                   <SortHeader label="M15 Dir" k="m15Direction" />
                 </tr>
@@ -247,7 +342,12 @@ const NYGapM15Dashboard = ({ result, symbol }: Props) => {
                         {d.gapType}
                       </span>
                     </td>
-                    <td className="px-2 py-1 text-right text-foreground">{d.gapSize.toFixed(2)}</td>
+                    <td className="px-2 py-1 text-right text-foreground">{Math.abs(d.gapPercent).toFixed(2)}%</td>
+                    <td className="px-2 py-1">
+                      <span className="px-1 py-0.5 rounded text-[9px] font-medium bg-muted text-muted-foreground">
+                        {d.gapCategory}
+                      </span>
+                    </td>
                     <td className="px-2 py-1 text-right text-foreground">{d.m15Close.toFixed(2)}</td>
                     <td className="px-2 py-1">
                       <span className={`px-1 py-0.5 rounded text-[9px] font-medium ${
