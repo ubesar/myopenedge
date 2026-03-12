@@ -108,8 +108,16 @@ const Index = () => {
         summary: `Symbol: ${symbol}\nTotal gap days: ${gapFillResult.totalDays}\nOverall Fill Rate: ${s.overallFillRate.toFixed(1)}%\nGap Up Fill: ${s.gapUpFillRate.toFixed(1)}% (${s.filledGapUp}/${s.totalGapUp})\nGap Down Fill: ${s.gapDownFillRate.toFixed(1)}% (${s.filledGapDown}/${s.totalGapDown})\nBy Size: Small ${s.bySize.small.rate.toFixed(0)}%, Medium ${s.bySize.medium.rate.toFixed(0)}%, Large ${s.bySize.large.rate.toFixed(0)}%`
       };
     }
+    if (activeMode === "nygap" && nyGapResult) {
+      const s = nyGapResult.stats;
+      return {
+        mode: "nygap",
+        symbol,
+        summary: `Symbol: ${symbol}\nTotal days: ${s.totalDays}\nGap Up Days: ${s.gapUpDays} → M15 Bullish ${s.gapUp.bullishPct.toFixed(1)}%, Bearish ${s.gapUp.bearishPct.toFixed(1)}%\nGap Down Days: ${s.gapDownDays} → M15 Bullish ${s.gapDown.bullishPct.toFixed(1)}%, Bearish ${s.gapDown.bearishPct.toFixed(1)}%`
+      };
+    }
     return { mode: null, symbol: "", summary: "" };
-  }, [activeMode, result, momentumResult, occResult, gapFillResult, symbol]);
+  }, [activeMode, result, momentumResult, occResult, gapFillResult, nyGapResult, symbol]);
 
   if (!authLoading && !user) {
     navigate("/auth");
