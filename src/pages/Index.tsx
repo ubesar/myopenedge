@@ -133,7 +133,7 @@ const Index = () => {
     return data;
   };
 
-  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, minGapSize?: number) => {
+  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => {
     setLoading(true);
     setResult(null);
     setMomentumResult(null);
