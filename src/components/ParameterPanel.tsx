@@ -33,11 +33,11 @@ const IB_WINDOWS = [
 ];
 
 const DAY_OPTIONS = [
-  { value: "0", label: "All Days" },
-  { value: "22", label: "1 Month" },
-  { value: "66", label: "3 Months" },
-  { value: "132", label: "6 Months" },
-  { value: "252", label: "12 Months" },
+  { value: "20", label: "1 Month" },
+  { value: "40", label: "2 Months" },
+  { value: "60", label: "3 Months" },
+  { value: "120", label: "6 Months" },
+  { value: "240", label: "12 Months" },
 ];
 
 const WEEKDAYS = [
