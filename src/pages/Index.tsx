@@ -226,7 +226,7 @@ const Index = () => {
     }
   };
 
-  const hasResults = result || momentumResult || occResult || gapFillResult;
+  const hasResults = result || momentumResult || occResult || gapFillResult || nyGapResult;
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background relative">
