@@ -150,8 +150,10 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Try each key with auto-rotation
-  for (let i = 0; i < keys.length; i++) {
+  // Try each key with auto-rotation, starting from key_index for round-robin distribution
+  const startIdx = (key_index !== null && key_index >= 0) ? (key_index % keys.length) : 0;
+  for (let attempt = 0; attempt < keys.length; attempt++) {
+    const i = (startIdx + attempt) % keys.length;
     try {
       let url: string;
       if (endpoint === "quote") {
