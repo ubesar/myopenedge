@@ -68,8 +68,7 @@ function getTimeMinutes(dt: Date): number {
 
 export function analyzeNYGapM15(
   bars: BarData[],
-  maxDays: number = 0,
-  minGapSize: number = 0
+  maxDays: number = 0
 ): NYGapM15Result {
   // Group bars by date
   const byDate = new Map<string, BarData[]>();
