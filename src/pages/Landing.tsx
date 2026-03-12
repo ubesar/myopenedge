@@ -182,7 +182,7 @@ const Landing = () => {
               </div>
 
               {/* Right: Essential Features */}
-              <div className="rounded-xl border bg-card/60 backdrop-blur-md p-6 sm:p-8 border-indigo-600">
+              <div className="rounded-xl border border-primary/20 bg-card/60 backdrop-blur-md p-6 sm:p-8">
                 <h3 className="text-base font-bold mb-5 lowercase">essential features</h3>
                 <ul className="space-y-3">
                   {essentialFeatures.map((f) =>
