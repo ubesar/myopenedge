@@ -8,6 +8,21 @@ interface BarData {
   close: string;
 }
 
+export type GapCategory = "0-0.19%" | "0.2-0.39%" | "0.4-0.69%" | "0.7-0.99%" | "1.0-1.49%" | "≥1.5%";
+
+export const GAP_CATEGORIES: GapCategory[] = [
+  "0-0.19%", "0.2-0.39%", "0.4-0.69%", "0.7-0.99%", "1.0-1.49%", "≥1.5%"
+];
+
+export function classifyGapCategory(absPct: number): GapCategory {
+  if (absPct < 0.2) return "0-0.19%";
+  if (absPct < 0.4) return "0.2-0.39%";
+  if (absPct < 0.7) return "0.4-0.69%";
+  if (absPct < 1.0) return "0.7-0.99%";
+  if (absPct < 1.5) return "1.0-1.49%";
+  return "≥1.5%";
+}
+
 export interface NYGapM15Day {
   date: string;
   dayOfWeek: number;
@@ -17,6 +32,7 @@ export interface NYGapM15Day {
   gapType: "Gap Up" | "Gap Down";
   gapSize: number;
   gapPercent: number;
+  gapCategory: GapCategory;
   m15Direction: "Bullish" | "Bearish";
 }
 
