@@ -68,10 +68,10 @@ const Index = () => {
 
   const DAY_NAMES_SHORT = ["", "Mon", "Tue", "Wed", "Thu", "Fri"];
   const formatDateRange = (days: number) => {
-    if (days === 0) return "all days";
-    if (days <= 22) return "1 month";
-    if (days <= 66) return "3 months";
-    if (days <= 132) return "6 months";
+    if (days <= 20) return "1 month";
+    if (days <= 40) return "2 months";
+    if (days <= 60) return "3 months";
+    if (days <= 120) return "6 months";
     return "12 months";
   };
   const formatWeekdays = (wd: number[]) => {
@@ -81,10 +81,66 @@ const Index = () => {
 
   if (!authLoading && !user) return <Navigate to="/auth" replace />;
 
-  const fetchMarketData = async (ticker: string) => {
-    const { data, error } = await supabase.functions.invoke("twelvedata-proxy", { body: { symbol: ticker } });
-    if (error) throw new Error("Failed to fetch market data");
-    return data;
+  const MAX_BATCH_DAYS = 60; // ~3 months of 5min bars per request (approx 4680 bars)
+  const BATCH_OUTPUTSIZE = 5000;
+  const BATCH_DELAY_MS = 8000;
+
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  const fetchMarketData = async (ticker: string, totalDays: number) => {
+    if (totalDays <= MAX_BATCH_DAYS) {
+      // Single request
+      const { data, error } = await supabase.functions.invoke("twelvedata-proxy", {
+        body: { symbol: ticker, outputsize: String(BATCH_OUTPUTSIZE) },
+      });
+      if (error) throw new Error("Failed to fetch market data");
+      return data;
+    }
+
+    // Pagination: multiple batches
+    let allValues: any[] = [];
+    let endDate: string | null = null;
+    let remaining = totalDays;
+    let batchIndex = 0;
+
+    while (remaining > 0) {
+      const body: Record<string, string> = {
+        symbol: ticker,
+        outputsize: String(BATCH_OUTPUTSIZE),
+      };
+      if (endDate) body.end_date = endDate;
+
+      const { data, error } = await supabase.functions.invoke("twelvedata-proxy", { body });
+      if (error) throw new Error("Failed to fetch market data (batch " + (batchIndex + 1) + ")");
+      if (data?.status === "error") throw new Error(data.message || "API error on batch " + (batchIndex + 1));
+
+      const values = data?.values;
+      if (!values || !Array.isArray(values) || values.length === 0) break;
+
+      allValues = allValues.concat(values);
+
+      // Get oldest datetime for next batch's end_date
+      const oldestBar = values[values.length - 1];
+      endDate = oldestBar.datetime;
+
+      remaining -= MAX_BATCH_DAYS;
+      batchIndex++;
+
+      // Rate limit delay between batches
+      if (remaining > 0) {
+        await sleep(BATCH_DELAY_MS);
+      }
+    }
+
+    // Deduplicate by datetime and return in the same format
+    const seen = new Set<string>();
+    const deduped = allValues.filter((v) => {
+      if (seen.has(v.datetime)) return false;
+      seen.add(v.datetime);
+      return true;
+    });
+
+    return { values: deduped };
   };
 
   const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50", weekdays: number[] = [1,2,3,4,5]) => {
