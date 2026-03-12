@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export type AnalysisMode = "ib" | "momentum" | "occ" | "gapfill" | "nygap";
 
 interface ControlPanelProps {
-  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, minGapSize?: number) => void;
+  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => void;
   loading: boolean;
   isFree?: boolean;
 }
