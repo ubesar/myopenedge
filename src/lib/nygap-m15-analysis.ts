@@ -133,6 +133,7 @@ export function analyzeNYGapM15(
     if (Math.abs(gapPercent) < 0.001) continue; // Skip no-gap days
 
     const gapType: "Gap Up" | "Gap Down" = nyOpen > prevClose ? "Gap Up" : "Gap Down";
+    const gapCategory = classifyGapCategory(Math.abs(gapPercent));
     const m15Direction: "Bullish" | "Bearish" = m15Close > nyOpen ? "Bullish" : "Bearish";
 
     const dt = parseDateTime(firstBar.datetime);
