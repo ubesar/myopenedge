@@ -43,7 +43,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!symbol.trim()) return;
-    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode);
+    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, minGapSize ? parseFloat(minGapSize) : undefined);
   };
 
   return (
