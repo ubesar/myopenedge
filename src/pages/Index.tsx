@@ -83,30 +83,30 @@ const Index = () => {
 
   const MAX_BATCH_DAYS = 60; // ~3 months of 5min bars per request (approx 4680 bars)
   const BATCH_OUTPUTSIZE = 5000;
-  const BATCH_DELAY_MS = 8000;
+  const BATCH_DELAY_MS = 3000; // reduced delay since requests are distributed across API keys
 
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   const fetchMarketData = async (ticker: string, totalDays: number) => {
     if (totalDays <= MAX_BATCH_DAYS) {
-      // Single request
       const { data, error } = await supabase.functions.invoke("twelvedata-proxy", {
-        body: { symbol: ticker, outputsize: String(BATCH_OUTPUTSIZE) },
+        body: { symbol: ticker, outputsize: String(BATCH_OUTPUTSIZE), key_index: 0 },
       });
       if (error) throw new Error("Failed to fetch market data");
       return data;
     }
 
-    // Pagination: multiple batches
+    // Pagination: multiple batches, distributed across API keys via key_index
     let allValues: any[] = [];
     let endDate: string | null = null;
     let remaining = totalDays;
     let batchIndex = 0;
 
     while (remaining > 0) {
-      const body: Record<string, string> = {
+      const body: Record<string, any> = {
         symbol: ticker,
         outputsize: String(BATCH_OUTPUTSIZE),
+        key_index: batchIndex, // round-robin across API keys
       };
       if (endDate) body.end_date = endDate;
 
@@ -119,20 +119,18 @@ const Index = () => {
 
       allValues = allValues.concat(values);
 
-      // Get oldest datetime for next batch's end_date
       const oldestBar = values[values.length - 1];
       endDate = oldestBar.datetime;
 
       remaining -= MAX_BATCH_DAYS;
       batchIndex++;
 
-      // Rate limit delay between batches
+      // Shorter delay since each batch uses a different API key
       if (remaining > 0) {
         await sleep(BATCH_DELAY_MS);
       }
     }
 
-    // Deduplicate by datetime and return in the same format
     const seen = new Set<string>();
     const deduped = allValues.filter((v) => {
       if (seen.has(v.datetime)) return false;
