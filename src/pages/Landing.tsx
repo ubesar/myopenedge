@@ -133,9 +133,9 @@ const Landing = () => {
 
             {/* Heading */}
             <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible" className="text-center mb-8 sm:mb-12">
-              <p className="text-xs sm:text-sm font-semibold tracking-[0.2em] text-primary uppercase mb-3">less than the profits of one trade</p>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-3">where consistent trading begins</h1>
-              <p className="text-sm sm:text-base text-muted-foreground">only if you're serious about trading</p>
+              <p className="text-xs sm:text-sm font-semibold tracking-[0.2em] text-primary uppercase mb-3">LESS EMOTION, MORE STATISTICS</p>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-3">trade based on true probabilities</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">only if you rely on data, not luck</p>
             </motion.div>
 
             {/* Billing Toggle */}
