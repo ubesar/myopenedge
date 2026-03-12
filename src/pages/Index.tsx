@@ -160,7 +160,7 @@ const Index = () => {
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
     try {
-      const json = await fetchMarketData(ticker);
+      const json = await fetchMarketData(ticker, effectiveMaxDays);
       if (json.status === "error") { toast.error(json.message || "API error"); return; }
       const parsed = TwelveDataResponseSchema.safeParse(json);
       if (!parsed.success) { toast.error("Invalid or empty data returned."); return; }
