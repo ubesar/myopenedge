@@ -1,7 +1,28 @@
-project_id = "wzyjfwvhvuqstnmuhnpk"
+project_id = "pyffawxowidfqyhxjlvb"
 
-[functions.auto-analyze]
+[functions.paddle-webhook]
 verify_jwt = false
 
-[functions.midtrans-notification]
+[functions.create-invoice]
+verify_jwt = false
+
+[functions.nowpayments-ipn]
+verify_jwt = false
+
+[functions.expire-subscriptions]
+verify_jwt = false
+
+[functions.get-command]
+verify_jwt = false
+
+[functions.reset-command]
+verify_jwt = false
+
+[functions.chat]
+verify_jwt = false
+
+[functions.midtrans-create-transaction]
+verify_jwt = false
+
+[functions.midtrans-webhook]
 verify_jwt = false
