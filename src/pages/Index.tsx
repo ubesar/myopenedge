@@ -49,6 +49,7 @@ const Index = () => {
   const [momentumResult, setMomentumResult] = useState<MomentumResult | null>(null);
   const [occResult, setOccResult] = useState<OCCResult | null>(null);
   const [gapFillResult, setGapFillResult] = useState<GapFillResult | null>(null);
+  const [nyGapResult, setNyGapResult] = useState<NYGapM15Result | null>(null);
   const [symbol, setSymbol] = useState("");
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
