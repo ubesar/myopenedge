@@ -102,7 +102,22 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
         {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for more days</p>}
       </div>
 
-      {mode !== "occ" && mode !== "gapfill" && (
+      {mode === "nygap" && (
+        <div className="space-y-2">
+          <Label className="text-sm text-muted-foreground">Min. Gap Size (points)</Label>
+          <Input
+            placeholder="0 (no filter)"
+            value={minGapSize}
+            onChange={(e) => setMinGapSize(e.target.value)}
+            type="number"
+            step="0.01"
+            min="0"
+            className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
+          />
+        </div>
+      )}
+
+      {mode !== "occ" && mode !== "gapfill" && mode !== "nygap" && (
         <div className="space-y-2">
           <Label className="text-sm text-muted-foreground">IB Window</Label>
           <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => !isFree && setIbWindow(v)} disabled={isFree}>
