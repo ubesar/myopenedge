@@ -207,6 +207,17 @@ const Index = () => {
           totalDays: analysis.totalDays,
           stats: analysis.stats,
         });
+      } else if (mode === "nygap") {
+        const analysis = analyzeNYGapM15(values as any, maxDays, minGapSize);
+        if (analysis.allDays.length === 0) {
+          toast.error("Not enough gap days in the data to analyze.");
+          return;
+        }
+        setNyGapResult(analysis);
+        addRun(mode, ticker, {
+          totalDays: analysis.stats.totalDays,
+          stats: analysis.stats,
+        });
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch data");
