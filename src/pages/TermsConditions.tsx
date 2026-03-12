@@ -136,7 +136,7 @@ export default function TermsConditions() {
               <h2 className="text-xl font-bold">2. Eligibility for Refund</h2>
               <p className="text-muted-foreground leading-relaxed">Refunds may be considered under the following circumstances:</p>
               <ul className="list-disc list-inside text-muted-foreground space-y-2 leading-relaxed">
-                <li>Duplicate or accidental payment (verified by Paddle).</li>
+                <li>Duplicate or accidental payment </li>
                 <li>Service was completely unavailable for a significant portion of the subscription period due to our fault.</li>
                 <li>Payment was confirmed but access was never granted due to a technical error on our end.</li>
               </ul>
@@ -162,7 +162,7 @@ export default function TermsConditions() {
             <section className="space-y-3">
               <h2 className="text-xl font-bold">5. How to Request a Refund</h2>
               <p className="text-muted-foreground leading-relaxed">
-                To request a refund, contact us at <span className="text-primary font-medium">support@myopenedge.com</span> within 7 days of payment with your order ID and account email. Refund requests are reviewed within 5 business days.
+                To request a refund, contact us at <span className="text-primary font-medium">https://x.com/Ubetrades </span> within 7 days of payment with your order ID and account email. Refund requests are reviewed within 5 business days.
               </p>
             </section>
           </TabsContent>
@@ -201,7 +201,7 @@ export default function TermsConditions() {
               <h2 className="text-xl font-bold">4. Third-Party Services</h2>
               <p className="text-muted-foreground leading-relaxed">We use the following third-party services:</p>
               <ul className="list-disc list-inside text-muted-foreground space-y-2 leading-relaxed">
-                <li><strong>Paddle:</strong> For payment processing as our merchant of record.</li>
+                <li><strong>Paddle:</strong>Midtrans:</li>
                 <li><strong>TwelveData:</strong> For market data used in analysis (data is fetched server-side).</li>
               </ul>
               <p className="text-muted-foreground leading-relaxed">
@@ -245,6 +245,6 @@ export default function TermsConditions() {
           </p>
         </div>
       </main>
-    </div>
-  );
+    </div>);
+
 }
