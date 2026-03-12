@@ -132,12 +132,13 @@ const Index = () => {
     return data;
   };
 
-  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => {
+  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, minGapSize?: number) => {
     setLoading(true);
     setResult(null);
     setMomentumResult(null);
     setOccResult(null);
     setGapFillResult(null);
+    setNyGapResult(null);
     setSymbol(ticker);
     setActiveMode(mode);
 
