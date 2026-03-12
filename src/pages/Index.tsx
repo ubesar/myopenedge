@@ -25,6 +25,7 @@ import { analyzeGapFill, type GapFillResult } from "@/lib/gapfill-analysis";
 import { analyzeNYGapM15, type NYGapM15Result } from "@/lib/nygap-m15-analysis";
 import GapFillDashboard from "@/components/GapFillDashboard";
 import NYGapM15Dashboard from "@/components/NYGapM15Dashboard";
+import { useSubscription } from "@/hooks/useSubscription";
 
 import { z } from "zod";
 
