@@ -25,52 +25,52 @@ const staggerItem = {
 };
 
 const essentialFeatures = [
-  "Works on futures, stocks, forex, and crypto",
-  "6 data-driven reports & analysis modes",
-  "IB Breakout, Momentum, OCC, Gap Fill, Inside Bar, Outside Day",
-  "Up to 12 months historical data",
-  "Weekday filtering for custom analysis",
-  "AI-powered chart analysis assistant",
-  "Real-time TwelveData market data",
-  "Custom analysis templates",
-  "Bookmarks & watchlists",
-  "EA remote control panel",
-  "24/7 support via community",
-];
+"Works on futures, stocks, forex, and crypto",
+"6 data-driven reports & analysis modes",
+"IB Breakout, Momentum, OCC, Gap Fill, Inside Bar, Outside Day",
+"Up to 12 months historical data",
+"Weekday filtering for custom analysis",
+"AI-powered chart analysis assistant",
+"Real-time TwelveData market data",
+"Custom analysis templates",
+"Bookmarks & watchlists",
+"EA remote control panel",
+"24/7 support via community"];
+
 
 const featureBreakdown = [
-  {
-    category: "data & analytics",
-    items: [
-      { name: "Stocks, futures, forex, crypto", included: true },
-      { name: "6 analysis report types", included: true },
-      { name: "Initial Balance (IB) breakout analysis", included: true },
-      { name: "Momentum candle detection", included: true },
-      { name: "Opening Candle Continuation (OCC)", included: true },
-      { name: "Gap fill, Inside Bar, Outside Day", included: true },
-      { name: "Up to 12 months historical data", included: true },
-      { name: "Custom lookback & weekday filters", included: true },
-    ],
-  },
-  {
-    category: "tools & integrations",
-    items: [
-      { name: "AI chart analysis assistant", included: true },
-      { name: "Custom analysis templates", included: true },
-      { name: "Real-time TwelveData API", included: true },
-      { name: "TradingView chart integration", included: true },
-      { name: "EA remote control panel", included: true },
-      { name: "Watchlist manager", included: true },
-    ],
-  },
-  {
-    category: "algo trading",
-    items: [
-      { name: "Expert Advisor (EA) download", included: true, upgrade: true },
-      { name: "Remote EA command & control", included: true },
-    ],
-  },
-];
+{
+  category: "data & analytics",
+  items: [
+  { name: "Stocks, futures, forex, crypto", included: true },
+  { name: "6 analysis report types", included: true },
+  { name: "Initial Balance (IB) breakout analysis", included: true },
+  { name: "Momentum candle detection", included: true },
+  { name: "Opening Candle Continuation (OCC)", included: true },
+  { name: "Gap fill, Inside Bar, Outside Day", included: true },
+  { name: "Up to 12 months historical data", included: true },
+  { name: "Custom lookback & weekday filters", included: true }]
+
+},
+{
+  category: "tools & integrations",
+  items: [
+  { name: "AI chart analysis assistant", included: true },
+  { name: "Custom analysis templates", included: true },
+  { name: "Real-time TwelveData API", included: true },
+  { name: "TradingView chart integration", included: true },
+  { name: "EA remote control panel", included: true },
+  { name: "Watchlist manager", included: true }]
+
+},
+{
+  category: "algo trading",
+  items: [
+  { name: "Expert Advisor (EA) download", included: true, upgrade: true },
+  { name: "Remote EA command & control", included: true }]
+
+}];
+
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -116,7 +116,7 @@ const Landing = () => {
             </div>
             <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
               <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-              <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
+              
             </div>
             <Button
               onClick={() => navigate("/auth")}
@@ -143,25 +143,25 @@ const Landing = () => {
               <div className="inline-flex rounded-full border border-border/50 p-1 bg-muted/30 backdrop-blur-sm">
                 <button
                   onClick={() => setBilling("monthly")}
-                  className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${billing === "monthly" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
-                >
+                  className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${billing === "monthly" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}>
+                  
                   monthly
                 </button>
                 <button
                   onClick={() => setBilling("yearly")}
-                  className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${billing === "yearly" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}
-                >
+                  className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${billing === "yearly" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}>
+                  
                   yearly
                 </button>
               </div>
-              {billing === "yearly" && (
-                <span className="text-xs bg-primary/20 text-primary px-3 py-1 rounded-full font-medium">save 20% yearly</span>
-              )}
+              {billing === "yearly" &&
+              <span className="text-xs bg-primary/20 text-primary px-3 py-1 rounded-full font-medium">save 20% yearly</span>
+              }
             </motion.div>
 
             {/* Price + Features Grid */}
             <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible"
-              className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
 
               {/* Left: Price */}
               <div className="text-center lg:text-left">
@@ -185,12 +185,12 @@ const Landing = () => {
               <div className="rounded-xl border border-primary/20 bg-card/60 backdrop-blur-md p-6 sm:p-8">
                 <h3 className="text-base font-bold mb-5 lowercase">essential features</h3>
                 <ul className="space-y-3">
-                  {essentialFeatures.map((f) => (
-                    <li key={f} className="flex items-start gap-3 text-sm">
+                  {essentialFeatures.map((f) =>
+                  <li key={f} className="flex items-start gap-3 text-sm">
                       <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                       <span className="text-muted-foreground">{f}</span>
                     </li>
-                  ))}
+                  )}
                 </ul>
                 <div className="mt-5 pt-4 border-t border-border/30 flex items-center gap-2 text-xs text-muted-foreground">
                   <Lock className="h-3.5 w-3.5" />
@@ -223,33 +223,33 @@ const Landing = () => {
             </Button>
           </motion.div>
 
-          {featureBreakdown.map((group) => (
-            <motion.div
-              key={group.category}
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-60px" }}
-              className="mb-10">
+          {featureBreakdown.map((group) =>
+          <motion.div
+            key={group.category}
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-60px" }}
+            className="mb-10">
               <h3 className="text-base font-bold mb-4 lowercase">{group.category}</h3>
               <div className="divide-y divide-border/20">
-                {group.items.map((item) => (
-                  <motion.div
-                    key={item.name}
-                    variants={staggerItem}
-                    className="flex items-center justify-between py-3.5 text-sm">
+                {group.items.map((item) =>
+              <motion.div
+                key={item.name}
+                variants={staggerItem}
+                className="flex items-center justify-between py-3.5 text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <span>{item.name}</span>
-                      {item.upgrade && (
-                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60 font-medium">upgrade required</span>
-                      )}
+                      {item.upgrade &&
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60 font-medium">upgrade required</span>
+                  }
                     </div>
                     <Check className="h-4 w-4 text-primary shrink-0" />
                   </motion.div>
-                ))}
+              )}
               </div>
             </motion.div>
-          ))}
+          )}
         </div>
       </section>
 
@@ -288,8 +288,8 @@ const Landing = () => {
           <p>© 2026 MyOpenEdge. All rights reserved.</p>
         </div>
       </footer>
-    </div>
-  );
+    </div>);
+
 };
 
 export default Landing;
