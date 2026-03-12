@@ -154,6 +154,9 @@ Deno.serve(async (req) => {
         url = `https://api.twelvedata.com/quote?symbol=${encodeURIComponent(symbol)}&apikey=${encodeURIComponent(keys[i])}&format=JSON`;
       } else {
         url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&outputsize=${encodeURIComponent(outputsize)}&apikey=${encodeURIComponent(keys[i])}&format=JSON&timezone=America/New_York`;
+        if (end_date) {
+          url += `&end_date=${encodeURIComponent(end_date)}`;
+        }
       }
       const res = await fetch(url);
       const json = await res.json();
