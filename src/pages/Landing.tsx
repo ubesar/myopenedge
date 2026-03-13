@@ -1,28 +1,41 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, Lock, Info, CheckCircle2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { Check, Lock, BarChart3, Activity, Target, Zap, Shield, TrendingUp, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.1, duration: 0.5, ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number] }
-  })
-};
-
-const staggerContainer = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.06 } }
-};
-
-const staggerItem = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number] } }
-};
+const appFeatures = [
+  {
+    icon: BarChart3,
+    title: "Initial Balance Analysis",
+    desc: "Automatically identify IB High/Low formation and breakout probability from historical data.",
+  },
+  {
+    icon: Activity,
+    title: "Momentum Candle Detection",
+    desc: "Detect momentum signals from consecutive M15 candles with strong body ratios.",
+  },
+  {
+    icon: Target,
+    title: "Breakout Probability",
+    desc: "View breakout statistics based on IB High First vs Low First for your trading edge.",
+  },
+  {
+    icon: Zap,
+    title: "Real-Time 5min Data",
+    desc: "Powered by TwelveData API with 5000 bars of intraday data for deep analysis.",
+  },
+  {
+    icon: Shield,
+    title: "M15 Aggregation",
+    desc: "Automatic aggregation to M15 timeframe for accurate breakout and momentum detection.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Smart Recommendations",
+    desc: "Daily setup recommendations based on IB and momentum statistical probabilities.",
+  },
+];
 
 const essentialFeatures = [
   "works on futures (nq, gc) and idx",
@@ -35,238 +48,248 @@ const essentialFeatures = [
   "discord community of dedicated traders",
 ];
 
-const featureBreakdown = [
-  {
-    category: "data & analytics",
-    items: [
-      { name: "stocks, futures, forex, crypto", included: true },
-      { name: "6 analysis report types", included: true },
-      { name: "initial balance (IB) breakout analysis", included: true },
-      { name: "momentum candle detection", included: true },
-      { name: "opening candle continuation (OCC)", included: true },
-      { name: "gap fill, inside bar, outside day", included: true },
-      { name: "up to 12 months historical data", included: true },
-      { name: "custom lookback & weekday filters", included: true },
-    ]
-  },
-  {
-    category: "tools & integrations",
-    items: [
-      { name: "AI chart analysis assistant", included: true },
-      { name: "custom analysis templates", included: true },
-      { name: "real-time TwelveData API", included: true },
-      { name: "TradingView chart integration", included: true },
-      { name: "EA remote control panel", included: true },
-      { name: "watchlist manager", included: true },
-    ]
-  },
-  {
-    category: "algo trading",
-    items: [
-      { name: "expert advisor (EA) download", included: true, upgrade: true },
-      { name: "remote EA command & control", included: true },
-    ]
-  }
-];
-
 const Landing = () => {
   const navigate = useNavigate();
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
 
-  const price = billing === "monthly" ? "49" : "490";
-  const period = billing === "monthly" ? "per bulan" : "per tahun";
-
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+    <div className="min-h-screen bg-[#0A0D14] text-white overflow-x-hidden font-sans">
 
-      {/* ─── Navbar ─── */}
-      <motion.nav
-        initial={{ opacity: 0, y: -16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full border-b border-border/30">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="MyOpenEdge" className="h-8 w-8 rounded-full object-cover" />
-            <span className="text-xl font-bold tracking-tight">MyOpenEdge</span>
+      {/* ─── Hero Section ─── */}
+      <section className="relative min-h-screen flex flex-col">
+        {/* Gradient overlay instead of video */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0A0D14] via-[#0d1120] to-[#0A0D14]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(0,102,255,0.08),transparent)]" />
+
+        {/* Navbar */}
+        <nav className="relative z-10 w-full border-b border-gray-800/40">
+          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img src={logo} alt="MyOpenEdge" className="h-8 w-8 rounded-full object-cover" />
+              <span className="text-xl font-bold tracking-tight">MyOpenEdge</span>
+            </div>
+            <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
+              <a href="#pricing" className="hover:text-white transition-colors">pricing</a>
+              <a href="#features" className="hover:text-white transition-colors">features</a>
+            </div>
+            <Button
+              onClick={() => navigate("/auth")}
+              className="bg-[#0066FF] hover:bg-[#0052CC] text-white border-none"
+            >
+              launch app
+            </Button>
           </div>
-          <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
-            <a href="#features" className="hover:text-foreground transition-colors">features</a>
-            <a href="#pricing" className="hover:text-foreground transition-colors">pricing</a>
-          </div>
-          <Button
-            onClick={() => navigate("/auth")}
-            variant="outline"
-            className="border-primary/50 text-primary hover:bg-primary/10">
-            launch app
-          </Button>
-        </div>
-      </motion.nav>
+        </nav>
 
-      {/* ─── Hero / Pricing Section ─── */}
-      <section className="py-16 sm:py-24 px-4 sm:px-6">
-        <div className="max-w-5xl mx-auto">
-
-          {/* Header */}
-          <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible" className="text-center mb-8 sm:mb-10">
-            <p className="text-xs sm:text-sm font-bold tracking-[0.2em] text-primary uppercase mb-4">
-              LEBIH MURAH DARI SATU KALI CUT LOSS
-            </p>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-3">
-              where consistent trading begins
+        {/* Hero Content */}
+        <div className="relative z-10 flex-1 flex items-center justify-center px-6">
+          <div className="text-center max-w-4xl mx-auto space-y-8">
+            <h1 className="text-5xl md:text-7xl font-bold leading-tight tracking-tight lowercase">
+              decode the market
+              <br />
+              with{" "}
+              <span className="text-[#0066FF]">IB & momentum data</span>
             </h1>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              only if you're serious about trading
+            <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto">
+              spot Initial Balance breakouts & momentum candles instantly.
+              turn raw 5-min data into actionable trading setups.
             </p>
-          </motion.div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+              <Button
+                size="lg"
+                onClick={() => {
+                  document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="text-base px-8 py-6 rounded-full bg-[#0066FF] hover:bg-[#0052CC] text-white"
+              >
+                mulai berlangganan
+                <ChevronRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Preview */}
+        <div className="relative z-10 max-w-5xl mx-auto px-6 pb-20 -mt-8">
+          <div className="rounded-xl border border-gray-800/50 bg-[#111827]/80 backdrop-blur-md p-6 shadow-2xl">
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { label: "IB Breakout Rate", value: "73%", color: "text-emerald-400" },
+                { label: "Momentum Accuracy", value: "68%", color: "text-[#0066FF]" },
+                { label: "Trading Days Analyzed", value: "100+", color: "text-amber-400" },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-lg border border-gray-800/40 bg-[#0A0D14]/50 p-4 text-center"
+                >
+                  <p className="text-xs text-gray-400 mb-1">{stat.label}</p>
+                  <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Pricing Section ─── */}
+      <section id="pricing" className="py-24 px-6 border-t border-gray-800/30">
+        <div className="text-center mb-4">
+          <p className="text-[#0066FF] text-sm font-bold uppercase tracking-wide mb-3">
+            LEBIH MURAH DARI SATU KALI CUT LOSS
+          </p>
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white lowercase mb-3">
+            where consistent trading begins
+          </h2>
+          <p className="text-gray-400 text-lg lowercase">
+            only if you're serious about trading
+          </p>
 
           {/* Billing Toggle */}
-          <motion.div custom={1} variants={fadeUp} initial="hidden" animate="visible" className="flex flex-col items-center gap-2 mb-12 sm:mb-16">
-            <div className="inline-flex rounded-full border border-border/50 p-1 bg-muted/30">
+          <div className="mt-8 flex flex-col items-center gap-2">
+            <div className="flex items-center bg-[#111827] rounded-full p-1 border border-gray-800">
               <button
                 onClick={() => setBilling("monthly")}
-                className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${billing === "monthly" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}>
+                className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
+                  billing === "monthly"
+                    ? "bg-[#0066FF] text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
                 monthly
               </button>
               <button
                 onClick={() => setBilling("yearly")}
-                className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${billing === "yearly" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}>
+                className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
+                  billing === "yearly"
+                    ? "bg-[#0066FF] text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
                 yearly
               </button>
             </div>
-            {billing === "yearly" && (
-              <span className="text-xs bg-primary/20 text-primary px-3 py-1 rounded-full font-medium">save 20% yearly</span>
+            {billing === "yearly" ? (
+              <span className="bg-[#0066FF] text-white text-xs font-medium px-3 py-1 rounded-full lowercase">
+                save 20% yearly
+              </span>
+            ) : (
+              <span className="bg-[#0066FF]/20 text-[#0066FF] text-xs font-medium px-3 py-1 rounded-full lowercase">
+                save 20% yearly
+              </span>
             )}
-          </motion.div>
+          </div>
+        </div>
 
-          {/* Price + Features Grid */}
-          <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible"
-            className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-
-            {/* Left: Price */}
-            <div className="flex flex-col items-center lg:items-start">
-              <div className="relative">
-                <span className="text-muted-foreground text-xl sm:text-2xl font-light absolute -left-8 sm:-left-10 top-6 sm:top-8">Rp</span>
-                <span className="text-8xl sm:text-9xl md:text-[140px] font-extrabold leading-none tracking-tighter bg-gradient-to-b from-foreground via-foreground/80 to-muted-foreground/40 bg-clip-text text-transparent">
-                  {price}
+        {/* Pricing Grid */}
+        <div className="max-w-5xl mx-auto mt-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            {/* Left - Price */}
+            <div className="flex flex-col items-center justify-center lg:pt-12">
+              <div className="flex items-start justify-center mb-2">
+                <span className="text-gray-400 text-2xl font-medium mt-4 mr-1">Rp</span>
+                <span className="text-white text-8xl md:text-9xl font-bold tracking-tighter">
+                  {billing === "monthly" ? "49" : "490"}
                 </span>
-                <span className="text-muted-foreground text-xl sm:text-2xl font-light">rb</span>
+                <span className="text-white text-3xl md:text-4xl font-bold mt-6 ml-1">rb</span>
               </div>
-              <p className="text-sm text-muted-foreground mt-2">{period}</p>
+              <p className="text-gray-400 text-sm mb-8 lowercase">
+                {billing === "monthly" ? "per bulan" : "per tahun"}
+              </p>
+
               <Button
-                size="lg"
+                className="w-full max-w-xs bg-[#0066FF] hover:bg-[#0052CC] text-white font-bold py-4 h-auto rounded-md lowercase transition-colors"
                 onClick={() => navigate("/upgrade")}
-                className="mt-8 text-base px-10 py-6 rounded-md w-full max-w-xs font-bold">
+              >
                 mulai berlangganan
               </Button>
             </div>
 
-            {/* Right: Feature Card */}
-            <div className="rounded-xl border border-primary/30 bg-card p-6 sm:p-8">
-              <h3 className="text-base font-bold mb-4">fitur esensial</h3>
-              <div className="border-t border-border/30 pt-4">
-                <ul className="space-y-3">
-                  {essentialFeatures.map((f) => (
-                    <li key={f} className="flex items-start gap-3 text-sm">
-                      <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                      <span className="text-muted-foreground">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="mt-5 pt-4 border-t border-border/30 flex items-center gap-2 text-xs text-muted-foreground/60">
-                <Lock className="h-3.5 w-3.5" />
-                <span>ninja script & copy trading not included | upgrade in app</span>
-                <Info className="h-3.5 w-3.5 ml-1" />
+            {/* Right - Features */}
+            <div className="bg-[#111827] border border-[#0066FF]/50 rounded-xl p-6">
+              <h3 className="text-white font-bold text-lg mb-3 lowercase">fitur esensial</h3>
+              <div className="h-px bg-[#0066FF]/30 mb-4" />
+
+              <ul className="space-y-3">
+                {essentialFeatures.map((feature) => (
+                  <li key={feature} className="flex items-start gap-3 text-sm">
+                    <span className="flex-shrink-0 w-4 h-4 rounded-full bg-[#0066FF]/20 flex items-center justify-center mt-0.5">
+                      <Check className="w-2.5 h-2.5 text-[#0066FF]" strokeWidth={3} />
+                    </span>
+                    <span className="text-gray-300 lowercase">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-6 pt-4 border-t border-gray-800">
+                <div className="flex items-center gap-2 text-gray-500 text-xs">
+                  <Lock className="w-3 h-3" />
+                  <span className="lowercase">
+                    ninja script & copy trading not included | upgrade in app
+                  </span>
+                </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* ─── Feature Breakdown Section ─── */}
-      <section id="features" className="py-16 sm:py-24 px-4 sm:px-6 border-t border-border/20">
-        <div className="max-w-3xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-8 sm:mb-12">
-            <p className="text-xs sm:text-sm font-bold tracking-[0.2em] text-primary uppercase mb-3">
-              IF YOU ARE HAVING SECOND THOUGHTS
+      {/* ─── Features Section ─── */}
+      <section id="features" className="py-24 px-6 border-t border-gray-800/30">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16 space-y-4">
+            <h2 className="text-3xl md:text-4xl font-bold lowercase">
+              everything you need for{" "}
+              <span className="text-[#0066FF]">IB & momentum analysis</span>
+            </h2>
+            <p className="text-gray-400 max-w-xl mx-auto">
+              Professional tools to decode Initial Balance breakouts and momentum candle patterns.
             </p>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">feature breakdown</h2>
-            <p className="text-sm text-muted-foreground mb-6">trust us, we didn't miss a spot</p>
-            <Button
-              size="lg"
-              onClick={() => navigate("/upgrade")}
-              className="text-base px-10 py-6 rounded-md font-bold">
-              get started now
-            </Button>
-          </motion.div>
+          </div>
 
-          {featureBreakdown.map((group) => (
-            <motion.div
-              key={group.category}
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-60px" }}
-              className="mb-10">
-              <h3 className="text-base font-bold mb-4">{group.category}</h3>
-              <div className="divide-y divide-border/20">
-                {group.items.map((item) => (
-                  <motion.div
-                    key={item.name}
-                    variants={staggerItem}
-                    className="flex items-center justify-between py-3.5 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <span>{item.name}</span>
-                      <Info className="h-3.5 w-3.5 text-muted-foreground/40" />
-                      {item.upgrade && (
-                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60 font-medium">upgrade required</span>
-                      )}
-                    </div>
-                    <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                  </motion.div>
-                ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {appFeatures.map((f) => (
+              <div
+                key={f.title}
+                className="group rounded-xl border border-gray-800/50 bg-[#111827]/50 p-6 hover:border-[#0066FF]/30 hover:bg-[#111827]/80 transition-all duration-300"
+              >
+                <div className="h-10 w-10 rounded-lg bg-[#0066FF]/10 flex items-center justify-center mb-4 group-hover:bg-[#0066FF]/20 transition-colors">
+                  <f.icon className="h-5 w-5 text-[#0066FF]" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2 text-white">{f.title}</h3>
+                <p className="text-sm text-gray-400 leading-relaxed">{f.desc}</p>
               </div>
-            </motion.div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ─── CTA ─── */}
-      <section id="pricing" className="py-16 sm:py-24 px-4 sm:px-6 border-t border-border/20">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.5 }}
-          className="max-w-3xl mx-auto text-center space-y-6">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">
-            ready to decode your <span className="text-primary">edge</span>?
+      <section className="py-24 px-6 border-t border-gray-800/30">
+        <div className="max-w-3xl mx-auto text-center space-y-6">
+          <h2 className="text-3xl md:text-4xl font-bold lowercase">
+            ready to decode your <span className="text-[#0066FF]">edge</span>?
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-gray-400">
             mulai dari Rp 49.000/bulan. analisis IB, momentum, OCC & lainnya dengan data real-time.
           </p>
           <Button
             size="lg"
             onClick={() => navigate("/upgrade")}
-            className="text-base px-10 py-6 rounded-md font-bold">
-            mulai berlangganan
+            className="text-base px-8 py-6 rounded-full bg-[#0066FF] hover:bg-[#0052CC] text-white"
+          >
+            launch MyOpenEdge
+            <ChevronRight className="ml-2 h-5 w-5" />
           </Button>
-        </motion.div>
+        </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border/20 px-4 sm:px-6 py-6 sm:py-8">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+      <footer className="border-t border-gray-800/30 px-6 py-8">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500">
           <div className="flex items-center gap-2">
             <img src={logo} alt="MyOpenEdge" className="h-5 w-5 rounded-full object-cover" />
-            <span className="font-semibold text-foreground">MyOpenEdge</span>
-            <span>· market analysis platform</span>
+            <span className="font-semibold text-white">MyOpenEdge</span>
+            <span>· Auction Market Theory</span>
           </div>
           <p>© 2026 MyOpenEdge. All rights reserved.</p>
         </div>

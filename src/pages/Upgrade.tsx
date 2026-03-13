@@ -53,10 +53,6 @@ const Upgrade = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <video autoPlay loop muted playsInline className="fixed inset-0 w-full h-full object-cover opacity-20 z-0">
-        <source src="/videos/hero-bg.mp4" type="video/mp4" />
-      </video>
-      <div className="fixed inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background z-0" />
 
       <div className="relative z-10">
         <nav className="w-full border-b border-border/40 backdrop-blur-sm">
