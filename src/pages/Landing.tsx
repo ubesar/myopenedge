@@ -1,7 +1,7 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, ChevronRight, Lock, Info } from "lucide-react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { Check, Lock, Info, CheckCircle2 } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
 
@@ -25,181 +25,162 @@ const staggerItem = {
 };
 
 const essentialFeatures = [
-"Works on futures, stocks, forex, and crypto",
-"6 data-driven reports & analysis modes",
-"IB Breakout, Momentum, OCC, Gap Fill, Inside Bar, Outside Day",
-"Up to 12 months historical data",
-"Weekday filtering for custom analysis",
-"AI-powered chart analysis assistant",
-"Real-time TwelveData market data",
-"Custom analysis templates",
-"Bookmarks & watchlists",
-"EA remote control panel",
-"24/7 support via community"];
-
+  "works on futures (nq, gc) and idx",
+  "real-time market probabilities & statistics",
+  "order flow analysis tools",
+  "myopenedge proprietary screeners",
+  "advanced trading journal",
+  "ninjatrader premium indicators",
+  "bookmarks, watchlists, custom sessions",
+  "discord community of dedicated traders",
+];
 
 const featureBreakdown = [
-{
-  category: "data & analytics",
-  items: [
-  { name: "Stocks, futures, forex, crypto", included: true },
-  { name: "6 analysis report types", included: true },
-  { name: "Initial Balance (IB) breakout analysis", included: true },
-  { name: "Momentum candle detection", included: true },
-  { name: "Opening Candle Continuation (OCC)", included: true },
-  { name: "Gap fill, Inside Bar, Outside Day", included: true },
-  { name: "Up to 12 months historical data", included: true },
-  { name: "Custom lookback & weekday filters", included: true }]
-
-},
-{
-  category: "tools & integrations",
-  items: [
-  { name: "AI chart analysis assistant", included: true },
-  { name: "Custom analysis templates", included: true },
-  { name: "Real-time TwelveData API", included: true },
-  { name: "TradingView chart integration", included: true },
-  { name: "EA remote control panel", included: true },
-  { name: "Watchlist manager", included: true }]
-
-},
-{
-  category: "algo trading",
-  items: [
-  { name: "Expert Advisor (EA) download", included: true, upgrade: true },
-  { name: "Remote EA command & control", included: true }]
-
-}];
-
+  {
+    category: "data & analytics",
+    items: [
+      { name: "stocks, futures, forex, crypto", included: true },
+      { name: "6 analysis report types", included: true },
+      { name: "initial balance (IB) breakout analysis", included: true },
+      { name: "momentum candle detection", included: true },
+      { name: "opening candle continuation (OCC)", included: true },
+      { name: "gap fill, inside bar, outside day", included: true },
+      { name: "up to 12 months historical data", included: true },
+      { name: "custom lookback & weekday filters", included: true },
+    ]
+  },
+  {
+    category: "tools & integrations",
+    items: [
+      { name: "AI chart analysis assistant", included: true },
+      { name: "custom analysis templates", included: true },
+      { name: "real-time TwelveData API", included: true },
+      { name: "TradingView chart integration", included: true },
+      { name: "EA remote control panel", included: true },
+      { name: "watchlist manager", included: true },
+    ]
+  },
+  {
+    category: "algo trading",
+    items: [
+      { name: "expert advisor (EA) download", included: true, upgrade: true },
+      { name: "remote EA command & control", included: true },
+    ]
+  }
+];
 
 const Landing = () => {
   const navigate = useNavigate();
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
 
-  const heroRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"]
-  });
-  const videoY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
-  const videoScale = useTransform(scrollYProgress, [0, 1], [1, 1.15]);
-  const overlayOpacity = useTransform(scrollYProgress, [0, 1], [0.4, 0.85]);
-
-  const price = billing === "monthly" ? "49.000" : "490.000";
+  const price = billing === "monthly" ? "49" : "490";
   const period = billing === "monthly" ? "per bulan" : "per tahun";
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
 
-      {/* ─── Hero / Pricing Section ─── */}
-      <section ref={heroRef} className="relative min-h-screen flex flex-col overflow-hidden">
-        <motion.video
-          autoPlay loop muted playsInline
-          style={{ y: videoY, scale: videoScale }}
-          className="absolute inset-0 w-full h-full object-cover opacity-20">
-          <source src="/videos/hero-bg.mp4" type="video/mp4" />
-        </motion.video>
-        <motion.div
-          style={{ opacity: overlayOpacity }}
-          className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/70 to-background" />
-
-        {/* Navbar */}
-        <motion.nav
-          initial={{ opacity: 0, y: -16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="relative z-10 w-full border-b border-border/30 backdrop-blur-sm">
-          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src={logo} alt="MyOpenEdge" className="h-8 w-8 rounded-full object-cover" />
-              <span className="text-xl font-bold tracking-tight">MyOpenEdge</span>
-            </div>
-            <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
-              <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-              
-            </div>
-            <Button
-              onClick={() => navigate("/auth")}
-              variant="outline"
-              className="border-primary/50 text-primary hover:bg-primary/10">
-              Launch App
-            </Button>
+      {/* ─── Navbar ─── */}
+      <motion.nav
+        initial={{ opacity: 0, y: -16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full border-b border-border/30">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src={logo} alt="MyOpenEdge" className="h-8 w-8 rounded-full object-cover" />
+            <span className="text-xl font-bold tracking-tight">MyOpenEdge</span>
           </div>
-        </motion.nav>
+          <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
+            <a href="#features" className="hover:text-foreground transition-colors">features</a>
+            <a href="#pricing" className="hover:text-foreground transition-colors">pricing</a>
+          </div>
+          <Button
+            onClick={() => navigate("/auth")}
+            variant="outline"
+            className="border-primary/50 text-primary hover:bg-primary/10">
+            launch app
+          </Button>
+        </div>
+      </motion.nav>
 
-        {/* Pricing Hero Content */}
-        <div className="relative z-10 flex-1 flex items-center justify-center px-4 sm:px-6 py-16 sm:py-24">
-          <div className="max-w-5xl mx-auto w-full">
+      {/* ─── Hero / Pricing Section ─── */}
+      <section className="py-16 sm:py-24 px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto">
 
-            {/* Heading */}
-            <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible" className="text-center mb-8 sm:mb-12">
-              <p className="text-xs sm:text-sm font-semibold tracking-[0.2em] text-primary uppercase mb-3">LESS EMOTION, MORE STATISTICS</p>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-3">trade based on true probabilities</h1>
-              <p className="text-sm sm:text-base text-muted-foreground">only if you rely on data, not luck</p>
-            </motion.div>
+          {/* Header */}
+          <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible" className="text-center mb-8 sm:mb-10">
+            <p className="text-xs sm:text-sm font-bold tracking-[0.2em] text-primary uppercase mb-4">
+              LEBIH MURAH DARI SATU KALI CUT LOSS
+            </p>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-3">
+              where consistent trading begins
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              only if you're serious about trading
+            </p>
+          </motion.div>
 
-            {/* Billing Toggle */}
-            <motion.div custom={1} variants={fadeUp} initial="hidden" animate="visible" className="flex flex-col items-center gap-2 mb-10 sm:mb-16">
-              <div className="inline-flex rounded-full border border-border/50 p-1 bg-muted/30 backdrop-blur-sm">
-                <button
-                  onClick={() => setBilling("monthly")}
-                  className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${billing === "monthly" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}>
-                  
-                  monthly
-                </button>
-                <button
-                  onClick={() => setBilling("yearly")}
-                  className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${billing === "yearly" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}>
-                  
-                  yearly
-                </button>
-              </div>
-              {billing === "yearly" &&
+          {/* Billing Toggle */}
+          <motion.div custom={1} variants={fadeUp} initial="hidden" animate="visible" className="flex flex-col items-center gap-2 mb-12 sm:mb-16">
+            <div className="inline-flex rounded-full border border-border/50 p-1 bg-muted/30">
+              <button
+                onClick={() => setBilling("monthly")}
+                className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${billing === "monthly" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}>
+                monthly
+              </button>
+              <button
+                onClick={() => setBilling("yearly")}
+                className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${billing === "yearly" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"}`}>
+                yearly
+              </button>
+            </div>
+            {billing === "yearly" && (
               <span className="text-xs bg-primary/20 text-primary px-3 py-1 rounded-full font-medium">save 20% yearly</span>
-              }
-            </motion.div>
+            )}
+          </motion.div>
 
-            {/* Price + Features Grid */}
-            <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible"
-            className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          {/* Price + Features Grid */}
+          <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible"
+            className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
 
-              {/* Left: Price */}
-              <div className="text-center lg:text-left">
-                <div className="relative inline-block">
-                  <span className="text-muted-foreground text-2xl sm:text-3xl font-light absolute -left-6 sm:-left-8 top-4 sm:top-6">Rp</span>
-                  <span className="text-7xl sm:text-8xl md:text-[120px] font-bold leading-none tracking-tighter bg-gradient-to-b from-foreground to-muted-foreground/60 bg-clip-text text-transparent">
-                    {billing === "monthly" ? "49" : "490"}
-                  </span>
-                  <span className="text-muted-foreground text-2xl sm:text-3xl font-light">.000</span>
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">{period}</p>
-                <Button
-                  size="lg"
-                  onClick={() => navigate("/upgrade")}
-                  className="mt-6 text-base px-10 py-6 rounded-full w-full max-w-xs">
-                  get started now
-                </Button>
+            {/* Left: Price */}
+            <div className="flex flex-col items-center lg:items-start">
+              <div className="relative">
+                <span className="text-muted-foreground text-xl sm:text-2xl font-light absolute -left-8 sm:-left-10 top-6 sm:top-8">Rp</span>
+                <span className="text-8xl sm:text-9xl md:text-[140px] font-extrabold leading-none tracking-tighter bg-gradient-to-b from-foreground via-foreground/80 to-muted-foreground/40 bg-clip-text text-transparent">
+                  {price}
+                </span>
+                <span className="text-muted-foreground text-xl sm:text-2xl font-light">rb</span>
               </div>
+              <p className="text-sm text-muted-foreground mt-2">{period}</p>
+              <Button
+                size="lg"
+                onClick={() => navigate("/upgrade")}
+                className="mt-8 text-base px-10 py-6 rounded-md w-full max-w-xs font-bold">
+                mulai berlangganan
+              </Button>
+            </div>
 
-              {/* Right: Essential Features */}
-              <div className="rounded-xl border border-primary/20 bg-card/60 backdrop-blur-md p-6 sm:p-8">
-                <h3 className="text-base font-bold mb-5 lowercase">essential features</h3>
+            {/* Right: Feature Card */}
+            <div className="rounded-xl border border-primary/30 bg-card p-6 sm:p-8">
+              <h3 className="text-base font-bold mb-4">fitur esensial</h3>
+              <div className="border-t border-border/30 pt-4">
                 <ul className="space-y-3">
-                  {essentialFeatures.map((f) =>
-                  <li key={f} className="flex items-start gap-3 text-sm">
-                      <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  {essentialFeatures.map((f) => (
+                    <li key={f} className="flex items-start gap-3 text-sm">
+                      <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                       <span className="text-muted-foreground">{f}</span>
                     </li>
-                  )}
+                  ))}
                 </ul>
-                <div className="mt-5 pt-4 border-t border-border/30 flex items-center gap-2 text-xs text-muted-foreground">
-                  <Lock className="h-3.5 w-3.5" />
-                  <span>algos not included | upgrade in app</span>
-                  <Info className="h-3.5 w-3.5 ml-1" />
-                </div>
               </div>
-            </motion.div>
-          </div>
+              <div className="mt-5 pt-4 border-t border-border/30 flex items-center gap-2 text-xs text-muted-foreground/60">
+                <Lock className="h-3.5 w-3.5" />
+                <span>ninja script & copy trading not included | upgrade in app</span>
+                <Info className="h-3.5 w-3.5 ml-1" />
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -212,44 +193,47 @@ const Landing = () => {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.5 }}
             className="text-center mb-8 sm:mb-12">
-            <p className="text-xs sm:text-sm font-semibold tracking-[0.2em] text-primary uppercase mb-3">if you are having second thoughts</p>
+            <p className="text-xs sm:text-sm font-bold tracking-[0.2em] text-primary uppercase mb-3">
+              IF YOU ARE HAVING SECOND THOUGHTS
+            </p>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">feature breakdown</h2>
             <p className="text-sm text-muted-foreground mb-6">trust us, we didn't miss a spot</p>
             <Button
               size="lg"
               onClick={() => navigate("/upgrade")}
-              className="text-base px-10 py-6 rounded-full">
+              className="text-base px-10 py-6 rounded-md font-bold">
               get started now
             </Button>
           </motion.div>
 
-          {featureBreakdown.map((group) =>
-          <motion.div
-            key={group.category}
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-60px" }}
-            className="mb-10">
-              <h3 className="text-base font-bold mb-4 lowercase">{group.category}</h3>
+          {featureBreakdown.map((group) => (
+            <motion.div
+              key={group.category}
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-60px" }}
+              className="mb-10">
+              <h3 className="text-base font-bold mb-4">{group.category}</h3>
               <div className="divide-y divide-border/20">
-                {group.items.map((item) =>
-              <motion.div
-                key={item.name}
-                variants={staggerItem}
-                className="flex items-center justify-between py-3.5 text-sm">
+                {group.items.map((item) => (
+                  <motion.div
+                    key={item.name}
+                    variants={staggerItem}
+                    className="flex items-center justify-between py-3.5 text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <span>{item.name}</span>
-                      {item.upgrade &&
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60 font-medium">upgrade required</span>
-                  }
+                      <Info className="h-3.5 w-3.5 text-muted-foreground/40" />
+                      {item.upgrade && (
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60 font-medium">upgrade required</span>
+                      )}
                     </div>
-                    <Check className="h-4 w-4 text-primary shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
                   </motion.div>
-              )}
+                ))}
               </div>
             </motion.div>
-          )}
+          ))}
         </div>
       </section>
 
@@ -262,17 +246,16 @@ const Landing = () => {
           transition={{ duration: 0.5 }}
           className="max-w-3xl mx-auto text-center space-y-6">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">
-            Ready to decode your <span className="text-primary">edge</span>?
+            ready to decode your <span className="text-primary">edge</span>?
           </h2>
           <p className="text-muted-foreground">
-            Mulai dari Rp 49.000/bulan. Analisis IB, Momentum, OCC & lainnya dengan data real-time.
+            mulai dari Rp 49.000/bulan. analisis IB, momentum, OCC & lainnya dengan data real-time.
           </p>
           <Button
             size="lg"
             onClick={() => navigate("/upgrade")}
-            className="text-base px-8 py-6 rounded-full">
-            Get Started Now
-            <ChevronRight className="ml-2 h-5 w-5" />
+            className="text-base px-10 py-6 rounded-md font-bold">
+            mulai berlangganan
           </Button>
         </motion.div>
       </section>
@@ -283,13 +266,13 @@ const Landing = () => {
           <div className="flex items-center gap-2">
             <img src={logo} alt="MyOpenEdge" className="h-5 w-5 rounded-full object-cover" />
             <span className="font-semibold text-foreground">MyOpenEdge</span>
-            <span>· Market Analysis Platform</span>
+            <span>· market analysis platform</span>
           </div>
           <p>© 2026 MyOpenEdge. All rights reserved.</p>
         </div>
       </footer>
-    </div>);
-
+    </div>
+  );
 };
 
 export default Landing;
