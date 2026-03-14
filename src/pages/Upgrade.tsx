@@ -8,12 +8,12 @@ import { MidtransCheckout } from "@/components/MidtransCheckout";
 
 const features = [
   "unlimited IB, momentum & OCC analysis",
-  "6 analysis report types",
+  "inside bar & outside day reports",
+  "gap fill analysis tools",
   "up to 12 months historical data",
-  "weekday filtering & custom templates",
   "AI chart analysis assistant",
-  "breakout probability statistics",
-  "daily setup recommendations",
+  "custom watchlists & analysis templates",
+  "algos command center access",
   "priority support",
 ];
 

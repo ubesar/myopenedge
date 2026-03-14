@@ -38,14 +38,14 @@ const appFeatures = [
 ];
 
 const essentialFeatures = [
-  "works on futures (nq, gc) and idx",
-  "real-time market probabilities & statistics",
-  "order flow analysis tools",
-  "myopenedge proprietary screeners",
-  "advanced trading journal",
-  "ninjatrader premium indicators",
-  "bookmarks, watchlists, custom sessions",
-  "discord community of dedicated traders",
+  "initial balance & breakout probability analysis",
+  "momentum candle detection (M15 aggregation)",
+  "OCC & gap fill analysis tools",
+  "inside bar & outside day reports",
+  "AI chart analysis assistant",
+  "real-time 5min data with 5000+ bars",
+  "custom watchlists & analysis templates",
+  "algos command center with pin lock",
 ];
 
 const Landing = () => {
