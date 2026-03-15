@@ -16,7 +16,7 @@ const content = {
     rights: "All rights reserved.",
     terms: [
       { title: "1. Agreement to Terms", body: "By accessing or using MyOpenEdge (\"the Service\"), you agree to be bound by these Terms and Conditions. If you do not agree to these terms, you may not access or use the Service." },
-      { title: "2. Description of Service", body: "MyOpenEdge is a web-based trading analytics platform that provides market structure analysis tools, including Initial Balance (IB), Momentum, Outside Candle Close (OCC), and Gap Fill analysis. The Service is intended for informational and educational purposes only and does not constitute financial advice." },
+      { title: "2. Description of Service", body: "MyOpenEdge is a web-based trading analytics platform that provides market structure analysis tools, including Initial Balance (IB), Momentum, Opening Candle Continuation(OCC), and Gap Fill analysis. The Service is intended for informational and educational purposes only and does not constitute financial advice." },
       { title: "3. User Accounts", list: [
         "You must provide accurate and complete information when creating an account.",
         "You are responsible for maintaining the security of your account credentials.",
