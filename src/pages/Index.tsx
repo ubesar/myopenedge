@@ -267,6 +267,10 @@ const Index = () => {
             </Badge>
           )}
           <div className="ml-auto flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/custom-analysis")} className="gap-1 text-muted-foreground h-7 px-2">
+              <Brain className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Custom AI</span>
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => navigate("/daily-briefing")} className="gap-1 text-muted-foreground h-7 px-2">
               <Bot className="h-4 w-4" />
               <span className="hidden sm:inline text-xs">Daily AI</span>
