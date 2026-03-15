@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, Crown, FileText, Bot } from "lucide-react";
+import { LogOut, Crown, FileText, Bot, Brain } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import logo from "@/assets/logo.png";
 import ControlPanel, { type AnalysisMode } from "@/components/ControlPanel";
