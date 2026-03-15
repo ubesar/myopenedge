@@ -8,6 +8,7 @@ import Upgrade from "@/pages/Upgrade";
 import Docs from "@/pages/Docs";
 import NotFound from "@/pages/NotFound";
 import AutoAnalysis from "@/pages/AutoAnalysis";
+import CustomAnalysis from "@/pages/CustomAnalysis";
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -21,6 +22,7 @@ const AnimatedRoutes = () => {
         <Route path="/upgrade" element={<PageTransition><Upgrade /></PageTransition>} />
         <Route path="/docs" element={<PageTransition><Docs /></PageTransition>} />
         <Route path="/daily-briefing" element={<PageTransition><AutoAnalysis /></PageTransition>} />
+        <Route path="/custom-analysis" element={<PageTransition><CustomAnalysis /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>

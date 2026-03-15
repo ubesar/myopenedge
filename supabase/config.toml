@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.midtrans-notification]
 verify_jwt = false
+
+[functions.custom-ai-analysis]
+verify_jwt = false
