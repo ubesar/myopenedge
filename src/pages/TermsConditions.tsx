@@ -16,7 +16,7 @@ const content = {
     rights: "All rights reserved.",
     terms: [
       { title: "1. Agreement to Terms", body: "By accessing or using MyOpenEdge (\"the Service\"), you agree to be bound by these Terms and Conditions. If you do not agree to these terms, you may not access or use the Service." },
-      { title: "2. Description of Service", body: "MyOpenEdge is a web-based trading analytics platform that provides market structure analysis tools, including Initial Balance (IB), Momentum, Outside Candle Close (OCC), and Gap Fill analysis. The Service is intended for informational and educational purposes only and does not constitute financial advice." },
+      { title: "2. Description of Service", body: "MyOpenEdge is a web-based trading analytics platform that provides market structure analysis tools, including Initial Balance (IB), Momentum, Opening Candle Continuation(OCC), and Gap Fill analysis. The Service is intended for informational and educational purposes only and does not constitute financial advice." },
       { title: "3. User Accounts", list: [
         "You must provide accurate and complete information when creating an account.",
         "You are responsible for maintaining the security of your account credentials.",
@@ -95,7 +95,7 @@ const content = {
     rights: "Hak cipta dilindungi.",
     terms: [
       { title: "1. Persetujuan Terhadap Ketentuan", body: "Dengan mengakses atau menggunakan MyOpenEdge (\"Layanan\"), Anda setuju untuk terikat oleh Syarat dan Ketentuan ini. Jika Anda tidak menyetujui ketentuan ini, Anda tidak diperkenankan mengakses atau menggunakan Layanan." },
-      { title: "2. Deskripsi Layanan", body: "MyOpenEdge adalah platform analisis trading berbasis web yang menyediakan alat analisis struktur pasar, termasuk Initial Balance (IB), Momentum, Outside Candle Close (OCC), dan Gap Fill analysis. Layanan ini hanya ditujukan untuk tujuan informasi dan edukasi, serta tidak merupakan nasihat keuangan." },
+      { title: "2. Deskripsi Layanan", body: "MyOpenEdge adalah platform analisis trading berbasis web yang menyediakan alat analisis struktur pasar, termasuk Initial Balance (IB), Momentum, Opening Candle Continuation(OCC), dan Gap Fill analysis. Layanan ini hanya ditujukan untuk tujuan informasi dan edukasi, serta tidak merupakan nasihat keuangan." },
       { title: "3. Akun Pengguna", list: [
         "Anda harus memberikan informasi yang akurat dan lengkap saat membuat akun.",
         "Anda bertanggung jawab menjaga keamanan kredensial akun Anda.",
