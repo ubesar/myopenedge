@@ -6,14 +6,9 @@ import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
 import Upgrade from "@/pages/Upgrade";
 import Docs from "@/pages/Docs";
-import AIAssistant from "@/pages/AIAssistant";
-import Algos from "@/pages/Algos";
-import Chart from "@/pages/Chart";
-import Watchlist from "@/pages/Watchlist";
 import NotFound from "@/pages/NotFound";
-import TermsConditions from "@/pages/TermsConditions";
-import PaddleLiveGuide from "@/pages/PaddleLiveGuide";
-import ResetPassword from "@/pages/ResetPassword";
+import AutoAnalysis from "@/pages/AutoAnalysis";
+import CustomAnalysis from "@/pages/CustomAnalysis";
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -24,15 +19,10 @@ const AnimatedRoutes = () => {
         <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
         <Route path="/app" element={<PageTransition><Index /></PageTransition>} />
-        <Route path="/ai-assistant" element={<PageTransition><AIAssistant /></PageTransition>} />
-        <Route path="/algos" element={<PageTransition><Algos /></PageTransition>} />
-        <Route path="/chart" element={<PageTransition><Chart /></PageTransition>} />
-        <Route path="/watchlist" element={<PageTransition><Watchlist /></PageTransition>} />
         <Route path="/upgrade" element={<PageTransition><Upgrade /></PageTransition>} />
         <Route path="/docs" element={<PageTransition><Docs /></PageTransition>} />
-        <Route path="/docs/paddle-guide" element={<PageTransition><PaddleLiveGuide /></PageTransition>} />
-        <Route path="/terms_conditions" element={<PageTransition><TermsConditions /></PageTransition>} />
-        <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
+        <Route path="/daily-briefing" element={<PageTransition><AutoAnalysis /></PageTransition>} />
+        <Route path="/custom-analysis" element={<PageTransition><CustomAnalysis /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>

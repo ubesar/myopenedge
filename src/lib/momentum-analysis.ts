@@ -71,7 +71,7 @@ const IB_START = 9 * 60 + 30;
 const NOON = 12 * 60;
 const MARKET_CLOSE = 16 * 60;
 
-function detectSignals(candles: CandleBar[], bodyRatio: number = 0.50): MomentumSignal[] {
+function detectSignals(candles: CandleBar[]): MomentumSignal[] {
   const signals: MomentumSignal[] = [];
   let i = 0;
   while (i < candles.length - 1) {
@@ -89,7 +89,7 @@ function detectSignals(candles: CandleBar[], bodyRatio: number = 0.50): Momentum
 
     if (
       prevRange > 0 && currRange > 0 &&
-      prevBody / prevRange >= bodyRatio &&
+      prevBody / prevRange >= 0.50 &&
       currBody / currRange >= 0.30 &&
       sameColor
     ) {
@@ -105,10 +105,10 @@ function detectSignals(candles: CandleBar[], bodyRatio: number = 0.50): Momentum
   return signals;
 }
 
-function evaluateMomentumTF(momentumBars5min: CandleBar[], tfMinutes: number, bodyRatio: number): MomentumTFResult {
+function evaluateMomentumTF(momentumBars5min: CandleBar[], tfMinutes: number): MomentumTFResult {
   const tf = TF_CONFIGS.find(t => t.minutes === tfMinutes)?.tf || `M${tfMinutes}`;
   const candles = aggregateBars(momentumBars5min, tfMinutes);
-  const signals = detectSignals(candles, bodyRatio);
+  const signals = detectSignals(candles);
   const momentum = signals.length > 0 ? signals[0].type : "choppy";
   return { tf, tfMinutes, momentum, signals };
 }
@@ -124,7 +124,7 @@ function getOverallMomentum(timeframes: MomentumTFResult[]): "bullish" | "bearis
   return "choppy";
 }
 
-export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0, bodyRatio: number = 0.50, weekdays: number[] = [1,2,3,4,5]): MomentumResult {
+export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0): MomentumResult {
   const ibEnd = IB_START + ibWindowMinutes;
 
   const byDate = new Map<string, BarData[]>();
@@ -138,10 +138,6 @@ export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, m
   if (maxDays > 0) {
     dates = dates.slice(-maxDays);
   }
-  dates = dates.filter(d => {
-    const day = new Date(d + "T12:00:00").getDay();
-    return weekdays.includes(day);
-  });
 
   const allDays: MomentumDayData[] = [];
 
@@ -189,7 +185,7 @@ export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, m
     }));
 
     // Evaluate all 4 timeframes
-    const timeframes = TF_CONFIGS.map(cfg => evaluateMomentumTF(momentumBars5min, cfg.minutes, bodyRatio));
+    const timeframes = TF_CONFIGS.map(cfg => evaluateMomentumTF(momentumBars5min, cfg.minutes));
     const momentum = getOverallMomentum(timeframes);
 
     // Keep first signal set for backward compat
