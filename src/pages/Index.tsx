@@ -357,12 +357,12 @@ const Index = () => {
               subtitle={`${symbol} · OCC · ${tf}`}
               totalDays={stats.bullishFirst.total}
               bars={[
-                { name: "valid continuation", value: stats.bullishFirst.total > 0 ? (stats.bullishFirst.valid / stats.bullishFirst.total * 100) : 0, color: "primary" },
-                { name: "failed continuation", value: stats.bullishFirst.total > 0 ? (stats.bullishFirst.invalid / stats.bullishFirst.total * 100) : 0, color: "muted" },
+                { name: "continuation", value: stats.bullishFirst.total > 0 ? (stats.bullishFirst.valid / stats.bullishFirst.total * 100) : 0, color: "primary" },
+                { name: "reverting", value: stats.bullishFirst.total > 0 ? (stats.bullishFirst.invalid / stats.bullishFirst.total * 100) : 0, color: "muted" },
               ]}
               legendItems={[
-                { label: "valid continuation", color: "hsl(217,91%,60%)" },
-                { label: "failed continuation", color: "hsl(240,5%,30%)" },
+                { label: "continuation", color: "hsl(217,91%,60%)" },
+                { label: "reverting", color: "hsl(240,5%,30%)" },
               ]}
               settingsGrid={[
                 { label: "candle timeframe", value: tf },
@@ -375,12 +375,12 @@ const Index = () => {
               subtitle={`${symbol} · OCC · ${tf}`}
               totalDays={stats.bearishFirst.total}
               bars={[
-                { name: "valid continuation", value: stats.bearishFirst.total > 0 ? (stats.bearishFirst.valid / stats.bearishFirst.total * 100) : 0, color: "primary" },
-                { name: "failed continuation", value: stats.bearishFirst.total > 0 ? (stats.bearishFirst.invalid / stats.bearishFirst.total * 100) : 0, color: "muted" },
+                { name: "continuation", value: stats.bearishFirst.total > 0 ? (stats.bearishFirst.valid / stats.bearishFirst.total * 100) : 0, color: "primary" },
+                { name: "reverting", value: stats.bearishFirst.total > 0 ? (stats.bearishFirst.invalid / stats.bearishFirst.total * 100) : 0, color: "muted" },
               ]}
               legendItems={[
-                { label: "valid continuation", color: "hsl(217,91%,60%)" },
-                { label: "failed continuation", color: "hsl(240,5%,30%)" },
+                { label: "continuation", color: "hsl(217,91%,60%)" },
+                { label: "reverting", color: "hsl(240,5%,30%)" },
               ]}
               settingsGrid={[
                 { label: "candle timeframe", value: tf },

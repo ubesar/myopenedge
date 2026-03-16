@@ -150,7 +150,7 @@ export function analyzeOCC(bars: BarData[], maxDays: number = 0, _bodyRatio: num
       close: parseFloat(b.close),
     }));
 
-    const timeframes = TF_CONFIGS.map((cfg) => evaluateOCC(bars5min, cfg.minutes, bodyRatio));
+    const timeframes = TF_CONFIGS.map((cfg) => evaluateOCC(bars5min, cfg.minutes));
     const overallBias = getOverallBias(timeframes);
 
     allDays.push({ date, bars: bars5min, timeframes, overallBias });
