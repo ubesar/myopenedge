@@ -200,13 +200,13 @@ export default function Docs() {
               </div>
               <InfoBox title="Signal Output">
                 <ul className="space-y-1 ml-4 list-disc">
-                  <li><span className="text-green-400 font-medium">Bullish OCC:</span> Both candles are green.</li>
-                  <li><span className="text-red-400 font-medium">Bearish OCC:</span> Both candles are red.</li>
-                  <li><span className="text-foreground font-medium">Failed OCC:</span> Mixed colors — no continuation signal.</li>
+                  <li><span className="text-green-400 font-medium">Bullish Continuation:</span> Both candles are green (C1 bullish + C2 bullish).</li>
+                  <li><span className="text-red-400 font-medium">Bearish Continuation:</span> Both candles are red (C1 bearish + C2 bearish).</li>
+                  <li><span className="text-foreground font-medium">Reverting:</span> Mixed colors — no continuation signal, market is reverting.</li>
                 </ul>
               </InfoBox>
-              <InfoBox title="Validation Rule">
-                <p>A setup is only "Valid" if the overall body percentage exceeds <span className="font-medium text-foreground">50%</span>. This filters out doji-like candles that technically match colors but lack conviction.</p>
+              <InfoBox title="No Body Ratio Filter">
+                <p>Unlike Momentum Candle, OCC does <span className="font-medium text-foreground">not</span> apply any body percentage threshold. Any bullish or bearish candle counts regardless of wick size.</p>
               </InfoBox>
             </CardContent>
           </Card>
