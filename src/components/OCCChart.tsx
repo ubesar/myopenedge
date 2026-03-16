@@ -12,8 +12,8 @@ const OCCChart = ({ title, stats, color }: OCCChartProps) => {
   const invalidPct = stats.total > 0 ? (stats.invalid / stats.total) * 100 : 0;
 
   const data = [
-    { name: "Valid", value: parseFloat(validPct.toFixed(1)), type: "valid" },
-    { name: "Invalid", value: parseFloat(invalidPct.toFixed(1)), type: "invalid" },
+    { name: "Continuation", value: parseFloat(validPct.toFixed(1)), type: "valid" },
+    { name: "Reverting", value: parseFloat(invalidPct.toFixed(1)), type: "invalid" },
   ];
 
   const colorMap: Record<string, string> = {
