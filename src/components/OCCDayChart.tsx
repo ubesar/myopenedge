@@ -223,7 +223,7 @@ const OCCDayChart = ({ date, bars, symbol, timeframes, overallBias, availableDat
                 </div>
                 {tfDirectionStats && (
                   <div className="border-t border-border/30 pt-2 space-y-1">
-                    <div className="text-muted-foreground font-medium">Historical Valid %</div>
+                    <div className="text-muted-foreground font-medium">Historical Continuation %</div>
                     {["M5", "M15", "M30", "H1"].map((tf) => {
                       const s = tfDirectionStats[tf];
                       if (!s) return null;

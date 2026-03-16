@@ -71,12 +71,7 @@ const MARKET_CLOSE = 16 * 60;
 function evaluateOCC(bars5min: CandleBar[], tfMinutes: number): OCCTimeframeResult {
   const tf = TF_CONFIGS.find((t) => t.minutes === tfMinutes)?.tf || `M${tfMinutes}`;
 
-  // Aggregate 5-min bars to the target timeframe
-  const aggregated = aggregateBars(bars5min, tfMinutes);
-
-  // We need the first 2 candles starting at 09:30
-  // Filter bars that are within the OCC evaluation window
-  const endMinute = IB_START + tfMinutes * 2; // need 2 candles worth of data
+  const endMinute = IB_START + tfMinutes * 2;
   const relevantBars = bars5min.filter((b) => {
     const [h, m] = b.time.split(":").map(Number);
     const totalMin = h * 60 + m;
@@ -116,7 +111,7 @@ function getOverallBias(timeframes: OCCTimeframeResult[]): OCCStatus {
   return "failed";
 }
 
-export function analyzeOCC(bars: BarData[], maxDays: number = 0): OCCResult {
+export function analyzeOCC(bars: BarData[], maxDays: number = 0, _bodyRatio: number = 0.50, weekdays: number[] = [1,2,3,4,5]): OCCResult {
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
     const date = bar.datetime.split(" ")[0];
@@ -128,6 +123,10 @@ export function analyzeOCC(bars: BarData[], maxDays: number = 0): OCCResult {
   if (maxDays > 0) {
     dates = dates.slice(-maxDays);
   }
+  dates = dates.filter(d => {
+    const day = new Date(d + "T12:00:00").getDay();
+    return weekdays.includes(day);
+  });
 
   const allDays: OCCDayData[] = [];
 

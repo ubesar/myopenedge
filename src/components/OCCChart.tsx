@@ -12,8 +12,8 @@ const OCCChart = ({ title, stats, color }: OCCChartProps) => {
   const invalidPct = stats.total > 0 ? (stats.invalid / stats.total) * 100 : 0;
 
   const data = [
-    { name: "Valid", value: parseFloat(validPct.toFixed(1)), type: "valid" },
-    { name: "Invalid", value: parseFloat(invalidPct.toFixed(1)), type: "invalid" },
+    { name: "Continuation", value: parseFloat(validPct.toFixed(1)), type: "valid" },
+    { name: "Reverting", value: parseFloat(invalidPct.toFixed(1)), type: "invalid" },
   ];
 
   const colorMap: Record<string, string> = {
@@ -65,11 +65,11 @@ const OCCChart = ({ title, stats, color }: OCCChartProps) => {
       </div>
       <div className="flex gap-1.5 mt-1 shrink-0">
         <div className={`flex-1 rounded border ${color === "emerald" ? "border-emerald-500/30 bg-emerald-500/10" : "border-red-500/30 bg-red-500/10"} px-1.5 py-1 text-center`}>
-          <div className={`text-[9px] ${iconColor} font-medium`}>Valid</div>
+          <div className={`text-[9px] ${iconColor} font-medium`}>Continuation</div>
           <div className={`text-sm font-bold ${iconColor}`}>{stats.valid}</div>
         </div>
         <div className="flex-1 rounded border border-border/30 bg-muted/30 px-1.5 py-1 text-center">
-          <div className="text-[9px] text-muted-foreground font-medium">Invalid</div>
+          <div className="text-[9px] text-muted-foreground font-medium">Reverting</div>
           <div className="text-sm font-bold text-muted-foreground">{stats.invalid}</div>
         </div>
       </div>
