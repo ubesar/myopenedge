@@ -68,7 +68,7 @@ function getTimeMinutes(dt: Date): number {
 const IB_START = 9 * 60 + 30; // 09:30
 const MARKET_CLOSE = 16 * 60;
 
-function evaluateOCC(bars5min: CandleBar[], tfMinutes: number, bodyRatio: number = 0.50): OCCTimeframeResult {
+function evaluateOCC(bars5min: CandleBar[], tfMinutes: number): OCCTimeframeResult {
   const tf = TF_CONFIGS.find((t) => t.minutes === tfMinutes)?.tf || `M${tfMinutes}`;
 
   const endMinute = IB_START + tfMinutes * 2;
@@ -87,12 +87,8 @@ function evaluateOCC(bars5min: CandleBar[], tfMinutes: number, bodyRatio: number
   const c1 = candles[0];
   const c2 = candles[1];
 
-  const c1Range = c1.high - c1.low;
-  const c1Body = Math.abs(c1.close - c1.open);
-  const c1BodyPct = c1Range > 0 ? c1Body / c1Range : 0;
-
-  const c1Bullish = c1.close > c1.open && c1BodyPct >= bodyRatio;
-  const c1Bearish = c1.close < c1.open && c1BodyPct >= bodyRatio;
+  const c1Bullish = c1.close > c1.open;
+  const c1Bearish = c1.close < c1.open;
   const c2Bullish = c2.close > c2.open;
   const c2Bearish = c2.close < c2.open;
 
