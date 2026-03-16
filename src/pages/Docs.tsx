@@ -216,22 +216,34 @@ export default function Docs() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <ArrowUpDown className="h-5 w-5 text-primary" />
-                4.4 Gap Fill Analysis
+                4.4 Gap Fill Analysis (Edgeful-style)
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p><span className="font-semibold text-foreground">Objective:</span> Measure the historical probability that the overnight gap between the previous close and today's open gets filled during the trading session.</p>
+              <p><span className="font-semibold text-foreground">Objective:</span> Measure the historical probability that the overnight gap between the previous close and today's open gets filled during the trading session, broken down by granular gap-size buckets.</p>
               <InfoBox title="Gap Detection">
-                <p><span className="font-medium text-foreground">Gap Up:</span> Today's open &gt; yesterday's close. <span className="font-medium text-foreground">Gap Down:</span> Today's open &lt; yesterday's close.</p>
+                <p><span className="font-medium text-foreground">Gap Up:</span> Today's open &gt; yesterday's close. <span className="font-medium text-foreground">Gap Down:</span> Today's open &lt; yesterday's close. Gaps &lt; 0.01% are excluded.</p>
               </InfoBox>
               <InfoBox title="Fill Confirmation">
-                <p>A gap is considered "filled" when intraday price action touches or passes through the previous close level during the session (09:30–16:00).</p>
+                <p>A <span className="font-medium text-foreground">Gap Up</span> is filled if session Low ≤ previous close. A <span className="font-medium text-foreground">Gap Down</span> is filled if session High ≥ previous close. Session: 09:30–16:00 NY.</p>
               </InfoBox>
-              <InfoBox title="Probability Output">
+              <InfoBox title="Gap Size Buckets (Edgeful-style)">
+                <p>Gaps are classified into 6 granular percentage ranges for precise edge discovery:</p>
+                <ul className="space-y-1 ml-4 list-disc mt-1.5">
+                  <li><span className="font-medium text-foreground">0 – 0.19%</span></li>
+                  <li><span className="font-medium text-foreground">0.2 – 0.39%</span></li>
+                  <li><span className="font-medium text-foreground">0.4 – 0.69%</span></li>
+                  <li><span className="font-medium text-foreground">0.7 – 0.99%</span></li>
+                  <li><span className="font-medium text-foreground">1.0 – 1.49%</span></li>
+                  <li><span className="font-medium text-foreground">≥ 1.5%</span></li>
+                </ul>
+              </InfoBox>
+              <InfoBox title="Dashboard Output">
                 <ul className="space-y-1 ml-4 list-disc">
-                  <li>Gap Fill Rate — % of days where the gap was fully filled</li>
-                  <li>Gap Not Filled — % of days where price failed to reach previous close</li>
-                  <li>Breakdown by gap direction (up vs. down)</li>
+                  <li><span className="font-medium text-foreground">Stacked Bar Chart</span> — Filled vs. Not Filled for Gap Up and Gap Down</li>
+                  <li><span className="font-medium text-foreground">Insights Table</span> — Category, frequency, and percentage breakdown</li>
+                  <li><span className="font-medium text-foreground">Day-of-Week Stats</span> — Fill rate per weekday (Mon–Fri)</li>
+                  <li><span className="font-medium text-foreground">Size Filter Buttons</span> — Click any bucket to filter the analysis dynamically</li>
                 </ul>
               </InfoBox>
             </CardContent>
