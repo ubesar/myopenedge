@@ -18,6 +18,7 @@ import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
 import { analyzeOCC, type OCCResult } from "@/lib/occ-analysis";
 import { analyzeGapFill, type GapFillResult } from "@/lib/gapfill-analysis";
+import GapFillDashboard from "@/components/GapFillDashboard";
 import { analyzeInsideBar, type InsideBarResult } from "@/lib/insidebar-analysis";
 import { analyzeOutsideDay, type OutsideDayResult } from "@/lib/outsideday-analysis";
 import InsideBarReport from "@/components/InsideBarReport";
@@ -394,36 +395,13 @@ const Index = () => {
     }
 
     if (activeMode === "gapfill" && gapFillResult) {
-      const s = gapFillResult.stats;
       return (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <ChartCard
-            title="gap up fill rate"
-            subtitle={`${symbol} · gap fill`}
-            totalDays={s.totalGapUp}
-            bars={[
-              { name: "filled", value: s.gapUpFillRate, color: "primary" },
-              { name: "unfilled", value: 100 - s.gapUpFillRate, color: "muted" },
-            ]}
-            legendItems={[
-              { label: "filled", color: "hsl(217,91%,60%)" },
-              { label: "unfilled", color: "hsl(240,5%,30%)" },
-            ]}
-          />
-          <ChartCard
-            title="gap down fill rate"
-            subtitle={`${symbol} · gap fill`}
-            totalDays={s.totalGapDown}
-            bars={[
-              { name: "filled", value: s.gapDownFillRate, color: "primary" },
-              { name: "unfilled", value: 100 - s.gapDownFillRate, color: "muted" },
-            ]}
-            legendItems={[
-              { label: "filled", color: "hsl(217,91%,60%)" },
-              { label: "unfilled", color: "hsl(240,5%,30%)" },
-            ]}
-          />
-        </div>
+        <GapFillDashboard
+          result={gapFillResult}
+          symbol={symbol}
+          dateRange={formatDateRange(analysisMaxDays)}
+          weekdays={formatWeekdays(analysisWeekdays)}
+        />
       );
     }
 
