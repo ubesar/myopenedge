@@ -18,6 +18,7 @@ import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
 import { analyzeOCC, type OCCResult } from "@/lib/occ-analysis";
 import { analyzeGapFill, type GapFillResult } from "@/lib/gapfill-analysis";
+import GapFillDashboard from "@/components/GapFillDashboard";
 import { analyzeInsideBar, type InsideBarResult } from "@/lib/insidebar-analysis";
 import { analyzeOutsideDay, type OutsideDayResult } from "@/lib/outsideday-analysis";
 import InsideBarReport from "@/components/InsideBarReport";
