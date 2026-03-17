@@ -88,7 +88,7 @@ const IB_START = 9 * 60 + 30;
 const MARKET_CLOSE = 16 * 60;
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export function analyzeGapFill(bars: BarData[], maxDays: number = 0): GapFillResult {
+export function analyzeGapFill(bars: BarData[], maxDays: number = 0, weekdays: number[] = [1,2,3,4,5]): GapFillResult {
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
     const date = bar.datetime.split(" ")[0];
@@ -98,6 +98,10 @@ export function analyzeGapFill(bars: BarData[], maxDays: number = 0): GapFillRes
 
   let dates = Array.from(byDate.keys()).sort();
   if (maxDays > 0) dates = dates.slice(-maxDays);
+  dates = dates.filter(d => {
+    const day = new Date(d + "T12:00:00").getDay();
+    return weekdays.includes(day);
+  });
 
   const allSortedDates = Array.from(byDate.keys()).sort();
   const allDays: GapDayData[] = [];
