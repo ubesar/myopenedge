@@ -62,7 +62,7 @@ function getTimeMinutes(dt: Date): number {
 const MARKET_OPEN = 9 * 60 + 30;
 const MARKET_CLOSE = 16 * 60;
 
-export function analyzeOutsideDay(bars: BarData[], maxDays: number = 0): OutsideDayResult {
+export function analyzeOutsideDay(bars: BarData[], maxDays: number = 0, weekdays: number[] = [1,2,3,4,5]): OutsideDayResult {
   // Group 5-min bars by date → build daily OHLC
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
@@ -73,6 +73,10 @@ export function analyzeOutsideDay(bars: BarData[], maxDays: number = 0): Outside
 
   let dates = Array.from(byDate.keys()).sort();
   if (maxDays > 0) dates = dates.slice(-maxDays);
+  dates = dates.filter(d => {
+    const day = new Date(d + "T12:00:00").getDay();
+    return weekdays.includes(day);
+  });
 
   interface DailyOHLC {
     date: string;

@@ -181,17 +181,17 @@ const Index = () => {
         setOccResult(a);
         addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfDirectionStats: a.tfDirectionStats });
       } else if (effectiveMode === "gapfill") {
-        const a = analyzeGapFill(values as any, effectiveMaxDays);
+        const a = analyzeGapFill(values as any, effectiveMaxDays, weekdays);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setGapFillResult(a);
         addRun(effectiveMode, ticker, { totalDays: a.totalDays, stats: a.stats });
       } else if (effectiveMode === "insidebar") {
-        const a = analyzeInsideBar(values as any, effectiveMaxDays);
+        const a = analyzeInsideBar(values as any, effectiveMaxDays, weekdays);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setInsideBarResult(a);
         addRun(effectiveMode, ticker, { totalDays: a.totalDays, insideBarPct: a.insideBarPct, breakoutPct: a.breakoutPct });
       } else if (effectiveMode === "outsideday") {
-        const a = analyzeOutsideDay(values as any, effectiveMaxDays);
+        const a = analyzeOutsideDay(values as any, effectiveMaxDays, weekdays);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setOutsideDayResult(a);
         addRun(effectiveMode, ticker, { totalDays: a.totalDays, outsidePct: a.outsidePct, bullishContinuationPct: a.bullishContinuationPct, bearishContinuationPct: a.bearishContinuationPct });

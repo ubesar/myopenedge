@@ -46,7 +46,7 @@ function getTimeMinutes(dt: Date): number {
 const IB_START = 9 * 60 + 30;
 const MARKET_CLOSE = 16 * 60;
 
-export function analyzeInsideBar(bars: BarData[], maxDays: number = 0): InsideBarResult {
+export function analyzeInsideBar(bars: BarData[], maxDays: number = 0, weekdays: number[] = [1,2,3,4,5]): InsideBarResult {
   // Group 5-min bars by date and build daily OHLC
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
@@ -59,6 +59,10 @@ export function analyzeInsideBar(bars: BarData[], maxDays: number = 0): InsideBa
   if (maxDays > 0) {
     dates = dates.slice(-maxDays);
   }
+  dates = dates.filter(d => {
+    const day = new Date(d + "T12:00:00").getDay();
+    return weekdays.includes(day);
+  });
 
   // Build daily OHLC from intraday bars (09:30-16:00)
   interface DailyOHLC {

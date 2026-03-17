@@ -243,29 +243,36 @@ const ParameterPanel = ({
               {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for more windows</p>}
             </>
           )}
-          {(mode === "ib" || mode === "momentum" || mode === "occ") && (
-            <>
-              <p className="text-[11px] text-muted-foreground mt-2">weekdays to use</p>
-              <div className="flex flex-wrap gap-2">
-                {WEEKDAYS.map((wd) => (
-                  <label key={wd.value} className="flex items-center gap-1.5 cursor-pointer">
-                    <Checkbox
-                      checked={weekdays.includes(wd.value)}
-                      onCheckedChange={(checked) => {
-                        setSelectedTemplateId("custom");
-                        if (checked) {
-                          setWeekdays((prev) => [...prev, wd.value].sort());
-                        } else {
-                          setWeekdays((prev) => prev.filter((d) => d !== wd.value));
-                        }
-                      }}
-                    />
-                    <span className="text-[12px] text-foreground">{wd.label}</span>
-                  </label>
-                ))}
-              </div>
-            </>
-          )}
+          <p className="text-[11px] text-muted-foreground mt-2">weekdays to use</p>
+          <div className="flex flex-wrap gap-2">
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <Checkbox
+                checked={weekdays.length === 5}
+                onCheckedChange={(checked) => {
+                  setSelectedTemplateId("custom");
+                  setWeekdays(checked ? [1, 2, 3, 4, 5] : []);
+                }}
+              />
+              <span className="text-[12px] text-foreground font-medium">All</span>
+            </label>
+            {WEEKDAYS.map((wd) => (
+              <label key={wd.value} className="flex items-center gap-1.5 cursor-pointer">
+                <Checkbox
+                  checked={weekdays.includes(wd.value)}
+                  onCheckedChange={(checked) => {
+                    setSelectedTemplateId("custom");
+                    if (checked) {
+                      // If clicking a single day, set ONLY that day
+                      setWeekdays([wd.value]);
+                    } else {
+                      setWeekdays((prev) => prev.filter((d) => d !== wd.value));
+                    }
+                  }}
+                />
+                <span className="text-[12px] text-foreground">{wd.label}</span>
+              </label>
+            ))}
+          </div>
         </div>
 
         {/* Run button */}
