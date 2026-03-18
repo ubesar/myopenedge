@@ -37,13 +37,13 @@ const MomentumChart = ({ title, total, bullish, bearish, choppy }: MomentumChart
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,20%)" vertical={false} />
             <XAxis
               dataKey="name"
-              tick={{ fill: "hsl(0,0%,55%)", fontSize: 11 }}
+              tick={{ fill: "hsl(0,0%,100%)", fontSize: 11 }}
               axisLine={{ stroke: "hsl(0,0%,20%)" }}
               tickLine={false} />
 
             <YAxis
               domain={[0, 100]}
-              tick={{ fill: "hsl(0,0%,55%)", fontSize: 12 }}
+              tick={{ fill: "hsl(0,0%,100%)", fontSize: 12 }}
               axisLine={false}
               tickLine={false}
               tickFormatter={(v) => `${v}%`} />
