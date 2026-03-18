@@ -56,7 +56,7 @@ const MomentumChart = ({ title, total, bullish, bearish, choppy }: MomentumChart
                 dataKey="value"
                 position="top"
                 formatter={(v: number) => `${v}%`}
-                style={{ fill: "hsl(0,0%,85%)", fontSize: 14, fontWeight: 600 }} />
+                style={{ fill: "hsl(0,0%,100%)", fontSize: 14, fontWeight: 600 }} />
 
             </Bar>
           </BarChart>
