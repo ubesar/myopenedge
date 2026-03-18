@@ -64,7 +64,7 @@ const ChartCard = ({ title, subtitle, totalDays, bars, legendItems, settingsGrid
                       className={`w-full rounded-t-md flex items-end justify-center pb-2 text-[12px] font-semibold transition-all duration-500 ${
                         bar.color === "primary"
                           ? "bg-primary text-primary-foreground"
-                          : "bg-chart-grey text-muted-foreground"
+                          : "bg-chart-grey text-primary-foreground"
                       }`}
                       style={{ height: `${barHeight}px` }}
                     >
