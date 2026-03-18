@@ -38,7 +38,7 @@ const StackedBar = ({
           style={{
             height: notFilledH,
             backgroundColor: NOT_FILLED_COLOR,
-            color: "hsl(0,0%,80%)",
+            color: "hsl(0, 0%, 100%)",
           }}
         >
           {notFilledPct >= 4 && `${notFilledPct.toFixed(0)}% not filled`}
