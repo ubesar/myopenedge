@@ -372,7 +372,7 @@ const Index = () => {
               ]}
             />
             <ChartCard
-              title="candle 1 bearish"
+              title="candle bearish first"
               subtitle={`${symbol} · OCC · ${tf}`}
               totalDays={stats.bearishFirst.total}
               bars={[
