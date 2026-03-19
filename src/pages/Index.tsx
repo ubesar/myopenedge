@@ -354,12 +354,12 @@ const Index = () => {
           </div>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
             <ChartCard
-              title="candle bullish first"
+              title="candle bearish first"
               subtitle={`${symbol} · OCC · ${tf}`}
-              totalDays={stats.bullishFirst.total}
+              totalDays={stats.bearishFirst.total}
               bars={[
-                { name: "continuation", value: stats.bullishFirst.total > 0 ? (stats.bullishFirst.valid / stats.bullishFirst.total * 100) : 0, color: "primary" },
-                { name: "reverting", value: stats.bullishFirst.total > 0 ? (stats.bullishFirst.invalid / stats.bullishFirst.total * 100) : 0, color: "muted" },
+                { name: "continuation", value: stats.bearishFirst.total > 0 ? (stats.bearishFirst.valid / stats.bearishFirst.total * 100) : 0, color: "primary" },
+                { name: "reverting", value: stats.bearishFirst.total > 0 ? (stats.bearishFirst.invalid / stats.bearishFirst.total * 100) : 0, color: "muted" },
               ]}
               legendItems={[
                 { label: "continuation", color: "hsl(217,91%,60%)" },
@@ -372,12 +372,12 @@ const Index = () => {
               ]}
             />
             <ChartCard
-              title="candle bearish first"
+              title="candle bullish first"
               subtitle={`${symbol} · OCC · ${tf}`}
-              totalDays={stats.bearishFirst.total}
+              totalDays={stats.bullishFirst.total}
               bars={[
-                { name: "continuation", value: stats.bearishFirst.total > 0 ? (stats.bearishFirst.valid / stats.bearishFirst.total * 100) : 0, color: "primary" },
-                { name: "reverting", value: stats.bearishFirst.total > 0 ? (stats.bearishFirst.invalid / stats.bearishFirst.total * 100) : 0, color: "muted" },
+                { name: "continuation", value: stats.bullishFirst.total > 0 ? (stats.bullishFirst.valid / stats.bullishFirst.total * 100) : 0, color: "primary" },
+                { name: "reverting", value: stats.bullishFirst.total > 0 ? (stats.bullishFirst.invalid / stats.bullishFirst.total * 100) : 0, color: "muted" },
               ]}
               legendItems={[
                 { label: "continuation", color: "hsl(217,91%,60%)" },
