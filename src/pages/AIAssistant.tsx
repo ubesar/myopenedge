@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Bot, Send, Loader2, TrendingUp, Target, Layers, BookOpen, Share2, Zap, BarChart3, Trash2, Lock, Crown } from "lucide-react";
+import { Bot, Send, Loader2, TrendingUp, Target, Layers, BookOpen, Share2, Zap, Trash2, Lock, Crown, Activity } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -9,9 +9,20 @@ import ReactMarkdown from "react-markdown";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
-import type { AnalysisContext, ConfluenceData } from "@/components/AIChatAssistant";
+import { useAIAnalysis, type ToolCallArgs } from "@/hooks/useAIAnalysis";
 
-type Message = { role: "user" | "assistant"; content: string };
+type Message = { role: "user" | "assistant" | "tool"; content: string; tool_call_id?: string; name?: string };
+
+interface ToolCall {
+  id: string;
+  function: { name: string; arguments: string };
+}
+
+interface AssistantToolCallMessage {
+  role: "assistant";
+  content: string | null;
+  tool_calls: ToolCall[];
+}
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
@@ -23,103 +34,185 @@ const AIAssistant = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [statusText, setStatusText] = useState("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { executeAnalysis } = useAIAnalysis();
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, statusText]);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
-  const streamAI = useCallback(async (allMessages: Message[]) => {
+  const getAccessToken = async (): Promise<string | null> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+  };
+
+  // Stream AI and handle tool calls
+  const streamAI = useCallback(async (allMessages: Message[]): Promise<void> => {
     setIsLoading(true);
-    let assistantSoFar = "";
+    setStatusText("");
+
+    const accessToken = await getAccessToken();
+    if (!accessToken) {
+      toast.error("Please log in to use the AI Assistant.");
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const accessToken = session?.access_token;
-
-      if (!accessToken) {
-        toast.error("Please log in to use the AI Assistant.");
-        setIsLoading(false);
-        return;
-      }
-
-      const resp = await fetch(CHAT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
-        body: JSON.stringify({ messages: allMessages }),
-      });
-
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: "Request failed" }));
-        if (resp.status === 429) toast.error("Rate limit exceeded. Please try again later.");
-        else if (resp.status === 402) toast.error("AI credits exhausted. Please add credits.");
-        else toast.error(err.error || "AI request failed");
-        setIsLoading(false);
-        return;
-      }
-
-      if (!resp.body) throw new Error("No response body");
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = "";
-      let streamDone = false;
-
-      while (!streamDone) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        textBuffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex: number;
-        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-          let line = textBuffer.slice(0, newlineIndex);
-          textBuffer = textBuffer.slice(newlineIndex + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (line.startsWith(":") || line.trim() === "") continue;
-          if (!line.startsWith("data: ")) continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") { streamDone = true; break; }
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-            if (content) {
-              assistantSoFar += content;
-              const snapshot = assistantSoFar;
-              setMessages((prev) => {
-                const last = prev[prev.length - 1];
-                if (last?.role === "assistant") {
-                  return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: snapshot } : m);
-                }
-                return [...prev, { role: "assistant", content: snapshot }];
-              });
-            }
-          } catch {
-            textBuffer = line + "\n" + textBuffer;
-            break;
-          }
-        }
-      }
+      await doStreamRound(allMessages, accessToken);
     } catch (e) {
       console.error(e);
       toast.error("Failed to connect to AI assistant");
     } finally {
       setIsLoading(false);
+      setStatusText("");
     }
-  }, []);
+  }, [executeAnalysis]);
+
+  const doStreamRound = async (allMessages: Message[], accessToken: string): Promise<void> => {
+    const resp = await fetch(CHAT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      },
+      body: JSON.stringify({ messages: allMessages, enableTools: true }),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ error: "Request failed" }));
+      if (resp.status === 429) toast.error("Rate limit exceeded. Please try again later.");
+      else if (resp.status === 402) toast.error("AI credits exhausted. Please add credits.");
+      else toast.error(err.error || "AI request failed");
+      return;
+    }
+
+    if (!resp.body) throw new Error("No response body");
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let textBuffer = "";
+    let streamDone = false;
+    let assistantSoFar = "";
+    let accumulatedToolCalls: Record<number, { id: string; functionName: string; args: string }> = {};
+    let finishReason = "";
+
+    while (!streamDone) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      textBuffer += decoder.decode(value, { stream: true });
+
+      let newlineIndex: number;
+      while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+        let line = textBuffer.slice(0, newlineIndex);
+        textBuffer = textBuffer.slice(newlineIndex + 1);
+        if (line.endsWith("\r")) line = line.slice(0, -1);
+        if (line.startsWith(":") || line.trim() === "") continue;
+        if (!line.startsWith("data: ")) continue;
+
+        const jsonStr = line.slice(6).trim();
+        if (jsonStr === "[DONE]") { streamDone = true; break; }
+
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const choice = parsed.choices?.[0];
+          if (!choice) continue;
+
+          // Track finish reason
+          if (choice.finish_reason) {
+            finishReason = choice.finish_reason;
+          }
+
+          const delta = choice.delta;
+          if (!delta) continue;
+
+          // Handle content
+          if (delta.content) {
+            assistantSoFar += delta.content;
+            const snapshot = assistantSoFar;
+            setMessages((prev) => {
+              const last = prev[prev.length - 1];
+              if (last?.role === "assistant" && !('tool_calls' in last)) {
+                return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: snapshot } : m);
+              }
+              return [...prev, { role: "assistant", content: snapshot }];
+            });
+          }
+
+          // Handle tool calls
+          if (delta.tool_calls) {
+            for (const tc of delta.tool_calls) {
+              const idx = tc.index ?? 0;
+              if (!accumulatedToolCalls[idx]) {
+                accumulatedToolCalls[idx] = { id: tc.id || "", functionName: "", args: "" };
+              }
+              if (tc.id) accumulatedToolCalls[idx].id = tc.id;
+              if (tc.function?.name) accumulatedToolCalls[idx].functionName += tc.function.name;
+              if (tc.function?.arguments) accumulatedToolCalls[idx].args += tc.function.arguments;
+            }
+          }
+        } catch {
+          textBuffer = line + "\n" + textBuffer;
+          break;
+        }
+      }
+    }
+
+    // If the AI requested tool calls, execute them and continue
+    if (finishReason === "tool_calls" && Object.keys(accumulatedToolCalls).length > 0) {
+      const toolCalls: ToolCall[] = Object.values(accumulatedToolCalls).map((tc) => ({
+        id: tc.id,
+        function: { name: tc.functionName, arguments: tc.args },
+      }));
+
+      // Build the assistant message with tool_calls for conversation history
+      const assistantToolMsg: AssistantToolCallMessage = {
+        role: "assistant",
+        content: assistantSoFar || null,
+        tool_calls: toolCalls,
+      };
+
+      // Execute each tool call
+      const toolResultMessages: Message[] = [];
+      for (const tc of toolCalls) {
+        try {
+          const args: ToolCallArgs = JSON.parse(tc.function.arguments);
+          setStatusText(`⏳ analyzing ${args.symbol} (${args.mode.toUpperCase()})...`);
+
+          const result = await executeAnalysis(args);
+          toolResultMessages.push({
+            role: "tool",
+            content: result,
+            tool_call_id: tc.id,
+            name: tc.function.name,
+          });
+        } catch (err: any) {
+          toolResultMessages.push({
+            role: "tool",
+            content: JSON.stringify({ error: err.message || "Tool execution failed" }),
+            tool_call_id: tc.id,
+            name: tc.function.name,
+          });
+        }
+      }
+
+      setStatusText("🧠 interpreting results...");
+
+      // Send results back to AI for interpretation
+      const updatedMessages = [...allMessages, assistantToolMsg as any, ...toolResultMessages];
+      await doStreamRound(updatedMessages, accessToken);
+    }
+  };
 
   const send = async () => {
     const text = input.trim();
@@ -129,7 +222,9 @@ const AIAssistant = () => {
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
 
-    await streamAI([...messages, userMsg]);
+    // Only send user+assistant messages (not tool messages) in visible history
+    const allMessages = [...messages, userMsg];
+    await streamAI(allMessages);
   };
 
   const handleQuickAction = (prompt: string) => {
@@ -173,40 +268,40 @@ const AIAssistant = () => {
 
   const quickActions = [
     {
-      label: "Pre-Market Briefing",
-      icon: Zap,
-      description: "Generate a briefing for today's NY Open session",
-      prompt: "Create a pre-market briefing for today's NY Open session. Based on historical patterns, analyze:\n1. Inside Bar probability based on yesterday's pattern\n2. Average IB range for today\n3. Key levels to watch\n4. Strategy recommendation (trend vs range)",
+      label: "Run Full Analysis",
+      icon: Activity,
+      description: "Analyze a ticker with all 6 modes and get confluence report",
+      prompt: "Run all 6 analysis modes (IB, Momentum, OCC, Gap Fill, Inside Bar, Outside Day) for QQQ using 60 trading days. Then provide a full confluence report with directional bias and confidence level.",
     },
     {
-      label: "Bias Analysis",
-      icon: TrendingUp,
-      description: "Analyze directional bias from historical data",
-      prompt: "Explain how to analyze directional bias using IB, Momentum, and OCC data. Provide a step-by-step framework I can use daily before trading.",
-    },
-    {
-      label: "Confluence Check",
+      label: "IB + OCC Confluence",
       icon: Layers,
-      description: "Cross-check multiple analysis modes",
-      prompt: "Explain the concept of confluence in trading and how to use MyOpenEdge to confirm signals from IB, Momentum, OCC, and Inside Bar simultaneously. Provide examples of high-probability vs conflicting signal scenarios.",
+      description: "Combine IB and OCC analysis for stronger signals",
+      prompt: "Run IB analysis and OCC analysis for QQQ using 60 trading days. Compare the signals — does the IB tell align with the OCC direction? Provide confluence assessment.",
+    },
+    {
+      label: "Gap + OCC Combo",
+      icon: TrendingUp,
+      description: "Check if gap direction aligns with opening candle bias",
+      prompt: "Run Gap Fill analysis and OCC analysis for QQQ using 60 trading days. Check if gap down days correlate with OCC bullish bias (or gap up with bearish). Provide the combined edge.",
+    },
+    {
+      label: "Momentum Scan",
+      icon: Zap,
+      description: "Run momentum candle analysis for a ticker",
+      prompt: "Run momentum candle analysis for QQQ using 60 trading days. Show the probability of continuation across all timeframes.",
     },
     {
       label: "Trading Plan",
       icon: Target,
-      description: "Create a structured trading plan",
-      prompt: "Create an ideal trading plan template for a day trader/scalper during the NY Open session. Include:\n- Pre-market checklist\n- Entry criteria based on IB/Momentum/OCC\n- Stop loss & target rules\n- Risk management per trade\n- Journaling template",
+      description: "Generate a full trading plan with data",
+      prompt: "Run IB, Momentum, and OCC analysis for QQQ using 60 days. Then create a complete trading plan with entry criteria, stop loss, profit target, and risk management rules based on the statistical edge.",
     },
     {
-      label: "Journal Template",
+      label: "Journal Entry",
       icon: BookOpen,
-      description: "Format trades for your journal",
-      prompt: "Show me an ideal trading journal template for scalpers using MyOpenEdge. Include formats for:\n- Setup entry (ticker, bias, statistical edge)\n- Execution (entry, SL, TP, R:R)\n- Post-trade review (grade, lesson learned)\n- Weekly summary template",
-    },
-    {
-      label: "Export Summary",
-      icon: Share2,
-      description: "Generate shareable summaries",
-      prompt: "Explain the export formats available in MyOpenEdge:\n1. JOURNAL format (full markdown)\n2. SOCIAL format (concise for community/social media)\n3. EA/JSON format (for Expert Advisor)\n\nProvide an example of each format.",
+      description: "Generate a journal-ready analysis report",
+      prompt: "Run IB and OCC analysis for QQQ using 40 trading days. Format the results into a trading journal entry with: Date, Bias, Statistical Edge, Setup Grade, Key Levels, and Risk Notes.",
     },
   ];
 
@@ -225,7 +320,7 @@ const AIAssistant = () => {
           <div className="flex-1">
             <h1 className="text-sm font-semibold text-foreground">AI Trading Assistant</h1>
             <div className="flex items-center gap-2">
-              <p className="text-[11px] text-muted-foreground">Quantitative analysis · Risk management · Trade planning</p>
+              <p className="text-[11px] text-muted-foreground">Live analysis · Confluence detection · Trade planning</p>
               <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium border border-primary/20">⚡ Gemini 3 Flash</span>
             </div>
           </div>
@@ -251,7 +346,7 @@ const AIAssistant = () => {
               </div>
               <h2 className="text-lg font-semibold text-foreground mb-1">How can I help you trade smarter?</h2>
               <p className="text-sm text-muted-foreground mb-8 text-center max-w-md">
-                Ask me about analysis strategies, get pre-market briefings, create trading plans, or format journal entries.
+                I can run live analysis, combine multiple modes for confluence, and generate data-driven trading plans. Just ask!
               </p>
 
               {/* Quick Actions Grid */}
@@ -275,7 +370,7 @@ const AIAssistant = () => {
             </div>
           ) : (
             <div className="max-w-3xl mx-auto px-6 py-6 space-y-5">
-              {messages.map((msg, i) => (
+              {messages.filter(m => m.role !== "tool").map((msg, i) => (
                 <div key={i} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                   {msg.role === "assistant" && (
                     <div className="h-7 w-7 rounded-lg bg-primary/15 flex items-center justify-center shrink-0 mt-1">
@@ -299,13 +394,16 @@ const AIAssistant = () => {
                   </div>
                 </div>
               ))}
-              {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+              {isLoading && (
                 <div className="flex gap-3">
                   <div className="h-7 w-7 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
                     <Bot className="h-4 w-4 text-primary" />
                   </div>
-                  <div className="rounded-xl px-4 py-3 bg-card border border-border/30">
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <div className="rounded-xl px-4 py-3 bg-card border border-border/30 flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    {statusText && (
+                      <span className="text-xs text-muted-foreground">{statusText}</span>
+                    )}
                   </div>
                 </div>
               )}
@@ -341,7 +439,7 @@ const AIAssistant = () => {
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about trading strategies, analysis, or get a pre-market briefing..."
+              placeholder="e.g. 'Analyze QQQ IB and OCC 60 days' or 'Is gap down + OCC bullish a good setup for SPY?'"
               className="flex-1 bg-muted/50 border border-border/40 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
               disabled={isLoading}
             />
@@ -350,7 +448,7 @@ const AIAssistant = () => {
             </Button>
           </form>
           <p className="text-[10px] text-muted-foreground text-center mt-2 max-w-3xl mx-auto">
-            AI provides historical probabilities only — not financial advice. Always apply strict risk management.
+            AI fetches live data & runs real analysis — not financial advice. Always apply strict risk management.
           </p>
         </div>
       </div>
