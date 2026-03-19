@@ -354,7 +354,7 @@ const Index = () => {
           </div>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
             <ChartCard
-              title="candle 1 bullish"
+              title="candle bullish first"
               subtitle={`${symbol} · OCC · ${tf}`}
               totalDays={stats.bullishFirst.total}
               bars={[
@@ -372,7 +372,7 @@ const Index = () => {
               ]}
             />
             <ChartCard
-              title="candle 1 bearish"
+              title="candle bearish first"
               subtitle={`${symbol} · OCC · ${tf}`}
               totalDays={stats.bearishFirst.total}
               bars={[
