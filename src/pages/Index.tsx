@@ -341,6 +341,17 @@ const Index = () => {
               ]}
             />
           </div>
+          <AITradingInsight
+            mode="momentum"
+            symbol={symbol}
+            analysisData={{
+              totalDays: momentumResult.totalDays,
+              currentTimeframe: tf,
+              highFirst: { total: hf.total, bullish: hf.bullish, bearish: hf.bearish, choppy: hf.choppy },
+              lowFirst: { total: lf.total, bullish: lf.bullish, bearish: lf.bearish, choppy: lf.choppy },
+              lastDay: momentumResult.lastDay ? { date: momentumResult.lastDay.date, overallBias: momentumResult.lastDay.overallBias } : null,
+            }}
+          />
         </div>
       );
     }
