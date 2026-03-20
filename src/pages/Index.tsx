@@ -456,7 +456,7 @@ const Index = () => {
               breakoutPct: insideBarResult.breakoutPct,
               brokeHighPct: insideBarResult.brokeHighPct,
               brokeLowPct: insideBarResult.brokeLowPct,
-              stayedInsidePct: insideBarResult.stayedInsidePct,
+              stayedInsidePct: insideBarResult.stayedPct,
             }}
           />
         </div>
