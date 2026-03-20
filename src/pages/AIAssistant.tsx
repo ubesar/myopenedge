@@ -439,7 +439,7 @@ const AIAssistant = () => {
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="e.g. 'Analyze QQQ IB and OCC 60 days' or 'Is gap down + OCC bullish a good setup for SPY?'"
+              placeholder="contoh: 'analisis IB dan OCC untuk QQQ 60 hari' atau 'apakah gap down + OCC bullish setup bagus untuk SPY?'"
               className="flex-1 bg-muted/50 border border-border/40 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
               disabled={isLoading}
             />
@@ -448,7 +448,7 @@ const AIAssistant = () => {
             </Button>
           </form>
           <p className="text-[10px] text-muted-foreground text-center mt-2 max-w-3xl mx-auto">
-            AI fetches live data & runs real analysis — not financial advice. Always apply strict risk management.
+            AI mengambil data live & menjalankan analisis nyata — bukan saran keuangan. selalu terapkan risk management yang ketat.
           </p>
         </div>
       </div>
