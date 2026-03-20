@@ -443,7 +443,24 @@ const Index = () => {
     }
 
     if (activeMode === "insidebar" && insideBarResult) {
-      return <InsideBarReport result={insideBarResult} symbol={symbol} />;
+      return (
+        <div className="space-y-4">
+          <InsideBarReport result={insideBarResult} symbol={symbol} />
+          <AITradingInsight
+            mode="insidebar"
+            symbol={symbol}
+            analysisData={{
+              totalDays: insideBarResult.totalDays,
+              insideBarDays: insideBarResult.insideBarDays,
+              insideBarPct: insideBarResult.insideBarPct,
+              breakoutPct: insideBarResult.breakoutPct,
+              brokeHighPct: insideBarResult.brokeHighPct,
+              brokeLowPct: insideBarResult.brokeLowPct,
+              stayedInsidePct: insideBarResult.stayedInsidePct,
+            }}
+          />
+        </div>
+      );
     }
 
     if (activeMode === "outsideday" && outsideDayResult) {
