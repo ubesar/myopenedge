@@ -344,9 +344,9 @@ const AIAssistant = () => {
               <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-5">
                 <Bot className="h-7 w-7 text-primary opacity-60" />
               </div>
-              <h2 className="text-lg font-semibold text-foreground mb-1">How can I help you trade smarter?</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-1">apa yang bisa saya bantu hari ini?</h2>
               <p className="text-sm text-muted-foreground mb-8 text-center max-w-md">
-                I can run live analysis, combine multiple modes for confluence, and generate data-driven trading plans. Just ask!
+                saya bisa menjalankan live analysis, menggabungkan beberapa mode untuk confluence, dan membuat trading plan berbasis data. langsung tanya saja!
               </p>
 
               {/* Quick Actions Grid */}
