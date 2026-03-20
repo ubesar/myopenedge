@@ -320,8 +320,8 @@ const AIAssistant = () => {
           <div className="flex-1">
             <h1 className="text-sm font-semibold text-foreground">AI Trading Assistant</h1>
             <div className="flex items-center gap-2">
-              <p className="text-[11px] text-muted-foreground">Live analysis · Confluence detection · Trade planning</p>
-              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium border border-primary/20">⚡ Gemini 3 Flash</span>
+              <p className="text-[11px] text-muted-foreground">live analysis · confluence detection · trade planning</p>
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium border border-primary/20">⚡ gemini 3 flash</span>
             </div>
           </div>
           {messages.length > 0 && (
