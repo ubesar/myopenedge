@@ -416,6 +416,17 @@ const Index = () => {
               ]}
             />
           </div>
+          <AITradingInsight
+            mode="occ"
+            symbol={symbol}
+            analysisData={{
+              totalDays: occResult.totalDays,
+              currentTimeframe: tf,
+              bearishFirst: { total: stats.bearishFirst.total, continuation: stats.bearishFirst.valid, reverting: stats.bearishFirst.invalid },
+              bullishFirst: { total: stats.bullishFirst.total, continuation: stats.bullishFirst.valid, reverting: stats.bullishFirst.invalid },
+              lastDay: occResult.lastDay ? { date: occResult.lastDay.date, overallBias: occResult.lastDay.overallBias } : null,
+            }}
+          />
         </div>
       );
     }
