@@ -268,40 +268,40 @@ const AIAssistant = () => {
 
   const quickActions = [
     {
-      label: "Run Full Analysis",
+      label: "Analisis Lengkap",
       icon: Activity,
-      description: "Analyze a ticker with all 6 modes and get confluence report",
-      prompt: "Run all 6 analysis modes (IB, Momentum, OCC, Gap Fill, Inside Bar, Outside Day) for QQQ using 60 trading days. Then provide a full confluence report with directional bias and confidence level.",
+      description: "Jalankan semua 6 mode analisis dan dapatkan laporan confluence",
+      prompt: "Jalankan semua 6 mode analisis (IB, Momentum, OCC, Gap Fill, Inside Bar, Outside Day) untuk QQQ menggunakan 60 hari trading. Berikan laporan confluence lengkap dengan directional bias dan confidence level.",
     },
     {
       label: "IB + OCC Confluence",
       icon: Layers,
-      description: "Combine IB and OCC analysis for stronger signals",
-      prompt: "Run IB analysis and OCC analysis for QQQ using 60 trading days. Compare the signals — does the IB tell align with the OCC direction? Provide confluence assessment.",
+      description: "Gabungkan IB tell dan OCC direction untuk sinyal lebih kuat",
+      prompt: "Jalankan analisis IB dan OCC untuk QQQ menggunakan 60 hari trading. Bandingkan apakah IB tell (high/low first) sejalan dengan arah OCC continuation. Berikan assessment confluence-nya.",
     },
     {
-      label: "Gap + OCC Combo",
+      label: "IB + Gap Fill",
       icon: TrendingUp,
-      description: "Check if gap direction aligns with opening candle bias",
-      prompt: "Run Gap Fill analysis and OCC analysis for QQQ using 60 trading days. Check if gap down days correlate with OCC bullish bias (or gap up with bearish). Provide the combined edge.",
+      description: "Cek apakah gap direction memperkuat IB breakout bias",
+      prompt: "Jalankan analisis IB dan Gap Fill untuk QQQ menggunakan 60 hari trading. Apakah hari gap down cenderung break low di IB? Apakah gap up cenderung break high? Berikan edge gabungannya.",
     },
     {
-      label: "Momentum Scan",
+      label: "Gap Down + OCC Bullish",
       icon: Zap,
-      description: "Run momentum candle analysis for a ticker",
-      prompt: "Run momentum candle analysis for QQQ using 60 trading days. Show the probability of continuation across all timeframes.",
+      description: "Cari reversal edge: gap down tapi OCC menunjukkan bullish",
+      prompt: "Jalankan analisis Gap Fill dan OCC untuk QQQ menggunakan 60 hari trading. Fokus pada hari gap down — apakah OCC menunjukkan bullish continuation? Jika ya, seberapa kuat edge reversal ini?",
     },
     {
-      label: "Trading Plan",
+      label: "IB + Inside Bar",
       icon: Target,
-      description: "Generate a full trading plan with data",
-      prompt: "Run IB, Momentum, and OCC analysis for QQQ using 60 days. Then create a complete trading plan with entry criteria, stop loss, profit target, and risk management rules based on the statistical edge.",
+      description: "Analisis breakout setelah konsolidasi inside bar",
+      prompt: "Jalankan analisis IB dan Inside Bar untuk QQQ menggunakan 60 hari trading. Apakah hari setelah inside bar cenderung break high atau break low di IB? Berikan probabilitas dan trading plan-nya.",
     },
     {
-      label: "Journal Entry",
+      label: "Buat Trading Plan",
       icon: BookOpen,
-      description: "Generate a journal-ready analysis report",
-      prompt: "Run IB and OCC analysis for QQQ using 40 trading days. Format the results into a trading journal entry with: Date, Bias, Statistical Edge, Setup Grade, Key Levels, and Risk Notes.",
+      description: "Generate trading plan lengkap berbasis data statistik",
+      prompt: "Jalankan analisis IB, Momentum, dan OCC untuk QQQ menggunakan 60 hari. Buat trading plan lengkap dengan entry criteria, stop loss, profit target, dan risk management berdasarkan statistical edge yang ditemukan.",
     },
   ];
 
