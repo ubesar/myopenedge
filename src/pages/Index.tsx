@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import AITradingInsight from "@/components/AITradingInsight";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Navigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -215,48 +216,62 @@ const Index = () => {
       const hf = result.highFirst;
       const lf = result.lowFirst;
       return (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <ChartCard
-            title="IB high formed first"
-            subtitle={`${symbol} · by rejection`}
-            totalDays={hf.total}
-            bars={[
-              { name: "first break IB high", value: hf.total > 0 ? (hf.breakHigh / hf.total * 100) : 0, color: "primary" },
-              { name: "first break IB low", value: hf.total > 0 ? (hf.breakLow / hf.total * 100) : 0, color: "muted" },
-            ]}
-            legendItems={[
-              { label: "first break IB high", color: "hsl(217,91%,60%)" },
-              { label: "first break IB low", color: "hsl(240,5%,30%)" },
-            ]}
-            settingsGrid={[
-              { label: "IB timeframe", value: `${result.ibWindowMinutes} min` },
-              { label: "candle timeframe", value: "5min" },
-              { label: "IB size", value: "any size" },
-              { label: "date range", value: formatDateRange(analysisMaxDays) },
-              { label: "IB breakout measure", value: "by rejection (M5 close)" },
-              { label: "weekdays to use", value: formatWeekdays(analysisWeekdays) },
-            ]}
-          />
-          <ChartCard
-            title="IB low formed first"
-            subtitle={`${symbol} · by rejection`}
-            totalDays={lf.total}
-            bars={[
-              { name: "first break IB high", value: lf.total > 0 ? (lf.breakHigh / lf.total * 100) : 0, color: "primary" },
-              { name: "first break IB low", value: lf.total > 0 ? (lf.breakLow / lf.total * 100) : 0, color: "muted" },
-            ]}
-            legendItems={[
-              { label: "first break IB high", color: "hsl(217,91%,60%)" },
-              { label: "first break IB low", color: "hsl(240,5%,30%)" },
-            ]}
-            settingsGrid={[
-              { label: "IB timeframe", value: `${result.ibWindowMinutes} min` },
-              { label: "candle timeframe", value: "5min" },
-              { label: "IB size", value: "any size" },
-              { label: "date range", value: formatDateRange(analysisMaxDays) },
-              { label: "IB breakout measure", value: "by rejection (M5 close)" },
-              { label: "weekdays to use", value: formatWeekdays(analysisWeekdays) },
-            ]}
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <ChartCard
+              title="IB high formed first"
+              subtitle={`${symbol} · by rejection`}
+              totalDays={hf.total}
+              bars={[
+                { name: "first break IB high", value: hf.total > 0 ? (hf.breakHigh / hf.total * 100) : 0, color: "primary" },
+                { name: "first break IB low", value: hf.total > 0 ? (hf.breakLow / hf.total * 100) : 0, color: "muted" },
+              ]}
+              legendItems={[
+                { label: "first break IB high", color: "hsl(217,91%,60%)" },
+                { label: "first break IB low", color: "hsl(240,5%,30%)" },
+              ]}
+              settingsGrid={[
+                { label: "IB timeframe", value: `${result.ibWindowMinutes} min` },
+                { label: "candle timeframe", value: "5min" },
+                { label: "IB size", value: "any size" },
+                { label: "date range", value: formatDateRange(analysisMaxDays) },
+                { label: "IB breakout measure", value: "by rejection (M5 close)" },
+                { label: "weekdays to use", value: formatWeekdays(analysisWeekdays) },
+              ]}
+            />
+            <ChartCard
+              title="IB low formed first"
+              subtitle={`${symbol} · by rejection`}
+              totalDays={lf.total}
+              bars={[
+                { name: "first break IB high", value: lf.total > 0 ? (lf.breakHigh / lf.total * 100) : 0, color: "primary" },
+                { name: "first break IB low", value: lf.total > 0 ? (lf.breakLow / lf.total * 100) : 0, color: "muted" },
+              ]}
+              legendItems={[
+                { label: "first break IB high", color: "hsl(217,91%,60%)" },
+                { label: "first break IB low", color: "hsl(240,5%,30%)" },
+              ]}
+              settingsGrid={[
+                { label: "IB timeframe", value: `${result.ibWindowMinutes} min` },
+                { label: "candle timeframe", value: "5min" },
+                { label: "IB size", value: "any size" },
+                { label: "date range", value: formatDateRange(analysisMaxDays) },
+                { label: "IB breakout measure", value: "by rejection (M5 close)" },
+                { label: "weekdays to use", value: formatWeekdays(analysisWeekdays) },
+              ]}
+            />
+          </div>
+          <AITradingInsight
+            mode="ib"
+            symbol={symbol}
+            analysisData={{
+              totalDays: result.totalDays,
+              insideDays: result.insideDays,
+              ibWindowMinutes: result.ibWindowMinutes,
+              highFirst: { total: hf.total, breakHigh: hf.breakHigh, breakLow: hf.breakLow, inside: hf.inside },
+              lowFirst: { total: lf.total, breakHigh: lf.breakHigh, breakLow: lf.breakLow, inside: lf.inside },
+              lastDay: result.lastDay ? { date: result.lastDay.date, ibHigh: result.lastDay.ibHigh, ibLow: result.lastDay.ibLow, highFirstFormed: result.lastDay.highFirstFormed, breakout: result.lastDay.breakout } : null,
+            }}
           />
         </div>
       );
@@ -326,6 +341,17 @@ const Index = () => {
               ]}
             />
           </div>
+          <AITradingInsight
+            mode="momentum"
+            symbol={symbol}
+            analysisData={{
+              totalDays: momentumResult.totalDays,
+              currentTimeframe: tf,
+              highFirst: { total: hf.total, bullish: hf.bullish, bearish: hf.bearish, choppy: hf.choppy },
+              lowFirst: { total: lf.total, bullish: lf.bullish, bearish: lf.bearish, choppy: lf.choppy },
+              lastDay: momentumResult.lastDay ? { date: momentumResult.lastDay.date, momentum: momentumResult.lastDay.momentum } : null,
+            }}
+          />
         </div>
       );
     }
@@ -390,6 +416,17 @@ const Index = () => {
               ]}
             />
           </div>
+          <AITradingInsight
+            mode="occ"
+            symbol={symbol}
+            analysisData={{
+              totalDays: occResult.totalDays,
+              currentTimeframe: tf,
+              bearishFirst: { total: stats.bearishFirst.total, continuation: stats.bearishFirst.valid, reverting: stats.bearishFirst.invalid },
+              bullishFirst: { total: stats.bullishFirst.total, continuation: stats.bullishFirst.valid, reverting: stats.bullishFirst.invalid },
+              lastDay: occResult.lastDay ? { date: occResult.lastDay.date, overallBias: occResult.lastDay.overallBias } : null,
+            }}
+          />
         </div>
       );
     }
@@ -406,7 +443,24 @@ const Index = () => {
     }
 
     if (activeMode === "insidebar" && insideBarResult) {
-      return <InsideBarReport result={insideBarResult} symbol={symbol} />;
+      return (
+        <div className="space-y-4">
+          <InsideBarReport result={insideBarResult} symbol={symbol} />
+          <AITradingInsight
+            mode="insidebar"
+            symbol={symbol}
+            analysisData={{
+              totalDays: insideBarResult.totalDays,
+              insideBarDays: insideBarResult.insideBarDays,
+              insideBarPct: insideBarResult.insideBarPct,
+              breakoutPct: insideBarResult.breakoutPct,
+              brokeHighPct: insideBarResult.brokeHighPct,
+              brokeLowPct: insideBarResult.brokeLowPct,
+              stayedInsidePct: insideBarResult.stayedPct,
+            }}
+          />
+        </div>
+      );
     }
 
     if (activeMode === "outsideday" && outsideDayResult) {
