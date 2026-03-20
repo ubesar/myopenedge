@@ -268,40 +268,40 @@ const AIAssistant = () => {
 
   const quickActions = [
     {
-      label: "Run Full Analysis",
+      label: "Analisis Lengkap",
       icon: Activity,
-      description: "Analyze a ticker with all 6 modes and get confluence report",
-      prompt: "Run all 6 analysis modes (IB, Momentum, OCC, Gap Fill, Inside Bar, Outside Day) for QQQ using 60 trading days. Then provide a full confluence report with directional bias and confidence level.",
+      description: "Jalankan semua 6 mode analisis dan dapatkan laporan confluence",
+      prompt: "Jalankan semua 6 mode analisis (IB, Momentum, OCC, Gap Fill, Inside Bar, Outside Day) untuk QQQ menggunakan 60 hari trading. Berikan laporan confluence lengkap dengan directional bias dan confidence level.",
     },
     {
       label: "IB + OCC Confluence",
       icon: Layers,
-      description: "Combine IB and OCC analysis for stronger signals",
-      prompt: "Run IB analysis and OCC analysis for QQQ using 60 trading days. Compare the signals — does the IB tell align with the OCC direction? Provide confluence assessment.",
+      description: "Gabungkan IB tell dan OCC direction untuk sinyal lebih kuat",
+      prompt: "Jalankan analisis IB dan OCC untuk QQQ menggunakan 60 hari trading. Bandingkan apakah IB tell (high/low first) sejalan dengan arah OCC continuation. Berikan assessment confluence-nya.",
     },
     {
-      label: "Gap + OCC Combo",
+      label: "IB + Gap Fill",
       icon: TrendingUp,
-      description: "Check if gap direction aligns with opening candle bias",
-      prompt: "Run Gap Fill analysis and OCC analysis for QQQ using 60 trading days. Check if gap down days correlate with OCC bullish bias (or gap up with bearish). Provide the combined edge.",
+      description: "Cek apakah gap direction memperkuat IB breakout bias",
+      prompt: "Jalankan analisis IB dan Gap Fill untuk QQQ menggunakan 60 hari trading. Apakah hari gap down cenderung break low di IB? Apakah gap up cenderung break high? Berikan edge gabungannya.",
     },
     {
-      label: "Momentum Scan",
+      label: "Gap Down + OCC Bullish",
       icon: Zap,
-      description: "Run momentum candle analysis for a ticker",
-      prompt: "Run momentum candle analysis for QQQ using 60 trading days. Show the probability of continuation across all timeframes.",
+      description: "Cari reversal edge: gap down tapi OCC menunjukkan bullish",
+      prompt: "Jalankan analisis Gap Fill dan OCC untuk QQQ menggunakan 60 hari trading. Fokus pada hari gap down — apakah OCC menunjukkan bullish continuation? Jika ya, seberapa kuat edge reversal ini?",
     },
     {
-      label: "Trading Plan",
+      label: "IB + Inside Bar",
       icon: Target,
-      description: "Generate a full trading plan with data",
-      prompt: "Run IB, Momentum, and OCC analysis for QQQ using 60 days. Then create a complete trading plan with entry criteria, stop loss, profit target, and risk management rules based on the statistical edge.",
+      description: "Analisis breakout setelah konsolidasi inside bar",
+      prompt: "Jalankan analisis IB dan Inside Bar untuk QQQ menggunakan 60 hari trading. Apakah hari setelah inside bar cenderung break high atau break low di IB? Berikan probabilitas dan trading plan-nya.",
     },
     {
-      label: "Journal Entry",
+      label: "Buat Trading Plan",
       icon: BookOpen,
-      description: "Generate a journal-ready analysis report",
-      prompt: "Run IB and OCC analysis for QQQ using 40 trading days. Format the results into a trading journal entry with: Date, Bias, Statistical Edge, Setup Grade, Key Levels, and Risk Notes.",
+      description: "Generate trading plan lengkap berbasis data statistik",
+      prompt: "Jalankan analisis IB, Momentum, dan OCC untuk QQQ menggunakan 60 hari. Buat trading plan lengkap dengan entry criteria, stop loss, profit target, dan risk management berdasarkan statistical edge yang ditemukan.",
     },
   ];
 
@@ -320,8 +320,8 @@ const AIAssistant = () => {
           <div className="flex-1">
             <h1 className="text-sm font-semibold text-foreground">AI Trading Assistant</h1>
             <div className="flex items-center gap-2">
-              <p className="text-[11px] text-muted-foreground">Live analysis · Confluence detection · Trade planning</p>
-              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium border border-primary/20">⚡ Gemini 3 Flash</span>
+              <p className="text-[11px] text-muted-foreground">live analysis · confluence detection · trade planning</p>
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium border border-primary/20">⚡ gemini 3 flash</span>
             </div>
           </div>
           {messages.length > 0 && (
@@ -344,9 +344,9 @@ const AIAssistant = () => {
               <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-5">
                 <Bot className="h-7 w-7 text-primary opacity-60" />
               </div>
-              <h2 className="text-lg font-semibold text-foreground mb-1">How can I help you trade smarter?</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-1">apa yang bisa saya bantu hari ini?</h2>
               <p className="text-sm text-muted-foreground mb-8 text-center max-w-md">
-                I can run live analysis, combine multiple modes for confluence, and generate data-driven trading plans. Just ask!
+                saya bisa menjalankan live analysis, menggabungkan beberapa mode untuk confluence, dan membuat trading plan berbasis data. langsung tanya saja!
               </p>
 
               {/* Quick Actions Grid */}
@@ -439,7 +439,7 @@ const AIAssistant = () => {
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="e.g. 'Analyze QQQ IB and OCC 60 days' or 'Is gap down + OCC bullish a good setup for SPY?'"
+              placeholder="contoh: 'analisis IB dan OCC untuk QQQ 60 hari' atau 'apakah gap down + OCC bullish setup bagus untuk SPY?'"
               className="flex-1 bg-muted/50 border border-border/40 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
               disabled={isLoading}
             />
@@ -448,7 +448,7 @@ const AIAssistant = () => {
             </Button>
           </form>
           <p className="text-[10px] text-muted-foreground text-center mt-2 max-w-3xl mx-auto">
-            AI fetches live data & runs real analysis — not financial advice. Always apply strict risk management.
+            AI mengambil data live & menjalankan analisis nyata — bukan saran keuangan. selalu terapkan risk management yang ketat.
           </p>
         </div>
       </div>
