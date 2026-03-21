@@ -372,7 +372,13 @@ const Index = () => {
             dateRange={formatDateRange(analysisMaxDays)}
             weekdays={formatWeekdays(analysisWeekdays)}
             candleSize={occCandleSize}
-            onCandleSizeChange={setOccCandleSize}
+            onCandleSizeChange={(size) => {
+              setOccCandleSize(size);
+              if (occRawBars) {
+                const a = analyzeOCC(occRawBars, occMaxDays, size, occWeekdays);
+                setOccResult(a);
+              }
+            }}
           />
           <AITradingInsight
             mode="occ"
