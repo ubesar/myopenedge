@@ -52,6 +52,9 @@ const Index = () => {
   const [gapFillResult, setGapFillResult] = useState<GapFillResult | null>(null);
   const [insideBarResult, setInsideBarResult] = useState<InsideBarResult | null>(null);
   const [outsideDayResult, setOutsideDayResult] = useState<OutsideDayResult | null>(null);
+  const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
+  const [occMaxDays, setOccMaxDays] = useState<number>(0);
+  const [occWeekdays, setOccWeekdays] = useState<number[]>([1,2,3,4,5]);
   const [symbol, setSymbol] = useState("");
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
   const [selectedRunId, setSelectedRunId] = useState<string | undefined>();
@@ -178,6 +181,9 @@ const Index = () => {
         setMomentumResult(a);
         addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });
       } else if (effectiveMode === "occ") {
+        setOccRawBars(values as any);
+        setOccMaxDays(effectiveMaxDays);
+        setOccWeekdays(weekdays);
         const a = analyzeOCC(values as any, effectiveMaxDays, occCandleSize, weekdays);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setOccResult(a);
@@ -366,7 +372,13 @@ const Index = () => {
             dateRange={formatDateRange(analysisMaxDays)}
             weekdays={formatWeekdays(analysisWeekdays)}
             candleSize={occCandleSize}
-            onCandleSizeChange={setOccCandleSize}
+            onCandleSizeChange={(size) => {
+              setOccCandleSize(size);
+              if (occRawBars) {
+                const a = analyzeOCC(occRawBars, occMaxDays, size, occWeekdays);
+                setOccResult(a);
+              }
+            }}
           />
           <AITradingInsight
             mode="occ"
