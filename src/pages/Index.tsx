@@ -475,8 +475,8 @@ const Index = () => {
           onRun={handleRun}
           loading={loading}
           isFree={isFree}
-          occTimeframe={occTimeframe}
-          onOccTimeframeChange={setOccTimeframe}
+          occTimeframe={momentumTimeframe}
+          onOccTimeframeChange={setMomentumTimeframe}
           templates={templates}
           onSaveTemplate={saveTemplate}
           onDeleteTemplate={deleteTemplate}
