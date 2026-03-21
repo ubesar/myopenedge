@@ -177,10 +177,10 @@ const Index = () => {
         setMomentumResult(a);
         addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });
       } else if (effectiveMode === "occ") {
-        const a = analyzeOCC(values as any, effectiveMaxDays, parseFloat(occBodyRatio), weekdays);
+        const a = analyzeOCC(values as any, effectiveMaxDays, occCandleSize, weekdays);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
         setOccResult(a);
-        addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfDirectionStats: a.tfDirectionStats });
+        addRun(effectiveMode, ticker, { totalDays: a.totalDays, candleSize: a.candleSize, greenCandle: a.greenCandle, redCandle: a.redCandle });
       } else if (effectiveMode === "gapfill") {
         const a = analyzeGapFill(values as any, effectiveMaxDays, weekdays);
         if (a.totalDays === 0) { toast.error("Not enough data."); return; }
