@@ -55,7 +55,7 @@ const Index = () => {
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
   const [selectedRunId, setSelectedRunId] = useState<string | undefined>();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-  const [occTimeframe, setOccTimeframe] = useState<OCCTimeframe>("M15");
+  const [occCandleSize, setOccCandleSize] = useState<import("@/lib/occ-analysis").OCCCandleSize>("30m");
   const [momentumTimeframe, setMomentumTimeframe] = useState<OCCTimeframe>("M15");
   const [analysisMaxDays, setAnalysisMaxDays] = useState<number>(0);
   const [analysisWeekdays, setAnalysisWeekdays] = useState<number[]>([1,2,3,4,5]);
