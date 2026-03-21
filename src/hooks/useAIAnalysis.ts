@@ -241,7 +241,7 @@ export function useAIAnalysis() {
           result = analyzeMomentum(values, ib_window, max_days, 0.50);
           break;
         case "occ":
-          result = analyzeOCC(values, max_days, 0.50);
+          result = analyzeOCC(values, max_days, "30m");
           break;
         case "gapfill":
           result = analyzeGapFill(values, max_days);
