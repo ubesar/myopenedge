@@ -94,6 +94,7 @@ const GlobexIBAnalysis = () => {
 
   const [loading, setLoading] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [ticker, setTicker] = useState("NQ");
   const [ibWindow, setIbWindow] = useState<GlobexIBWindow>(60);
   const [maxDays, setMaxDays] = useState(60);
