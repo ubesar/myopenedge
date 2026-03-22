@@ -263,7 +263,7 @@ const GlobexIBAnalysis = () => {
   return (
     <div className="min-h-screen bg-background flex">
       {!isMobile && <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />}
-      {isMobile && <MobileHeader />}
+      {isMobile && <MobileHeader onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} title="globex ib" />}
 
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Top bar with nav */}
