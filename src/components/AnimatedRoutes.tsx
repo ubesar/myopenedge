@@ -14,6 +14,7 @@ import NotFound from "@/pages/NotFound";
 import TermsConditions from "@/pages/TermsConditions";
 import PaddleLiveGuide from "@/pages/PaddleLiveGuide";
 import ResetPassword from "@/pages/ResetPassword";
+import GlobexIBAnalysis from "@/pages/GlobexIBAnalysis";
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -24,6 +25,7 @@ const AnimatedRoutes = () => {
         <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
         <Route path="/app" element={<PageTransition><Index /></PageTransition>} />
+        <Route path="/globex" element={<PageTransition><GlobexIBAnalysis /></PageTransition>} />
         <Route path="/ai-assistant" element={<PageTransition><AIAssistant /></PageTransition>} />
         <Route path="/algos" element={<PageTransition><Algos /></PageTransition>} />
         <Route path="/chart" element={<PageTransition><Chart /></PageTransition>} />
