@@ -107,6 +107,7 @@ const GlobexIBAnalysis = () => {
   const [showSettings, setShowSettings] = useState(false);
 
   if (!authLoading && !user) return <Navigate to="/auth" replace />;
+  if (authLoading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
   const BATCH_DELAY_MS = 3000;
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
