@@ -26,3 +26,9 @@ verify_jwt = false
 
 [functions.midtrans-webhook]
 verify_jwt = false
+
+[functions.massive-bars]
+verify_jwt = false
+
+[functions.twelvedata-bars]
+verify_jwt = false
