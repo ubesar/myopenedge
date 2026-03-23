@@ -9,8 +9,8 @@ interface GapFillDashboardProps {
   weekdays?: string;
 }
 
-const FILLED_COLOR = "hsl(217, 91%, 60%)";
-const NOT_FILLED_COLOR = "hsl(217, 50%, 25%)";
+const FILLED_COLOR_VAR = "hsl(var(--chart-bar-a))";
+const NOT_FILLED_COLOR_VAR = "hsl(var(--chart-bar-b))";
 const BAR_HEIGHT = 340;
 
 /* ── Stacked Bar ── */
