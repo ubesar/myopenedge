@@ -37,7 +37,7 @@ const StackedBar = ({
           className="w-full flex items-center justify-center text-[12px] font-semibold"
           style={{
             height: notFilledH,
-            backgroundColor: NOT_FILLED_COLOR,
+            backgroundColor: NOT_FILLED_COLOR_VAR,
             color: "hsl(0, 0%, 100%)",
           }}
         >
@@ -50,7 +50,7 @@ const StackedBar = ({
           className="w-full flex items-center justify-center text-[13px] font-bold text-primary-foreground"
           style={{
             height: filledH,
-            backgroundColor: FILLED_COLOR,
+            backgroundColor: FILLED_COLOR_VAR,
           }}
         >
           {filledPct >= 4 && `${filledPct.toFixed(0)}% filled`}
