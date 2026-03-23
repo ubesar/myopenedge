@@ -10,6 +10,7 @@ import iconYt from "@/assets/icon-yt.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useIsMobile } from "@/hooks/use-mobile";
+import ThemeToggle from "@/components/ThemeToggle";
 
 interface AppNavSidebarProps {
   collapsed: boolean;
@@ -161,6 +162,7 @@ const SidebarContent = ({ collapsed, onToggle, onNavigate }: { collapsed: boolea
             {!collapsed && <span>upgrade</span>}
           </button>
         )}
+        <ThemeToggle />
         <button
           onClick={signOut}
           className="ml-auto text-muted-foreground hover:text-foreground transition-colors"

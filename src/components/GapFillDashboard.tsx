@@ -9,8 +9,8 @@ interface GapFillDashboardProps {
   weekdays?: string;
 }
 
-const FILLED_COLOR = "hsl(217, 91%, 60%)";
-const NOT_FILLED_COLOR = "hsl(217, 50%, 25%)";
+const FILLED_COLOR_VAR = "hsl(var(--chart-bar-a))";
+const NOT_FILLED_COLOR_VAR = "hsl(var(--chart-bar-b))";
 const BAR_HEIGHT = 340;
 
 /* ── Stacked Bar ── */
@@ -37,7 +37,7 @@ const StackedBar = ({
           className="w-full flex items-center justify-center text-[12px] font-semibold"
           style={{
             height: notFilledH,
-            backgroundColor: NOT_FILLED_COLOR,
+            backgroundColor: NOT_FILLED_COLOR_VAR,
             color: "hsl(0, 0%, 100%)",
           }}
         >
@@ -50,7 +50,7 @@ const StackedBar = ({
           className="w-full flex items-center justify-center text-[13px] font-bold text-primary-foreground"
           style={{
             height: filledH,
-            backgroundColor: FILLED_COLOR,
+            backgroundColor: FILLED_COLOR_VAR,
           }}
         >
           {filledPct >= 4 && `${filledPct.toFixed(0)}% filled`}
@@ -198,14 +198,11 @@ const GapFillDashboard = ({ result, symbol, dateRange, weekdays }: GapFillDashbo
             {/* Legend */}
             <div className="flex items-center justify-center gap-6 mt-5 text-[11px]">
               <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
+                <span className="w-2.5 h-2.5 rounded-full bg-chart-bar-a shrink-0" />
                 <span className="text-muted-foreground">% filled</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span
-                  className="w-2.5 h-2.5 rounded-full shrink-0"
-                  style={{ background: NOT_FILLED_COLOR }}
-                />
+                <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-chart-bar-b" />
                 <span className="text-muted-foreground">% not filled</span>
               </div>
             </div>

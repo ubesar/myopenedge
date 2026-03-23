@@ -95,11 +95,11 @@ const OCCDashboard = ({ result, symbol, dateRange, weekdays, candleSize, onCandl
         {/* Legend */}
         <div className="flex items-center justify-center gap-8 mt-5 text-[11px]">
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-primary" />
+            <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-chart-bar-a" />
             <span className="text-muted-foreground">% green day</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-chart-grey" />
+            <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-chart-bar-b" />
             <span className="text-muted-foreground">% red day</span>
           </div>
         </div>
@@ -182,7 +182,7 @@ function StackedBar({
         {/* Red day (top portion) */}
         {redPct > 0 && (
           <div
-            className="w-full bg-chart-grey flex items-center justify-center text-[11px] font-semibold text-primary-foreground"
+            className="w-full bg-chart-bar-b flex items-center justify-center text-[11px] font-semibold text-primary-foreground"
             style={{ height: `${redHeight}px` }}
           >
             {redHeight >= 30 && `${redPct.toFixed(2)}% red day`}
@@ -191,7 +191,7 @@ function StackedBar({
         {/* Green day (bottom portion) */}
         {greenPct > 0 && (
           <div
-            className="w-full bg-primary flex items-center justify-center text-[11px] font-semibold text-primary-foreground"
+            className="w-full bg-chart-bar-a flex items-center justify-center text-[11px] font-semibold text-primary-foreground"
             style={{ height: `${greenHeight}px` }}
           >
             {greenHeight >= 30 && `${greenPct.toFixed(2)}% green day`}

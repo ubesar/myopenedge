@@ -59,12 +59,12 @@ const ChartCard = ({ title, subtitle, totalDays, bars, legendItems, settingsGrid
                 const barHeight = Math.max((clampedValue / 100) * CHART_HEIGHT, clampedValue > 0 ? 4 : 0);
                 const showInsideLabel = barHeight >= 28;
                 return (
-                  <div key={i} className="flex flex-col items-center gap-1" style={{ width: "90px" }}>
+                   <div key={i} className="flex flex-col items-center gap-1" style={{ width: "90px" }}>
                     <div
                       className={`w-full rounded-t-md flex items-end justify-center pb-2 text-[12px] font-semibold transition-all duration-500 ${
                         bar.color === "primary"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-chart-grey text-primary-foreground"
+                          ? "bg-chart-bar-a text-primary-foreground"
+                          : "bg-chart-bar-b text-primary-foreground"
                       }`}
                       style={{ height: `${barHeight}px` }}
                     >
@@ -93,9 +93,9 @@ const ChartCard = ({ title, subtitle, totalDays, bars, legendItems, settingsGrid
         {/* Legend */}
         {legendItems && legendItems.length > 0 && (
           <div className="flex items-center justify-center gap-6 mt-4 text-[11px]">
-            {legendItems.map((item) => (
+            {legendItems.map((item, i) => (
               <div key={item.label} className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                <span className={`w-2 h-2 rounded-full shrink-0 ${i === 0 ? "bg-chart-bar-a" : "bg-chart-bar-b"}`} />
                 <span className="text-muted-foreground">{item.label}</span>
               </div>
             ))}

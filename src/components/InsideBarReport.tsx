@@ -50,13 +50,13 @@ const PieChart = ({ outsidePct, insidePct }: { outsidePct: number; insidePct: nu
   return (
     <div className="flex flex-col items-center">
       <svg width="240" height="240" viewBox="0 0 240 240">
-        {/* Outside days (primary blue) */}
+        {/* Outside days (chart-donut-a) */}
         {outsidePct > 0 && (
-          <path d={outsidePath} fill="hsl(217,91%,60%)" />
+          <path d={outsidePath} fill="hsl(var(--chart-donut-a))" />
         )}
-        {/* Inside days (grey) */}
+        {/* Inside days (chart-donut-b) */}
         {insidePct > 0 && (
-          <path d={insidePath} fill="hsl(240,5%,30%)" />
+          <path d={insidePath} fill="hsl(var(--chart-donut-b))" />
         )}
         {/* Labels */}
         {outsidePct > 5 && (
@@ -74,11 +74,11 @@ const PieChart = ({ outsidePct, insidePct }: { outsidePct: number; insidePct: nu
       {/* Legend */}
       <div className="flex items-center justify-center gap-6 mt-3 text-[11px]">
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full shrink-0 bg-primary" />
+          <span className="w-2 h-2 rounded-full shrink-0 bg-chart-donut-a" />
           <span className="text-muted-foreground">outside days</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "hsl(240,5%,30%)" }} />
+          <span className="w-2 h-2 rounded-full shrink-0 bg-chart-donut-b" />
           <span className="text-muted-foreground">inside days</span>
         </div>
       </div>

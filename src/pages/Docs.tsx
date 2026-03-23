@@ -185,28 +185,43 @@ export default function Docs() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <CandlestickChart className="h-5 w-5 text-primary" />
-                4.3 Opening Candle Continuation (OCC)
+                4.3 Opening Candle Continuation (OCC) — Edgeful Model
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p><span className="font-semibold text-foreground">Objective:</span> Evaluate the immediate directional bias established by the first two candles at market open.</p>
+              <p><span className="font-semibold text-foreground">Objective:</span> Calculate the statistical probability that the daily close direction (green day vs red day) correlates with the direction of the first opening candle at market open — a direct 1-to-1 correlation model.</p>
               <div className="grid sm:grid-cols-2 gap-3">
-                <InfoBox title="Evaluation Point">
-                  <p>First 2 candles immediately following the 09:30 open.</p>
+                <InfoBox title="Session">
+                  <p>RTH (Regular Trading Hours): 09:30 AM – 04:00 PM EST</p>
                 </InfoBox>
-                <InfoBox title="Monitored Timeframes">
-                  <p>M5, M15, M30, H1 (simultaneously but independently).</p>
+                <InfoBox title="Opening Candle Size">
+                  <p>Selectable: 5min, 15min, 30min, 1hour (default: 30min). Switching re-calculates instantly from cached data.</p>
                 </InfoBox>
               </div>
-              <InfoBox title="Signal Output">
-                <ul className="space-y-1 ml-4 list-disc">
-                  <li><span className="text-green-400 font-medium">Bullish Continuation:</span> Both candles are green (C1 bullish + C2 bullish).</li>
-                  <li><span className="text-red-400 font-medium">Bearish Continuation:</span> Both candles are red (C1 bearish + C2 bearish).</li>
-                  <li><span className="text-foreground font-medium">Reverting:</span> Mixed colors — no continuation signal, market is reverting.</li>
+              <InfoBox title="Independent Variable (X)">
+                <p>The direction of the <span className="font-medium text-foreground">first candle</span> after the 09:30 open:</p>
+                <ul className="space-y-1 ml-4 list-disc mt-1.5">
+                  <li><span className="text-green-400 font-medium">Green (Bullish) Candle:</span> Close &gt; Open</li>
+                  <li><span className="text-red-400 font-medium">Red (Bearish) Candle:</span> Close &lt; Open</li>
                 </ul>
               </InfoBox>
-              <InfoBox title="No Body Ratio Filter">
-                <p>Unlike Momentum Candle, OCC does <span className="font-medium text-foreground">not</span> apply any body percentage threshold. Any bullish or bearish candle counts regardless of wick size.</p>
+              <InfoBox title="Dependent Variable (Y)">
+                <p>The direction of the <span className="font-medium text-foreground">daily close at 04:00 PM</span>:</p>
+                <ul className="space-y-1 ml-4 list-disc mt-1.5">
+                  <li><span className="font-medium text-foreground">Green Day:</span> Daily Close &gt; Daily Open (09:30)</li>
+                  <li><span className="font-medium text-foreground">Red Day:</span> Daily Close &lt; Daily Open (09:30)</li>
+                </ul>
+              </InfoBox>
+              <InfoBox title="Calculation Logic">
+                <p><span className="font-medium text-foreground">Green Opening Candle:</span> From all days where the opening candle was green — what percentage ended as a Green Day vs Red Day?</p>
+                <p className="mt-1"><span className="font-medium text-foreground">Red Opening Candle:</span> From all days where the opening candle was red — what percentage ended as a Green Day vs Red Day?</p>
+              </InfoBox>
+              <InfoBox title="Dashboard Output">
+                <ul className="space-y-1 ml-4 list-disc">
+                  <li><span className="font-medium text-foreground">Stacked Bar Chart</span> — Two bars (Green Candle, Red Candle) showing % Green Day vs % Red Day</li>
+                  <li><span className="font-medium text-foreground">Real-time Candle Size Selector</span> — Switch between 5m/15m/30m/1h without re-fetching data</li>
+                  <li>Color: Blue for Green Day probability, Grey for Red Day probability (Edgeful-style neutral palette)</li>
+                </ul>
               </InfoBox>
             </CardContent>
           </Card>
