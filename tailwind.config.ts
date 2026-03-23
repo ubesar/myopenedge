@@ -50,6 +50,10 @@ export default {
   			},
   			'chart-blue': 'hsl(var(--chart-blue))',
   			'chart-grey': 'hsl(var(--chart-grey))',
+  			'chart-bar-a': 'hsl(var(--chart-bar-a))',
+  			'chart-bar-b': 'hsl(var(--chart-bar-b))',
+  			'chart-donut-a': 'hsl(var(--chart-donut-a))',
+  			'chart-donut-b': 'hsl(var(--chart-donut-b))',
   			buy: {
   				DEFAULT: 'hsl(var(--buy))',
   				foreground: 'hsl(var(--buy-foreground))'
