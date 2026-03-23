@@ -10,6 +10,7 @@ import iconYt from "@/assets/icon-yt.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useIsMobile } from "@/hooks/use-mobile";
+import ThemeToggle from "@/components/ThemeToggle";
 
 interface AppNavSidebarProps {
   collapsed: boolean;
