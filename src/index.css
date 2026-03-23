@@ -37,6 +37,12 @@
     --chart-blue: 217 91% 60%;
     --chart-grey: 240 5% 30%;
 
+    /* Light-mode chart overrides (same as dark by default) */
+    --chart-bar-a: 217 91% 60%;
+    --chart-bar-b: 240 5% 30%;
+    --chart-donut-a: 217 91% 60%;
+    --chart-donut-b: 240 5% 30%;
+
     --surface: 240 14% 7%;
 
     --sidebar-background: 240 14% 5%;
@@ -70,6 +76,77 @@
     --warning: 38 92% 55%;
     --warning-foreground: 0 0% 5%;
     --warning-glow: 38 92% 55%;
+  }
+
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 10%;
+
+    --card: 0 0% 99%;
+    --card-foreground: 240 10% 10%;
+
+    --popover: 0 0% 99%;
+    --popover-foreground: 240 10% 10%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 5% 94%;
+    --secondary-foreground: 240 5% 40%;
+
+    --muted: 240 5% 94%;
+    --muted-foreground: 240 5% 40%;
+
+    --accent: 240 5% 94%;
+    --accent-foreground: 240 10% 10%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 6% 88%;
+    --input: 240 6% 92%;
+    --ring: 217 91% 60%;
+
+    --chart-blue: 217 91% 60%;
+    --chart-grey: 240 5% 80%;
+
+    /* Light-mode chart: pink + black per reference */
+    --chart-bar-a: 330 81% 60%;
+    --chart-bar-b: 0 0% 8%;
+    --chart-donut-a: 330 81% 60%;
+    --chart-donut-b: 0 0% 8%;
+
+    --surface: 0 0% 98%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5% 40%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 5% 94%;
+    --sidebar-accent-foreground: 240 10% 10%;
+    --sidebar-border: 240 6% 90%;
+    --sidebar-ring: 217 91% 60%;
+
+    --profit: 160 84% 35%;
+    --profit-foreground: 160 84% 10%;
+    --loss: 0 84% 55%;
+    --loss-foreground: 0 84% 10%;
+
+    --chart-1: 217 91% 60%;
+    --chart-2: 160 84% 35%;
+    --chart-3: 217 91% 60%;
+    --chart-4: 280 65% 55%;
+    --chart-5: 38 92% 45%;
+
+    --buy: 152 69% 40%;
+    --buy-foreground: 0 0% 100%;
+    --buy-glow: 152 69% 40%;
+    --sell: 358 75% 50%;
+    --sell-foreground: 0 0% 100%;
+    --sell-glow: 358 75% 50%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 5%;
+    --warning-glow: 38 92% 50%;
   }
 }
 
