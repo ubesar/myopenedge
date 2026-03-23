@@ -95,11 +95,11 @@ const OCCDashboard = ({ result, symbol, dateRange, weekdays, candleSize, onCandl
         {/* Legend */}
         <div className="flex items-center justify-center gap-8 mt-5 text-[11px]">
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-primary" />
+            <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-chart-bar-a" />
             <span className="text-muted-foreground">% green day</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-chart-grey" />
+            <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-chart-bar-b" />
             <span className="text-muted-foreground">% red day</span>
           </div>
         </div>
