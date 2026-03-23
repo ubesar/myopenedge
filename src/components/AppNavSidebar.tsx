@@ -162,6 +162,7 @@ const SidebarContent = ({ collapsed, onToggle, onNavigate }: { collapsed: boolea
             {!collapsed && <span>upgrade</span>}
           </button>
         )}
+        <ThemeToggle />
         <button
           onClick={signOut}
           className="ml-auto text-muted-foreground hover:text-foreground transition-colors"
