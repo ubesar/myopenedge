@@ -198,14 +198,11 @@ const GapFillDashboard = ({ result, symbol, dateRange, weekdays }: GapFillDashbo
             {/* Legend */}
             <div className="flex items-center justify-center gap-6 mt-5 text-[11px]">
               <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
+                <span className="w-2.5 h-2.5 rounded-full bg-chart-bar-a shrink-0" />
                 <span className="text-muted-foreground">% filled</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span
-                  className="w-2.5 h-2.5 rounded-full shrink-0"
-                  style={{ background: NOT_FILLED_COLOR }}
-                />
+                <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-chart-bar-b" />
                 <span className="text-muted-foreground">% not filled</span>
               </div>
             </div>

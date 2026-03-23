@@ -182,7 +182,7 @@ function StackedBar({
         {/* Red day (top portion) */}
         {redPct > 0 && (
           <div
-            className="w-full bg-chart-grey flex items-center justify-center text-[11px] font-semibold text-primary-foreground"
+            className="w-full bg-chart-bar-b flex items-center justify-center text-[11px] font-semibold text-primary-foreground"
             style={{ height: `${redHeight}px` }}
           >
             {redHeight >= 30 && `${redPct.toFixed(2)}% red day`}
@@ -191,7 +191,7 @@ function StackedBar({
         {/* Green day (bottom portion) */}
         {greenPct > 0 && (
           <div
-            className="w-full bg-primary flex items-center justify-center text-[11px] font-semibold text-primary-foreground"
+            className="w-full bg-chart-bar-a flex items-center justify-center text-[11px] font-semibold text-primary-foreground"
             style={{ height: `${greenHeight}px` }}
           >
             {greenHeight >= 30 && `${greenPct.toFixed(2)}% green day`}
