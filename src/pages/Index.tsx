@@ -167,45 +167,65 @@ const Index = () => {
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
     try {
-      const json = await fetchMarketData(ticker, effectiveMaxDays);
-      if (json.status === "error") { toast.error(json.message || "API error"); return; }
-      const parsed = TwelveDataResponseSchema.safeParse(json);
-      if (!parsed.success) { toast.error("Invalid or empty data returned."); return; }
-      const values = parsed.data.values;
+      if (effectiveMode === "globex-ib") {
+        // Globex IB uses Massive API via massive-bars edge function
+        const now = new Date();
+        const from = new Date(now);
+        from.setDate(from.getDate() - Math.ceil(effectiveMaxDays * 1.5)); // extra days for weekends
+        const fromStr = from.toISOString().split("T")[0];
+        const toStr = now.toISOString().split("T")[0];
 
-      if (effectiveMode === "ib") {
-        const a = analyzeIB(values as any, effectiveIbWindow, effectiveMaxDays, weekdays);
-        if (a.totalDays === 0) { toast.error("Not enough data."); return; }
-        setResult(a);
+        const { data: json, error } = await supabase.functions.invoke("massive-bars", {
+          body: { symbol: ticker, from: fromStr, to: toStr, multiplier: 5, timespan: "minute" },
+        });
+        if (error) throw new Error("Failed to fetch Globex data from Massive API");
+        if (!json?.values || json.values.length === 0) { toast.error("No data returned from Massive API."); return; }
+
+        const a = analyzeGlobexIB(json.values, effectiveIbWindow, effectiveMaxDays, weekdays);
+        if (a.totalDays === 0) { toast.error("Not enough overnight data."); return; }
+        setGlobexIBResult(a);
         addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
-      } else if (effectiveMode === "momentum") {
-        const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, parseFloat(bodyRatio), weekdays);
-        if (a.totalDays === 0) { toast.error("Not enough data."); return; }
-        setMomentumResult(a);
-        addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });
-      } else if (effectiveMode === "occ") {
-        setOccRawBars(values as any);
-        setOccMaxDays(effectiveMaxDays);
-        setOccWeekdays(weekdays);
-        const a = analyzeOCC(values as any, effectiveMaxDays, occCandleSize, weekdays);
-        if (a.totalDays === 0) { toast.error("Not enough data."); return; }
-        setOccResult(a);
-        addRun(effectiveMode, ticker, { totalDays: a.totalDays, candleSize: a.candleSize, greenCandle: a.greenCandle, redCandle: a.redCandle });
-      } else if (effectiveMode === "gapfill") {
-        const a = analyzeGapFill(values as any, effectiveMaxDays, weekdays);
-        if (a.totalDays === 0) { toast.error("Not enough data."); return; }
-        setGapFillResult(a);
-        addRun(effectiveMode, ticker, { totalDays: a.totalDays, stats: a.stats });
-      } else if (effectiveMode === "insidebar") {
-        const a = analyzeInsideBar(values as any, effectiveMaxDays, weekdays);
-        if (a.totalDays === 0) { toast.error("Not enough data."); return; }
-        setInsideBarResult(a);
-        addRun(effectiveMode, ticker, { totalDays: a.totalDays, insideBarPct: a.insideBarPct, breakoutPct: a.breakoutPct });
-      } else if (effectiveMode === "outsideday") {
-        const a = analyzeOutsideDay(values as any, effectiveMaxDays, weekdays);
-        if (a.totalDays === 0) { toast.error("Not enough data."); return; }
-        setOutsideDayResult(a);
-        addRun(effectiveMode, ticker, { totalDays: a.totalDays, outsidePct: a.outsidePct, bullishContinuationPct: a.bullishContinuationPct, bearishContinuationPct: a.bearishContinuationPct });
+      } else {
+        const json = await fetchMarketData(ticker, effectiveMaxDays);
+        if (json.status === "error") { toast.error(json.message || "API error"); return; }
+        const parsed = TwelveDataResponseSchema.safeParse(json);
+        if (!parsed.success) { toast.error("Invalid or empty data returned."); return; }
+        const values = parsed.data.values;
+
+        if (effectiveMode === "ib") {
+          const a = analyzeIB(values as any, effectiveIbWindow, effectiveMaxDays, weekdays);
+          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setResult(a);
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
+        } else if (effectiveMode === "momentum") {
+          const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, parseFloat(bodyRatio), weekdays);
+          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setMomentumResult(a);
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });
+        } else if (effectiveMode === "occ") {
+          setOccRawBars(values as any);
+          setOccMaxDays(effectiveMaxDays);
+          setOccWeekdays(weekdays);
+          const a = analyzeOCC(values as any, effectiveMaxDays, occCandleSize, weekdays);
+          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setOccResult(a);
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, candleSize: a.candleSize, greenCandle: a.greenCandle, redCandle: a.redCandle });
+        } else if (effectiveMode === "gapfill") {
+          const a = analyzeGapFill(values as any, effectiveMaxDays, weekdays);
+          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setGapFillResult(a);
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, stats: a.stats });
+        } else if (effectiveMode === "insidebar") {
+          const a = analyzeInsideBar(values as any, effectiveMaxDays, weekdays);
+          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setInsideBarResult(a);
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, insideBarPct: a.insideBarPct, breakoutPct: a.breakoutPct });
+        } else if (effectiveMode === "outsideday") {
+          const a = analyzeOutsideDay(values as any, effectiveMaxDays, weekdays);
+          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setOutsideDayResult(a);
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, outsidePct: a.outsidePct, bullishContinuationPct: a.bullishContinuationPct, bearishContinuationPct: a.bearishContinuationPct });
+        }
       }
 
     } catch (err: any) {
