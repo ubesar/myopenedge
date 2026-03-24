@@ -161,6 +161,7 @@ const ParameterPanel = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ib">IB: initial balance breakout</SelectItem>
+              {!isFree && <SelectItem value="globex-ib">IB: globex overnight</SelectItem>}
               {!isFree && <SelectItem value="momentum">momentum candle</SelectItem>}
               {!isFree && <SelectItem value="occ">opening candle continuation</SelectItem>}
               {!isFree && <SelectItem value="gapfill">gap fill statistics</SelectItem>}
