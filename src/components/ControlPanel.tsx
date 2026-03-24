@@ -95,7 +95,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
         {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for more days</p>}
       </div>
 
-      {mode !== "occ" && mode !== "gapfill" && mode !== "insidebar" && mode !== "outsideday" && (
+      {(mode === "ib" || mode === "momentum" || mode === "globex-ib") && (
         <div className="space-y-2">
           <Label className="text-sm text-muted-foreground">IB Window</Label>
           <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => !isFree && setIbWindow(v)} disabled={isFree}>
