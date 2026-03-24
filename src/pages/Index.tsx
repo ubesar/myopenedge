@@ -54,6 +54,7 @@ const Index = () => {
   const [gapFillResult, setGapFillResult] = useState<GapFillResult | null>(null);
   const [insideBarResult, setInsideBarResult] = useState<InsideBarResult | null>(null);
   const [outsideDayResult, setOutsideDayResult] = useState<OutsideDayResult | null>(null);
+  const [globexIBResult, setGlobexIBResult] = useState<GlobexIBResult | null>(null);
   const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
   const [occMaxDays, setOccMaxDays] = useState<number>(0);
   const [occWeekdays, setOccWeekdays] = useState<number[]>([1,2,3,4,5]);
