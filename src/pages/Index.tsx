@@ -23,8 +23,10 @@ import { analyzeGapFill, type GapFillResult } from "@/lib/gapfill-analysis";
 import GapFillDashboard from "@/components/GapFillDashboard";
 import { analyzeInsideBar, type InsideBarResult } from "@/lib/insidebar-analysis";
 import { analyzeOutsideDay, type OutsideDayResult } from "@/lib/outsideday-analysis";
+import { analyzeGlobexIB, type GlobexIBResult } from "@/lib/globex-ib-analysis";
 import InsideBarReport from "@/components/InsideBarReport";
 import OutsideDayReport from "@/components/OutsideDayReport";
+import GlobexIBDashboard from "@/components/GlobexIBDashboard";
 import { useSubscription } from "@/hooks/useSubscription";
 import { z } from "zod";
 
