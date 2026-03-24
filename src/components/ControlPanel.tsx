@@ -55,6 +55,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ib">Initial Balance (IB)</SelectItem>
+            {!isFree && <SelectItem value="globex-ib">Globex IB (Overnight)</SelectItem>}
             {!isFree && <SelectItem value="momentum">Momentum Candle</SelectItem>}
             {!isFree && <SelectItem value="occ">Opening Candle Continuation</SelectItem>}
             {!isFree && <SelectItem value="gapfill">Gap Fill Statistics</SelectItem>}
