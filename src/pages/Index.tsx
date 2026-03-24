@@ -453,6 +453,37 @@ const Index = () => {
       return <OutsideDayReport result={outsideDayResult} symbol={symbol} />;
     }
 
+    if (activeMode === "globex-ib" && globexIBResult) {
+      return (
+        <div className="space-y-4">
+          <GlobexIBDashboard
+            result={globexIBResult}
+            symbol={symbol}
+            dateRange={formatDateRange(analysisMaxDays)}
+            weekdays={formatWeekdays(analysisWeekdays)}
+          />
+          <AITradingInsight
+            mode="ib"
+            symbol={symbol}
+            analysisData={{
+              totalDays: globexIBResult.totalDays,
+              insideDays: 0,
+              ibWindowMinutes: globexIBResult.ibWindowMinutes,
+              highFirst: globexIBResult.highFirst,
+              lowFirst: globexIBResult.lowFirst,
+              lastDay: globexIBResult.lastDay ? {
+                date: globexIBResult.lastDay.date,
+                ibHigh: globexIBResult.lastDay.globexIBHigh,
+                ibLow: globexIBResult.lastDay.globexIBLow,
+                highFirstFormed: globexIBResult.lastDay.highFirstFormed,
+                breakout: globexIBResult.lastDay.rthBreakout,
+              } : null,
+            }}
+          />
+        </div>
+      );
+    }
+
     return null;
   };
 
