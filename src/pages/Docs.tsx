@@ -218,9 +218,10 @@ export default function Docs() {
               </InfoBox>
               <InfoBox title="Dashboard Output">
                 <ul className="space-y-1 ml-4 list-disc">
-                  <li><span className="font-medium text-foreground">Stacked Bar Chart</span> — Two bars (Green Candle, Red Candle) showing % Green Day vs % Red Day</li>
+                  <li><span className="font-medium text-foreground">Two Chart Cards</span> — "Green Opening Candle" and "Red Opening Candle", each showing continuation % vs reversal %</li>
+                  <li><span className="font-medium text-foreground">Continuation</span> — Session closed in the same direction as the opening candle</li>
+                  <li><span className="font-medium text-foreground">Reversal</span> — Session closed in the opposite direction of the opening candle</li>
                   <li><span className="font-medium text-foreground">Real-time Candle Size Selector</span> — Switch between 5m/15m/30m/1h without re-fetching data</li>
-                  <li>Color: Blue for Green Day probability, Grey for Red Day probability (Edgeful-style neutral palette)</li>
                 </ul>
               </InfoBox>
             </CardContent>
