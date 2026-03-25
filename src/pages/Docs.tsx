@@ -123,7 +123,7 @@ export default function Docs() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p><span className="font-semibold text-foreground">Objective:</span> Map the institutional opening range and calculate breakout probability based on sequence formation.</p>
+              <p><span className="font-semibold text-foreground">Objective:</span> Map the institutional opening range, track breakout type (single vs double), and calculate breakout probability based on sequence formation — following the Edgeful model.</p>
               <div className="grid sm:grid-cols-2 gap-3">
                 <InfoBox title="IB Window Options">
                   <p>15 min (09:30–09:45), 30 min (09:30–10:00), 60 min (09:30–10:30), 90 min (09:30–11:00)</p>
@@ -133,16 +133,24 @@ export default function Docs() {
                 </InfoBox>
               </div>
               <InfoBox title="Sequence Detection — The 'Tell'">
-                <p>The system tracks which extreme was formed first (IB High First vs IB Low First). This sequence is the key predictor for breakout direction.</p>
+                <p>The system tracks which extreme was formed first (IB High First vs IB Low First). This sequence is the key predictor for first breakout direction.</p>
               </InfoBox>
               <InfoBox title="Breakout Confirmation (By Rejection)">
-                <p>After the IB window, the system monitors M5 bars until 12:00 NY. A breakout is confirmed only when a candle <span className="font-medium text-foreground">closes</span> outside the IB range — not just wicks through it.</p>
+                <p>After the IB window, the system monitors M5 bars until <span className="font-medium text-foreground">session close (04:00 PM)</span>. A breakout is confirmed only when a candle <span className="font-medium text-foreground">closes</span> outside the IB range — not just wicks through it.</p>
+              </InfoBox>
+              <InfoBox title="Break Type Classification (Edgeful Model)">
+                <p>The system tracks whether price broke one side, both sides, or stayed inside throughout the entire session:</p>
+                <ul className="space-y-1 ml-4 list-disc mt-1.5">
+                  <li><span className="font-medium text-foreground">Single Break</span> — Price broke only one side (IB High or IB Low) during the session. Most common pattern (~73–80% on NQ).</li>
+                  <li><span className="font-medium text-foreground">Double Break</span> — Price broke both IB High and IB Low during the session. Signals high volatility and indecision (~15–27%).</li>
+                  <li><span className="font-medium text-foreground">No Break</span> — Price stayed within the IB range for the entire session. Very rare (~5%).</li>
+                </ul>
               </InfoBox>
               <InfoBox title="Probability Output">
                 <ul className="space-y-1 ml-4 list-disc">
-                  <li><span className="text-green-400 font-medium">Break High</span> — Price closed above IB High</li>
-                  <li><span className="text-red-400 font-medium">Break Low</span> — Price closed below IB Low</li>
-                  <li><span className="text-foreground font-medium">Inside Day</span> — Price remained within IB until 12:00</li>
+                  <li><span className="font-medium text-foreground">First Break Direction</span> — Which side broke first (High vs Low) grouped by IB High/Low formed first</li>
+                  <li><span className="font-medium text-foreground">Break Type Stats</span> — Single break %, double break %, no break % for the selected period</li>
+                  <li>Once price single breaks, expect continuation — don't expect a big reversal</li>
                 </ul>
               </InfoBox>
             </CardContent>
