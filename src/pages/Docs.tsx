@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, BarChart3, Activity, Target, Zap, TrendingUp,
   CandlestickChart, FileText, FlaskConical, ArrowUpDown,
-  Layers, SquareStack, LineChart, Bot, Cpu, Eye, Rocket
+  Layers, SquareStack, LineChart, Bot, Cpu, Eye, Rocket, Moon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -318,6 +318,56 @@ export default function Docs() {
                   <li>Outside Day frequency (% of trading days)</li>
                   <li>Next-day follow-through direction and magnitude</li>
                   <li>Close position relative to the outside day's range</li>
+                </ul>
+              </InfoBox>
+            </CardContent>
+          </Card>
+          {/* Feature 7: Globex IB */}
+          <Card className="border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Moon className="h-5 w-5 text-primary" />
+                4.7 Globex IB (Overnight Initial Balance) Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm text-muted-foreground">
+              <p><span className="font-semibold text-foreground">Objective:</span> Evaluate the relationship between the overnight Globex session and the RTH morning session to predict breakout direction based on the Globex Initial Balance formation sequence.</p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <InfoBox title="Globex Session">
+                  <p>6:00 PM – 9:30 AM ET (overnight). Starts from the previous calendar day's evening through the next morning before RTH open.</p>
+                </InfoBox>
+                <InfoBox title="Data Source">
+                  <p>Intraday bars fetched via <span className="font-medium text-foreground">Massive API</span> for accurate historical overnight data (not TwelveData).</p>
+                </InfoBox>
+              </div>
+              <InfoBox title="Globex IB Window">
+                <p>The Initial Balance is computed from the <span className="font-medium text-foreground">first 30 or 60 minutes</span> after the Globex session opens (6:00 PM ET). The IB High and IB Low are the extreme values within this window.</p>
+              </InfoBox>
+              <InfoBox title="Sequence Detection — High First vs Low First">
+                <p>The system tracks which extreme of the Globex IB was formed first. If the IB High was established before the IB Low, the day is classified as <span className="font-medium text-foreground">"High First"</span>, and vice versa. This sequence is the key predictor for RTH breakout direction.</p>
+              </InfoBox>
+              <InfoBox title="Overnight IB Break Tracking">
+                <p>After the Globex IB window closes, the system monitors the remaining overnight session to determine if price broke above or below the Globex IB range before RTH opens:</p>
+                <ul className="space-y-1 ml-4 list-disc mt-1.5">
+                  <li><span className="font-medium text-foreground">Broke High Only</span> — Overnight closed above Globex IB High</li>
+                  <li><span className="font-medium text-foreground">Broke Low Only</span> — Overnight closed below Globex IB Low</li>
+                  <li><span className="font-medium text-foreground">Broke Both</span> — Overnight breached both extremes</li>
+                  <li><span className="font-medium text-foreground">Stayed Inside</span> — Price remained within Globex IB range</li>
+                </ul>
+              </InfoBox>
+              <InfoBox title="RTH Breakout vs Full Globex Range">
+                <p>During <span className="font-medium text-foreground">RTH morning (9:30 AM – 12:00 PM)</span>, the system monitors whether price breaks the full overnight Globex range (not just the IB). A breakout is confirmed when a M5 candle <span className="font-medium text-foreground">closes</span> above the Globex High or below the Globex Low.</p>
+                <ul className="space-y-1 ml-4 list-disc mt-1.5">
+                  <li><span className="text-green-400 font-medium">Break Globex High</span> — RTH closed above the full Globex overnight high</li>
+                  <li><span className="text-red-400 font-medium">Break Globex Low</span> — RTH closed below the full Globex overnight low</li>
+                  <li><span className="text-foreground font-medium">Inside</span> — RTH remained within the Globex range until 12:00 PM</li>
+                </ul>
+              </InfoBox>
+              <InfoBox title="Dashboard Output">
+                <ul className="space-y-1 ml-4 list-disc">
+                  <li><span className="font-medium text-foreground">Two Chart Cards</span> — "Globex IB High Formed First" and "Globex IB Low Formed First", each showing RTH breakout probabilities</li>
+                  <li><span className="font-medium text-foreground">Overnight Break Statistics</span> — Percentage breakdown of how often overnight broke the Globex IB (high only, low only, both, stayed inside)</li>
+                  <li>Execution parameters displayed for full transparency</li>
                 </ul>
               </InfoBox>
             </CardContent>
