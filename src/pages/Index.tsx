@@ -245,6 +245,7 @@ const Index = () => {
     if (activeMode === "ib" && result) {
       const hf = result.highFirst;
       const lf = result.lowFirst;
+      const bs = result.breakTypeStats;
       return (
         <div className="space-y-4">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -257,8 +258,8 @@ const Index = () => {
                 { name: "first break IB low", value: hf.total > 0 ? (hf.breakLow / hf.total * 100) : 0, color: "muted" },
               ]}
               legendItems={[
-                { label: "first break IB high", color: "hsl(217,91%,60%)" },
-                { label: "first break IB low", color: "hsl(240,5%,30%)" },
+                { label: "first break IB high", color: "hsl(var(--chart-bar-a))" },
+                { label: "first break IB low", color: "hsl(var(--chart-bar-b))" },
               ]}
               settingsGrid={[
                 { label: "IB timeframe", value: `${result.ibWindowMinutes} min` },
@@ -278,8 +279,8 @@ const Index = () => {
                 { name: "first break IB low", value: lf.total > 0 ? (lf.breakLow / lf.total * 100) : 0, color: "muted" },
               ]}
               legendItems={[
-                { label: "first break IB high", color: "hsl(217,91%,60%)" },
-                { label: "first break IB low", color: "hsl(240,5%,30%)" },
+                { label: "first break IB high", color: "hsl(var(--chart-bar-a))" },
+                { label: "first break IB low", color: "hsl(var(--chart-bar-b))" },
               ]}
               settingsGrid={[
                 { label: "IB timeframe", value: `${result.ibWindowMinutes} min` },
@@ -291,6 +292,34 @@ const Index = () => {
               ]}
             />
           </div>
+
+          {/* Break Type Stats — Edgeful Model */}
+          <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-4">
+            <h3 className="text-[13px] font-semibold text-foreground mb-3 lowercase">
+              IB break type statistics
+            </h3>
+            <p className="text-[11px] text-muted-foreground mb-3">
+              how often does price single break, double break, or stay inside the IB range?
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="text-center p-3 rounded-lg bg-muted/30">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">single break</p>
+                <p className="text-lg font-semibold text-foreground">{bs.singleBreakPct.toFixed(0)}%</p>
+                <p className="text-[10px] text-muted-foreground">{bs.singleBreak} days</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-muted/30">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">double break</p>
+                <p className="text-lg font-semibold text-foreground">{bs.doubleBreakPct.toFixed(0)}%</p>
+                <p className="text-[10px] text-muted-foreground">{bs.doubleBreak} days</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-muted/30">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">no break</p>
+                <p className="text-lg font-semibold text-foreground">{bs.noBreakPct.toFixed(0)}%</p>
+                <p className="text-[10px] text-muted-foreground">{bs.noBreak} days</p>
+              </div>
+            </div>
+          </div>
+
           <AITradingInsight
             mode="ib"
             symbol={symbol}
@@ -300,7 +329,8 @@ const Index = () => {
               ibWindowMinutes: result.ibWindowMinutes,
               highFirst: { total: hf.total, breakHigh: hf.breakHigh, breakLow: hf.breakLow, inside: hf.inside },
               lowFirst: { total: lf.total, breakHigh: lf.breakHigh, breakLow: lf.breakLow, inside: lf.inside },
-              lastDay: result.lastDay ? { date: result.lastDay.date, ibHigh: result.lastDay.ibHigh, ibLow: result.lastDay.ibLow, highFirstFormed: result.lastDay.highFirstFormed, breakout: result.lastDay.breakout } : null,
+              breakTypeStats: { singleBreak: bs.singleBreak, doubleBreak: bs.doubleBreak, noBreak: bs.noBreak, singleBreakPct: bs.singleBreakPct, doubleBreakPct: bs.doubleBreakPct, noBreakPct: bs.noBreakPct },
+              lastDay: result.lastDay ? { date: result.lastDay.date, ibHigh: result.lastDay.ibHigh, ibLow: result.lastDay.ibLow, highFirstFormed: result.lastDay.highFirstFormed, breakout: result.lastDay.breakout, breakType: result.lastDay.breakType } : null,
             }}
           />
         </div>
