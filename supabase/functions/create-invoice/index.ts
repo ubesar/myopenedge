@@ -55,12 +55,17 @@ Deno.serve(async (req) => {
       },
     };
 
-    const pricing = prices[plan]?.[currency];
+    let pricing = prices[plan]?.[currency];
     if (!pricing) {
       return new Response(JSON.stringify({ error: "Invalid plan or currency" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Special discount for specific users
+    if (user.email === "basoukkas.pnup09@gmail.com") {
+      pricing = { amount: 0.1, label: "$0.10 (discount)" };
     }
 
     const orderId = `MOE-${Date.now()}-${user.id.substring(0, 8)}`;
