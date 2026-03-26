@@ -1,5 +1,5 @@
-import type { OutsideDayResult } from "@/lib/outsideday-analysis";
-import ChartCard from "@/components/ChartCard";
+import { useState, useMemo } from "react";
+import type { OutsideDayResult, OutsideDayData } from "@/lib/outsideday-analysis";
 
 interface OutsideDayReportProps {
   result: OutsideDayResult;
@@ -8,170 +8,244 @@ interface OutsideDayReportProps {
   weekdays?: string;
 }
 
-const OutsideDayReport = ({ result, symbol, dateRange = "", weekdays = "" }: OutsideDayReportProps) => {
-  const { bullish, bearish } = result;
+const GAP_FILTERS = [
+  { label: "all", min: 0, max: Infinity },
+  { label: "< 0.1%", min: 0, max: 0.1 },
+  { label: "0.1 – 0.19%", min: 0.1, max: 0.2 },
+  { label: "0.20 – 0.39%", min: 0.2, max: 0.4 },
+  { label: "0.40 – 0.59%", min: 0.4, max: 0.6 },
+  { label: "0.60 – 0.99%", min: 0.6, max: 1.0 },
+  { label: "1.0 – 1.49%", min: 1.0, max: 1.5 },
+  { label: ">= 1.5%", min: 1.5, max: Infinity },
+];
+
+function calcFiltered(days: OutsideDayData[], type: "bullish" | "bearish") {
+  const typed = days.filter(d => d.type === type);
+  const total = typed.length;
+  // "did not reverse" = bullish closed green, bearish closed red
+  const didNotReverse = type === "bullish"
+    ? typed.filter(d => d.closedGreen === true).length
+    : typed.filter(d => d.closedGreen === false).length;
+  const reversed = total - didNotReverse;
+  return {
+    total,
+    didNotReverse,
+    didNotReversePct: total > 0 ? (didNotReverse / total) * 100 : 0,
+    reversed,
+    reversedPct: total > 0 ? (reversed / total) * 100 : 0,
+  };
+}
+
+const OutsideDayReport = ({ result, symbol, dateRange = "" }: OutsideDayReportProps) => {
+  const [activeFilter, setActiveFilter] = useState(0);
+
+  const filteredDays = useMemo(() => {
+    const f = GAP_FILTERS[activeFilter];
+    return result.allDays.filter(d => {
+      if (d.type === null) return false;
+      const gap = d.gapPct ?? 0;
+      return gap >= f.min && gap < f.max;
+    });
+  }, [result.allDays, activeFilter]);
+
+  const bull = useMemo(() => calcFiltered(filteredDays, "bullish"), [filteredDays]);
+  const bear = useMemo(() => calcFiltered(filteredDays, "bearish"), [filteredDays]);
+
+  const allOutside = filteredDays.length;
+  const bullPctOfAll = allOutside > 0 ? (bull.total / allOutside) * 100 : 0;
+  const bearPctOfAll = allOutside > 0 ? (bear.total / allOutside) * 100 : 0;
 
   return (
     <div className="space-y-4">
-      {/* Gap Fill Probability */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <ChartCard
-          title="bullish outside day"
-          subtitle={`${symbol} · open > yesterday's high`}
-          totalDays={bullish.total}
-          bars={[
-            { name: "filled gap (touched prior high)", value: bullish.filledGapPct, color: "primary" },
-            { name: "continued higher", value: bullish.didNotFillPct, color: "muted" },
-          ]}
-          legendItems={[
-            { label: "retraced to prior high", color: "hsl(var(--chart-bar-a))" },
-            { label: "continued higher", color: "hsl(var(--chart-bar-b))" },
-          ]}
-          settingsGrid={[
-            { label: "trigger", value: "open > yesterday's high" },
-            { label: "session", value: "9:30–16:00 ET" },
-            ...(dateRange ? [{ label: "date range", value: dateRange }] : []),
-            ...(weekdays ? [{ label: "weekdays", value: weekdays }] : []),
-          ]}
-        />
-        <ChartCard
-          title="bearish outside day"
-          subtitle={`${symbol} · open < yesterday's low`}
-          totalDays={bearish.total}
-          bars={[
-            { name: "filled gap (touched prior low)", value: bearish.filledGapPct, color: "primary" },
-            { name: "continued lower", value: bearish.didNotFillPct, color: "muted" },
-          ]}
-          legendItems={[
-            { label: "retraced to prior low", color: "hsl(var(--chart-bar-a))" },
-            { label: "continued lower", color: "hsl(var(--chart-bar-b))" },
-          ]}
-          settingsGrid={[
-            { label: "trigger", value: "open < yesterday's low" },
-            { label: "session", value: "9:30–16:00 ET" },
-            ...(dateRange ? [{ label: "date range", value: dateRange }] : []),
-            ...(weekdays ? [{ label: "weekdays", value: weekdays }] : []),
-          ]}
-        />
-      </div>
+      {/* Main layout: Charts + Insights */}
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
+        {/* Charts panel */}
+        <div className="xl:col-span-3 border border-border rounded-xl bg-card overflow-hidden">
+          <div className="px-5 pt-4 pb-2">
+            <p className="text-[11px] text-muted-foreground font-medium lowercase">charts</p>
+            <h3 className="text-sm font-semibold text-foreground mt-1">
+              outside days | {symbol} | 9:30 am – 4:00 pm
+            </h3>
+            {dateRange && (
+              <p className="text-[11px] text-muted-foreground mt-0.5">{dateRange}</p>
+            )}
+          </div>
 
-      {/* By Close Report */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <ChartCard
-          title="bullish outside day → by close"
-          subtitle={`${symbol} · session close direction after bullish outside day`}
-          totalDays={bullish.total}
-          bars={[
-            { name: "closed green", value: bullish.closedGreenPct, color: "primary" },
-            { name: "closed red", value: bullish.closedRedPct, color: "muted" },
-          ]}
-          legendItems={[
-            { label: "closed above prior high (green)", color: "hsl(var(--chart-bar-a))" },
-            { label: "closed below prior high (red)", color: "hsl(var(--chart-bar-b))" },
-          ]}
-          settingsGrid={[
-            { label: "filter", value: "by close" },
-            { label: "session", value: "9:30–16:00 ET" },
-          ]}
-        />
-        <ChartCard
-          title="bearish outside day → by close"
-          subtitle={`${symbol} · session close direction after bearish outside day`}
-          totalDays={bearish.total}
-          bars={[
-            { name: "closed green", value: bearish.closedGreenPct, color: "primary" },
-            { name: "closed red", value: bearish.closedRedPct, color: "muted" },
-          ]}
-          legendItems={[
-            { label: "closed green", color: "hsl(var(--chart-bar-a))" },
-            { label: "closed red", color: "hsl(var(--chart-bar-b))" },
-          ]}
-          settingsGrid={[
-            { label: "filter", value: "by close" },
-            { label: "session", value: "9:30–16:00 ET" },
-          ]}
-        />
-      </div>
+          {/* Stacked bar chart */}
+          <div className="px-5 pb-4 pt-2">
+            <div className="flex items-end gap-8 justify-center" style={{ height: 280 }}>
+              {/* Y-axis labels */}
+              <div className="flex flex-col justify-between h-full text-[10px] text-muted-foreground pr-1">
+                <span>100%</span>
+                <span>75%</span>
+                <span>50%</span>
+                <span>25%</span>
+                <span>0%</span>
+              </div>
 
-      {/* Overview */}
-      <div className="border border-border rounded-xl bg-card overflow-hidden">
-        <div className="px-5 pt-4 pb-3 border-b border-border">
-          <h4 className="text-[13px] font-semibold text-foreground lowercase">overview</h4>
-          <p className="text-[11px] text-muted-foreground mt-0.5">
-            {symbol} · {result.totalDays} trading days analyzed
-          </p>
-        </div>
-        <div className="px-5 py-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="text-center">
-            <p className="text-[22px] font-bold text-foreground">{result.outsideDays}</p>
-            <p className="text-[11px] text-muted-foreground">outside days</p>
-          </div>
-          <div className="text-center">
-            <p className="text-[22px] font-bold text-primary">{result.outsidePct.toFixed(1)}%</p>
-            <p className="text-[11px] text-muted-foreground">occurrence rate</p>
-          </div>
-          <div className="text-center">
-            <p className="text-[22px] font-bold text-foreground">{bullish.total}</p>
-            <p className="text-[11px] text-muted-foreground">bullish (open &gt; high)</p>
-          </div>
-          <div className="text-center">
-            <p className="text-[22px] font-bold text-foreground">{bearish.total}</p>
-            <p className="text-[11px] text-muted-foreground">bearish (open &lt; low)</p>
-          </div>
-        </div>
-      </div>
+              {/* Bullish bar */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="relative w-36 sm:w-44" style={{ height: 250 }}>
+                  {bull.total > 0 ? (
+                    <>
+                      {/* Reversal (top - dark) */}
+                      <div
+                        className="absolute top-0 left-0 right-0 bg-[#374151] rounded-t-md flex items-center justify-center"
+                        style={{ height: `${bull.reversedPct}%` }}
+                      >
+                        {bull.reversedPct >= 10 && (
+                          <span className="text-[11px] font-semibold text-white/90">
+                            {bull.reversedPct.toFixed(0)}% reversal back down
+                          </span>
+                        )}
+                      </div>
+                      {/* Did not reverse (bottom - blue) */}
+                      <div
+                        className="absolute bottom-0 left-0 right-0 bg-[#3b82f6] rounded-b-md flex items-center justify-center"
+                        style={{ height: `${bull.didNotReversePct}%` }}
+                      >
+                        <span className="text-[11px] font-semibold text-white">
+                          {bull.didNotReversePct.toFixed(0)}% did not reverse
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full h-full bg-muted/20 rounded-md flex items-center justify-center">
+                      <span className="text-[10px] text-muted-foreground">no data</span>
+                    </div>
+                  )}
+                </div>
+                <span className="text-[11px] text-muted-foreground">bullish outside day</span>
+              </div>
 
-      {/* Execution Log */}
-      <div className="border border-border rounded-xl bg-card overflow-hidden">
-        <div className="px-5 pt-4 pb-3 border-b border-border">
-          <h4 className="text-[13px] font-semibold text-foreground lowercase">execution log</h4>
-          <p className="text-[11px] text-muted-foreground mt-0.5">historical outside day instances</p>
+              {/* Bearish bar */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="relative w-36 sm:w-44" style={{ height: 250 }}>
+                  {bear.total > 0 ? (
+                    <>
+                      {/* Reversal (top - dark) */}
+                      <div
+                        className="absolute top-0 left-0 right-0 bg-[#374151] rounded-t-md flex items-center justify-center"
+                        style={{ height: `${bear.reversedPct}%` }}
+                      >
+                        {bear.reversedPct >= 10 && (
+                          <span className="text-[11px] font-semibold text-white/90">
+                            {bear.reversedPct.toFixed(0)}% reversal back up
+                          </span>
+                        )}
+                      </div>
+                      {/* Did not reverse (bottom - blue) */}
+                      <div
+                        className="absolute bottom-0 left-0 right-0 bg-[#3b82f6] rounded-b-md flex items-center justify-center"
+                        style={{ height: `${bear.didNotReversePct}%` }}
+                      >
+                        <span className="text-[11px] font-semibold text-white">
+                          {bear.didNotReversePct.toFixed(0)}% did not reverse
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full h-full bg-muted/20 rounded-md flex items-center justify-center">
+                      <span className="text-[10px] text-muted-foreground">no data</span>
+                    </div>
+                  )}
+                </div>
+                <span className="text-[11px] text-muted-foreground">bearish outside day</span>
+              </div>
+            </div>
+
+            {/* Gap size filter buttons */}
+            <div className="flex flex-wrap gap-2 mt-5">
+              {GAP_FILTERS.map((f, i) => (
+                <button
+                  key={f.label}
+                  onClick={() => setActiveFilter(i)}
+                  className={`px-3 py-1.5 text-[11px] rounded-md border transition-colors ${
+                    activeFilter === i
+                      ? "border-[#3b82f6] text-[#3b82f6] bg-[#3b82f6]/10"
+                      : "border-border text-muted-foreground hover:border-muted-foreground/50"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-[11px]">
-            <thead>
-              <tr className="border-b border-border text-muted-foreground">
-                <th className="px-4 py-2 text-left font-medium">date</th>
-                <th className="px-4 py-2 text-left font-medium">type</th>
-                <th className="px-4 py-2 text-left font-medium">gap size</th>
-                <th className="px-4 py-2 text-left font-medium">filled gap</th>
-                <th className="px-4 py-2 text-left font-medium">close</th>
-                <th className="px-4 py-2 text-right font-medium">open</th>
-                <th className="px-4 py-2 text-right font-medium">close</th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.allDays
-                .filter(d => d.type !== null)
-                .reverse()
-                .slice(0, 50)
-                .map(d => (
-                  <tr key={d.date} className="border-b border-border/50 hover:bg-accent/30 transition-colors">
-                    <td className="px-4 py-2 font-mono text-foreground">{d.date}</td>
-                    <td className="px-4 py-2">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                        d.type === "bullish"
-                          ? "bg-primary/15 text-primary"
-                          : "bg-destructive/15 text-destructive"
-                      }`}>
-                        {d.type}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2 font-mono text-foreground">{d.gapPct?.toFixed(2)}%</td>
-                    <td className="px-4 py-2">
-                      {d.filledGap === true && <span className="text-primary font-semibold">✓ yes</span>}
-                      {d.filledGap === false && <span className="text-muted-foreground">✗ no</span>}
-                    </td>
-                    <td className="px-4 py-2">
-                      {d.closedGreen === true && <span className="text-primary font-semibold">green</span>}
-                      {d.closedGreen === false && <span className="text-destructive font-semibold">red</span>}
-                    </td>
-                    <td className="px-4 py-2 text-right font-mono text-foreground">{d.open.toFixed(2)}</td>
-                    <td className="px-4 py-2 text-right font-mono text-foreground">{d.close.toFixed(2)}</td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
+
+        {/* Insights panel */}
+        <div className="xl:col-span-2 border border-border rounded-xl bg-card overflow-hidden">
+          <div className="px-5 pt-4 pb-2">
+            <p className="text-[11px] text-muted-foreground font-medium lowercase">insights</p>
+          </div>
+
+          {/* Bullish table */}
+          <div className="px-4">
+            <table className="w-full text-[12px]">
+              <thead>
+                <tr className="bg-[#3b82f6] text-white">
+                  <th className="px-3 py-2 text-left font-medium rounded-tl-md">category</th>
+                  <th className="px-3 py-2 text-right font-medium">frequency</th>
+                  <th className="px-3 py-2 text-right font-medium rounded-tr-md">percentage</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-border/30">
+                  <td className="px-3 py-2.5 text-foreground">bullish outside day</td>
+                  <td className="px-3 py-2.5 text-right text-foreground font-mono">{bull.total}</td>
+                  <td className="px-3 py-2.5 text-right text-foreground font-mono">{bullPctOfAll.toFixed(0)}%</td>
+                </tr>
+                <tr className="border-b border-border/30">
+                  <td className="px-3 py-2.5 text-foreground">bullish outside day did not reverse</td>
+                  <td className="px-3 py-2.5 text-right text-foreground font-mono">{bull.didNotReverse}</td>
+                  <td className="px-3 py-2.5 text-right text-foreground font-mono">
+                    {bull.total > 0 ? bull.didNotReversePct.toFixed(0) : 0}%
+                  </td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="px-3 py-2.5 text-foreground">bullish outside day reversal down</td>
+                  <td className="px-3 py-2.5 text-right text-foreground font-mono">{bull.reversed}</td>
+                  <td className="px-3 py-2.5 text-right text-foreground font-mono">
+                    {bull.total > 0 ? bull.reversedPct.toFixed(0) : 0}%
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Bearish table */}
+          <div className="px-4 mt-4 pb-4">
+            <table className="w-full text-[12px]">
+              <thead>
+                <tr className="bg-[#3b82f6] text-white">
+                  <th className="px-3 py-2 text-left font-medium rounded-tl-md">category</th>
+                  <th className="px-3 py-2 text-right font-medium">frequency</th>
+                  <th className="px-3 py-2 text-right font-medium rounded-tr-md">percentage</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-border/30">
+                  <td className="px-3 py-2.5 text-foreground">bearish outside day</td>
+                  <td className="px-3 py-2.5 text-right text-foreground font-mono">{bear.total}</td>
+                  <td className="px-3 py-2.5 text-right text-foreground font-mono">{bearPctOfAll.toFixed(0)}%</td>
+                </tr>
+                <tr className="border-b border-border/30">
+                  <td className="px-3 py-2.5 text-foreground">bearish outside day did not reverse</td>
+                  <td className="px-3 py-2.5 text-right text-foreground font-mono">{bear.didNotReverse}</td>
+                  <td className="px-3 py-2.5 text-right text-foreground font-mono">
+                    {bear.total > 0 ? bear.didNotReversePct.toFixed(0) : 0}%
+                  </td>
+                </tr>
+                <tr>
+                  <td className="px-3 py-2.5 text-foreground">bearish outside day reversal up</td>
+                  <td className="px-3 py-2.5 text-right text-foreground font-mono">{bear.reversed}</td>
+                  <td className="px-3 py-2.5 text-right text-foreground font-mono">
+                    {bear.total > 0 ? bear.reversedPct.toFixed(0) : 0}%
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
