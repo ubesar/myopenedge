@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useKnowledge } from "@/hooks/useKnowledge";
 import { Sparkles, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { motion, AnimatePresence } from "framer-motion";
@@ -53,6 +54,7 @@ async function streamChat(
     },
     body: JSON.stringify({
       messages: [{ role: "user", content: prompt }],
+      customKnowledge,
     }),
     signal,
   });
@@ -98,6 +100,7 @@ const AITradingInsight = ({ mode, symbol, analysisData }: AITradingInsightProps)
   const [expanded, setExpanded] = useState(true);
   const abortRef = useRef<AbortController | null>(null);
   const generatedKeyRef = useRef("");
+  const { knowledgeText } = useKnowledge();
 
   const generateInsight = useCallback(async () => {
     abortRef.current?.abort();
