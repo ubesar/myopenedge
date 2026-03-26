@@ -468,6 +468,7 @@ const AIAssistant = () => {
           </p>
         </div>
       </div>
+      <KnowledgeManager open={showKnowledge} onClose={() => setShowKnowledge(false)} />
     </div>
   );
 };
