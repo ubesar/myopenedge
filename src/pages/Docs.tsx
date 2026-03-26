@@ -1,18 +1,23 @@
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, BarChart3, Activity, Target, Zap, TrendingUp,
-  CandlestickChart, FileText, FlaskConical, ArrowUpDown,
-  Layers, SquareStack, LineChart, Bot, Cpu, Eye, Rocket, Moon
+  FileText, ArrowUpDown, Layers, Bot, Moon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import logo from "@/assets/logo.png";
 
-/* ── tiny reusable info box ── */
 const InfoBox = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div className="rounded-lg bg-muted/30 border border-border/20 p-3 space-y-1.5">
     <p className="text-xs font-semibold text-foreground">{title}</p>
     <div className="text-xs text-muted-foreground">{children}</div>
+  </div>
+);
+
+const Stat = ({ label, value }: { label: string; value: string }) => (
+  <div className="text-center p-2 rounded-lg bg-muted/20">
+    <p className="text-lg font-bold text-primary">{value}</p>
+    <p className="text-[10px] text-muted-foreground">{label}</p>
   </div>
 );
 
@@ -21,7 +26,6 @@ export default function Docs() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border/40 bg-background/95 backdrop-blur px-4 sm:px-8 py-3">
         <div className="max-w-5xl mx-auto flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate("/app")} className="shrink-0">
@@ -30,7 +34,7 @@ export default function Docs() {
           <img src={logo} alt="MyOpenEdge" className="h-8 w-8 rounded-full object-cover" />
           <div className="flex-1">
             <h1 className="text-lg font-bold text-foreground">MyOpenEdge Documentation</h1>
-            <p className="text-xs text-muted-foreground">v2.0 — Complete Feature Reference</p>
+            <p className="text-xs text-muted-foreground">Edgeful Model — Data-Driven Trading Edge</p>
           </div>
           <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => navigate("/terms_conditions")}>
             <FileText className="h-3.5 w-3.5" /> Legal
@@ -47,465 +51,394 @@ export default function Docs() {
             1. Product Overview
           </h2>
           <Card>
-            <CardContent className="pt-6 text-sm text-muted-foreground leading-relaxed">
+            <CardContent className="pt-6 text-sm text-muted-foreground leading-relaxed space-y-3">
               <p>
-                <span className="font-semibold text-foreground">MyOpenEdge</span> is a specialized web-based analytical platform designed to provide futures day traders and swing traders with a distinct statistical edge. By parsing historical data and real-time market structure during the New York (NY) open, the application calculates the probability of specific price action setups.
+                <strong className="text-foreground">MyOpenEdge</strong> is a data-driven trading analysis platform inspired by{" "}
+                <a href="https://www.edgeful.com/blog" target="_blank" rel="noopener noreferrer" className="text-primary underline">Edgeful's methodology</a>.
+                It provides traders with statistical probabilities based on historical price data to build trading plans rooted in data, not emotions.
               </p>
-              <p className="mt-3">
-                The core objective is to shift trading decisions from intuition-based to data-driven, specifically for high-volatility instruments like <span className="font-medium text-foreground">Nasdaq (NQ/QQQ)</span>, <span className="font-medium text-foreground">Gold (GC/GLD)</span>, and <span className="font-medium text-foreground">IDX futures</span>.
+              <p>
+                The platform analyzes Regular Trading Hours (RTH) data from 09:30 AM – 04:00 PM ET using 5-minute intraday bars from TwelveData, then computes probabilities across six core reports.
+              </p>
+              <p className="font-medium text-foreground">
+                Core philosophy: "Build a bias based on data, not your gut feelings or emotions."
               </p>
             </CardContent>
           </Card>
         </section>
 
-        {/* ─── 2. Target Audience ─── */}
+        {/* ─── 2. Initial Balance ─── */}
         <section className="space-y-4">
           <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Target className="h-6 w-6 text-primary" />
-            2. Target Audience
-          </h2>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Scalpers & Swing Traders</CardTitle></CardHeader>
-              <CardContent className="text-xs text-muted-foreground">Traders looking for high-probability setups during the opening hours of the market.</CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Systematic Traders</CardTitle></CardHeader>
-              <CardContent className="text-xs text-muted-foreground">Users who rely on strict rule-based execution, independent timeframe analysis, and historical backtesting to justify entries.</CardContent>
-            </Card>
-          </div>
-        </section>
-
-        {/* ─── 3. Platform Workflow ─── */}
-        <section className="space-y-4">
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Rocket className="h-6 w-6 text-primary" />
-            3. Platform Workflow
+            2. Initial Balance (IB)
           </h2>
           <Card>
-            <CardContent className="pt-6 text-sm text-muted-foreground leading-relaxed space-y-3">
-              <p>All analysis modules share a common data pipeline:</p>
-              <div className="rounded-lg bg-muted/30 border border-border/20 p-4 font-mono text-xs space-y-1">
-                <p className="text-foreground">1. User selects Symbol, Mode, Date Range, and Weekday Filter</p>
-                <p className="text-foreground">2. System fetches 5-minute bars from TwelveData (batched 60-day windows)</p>
-                <p className="text-foreground">3. Bars are aggregated to M15/M30/H1 as needed</p>
-                <p className="text-foreground">4. Analysis logic processes bars → generates statistics</p>
-                <p className="text-foreground">5. Results rendered as charts + probability dashboards</p>
+            <CardContent className="pt-6 text-sm text-muted-foreground leading-relaxed space-y-4">
+              <p>
+                The initial balance is the <strong className="text-foreground">high and low of the first hour</strong> of the trading session (09:30–10:30 ET by default).
+                It sets up two critical levels every single day that dictate the probability of price action for the rest of the session.
+              </p>
+
+              <InfoBox title="What is the IB?">
+                <p>The IB high and IB low are automatically calculated from the first N minutes of RTH (configurable: 15, 30, 60, or 90 min). These levels act as key support/resistance for the entire trading day.</p>
+              </InfoBox>
+
+              <h3 className="text-base font-semibold text-foreground">Three Outcome Types</h3>
+              <p>The IB report tracks what happens <strong className="text-foreground">across the full session</strong> (09:30–16:00 ET) after the IB forms:</p>
+              <div className="grid grid-cols-3 gap-3">
+                <Stat label="Single Break" value="~73-80%" />
+                <Stat label="Double Break" value="~15-20%" />
+                <Stat label="No Break" value="~5%" />
               </div>
-              <div className="grid sm:grid-cols-3 gap-3 mt-2">
-                <InfoBox title="Date Range Options">
-                  <p>1 Month (20 days), 2 Months (40), 3 Months (60), 6 Months (120), 12 Months (240)</p>
-                </InfoBox>
-                <InfoBox title="Weekday Filter">
-                  <p>Select any combination of Monday–Friday to isolate day-of-week patterns.</p>
-                </InfoBox>
-                <InfoBox title="Supported Symbols">
-                  <p>QQQ, GLD, SPY, AAPL, TSLA, NVDA, BTC/USD, ETH/USD, and more.</p>
-                </InfoBox>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
+              <ul className="list-disc pl-5 space-y-1">
+                <li><strong className="text-foreground">Single Break:</strong> Price breaks ONLY one side of the IB. Once it breaks one side, expect continuation — don't fight the direction.</li>
+                <li><strong className="text-foreground">Double Break:</strong> Price breaks both IB high and IB low. This is rare and typically a chop day — best to sit out.</li>
+                <li><strong className="text-foreground">No Break:</strong> Price stays entirely within the IB range. Extremely rare.</li>
+              </ul>
 
-        {/* ─── 4. Edge Lab — Core Features ─── */}
-        <section className="space-y-6">
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <FlaskConical className="h-6 w-6 text-primary" />
-            4. Edge Lab — Core Analysis Modules
-          </h2>
+              <InfoBox title="The Tell">
+                <p>Track whether the IB high or IB low formed first. This "tell" helps predict which direction the breakout will occur. If the high forms first, there's a higher probability of breaking to the downside, and vice versa.</p>
+              </InfoBox>
 
-          {/* Feature 1: IB */}
-          <Card className="border-primary/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                4.1 Initial Balance (IB) Analysis
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p><span className="font-semibold text-foreground">Objective:</span> Map the institutional opening range, track breakout type (single vs double), and calculate breakout probability based on sequence formation — following the Edgeful model.</p>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <InfoBox title="IB Window Options">
-                  <p>15 min (09:30–09:45), 30 min (09:30–10:00), 60 min (09:30–10:30), 90 min (09:30–11:00)</p>
-                </InfoBox>
-                <InfoBox title="Data Source">
-                  <p>Strictly calculated using <span className="font-medium text-foreground">5-minute (M5)</span> bars to define the exact High and Low.</p>
-                </InfoBox>
-              </div>
-              <InfoBox title="Sequence Detection — The 'Tell'">
-                <p>The system tracks which extreme was formed first (IB High First vs IB Low First). This sequence is the key predictor for first breakout direction.</p>
-              </InfoBox>
-              <InfoBox title="Breakout Confirmation (By Rejection)">
-                <p>After the IB window, the system monitors M5 bars until <span className="font-medium text-foreground">session close (04:00 PM)</span>. A breakout is confirmed only when a candle <span className="font-medium text-foreground">closes</span> outside the IB range — not just wicks through it.</p>
-              </InfoBox>
-              <InfoBox title="Break Type Classification (Edgeful Model)">
-                <p>The system tracks whether price broke one side, both sides, or stayed inside throughout the entire session:</p>
-                <ul className="space-y-1 ml-4 list-disc mt-1.5">
-                  <li><span className="font-medium text-foreground">Single Break</span> — Price broke only one side (IB High or IB Low) during the session. Most common pattern (~73–80% on NQ).</li>
-                  <li><span className="font-medium text-foreground">Double Break</span> — Price broke both IB High and IB Low during the session. Signals high volatility and indecision (~15–27%).</li>
-                  <li><span className="font-medium text-foreground">No Break</span> — Price stayed within the IB range for the entire session. Very rare (~5%).</li>
-                </ul>
-              </InfoBox>
-              <InfoBox title="Probability Output">
-                <ul className="space-y-1 ml-4 list-disc">
-                  <li><span className="font-medium text-foreground">First Break Direction</span> — Which side broke first (High vs Low) grouped by IB High/Low formed first</li>
-                  <li><span className="font-medium text-foreground">Break Type Stats</span> — Single break %, double break %, no break % for the selected period</li>
-                  <li>Once price single breaks, expect continuation — don't expect a big reversal</li>
-                </ul>
-              </InfoBox>
-            </CardContent>
-          </Card>
-
-          {/* Feature 2: Momentum */}
-          <Card className="border-primary/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Activity className="h-5 w-5 text-primary" />
-                4.2 Momentum Candle Analysis
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p><span className="font-semibold text-foreground">Objective:</span> Identify strong directional momentum during the morning session and validate against historical probabilities.</p>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <InfoBox title="Time Window">
-                  <p>09:30 – 12:00 (NY Time)</p>
-                </InfoBox>
-                <InfoBox title="Monitored Timeframes">
-                  <p>M5, M15, M30, H1 (evaluated independently)</p>
-                </InfoBox>
-              </div>
-              <InfoBox title="Trigger Criteria">
-                <p>Scans for <span className="font-medium text-foreground">2 consecutive candles</span> of the same color (Bullish or Bearish).</p>
-                <ul className="space-y-1 ml-4 list-disc mt-1.5">
-                  <li><span className="font-medium text-foreground">Candle 1:</span> Body ratio ≥ threshold (40%, 50%, or 60%)</li>
-                  <li><span className="font-medium text-foreground">Candle 2:</span> Body ratio ≥ 30%</li>
-                </ul>
-                <p className="mt-1.5">Body Ratio = <code className="bg-muted px-1 rounded text-foreground">abs(open − close) / (high − low)</code></p>
-              </InfoBox>
-              <InfoBox title="Timeframe Independence">
-                <p>Each timeframe is treated as a standalone setup. A valid M5 signal does not require M15/H1 confirmation, enabling sequential execution (e.g., scalping M5 then swinging M15).</p>
-              </InfoBox>
-            </CardContent>
-          </Card>
-
-          {/* Feature 3: OCC */}
-          <Card className="border-primary/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <CandlestickChart className="h-5 w-5 text-primary" />
-                4.3 Opening Candle Continuation (OCC) — Edgeful Model
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p><span className="font-semibold text-foreground">Objective:</span> Calculate the statistical probability that the daily close direction (green day vs red day) correlates with the direction of the first opening candle at market open — a direct 1-to-1 correlation model.</p>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <InfoBox title="Session">
-                  <p>RTH (Regular Trading Hours): 09:30 AM – 04:00 PM EST</p>
-                </InfoBox>
-                <InfoBox title="Opening Candle Size">
-                  <p>Selectable: 5min, 15min, 30min, 1hour (default: 30min). Switching re-calculates instantly from cached data.</p>
-                </InfoBox>
-              </div>
-              <InfoBox title="Independent Variable (X)">
-                <p>The direction of the <span className="font-medium text-foreground">first candle</span> after the 09:30 open:</p>
-                <ul className="space-y-1 ml-4 list-disc mt-1.5">
-                  <li><span className="text-green-400 font-medium">Green (Bullish) Candle:</span> Close &gt; Open</li>
-                  <li><span className="text-red-400 font-medium">Red (Bearish) Candle:</span> Close &lt; Open</li>
-                </ul>
-              </InfoBox>
-              <InfoBox title="Dependent Variable (Y)">
-                <p>The direction of the <span className="font-medium text-foreground">daily close at 04:00 PM</span>:</p>
-                <ul className="space-y-1 ml-4 list-disc mt-1.5">
-                  <li><span className="font-medium text-foreground">Green Day:</span> Daily Close &gt; Daily Open (09:30)</li>
-                  <li><span className="font-medium text-foreground">Red Day:</span> Daily Close &lt; Daily Open (09:30)</li>
-                </ul>
-              </InfoBox>
-              <InfoBox title="Calculation Logic">
-                <p><span className="font-medium text-foreground">Green Opening Candle:</span> From all days where the opening candle was green — what percentage ended as a Green Day vs Red Day?</p>
-                <p className="mt-1"><span className="font-medium text-foreground">Red Opening Candle:</span> From all days where the opening candle was red — what percentage ended as a Green Day vs Red Day?</p>
-              </InfoBox>
-              <InfoBox title="Dashboard Output">
-                <ul className="space-y-1 ml-4 list-disc">
-                  <li><span className="font-medium text-foreground">Two Chart Cards</span> — "Green Opening Candle" and "Red Opening Candle", each showing continuation % vs reversal %</li>
-                  <li><span className="font-medium text-foreground">Continuation</span> — Session closed in the same direction as the opening candle</li>
-                  <li><span className="font-medium text-foreground">Reversal</span> — Session closed in the opposite direction of the opening candle</li>
-                  <li><span className="font-medium text-foreground">Real-time Candle Size Selector</span> — Switch between 5m/15m/30m/1h without re-fetching data</li>
-                </ul>
-              </InfoBox>
-            </CardContent>
-          </Card>
-
-          {/* Feature 4: Gap Fill */}
-          <Card className="border-primary/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <ArrowUpDown className="h-5 w-5 text-primary" />
-                4.4 Gap Fill Analysis (Edgeful-style)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p><span className="font-semibold text-foreground">Objective:</span> Measure the historical probability that the overnight gap between the previous close and today's open gets filled during the trading session, broken down by granular gap-size buckets.</p>
-              <InfoBox title="Gap Detection">
-                <p><span className="font-medium text-foreground">Gap Up:</span> Today's open &gt; yesterday's close. <span className="font-medium text-foreground">Gap Down:</span> Today's open &lt; yesterday's close. Gaps &lt; 0.01% are excluded.</p>
-              </InfoBox>
-              <InfoBox title="Fill Confirmation">
-                <p>A <span className="font-medium text-foreground">Gap Up</span> is filled if session Low ≤ previous close. A <span className="font-medium text-foreground">Gap Down</span> is filled if session High ≥ previous close. Session: 09:30–16:00 NY.</p>
-              </InfoBox>
-              <InfoBox title="Gap Size Buckets (Edgeful-style)">
-                <p>Gaps are classified into 6 granular percentage ranges for precise edge discovery:</p>
-                <ul className="space-y-1 ml-4 list-disc mt-1.5">
-                  <li><span className="font-medium text-foreground">0 – 0.19%</span></li>
-                  <li><span className="font-medium text-foreground">0.2 – 0.39%</span></li>
-                  <li><span className="font-medium text-foreground">0.4 – 0.69%</span></li>
-                  <li><span className="font-medium text-foreground">0.7 – 0.99%</span></li>
-                  <li><span className="font-medium text-foreground">1.0 – 1.49%</span></li>
-                  <li><span className="font-medium text-foreground">≥ 1.5%</span></li>
-                </ul>
-              </InfoBox>
-              <InfoBox title="Dashboard Output">
-                <ul className="space-y-1 ml-4 list-disc">
-                  <li><span className="font-medium text-foreground">Stacked Bar Chart</span> — Filled vs. Not Filled for Gap Up and Gap Down</li>
-                  <li><span className="font-medium text-foreground">Insights Table</span> — Category, frequency, and percentage breakdown</li>
-                  <li><span className="font-medium text-foreground">Day-of-Week Stats</span> — Fill rate per weekday (Mon–Fri)</li>
-                  <li><span className="font-medium text-foreground">Size Filter Buttons</span> — Click any bucket to filter the analysis dynamically</li>
-                </ul>
-              </InfoBox>
-            </CardContent>
-          </Card>
-
-          {/* Feature 5: Inside Bar */}
-          <Card className="border-primary/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Layers className="h-5 w-5 text-primary" />
-                4.5 Inside Bar Analysis
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p><span className="font-semibold text-foreground">Objective:</span> Detect daily range contraction (Inside Bar) and measure the probability and direction of the subsequent breakout.</p>
-              <InfoBox title="Inside Bar Definition">
-                <p>A day where today's <span className="font-medium text-foreground">High &lt; yesterday's High</span> AND today's <span className="font-medium text-foreground">Low &gt; yesterday's Low</span>. The entire day's range is "inside" the previous day's range — a sign of consolidation.</p>
-              </InfoBox>
-              <InfoBox title="Data Source">
-                <p>Daily OHLC is constructed from intraday 5-minute bars (09:30–16:00) to ensure consistency with other modules.</p>
-              </InfoBox>
-              <InfoBox title="Breakout Tracking">
-                <p>After an Inside Bar is identified, the system examines the <span className="font-medium text-foreground">next trading day</span> to determine breakout direction:</p>
-                <ul className="space-y-1 ml-4 list-disc mt-1.5">
-                  <li><span className="text-green-400 font-medium">Broke High</span> — Next day's high exceeded the mother bar's high</li>
-                  <li><span className="text-red-400 font-medium">Broke Low</span> — Next day's low broke below the mother bar's low</li>
-                  <li><span className="text-foreground font-medium">Stayed Inside</span> — Another inside day (double inside bar)</li>
-                </ul>
-              </InfoBox>
-              <InfoBox title="Statistics Output">
-                <ul className="space-y-1 ml-4 list-disc">
-                  <li>Inside Bar frequency (% of total trading days)</li>
-                  <li>Breakout direction probabilities (High vs. Low vs. Stayed)</li>
-                </ul>
-              </InfoBox>
-            </CardContent>
-          </Card>
-
-          {/* Feature 6: Outside Day */}
-          <Card className="border-primary/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <SquareStack className="h-5 w-5 text-primary" />
-                4.6 Outside Day Analysis
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p><span className="font-semibold text-foreground">Objective:</span> Identify days with range expansion (Outside Day / Engulfing Day) and analyze subsequent price behavior.</p>
-              <InfoBox title="Outside Day Definition">
-                <p>The inverse of Inside Bar — today's <span className="font-medium text-foreground">High &gt; yesterday's High</span> AND today's <span className="font-medium text-foreground">Low &lt; yesterday's Low</span>. The current day's range completely engulfs the previous day.</p>
-              </InfoBox>
-              <InfoBox title="Significance">
-                <p>Outside Days signal high volatility and indecision. Tracking the follow-through direction helps determine whether the expansion was bullish or bearish in nature.</p>
-              </InfoBox>
-              <InfoBox title="Statistics Output">
-                <ul className="space-y-1 ml-4 list-disc">
-                  <li>Outside Day frequency (% of trading days)</li>
-                  <li>Next-day follow-through direction and magnitude</li>
-                  <li>Close position relative to the outside day's range</li>
-                </ul>
-              </InfoBox>
-            </CardContent>
-          </Card>
-          {/* Feature 7: Globex IB */}
-          <Card className="border-primary/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Moon className="h-5 w-5 text-primary" />
-                4.7 Globex IB (Overnight Initial Balance) Analysis
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p><span className="font-semibold text-foreground">Objective:</span> Evaluate the relationship between the overnight Globex session and the RTH morning session to predict breakout direction based on the Globex Initial Balance formation sequence.</p>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <InfoBox title="Globex Session">
-                  <p>6:00 PM – 9:30 AM ET (overnight). Starts from the previous calendar day's evening through the next morning before RTH open.</p>
-                </InfoBox>
-                <InfoBox title="Data Source">
-                  <p>Intraday bars fetched via <span className="font-medium text-foreground">Massive API</span> for accurate historical overnight data (not TwelveData).</p>
-                </InfoBox>
-              </div>
-              <InfoBox title="Globex IB Window">
-                <p>The Initial Balance is computed from the <span className="font-medium text-foreground">first 30 or 60 minutes</span> after the Globex session opens (6:00 PM ET). The IB High and IB Low are the extreme values within this window.</p>
-              </InfoBox>
-              <InfoBox title="Sequence Detection — High First vs Low First">
-                <p>The system tracks which extreme of the Globex IB was formed first. If the IB High was established before the IB Low, the day is classified as <span className="font-medium text-foreground">"High First"</span>, and vice versa. This sequence is the key predictor for RTH breakout direction.</p>
-              </InfoBox>
-              <InfoBox title="Overnight IB Break Tracking">
-                <p>After the Globex IB window closes, the system monitors the remaining overnight session to determine if price broke above or below the Globex IB range before RTH opens:</p>
-                <ul className="space-y-1 ml-4 list-disc mt-1.5">
-                  <li><span className="font-medium text-foreground">Broke High Only</span> — Overnight closed above Globex IB High</li>
-                  <li><span className="font-medium text-foreground">Broke Low Only</span> — Overnight closed below Globex IB Low</li>
-                  <li><span className="font-medium text-foreground">Broke Both</span> — Overnight breached both extremes</li>
-                  <li><span className="font-medium text-foreground">Stayed Inside</span> — Price remained within Globex IB range</li>
-                </ul>
-              </InfoBox>
-              <InfoBox title="RTH Breakout vs Full Globex Range">
-                <p>During <span className="font-medium text-foreground">RTH morning (9:30 AM – 12:00 PM)</span>, the system monitors whether price breaks the full overnight Globex range (not just the IB). A breakout is confirmed when a M5 candle <span className="font-medium text-foreground">closes</span> above the Globex High or below the Globex Low.</p>
-                <ul className="space-y-1 ml-4 list-disc mt-1.5">
-                  <li><span className="text-green-400 font-medium">Break Globex High</span> — RTH closed above the full Globex overnight high</li>
-                  <li><span className="text-red-400 font-medium">Break Globex Low</span> — RTH closed below the full Globex overnight low</li>
-                  <li><span className="text-foreground font-medium">Inside</span> — RTH remained within the Globex range until 12:00 PM</li>
-                </ul>
-              </InfoBox>
-              <InfoBox title="Dashboard Output">
-                <ul className="space-y-1 ml-4 list-disc">
-                  <li><span className="font-medium text-foreground">Two Chart Cards</span> — "Globex IB High Formed First" and "Globex IB Low Formed First", each showing RTH breakout probabilities</li>
-                  <li><span className="font-medium text-foreground">Overnight Break Statistics</span> — Percentage breakdown of how often overnight broke the Globex IB (high only, low only, both, stayed inside)</li>
-                  <li>Execution parameters displayed for full transparency</li>
-                </ul>
-              </InfoBox>
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* ─── 5. Chart & Overlays ─── */}
-        <section className="space-y-4">
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <LineChart className="h-6 w-6 text-primary" />
-            5. Live Chart & Visual Overlays
-          </h2>
-          <Card>
-            <CardContent className="pt-6 space-y-3 text-sm text-muted-foreground">
-              <p>The Chart page provides a TradingView-powered interface with real-time data and built-in analytical overlays.</p>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <InfoBox title="Timeframes">
-                  <p>5m, 15m, 30m, 1h — synced to New York Open (09:30 ET)</p>
-                </InfoBox>
-                <InfoBox title="Candle Colors">
-                  <p>Bullish: Dark Green (#1b5e20) · Bearish: Default red · Wick: Dark Gray (#363A45)</p>
-                </InfoBox>
-              </div>
-              <InfoBox title="Momentum Candle (MC) Overlay">
-                <p>Active by default. Highlights valid 2-candle momentum pairs during 09:30–12:00 window:</p>
-                <ul className="space-y-1 ml-4 list-disc mt-1.5">
-                  <li><span className="font-medium" style={{ color: "#00FF66" }}>Neon Green (#00FF66)</span> — Bullish momentum pair</li>
-                  <li><span className="font-medium" style={{ color: "#FF00FF" }}>Magenta (#FF00FF)</span> — Bearish momentum pair</li>
-                </ul>
-              </InfoBox>
-              <InfoBox title="Initial Balance (IB) Overlay">
-                <p>Active by default. Displays the IB range (High/Low) as a horizontal band on the chart for visual reference during the session.</p>
-              </InfoBox>
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* ─── 6. Additional Tools ─── */}
-        <section className="space-y-4">
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Zap className="h-6 w-6 text-primary" />
-            6. Additional Tools
-          </h2>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2"><Bot className="h-4 w-4 text-primary" /> AI Assistant</CardTitle>
-              </CardHeader>
-              <CardContent className="text-xs text-muted-foreground">
-                Chat-based AI powered by Gemini for chart analysis, market questions, and screenshot interpretation. Upload a chart screenshot for instant visual analysis.
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2"><Cpu className="h-4 w-4 text-primary" /> Algos Command Center</CardTitle>
-              </CardHeader>
-              <CardContent className="text-xs text-muted-foreground">
-                PIN-protected (SHA-256 hashed) control panel for sending trading commands (BUY_STOP, SELL_STOP, CLOSE_ALL) to external MQL5 Expert Advisors. Configurable risk parameters: Lot Size, Risk USD, RR Ratio, SL/TP.
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2"><Eye className="h-4 w-4 text-primary" /> Watchlist</CardTitle>
-              </CardHeader>
-              <CardContent className="text-xs text-muted-foreground">
-                Persistent symbol watchlist saved to your account. Quickly add or remove tickers for fast access across sessions.
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Templates & History</CardTitle>
-              </CardHeader>
-              <CardContent className="text-xs text-muted-foreground">
-                Save analysis parameter presets as templates for one-click re-runs. All analysis results are stored in history for comparison and review.
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        {/* ─── 7. UI Requirements ─── */}
-        <section className="space-y-4">
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <BarChart3 className="h-6 w-6 text-primary" />
-            7. UI Requirements
-          </h2>
-          <Card>
-            <CardContent className="pt-6 space-y-4 text-sm text-muted-foreground">
-              <div className="space-y-2">
-                <p className="font-semibold text-foreground text-xs">Independent Timeframe Toggles</p>
-                <p className="text-xs">Users can switch between M5, M15, M30, and H1 views to isolate setups per timeframe.</p>
-              </div>
-              <div className="space-y-2">
-                <p className="font-semibold text-foreground text-xs">Visual Chart Overlays</p>
-                <ul className="text-xs space-y-1 ml-4 list-disc">
-                  <li>Momentum Candle highlights (Neon Green / Magenta) during 09:30–12:00.</li>
-                  <li>IB range band displayed as horizontal overlay on TradingView chart.</li>
-                </ul>
-              </div>
-              <div className="space-y-2">
-                <p className="font-semibold text-foreground text-xs">Probability Dashboards</p>
-                <ul className="text-xs space-y-1 ml-4 list-disc">
-                  <li>Bar charts displaying historical win rate for each module.</li>
-                  <li>"Overall Bias" panels summarizing real-time signals merged with historical edges.</li>
-                  <li>Execution parameters (date range, weekdays) displayed on every report for transparency.</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* ─── 8. Future Integrations ─── */}
-        <section className="space-y-4">
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Zap className="h-6 w-6 text-primary" />
-            8. Future Integrations
-          </h2>
-          <Card>
-            <CardContent className="pt-6 text-sm text-muted-foreground leading-relaxed">
-              <p className="font-semibold text-foreground text-xs mb-2">Automated Execution Bridge</p>
-              <p className="text-xs">
-                Exporting valid MyOpenEdge signals into MQL5 Expert Advisors (EAs) & NinjaTrader Automated Trading Strategies for automated or semi-automated trade execution, complete with progressive risk management parameters and strict 1:1 & 1:2 Risk-to-Reward enforcement.
+              <h3 className="text-base font-semibold text-foreground">Key Trading Insight</h3>
+              <p>
+                On NQ during the NY session, price single breaks <strong className="text-foreground">73% of the time</strong> over the last 6 months.
+                That means once it breaks to one side, you should expect continuation in that direction. The IB provides your directional bias for the rest of the day.
+              </p>
+              <p className="text-xs italic">
+                Source: <a href="https://www.edgeful.com/blog/posts/initial-balance-indicator-tradingview" target="_blank" rel="noopener noreferrer" className="text-primary underline">Edgeful — Initial Balance Indicator</a>
               </p>
             </CardContent>
           </Card>
         </section>
 
-        <div className="border-t border-border/30 pt-6 pb-12 text-center">
-          <p className="text-xs text-muted-foreground">MyOpenEdge — Data-Driven Trading Edge</p>
-        </div>
+        {/* ─── 3. Opening Candle Continuation ─── */}
+        <section className="space-y-4">
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Zap className="h-6 w-6 text-primary" />
+            3. Opening Candle Continuation (OCC)
+          </h2>
+          <Card>
+            <CardContent className="pt-6 text-sm text-muted-foreground leading-relaxed space-y-4">
+              <p>
+                The OCC measures the <strong className="text-foreground">correlation between the color of the first candle</strong> (opening candle) and the session's closing direction.
+                If the first candle is green, the session is likely to close green. If the first candle is red, the session is likely to close red.
+              </p>
+
+              <InfoBox title="How it works">
+                <p>After the opening candle completes (default: 30 min from 09:30), the system checks: did the candle close green (close &gt; open) or red (close &lt; open)?
+                Then it tracks whether the entire session (09:30–16:00) closed in the same direction.</p>
+              </InfoBox>
+
+              <h3 className="text-base font-semibold text-foreground">Continuation Rates (6-month data)</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs font-semibold text-foreground mb-2">YM (Dow Futures)</p>
+                  <Stat label="Green OC → Green Day" value="74.32%" />
+                  <div className="mt-2"><Stat label="Red OC → Red Day" value="70.18%" /></div>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-foreground mb-2">ES (S&P 500 Futures)</p>
+                  <Stat label="Green OC → Green Day" value="71.62%" />
+                  <div className="mt-2"><Stat label="Red OC → Red Day" value="71.93%" /></div>
+                </div>
+              </div>
+
+              <InfoBox title="Available Candle Sizes">
+                <p>5 min (9:30–9:35), 15 min (9:30–9:45), 30 min (9:30–10:00), 1 hour (9:30–10:30). The default is 30 minutes.</p>
+              </InfoBox>
+
+              <h3 className="text-base font-semibold text-foreground">Trading Application</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Green box → lean bullish for the session, look for long setups</li>
+                <li>Red box → lean bearish for the session, look for short setups</li>
+                <li>Combine with IB report: OCC gives bias, IB gives breakout levels</li>
+              </ul>
+              <p className="text-xs italic">
+                Source: <a href="https://www.edgeful.com/blog/posts/opening-candle-continuation-indicator-tradingview" target="_blank" rel="noopener noreferrer" className="text-primary underline">Edgeful — Opening Candle Continuation</a>
+              </p>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* ─── 4. Gap Fill ─── */}
+        <section className="space-y-4">
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <ArrowUpDown className="h-6 w-6 text-primary" />
+            4. Gap Fill
+          </h2>
+          <Card>
+            <CardContent className="pt-6 text-sm text-muted-foreground leading-relaxed space-y-4">
+              <p>
+                A <strong className="text-foreground">gap</strong> occurs when price opens higher or lower than the previous session's close (PSC).
+                The gap fill report measures how often gaps fill (price retraces to touch the PSC) and what happens after they fill.
+              </p>
+
+              <InfoBox title="Gap Types">
+                <ul className="list-disc pl-4 space-y-1">
+                  <li><strong>Gap Up:</strong> Today's open &gt; yesterday's close</li>
+                  <li><strong>Gap Down:</strong> Today's open &lt; yesterday's close</li>
+                  <li><strong>Gap Fill:</strong> Price retraces to touch the PSC during the session</li>
+                  <li><strong>No Fill:</strong> Price never touches the PSC during the session</li>
+                </ul>
+              </InfoBox>
+
+              <h3 className="text-base font-semibold text-foreground">Key Statistics (ES, 6 months)</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <Stat label="Gap Up Fill Rate" value="59%" />
+                <Stat label="Gap Down Fill Rate" value="66%" />
+              </div>
+
+              <h3 className="text-base font-semibold text-foreground">The "By Close" Edge</h3>
+              <p>
+                After a gap fills, what color does the session close? On ES, gap ups that fill close <strong className="text-foreground">green 56% of the time</strong>.
+                This means you should use the PSC as your profit target on short trades — don't hold hoping for more.
+              </p>
+
+              <InfoBox title="Weekday Impact">
+                <p>Gap fill rates vary dramatically by day of week. On NQ: gap downs fill 30% on Monday but 77% on Wednesday. Always check the weekday filter for your specific instrument.</p>
+              </InfoBox>
+
+              <h3 className="text-base font-semibold text-foreground">Gap Fill Strategy</h3>
+              <ol className="list-decimal pl-5 space-y-1">
+                <li>Identify gap up/down at market open</li>
+                <li>Check fill probability for your instrument and timeframe</li>
+                <li>Entry: Break of consolidation in gap fill direction</li>
+                <li>Target: Previous session close (PSC)</li>
+                <li>Stop: Above/below current day's high/low</li>
+              </ol>
+              <p className="text-xs italic">
+                Source: <a href="https://www.edgeful.com/blog/posts/trading-gap-fills" target="_blank" rel="noopener noreferrer" className="text-primary underline">Edgeful — Gap Fill Trading Strategy</a>
+              </p>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* ─── 5. Inside Bar ─── */}
+        <section className="space-y-4">
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Layers className="h-6 w-6 text-primary" />
+            5. Inside Bar
+          </h2>
+          <Card>
+            <CardContent className="pt-6 text-sm text-muted-foreground leading-relaxed space-y-4">
+              <p>
+                An <strong className="text-foreground">inside bar</strong> occurs when today's entire price range is contained within yesterday's range
+                (today's high &lt; yesterday's high AND today's low &gt; yesterday's low). It represents consolidation before a breakout.
+              </p>
+
+              <InfoBox title="Key Statistics (SPY, 6 months)">
+                <ul className="list-disc pl-4 space-y-1">
+                  <li>Inside days occurred only <strong>22%</strong> of the time (rare)</li>
+                  <li>Price breaks out of previous day's range <strong>77.78%</strong> of the time</li>
+                  <li>~52% break to the upside, ~40% break to the downside</li>
+                  <li>Double breaks (both sides) only happen ~15% of the time</li>
+                </ul>
+              </InfoBox>
+
+              <h3 className="text-base font-semibold text-foreground">Previous Day's Range Power</h3>
+              <p>When price breaks above the previous day's high, <strong className="text-foreground">74% of the time</strong> the session closes green (SPY).
+              When price breaks below the previous day's low, <strong className="text-foreground">80% of the time</strong> the session closes red.</p>
+
+              <h3 className="text-base font-semibold text-foreground">Inside Bar Strategy</h3>
+              <ol className="list-decimal pl-5 space-y-1">
+                <li><strong>Identify:</strong> Spot inside day when price opens within yesterday's range</li>
+                <li><strong>Wait:</strong> Let the first 30 minutes develop a trading range</li>
+                <li><strong>Enter:</strong> Trade breakout of the 30-minute range</li>
+                <li><strong>Stop:</strong> Opposite side of the 30-minute range</li>
+                <li><strong>Target:</strong> Previous day's high (longs) or low (shorts)</li>
+                <li><strong>Runners:</strong> Hold partial position through close — breakouts tend to continue</li>
+              </ol>
+              <p className="text-xs italic">
+                Source: <a href="https://www.edgeful.com/blog/posts/inside-bar-pattern-day-trading-strategy" target="_blank" rel="noopener noreferrer" className="text-primary underline">Edgeful — Inside Bar Day Trading Strategy</a>
+              </p>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* ─── 6. Outside Day ─── */}
+        <section className="space-y-4">
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <TrendingUp className="h-6 w-6 text-primary" />
+            6. Outside Day (Bullish & Bearish)
+          </h2>
+          <Card>
+            <CardContent className="pt-6 text-sm text-muted-foreground leading-relaxed space-y-4">
+              <p>
+                An <strong className="text-foreground">outside day</strong> occurs when the market opens OUTSIDE of the previous day's range:
+              </p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li><strong className="text-foreground">Bullish outside day:</strong> Price opens ABOVE yesterday's high</li>
+                <li><strong className="text-foreground">Bearish outside day:</strong> Price opens BELOW yesterday's low</li>
+              </ul>
+
+              <InfoBox title="Important Distinction">
+                <p>This is NOT the same as an engulfing candle pattern. Outside days are specifically about price gapping outside the prior day's range at the open — they signal a significant overnight shift in sentiment.</p>
+              </InfoBox>
+
+              <h3 className="text-base font-semibold text-foreground">Key Statistics (NQ, 12 months)</h3>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs font-semibold text-foreground mb-2">Bullish Outside Days (open &gt; yesterday's high):</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Stat label="Retrace to prior high" value="65%" />
+                    <Stat label="Continue higher" value="35%" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-foreground mb-2">Bearish Outside Days (open &lt; yesterday's low):</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Stat label="Retrace to prior low" value="58%" />
+                    <Stat label="Continue lower" value="42%" />
+                  </div>
+                </div>
+              </div>
+
+              <h3 className="text-base font-semibold text-foreground">The "By Close" Edge</h3>
+              <p>72% of bullish outside days close above the prior day's high. 64% of bearish outside days close below the prior day's low.</p>
+
+              <InfoBox title="Gap Size Matters">
+                <ul className="list-disc pl-4 space-y-1">
+                  <li>Small gap (0.1–0.19%): fills 83–93% of the time → great gap fill setups</li>
+                  <li>Large gap (0.6%+): fills 0–25% of the time → don't expect a retracement</li>
+                  <li>Best gap fill trades: gap size &lt; 0.2%</li>
+                </ul>
+              </InfoBox>
+
+              <h3 className="text-base font-semibold text-foreground">Outside Day Trading Plan</h3>
+              <ol className="list-decimal pl-5 space-y-1">
+                <li>Identify outside day at the market open (bullish or bearish?)</li>
+                <li>Check gap size — small gaps have much higher fill rates</li>
+                <li>Check edgeful probabilities for continuation vs. reversal</li>
+                <li>Set profit targets at prior day's high (bullish) or low (bearish)</li>
+                <li>Manage position using weekday-specific data</li>
+              </ol>
+              <p className="text-xs italic">
+                Source: <a href="https://www.edgeful.com/blog/posts/trading-bullish-bearish-outside-days" target="_blank" rel="noopener noreferrer" className="text-primary underline">Edgeful — Bullish & Bearish Outside Days</a>
+              </p>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* ─── 7. Momentum Candle ─── */}
+        <section className="space-y-4">
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Activity className="h-6 w-6 text-primary" />
+            7. Momentum Candle
+          </h2>
+          <Card>
+            <CardContent className="pt-6 text-sm text-muted-foreground leading-relaxed space-y-4">
+              <p>
+                The momentum candle report scans for <strong className="text-foreground">2 consecutive same-color candles</strong> during the first half of the session (09:30–12:00 ET).
+                The first candle's body must be ≥ the configured threshold of its total range, and the second candle's body must be ≥ 30%.
+              </p>
+              <InfoBox title="Configuration">
+                <ul className="list-disc pl-4 space-y-1">
+                  <li><strong>Timeframes:</strong> M5, M15, M30, H1</li>
+                  <li><strong>Body Ratio:</strong> Configurable threshold (default 50%)</li>
+                  <li><strong>"The Tell":</strong> Same as IB — tracks whether high or low formed first</li>
+                </ul>
+              </InfoBox>
+              <p>
+                This report helps identify early momentum that often persists through the session, giving you confirmation to hold positions.
+              </p>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* ─── 8. Globex IB ─── */}
+        <section className="space-y-4">
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Moon className="h-6 w-6 text-primary" />
+            8. Globex IB (Overnight Session)
+          </h2>
+          <Card>
+            <CardContent className="pt-6 text-sm text-muted-foreground leading-relaxed space-y-4">
+              <p>
+                The Globex IB module analyzes the <strong className="text-foreground">overnight futures session</strong> (6:00 PM – 9:30 AM ET)
+                and tracks how RTH price action interacts with the overnight range.
+              </p>
+              <InfoBox title="Data Source">
+                <p>Uses Massive API for overnight bar data (not TwelveData which only covers RTH).</p>
+              </InfoBox>
+              <ul className="list-disc pl-5 space-y-1">
+                <li><strong>Globex IB Window:</strong> First 30 or 60 minutes from Globex open</li>
+                <li><strong>Overnight Break Tracking:</strong> Did the Globex IB get broken during the overnight session?</li>
+                <li><strong>RTH Breakout:</strong> After 9:30 AM, does RTH break the full Globex range?</li>
+              </ul>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* ─── 9. Confluence Strategy ─── */}
+        <section className="space-y-4">
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Bot className="h-6 w-6 text-primary" />
+            9. Confluence: Combining Reports
+          </h2>
+          <Card>
+            <CardContent className="pt-6 text-sm text-muted-foreground leading-relaxed space-y-4">
+              <p>
+                The real power of MyOpenEdge comes from <strong className="text-foreground">combining multiple reports</strong> to build a complete trading plan.
+                This approach is directly based on Edgeful's "3 Powerful Reports" methodology.
+              </p>
+
+              <h3 className="text-base font-semibold text-foreground">Step-by-Step Confluence Trading Plan</h3>
+              <ol className="list-decimal pl-5 space-y-2">
+                <li><strong>Wait</strong> for the London session to close (11:00 AM ET)</li>
+                <li><strong>Check OCC:</strong> Was the first hour green or red? → This sets your directional bias</li>
+                <li><strong>Check IB:</strong> Has the IB broken? Which side? → Single break = expect continuation</li>
+                <li><strong>Check Market Session Breakout:</strong> Has NY broken the London range? → Target London high/low</li>
+                <li><strong>Set profit targets</strong> at London high/low based on your bias</li>
+              </ol>
+
+              <InfoBox title="YM Example (6 months)">
+                <ul className="list-disc pl-4 space-y-1">
+                  <li>NY breaks London range (single break): <strong>83.2%</strong> of the time</li>
+                  <li>Red OCC → red session close: <strong>66.23%</strong> of the time</li>
+                  <li>IB single break: <strong>76%</strong> of the time</li>
+                  <li>Combined: Red OCC + IB low break = target London low with high confidence</li>
+                </ul>
+              </InfoBox>
+
+              <h3 className="text-base font-semibold text-foreground">AI Trading Assistant</h3>
+              <p>
+                The AI Trading Assistant can automatically run multiple analyses and combine signals for you.
+                Use quick actions like "IB + OCC Analysis" to get instant confluence reads.
+              </p>
+              <p className="text-xs italic">
+                Source: <a href="https://www.edgeful.com/blog/posts/market-session-breakout-report-trading-strategy" target="_blank" rel="noopener noreferrer" className="text-primary underline">Edgeful — 3 Powerful Reports to Trade Market Session Breakouts</a>
+              </p>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* ─── 10. Data Sources ─── */}
+        <section className="space-y-4">
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <BarChart3 className="h-6 w-6 text-primary" />
+            10. Data & Parameters
+          </h2>
+          <Card>
+            <CardContent className="pt-6 text-sm text-muted-foreground leading-relaxed space-y-3">
+              <InfoBox title="Data Source">
+                <ul className="list-disc pl-4 space-y-1">
+                  <li><strong>RTH Data:</strong> TwelveData API — 5-minute intraday bars</li>
+                  <li><strong>Globex Data:</strong> Massive API — 5-minute overnight bars</li>
+                  <li><strong>Session:</strong> RTH 09:30–16:00 ET (default)</li>
+                </ul>
+              </InfoBox>
+              <InfoBox title="Date Range Options">
+                <p>1 month (20 days), 2 months (40 days), 3 months (60 days), 6 months (120 days), 12 months (240 days)</p>
+              </InfoBox>
+              <InfoBox title="Weekday Filter">
+                <p>Analyze all days or filter by specific weekdays (Mon–Fri). Edgeful data shows significant weekday-based variations in probabilities.</p>
+              </InfoBox>
+            </CardContent>
+          </Card>
+        </section>
+
       </main>
     </div>
   );

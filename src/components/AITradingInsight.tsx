@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface AITradingInsightProps {
-  mode: "ib" | "momentum" | "occ" | "insidebar";
+  mode: "ib" | "momentum" | "occ" | "insidebar" | "outsideday";
   symbol: string;
   analysisData: Record<string, any>;
 }
@@ -15,6 +15,7 @@ const MODE_LABELS: Record<string, string> = {
   momentum: "Momentum Candle",
   occ: "OCC",
   insidebar: "Inside Bar",
+  outsideday: "Outside Day",
 };
 
 function buildPrompt(mode: string, symbol: string, data: Record<string, any>): string {

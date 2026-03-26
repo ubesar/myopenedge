@@ -224,7 +224,7 @@ const Index = () => {
           const a = analyzeOutsideDay(values as any, effectiveMaxDays, weekdays);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setOutsideDayResult(a);
-          addRun(effectiveMode, ticker, { totalDays: a.totalDays, outsidePct: a.outsidePct, bullishContinuationPct: a.bullishContinuationPct, bearishContinuationPct: a.bearishContinuationPct });
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, outsidePct: a.outsidePct, bullishFilledPct: a.bullish.filledGapPct, bearishFilledPct: a.bearish.filledGapPct });
         }
       }
 
@@ -480,7 +480,28 @@ const Index = () => {
     }
 
     if (activeMode === "outsideday" && outsideDayResult) {
-      return <OutsideDayReport result={outsideDayResult} symbol={symbol} />;
+      return (
+        <div className="space-y-4">
+          <OutsideDayReport
+            result={outsideDayResult}
+            symbol={symbol}
+            dateRange={formatDateRange(analysisMaxDays)}
+            weekdays={formatWeekdays(analysisWeekdays)}
+          />
+          <AITradingInsight
+            mode="outsideday"
+            symbol={symbol}
+            analysisData={{
+              type: "outsideday",
+              totalDays: outsideDayResult.totalDays,
+              outsideDays: outsideDayResult.outsideDays,
+              outsidePct: outsideDayResult.outsidePct,
+              bullish: outsideDayResult.bullish,
+              bearish: outsideDayResult.bearish,
+            }}
+          />
+        </div>
+      );
     }
 
     if (activeMode === "globex-ib" && globexIBResult) {
