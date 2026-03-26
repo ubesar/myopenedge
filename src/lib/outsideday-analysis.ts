@@ -14,40 +14,34 @@ export interface OutsideDayData {
   high: number;
   low: number;
   close: number;
-  isOutsideDay: boolean;
-  sentiment: "bullish" | "bearish" | null;
-  nextDayResult: "continuation" | "reversal" | "none" | null;
-  /** Did next day hit 1:1 RR target (SL at opposite end of outside bar)? */
-  rrHit: boolean | null;
+  /** Edgeful model: open > prev high = bullish, open < prev low = bearish */
+  type: "bullish" | "bearish" | null;
+  /** Did price retrace to touch the prior day's key level? */
+  filledGap: boolean | null;
+  /** Session close direction */
+  closedGreen: boolean | null;
+  /** Gap size as % of prior day close */
+  gapPct: number | null;
+}
+
+export interface OutsideDayDirectionStats {
+  total: number;
+  filledGap: number;
+  filledGapPct: number;
+  didNotFill: number;
+  didNotFillPct: number;
+  closedGreen: number;
+  closedRed: number;
+  closedGreenPct: number;
+  closedRedPct: number;
 }
 
 export interface OutsideDayResult {
   totalDays: number;
   outsideDays: number;
   outsidePct: number;
-  bullishOutside: number;
-  bearishOutside: number;
-
-  // Bullish outside → next day
-  bullishContinuation: number;
-  bullishReversal: number;
-  bullishNone: number;
-  bullishContinuationPct: number;
-  bullishReversalPct: number;
-
-  // Bearish outside → next day
-  bearishContinuation: number;
-  bearishReversal: number;
-  bearishNone: number;
-  bearishContinuationPct: number;
-  bearishReversalPct: number;
-
-  // 1:1 RR simulation
-  bullishRRHits: number;
-  bullishRRPct: number;
-  bearishRRHits: number;
-  bearishRRPct: number;
-
+  bullish: OutsideDayDirectionStats;
+  bearish: OutsideDayDirectionStats;
   allDays: OutsideDayData[];
 }
 
@@ -84,6 +78,7 @@ export function analyzeOutsideDay(bars: BarData[], maxDays: number = 0, weekdays
     high: number;
     low: number;
     close: number;
+    marketBars: { high: number; low: number; open: number; close: number; time: number }[];
   }
 
   const dailyBars: DailyOHLC[] = [];
@@ -107,7 +102,16 @@ export function analyzeOutsideDay(bars: BarData[], maxDays: number = 0, weekdays
       if (h > high) high = h;
       if (l < low) low = l;
     }
-    dailyBars.push({ date, open, high, low, close });
+
+    const parsedBars = marketBars.map(b => ({
+      high: parseFloat(b.high),
+      low: parseFloat(b.low),
+      open: parseFloat(b.open),
+      close: parseFloat(b.close),
+      time: getTimeMinutes(parseDateTime(b.datetime)),
+    }));
+
+    dailyBars.push({ date, open, high, low, close, marketBars: parsedBars });
   }
 
   const allDays: OutsideDayData[] = [];
@@ -116,87 +120,27 @@ export function analyzeOutsideDay(bars: BarData[], maxDays: number = 0, weekdays
     const today = dailyBars[i];
     const yesterday = i > 0 ? dailyBars[i - 1] : null;
 
-    // Outside Day: High > yesterday High AND Low < yesterday Low
-    const isOutsideDay = yesterday
-      ? today.high > yesterday.high && today.low < yesterday.low
-      : false;
+    let type: "bullish" | "bearish" | null = null;
+    let filledGap: boolean | null = null;
+    let closedGreen: boolean | null = null;
+    let gapPct: number | null = null;
 
-    let sentiment: "bullish" | "bearish" | null = null;
-    let nextDayResult: "continuation" | "reversal" | "none" | null = null;
-    let rrHit: boolean | null = null;
-
-    if (isOutsideDay) {
-      sentiment = today.close > today.open ? "bullish" : "bearish";
-
-      const nextDay = i + 1 < dailyBars.length ? dailyBars[i + 1] : null;
-
-      if (nextDay) {
-        // Use intraday bars of next day to determine which level was hit first
-        const nextDayBars = byDate.get(nextDay.date);
-        if (nextDayBars) {
-          const sortedBars = nextDayBars
-            .filter((b) => {
-              const m = getTimeMinutes(parseDateTime(b.datetime));
-              return m >= MARKET_OPEN && m < MARKET_CLOSE;
-            })
-            .sort((a, b) => parseDateTime(a.datetime).getTime() - parseDateTime(b.datetime).getTime());
-
-          let firstBreak: "high" | "low" | null = null;
-          for (const bar of sortedBars) {
-            const h = parseFloat(bar.high);
-            const l = parseFloat(bar.low);
-            if (h > today.high && firstBreak === null) { firstBreak = "high"; break; }
-            if (l < today.low && firstBreak === null) { firstBreak = "low"; break; }
-          }
-
-          if (sentiment === "bullish") {
-            // Continuation = breaks high first, Reversal = breaks low first
-            if (firstBreak === "high") nextDayResult = "continuation";
-            else if (firstBreak === "low") nextDayResult = "reversal";
-            else nextDayResult = "none";
-          } else {
-            // Bearish: Continuation = breaks low first, Reversal = breaks high first
-            if (firstBreak === "low") nextDayResult = "continuation";
-            else if (firstBreak === "high") nextDayResult = "reversal";
-            else nextDayResult = "none";
-          }
-
-          // 1:1 RR simulation
-          // For bullish outside: entry at next day open, SL = outside bar low, TP = entry + (entry - SL)
-          // For bearish outside: entry at next day open, SL = outside bar high, TP = entry - (SL - entry)
-          const entryPrice = parseFloat(sortedBars[0]?.open || "0");
-          if (entryPrice > 0) {
-            if (sentiment === "bullish") {
-              const sl = today.low;
-              const risk = entryPrice - sl;
-              if (risk > 0) {
-                const tp = entryPrice + risk;
-                let hit: "tp" | "sl" | null = null;
-                for (const bar of sortedBars) {
-                  const h = parseFloat(bar.high);
-                  const l = parseFloat(bar.low);
-                  if (l <= sl) { hit = "sl"; break; }
-                  if (h >= tp) { hit = "tp"; break; }
-                }
-                rrHit = hit === "tp";
-              }
-            } else {
-              const sl = today.high;
-              const risk = sl - entryPrice;
-              if (risk > 0) {
-                const tp = entryPrice - risk;
-                let hit: "tp" | "sl" | null = null;
-                for (const bar of sortedBars) {
-                  const h = parseFloat(bar.high);
-                  const l = parseFloat(bar.low);
-                  if (h >= sl) { hit = "sl"; break; }
-                  if (l <= tp) { hit = "tp"; break; }
-                }
-                rrHit = hit === "tp";
-              }
-            }
-          }
-        }
+    if (yesterday) {
+      // Edgeful definition:
+      // Bullish outside day: today's open > yesterday's high
+      // Bearish outside day: today's open < yesterday's low
+      if (today.open > yesterday.high) {
+        type = "bullish";
+        gapPct = yesterday.close > 0 ? ((today.open - yesterday.high) / yesterday.close) * 100 : 0;
+        // Did price retrace to touch yesterday's high?
+        filledGap = today.marketBars.some(b => b.low <= yesterday.high);
+        closedGreen = today.close > today.open;
+      } else if (today.open < yesterday.low) {
+        type = "bearish";
+        gapPct = yesterday.close > 0 ? ((yesterday.low - today.open) / yesterday.close) * 100 : 0;
+        // Did price retrace to touch yesterday's low?
+        filledGap = today.marketBars.some(b => b.high >= yesterday.low);
+        closedGreen = today.close > today.open;
       }
     }
 
@@ -206,27 +150,35 @@ export function analyzeOutsideDay(bars: BarData[], maxDays: number = 0, weekdays
       high: today.high,
       low: today.low,
       close: today.close,
-      isOutsideDay,
-      sentiment,
-      nextDayResult,
-      rrHit,
+      type,
+      filledGap,
+      closedGreen,
+      gapPct,
     });
   }
 
-  const outsideDays = allDays.filter((d) => d.isOutsideDay);
-  const bullish = outsideDays.filter((d) => d.sentiment === "bullish");
-  const bearish = outsideDays.filter((d) => d.sentiment === "bearish");
+  const outsideDays = allDays.filter(d => d.type !== null);
+  const bullishDays = outsideDays.filter(d => d.type === "bullish");
+  const bearishDays = outsideDays.filter(d => d.type === "bearish");
 
-  const bullishCont = bullish.filter((d) => d.nextDayResult === "continuation").length;
-  const bullishRev = bullish.filter((d) => d.nextDayResult === "reversal").length;
-  const bullishNone = bullish.filter((d) => d.nextDayResult === "none").length;
-
-  const bearishCont = bearish.filter((d) => d.nextDayResult === "continuation").length;
-  const bearishRev = bearish.filter((d) => d.nextDayResult === "reversal").length;
-  const bearishNone = bearish.filter((d) => d.nextDayResult === "none").length;
-
-  const bullishRRHits = bullish.filter((d) => d.rrHit === true).length;
-  const bearishRRHits = bearish.filter((d) => d.rrHit === true).length;
+  function calcStats(days: OutsideDayData[]): OutsideDayDirectionStats {
+    const total = days.length;
+    const filled = days.filter(d => d.filledGap === true).length;
+    const notFilled = days.filter(d => d.filledGap === false).length;
+    const green = days.filter(d => d.closedGreen === true).length;
+    const red = days.filter(d => d.closedGreen === false).length;
+    return {
+      total,
+      filledGap: filled,
+      filledGapPct: total > 0 ? (filled / total) * 100 : 0,
+      didNotFill: notFilled,
+      didNotFillPct: total > 0 ? (notFilled / total) * 100 : 0,
+      closedGreen: green,
+      closedRed: red,
+      closedGreenPct: total > 0 ? (green / total) * 100 : 0,
+      closedRedPct: total > 0 ? (red / total) * 100 : 0,
+    };
+  }
 
   const totalDays = allDays.length > 0 ? allDays.length - 1 : 0;
 
@@ -234,26 +186,8 @@ export function analyzeOutsideDay(bars: BarData[], maxDays: number = 0, weekdays
     totalDays,
     outsideDays: outsideDays.length,
     outsidePct: totalDays > 0 ? (outsideDays.length / totalDays) * 100 : 0,
-    bullishOutside: bullish.length,
-    bearishOutside: bearish.length,
-
-    bullishContinuation: bullishCont,
-    bullishReversal: bullishRev,
-    bullishNone,
-    bullishContinuationPct: bullish.length > 0 ? (bullishCont / bullish.length) * 100 : 0,
-    bullishReversalPct: bullish.length > 0 ? (bullishRev / bullish.length) * 100 : 0,
-
-    bearishContinuation: bearishCont,
-    bearishReversal: bearishRev,
-    bearishNone,
-    bearishContinuationPct: bearish.length > 0 ? (bearishCont / bearish.length) * 100 : 0,
-    bearishReversalPct: bearish.length > 0 ? (bearishRev / bearish.length) * 100 : 0,
-
-    bullishRRHits,
-    bullishRRPct: bullish.length > 0 ? (bullishRRHits / bullish.length) * 100 : 0,
-    bearishRRHits,
-    bearishRRPct: bearish.length > 0 ? (bearishRRHits / bearish.length) * 100 : 0,
-
+    bullish: calcStats(bullishDays),
+    bearish: calcStats(bearishDays),
     allDays,
   };
 }
