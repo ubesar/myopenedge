@@ -49,7 +49,7 @@ const PieChart = ({ outsidePct, insidePct }: { outsidePct: number; insidePct: nu
 
   return (
     <div className="flex flex-col items-center">
-      <svg width="240" height="240" viewBox="0 0 240 240">
+      <svg width="200" height="200" viewBox="0 0 240 240" className="w-[180px] h-[180px] sm:w-[240px] sm:h-[240px]">
         {/* Outside days (chart-donut-a) */}
         {outsidePct > 0 && (
           <path d={outsidePath} fill="hsl(var(--chart-donut-a))" />
@@ -91,7 +91,7 @@ const InsideBarReport = ({ result, symbol }: InsideBarReportProps) => {
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
       {/* Left: Pie Chart Card */}
       <div className="border border-border rounded-xl bg-card overflow-hidden">
-        <div className="px-5 pt-4 pb-3 border-b border-border">
+        <div className="px-3 sm:px-5 pt-3 sm:pt-4 pb-2 sm:pb-3 border-b border-border">
           <div className="flex items-start justify-between">
             <div>
               <h4 className="text-[13px] font-semibold text-foreground lowercase">charts</h4>
@@ -105,14 +105,14 @@ const InsideBarReport = ({ result, symbol }: InsideBarReportProps) => {
           </div>
         </div>
 
-        <div className="px-5 py-6 flex justify-center">
+        <div className="px-3 sm:px-5 py-4 sm:py-6 flex justify-center">
           <PieChart outsidePct={result.outsidePct} insidePct={result.insideBarPct} />
         </div>
 
         {/* Custom Settings */}
-        <div className="border-t border-border px-5 py-3">
-          <h5 className="text-[11px] text-muted-foreground mb-2 uppercase tracking-wider">custom settings</h5>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
+        <div className="border-t border-border px-3 sm:px-5 py-2.5 sm:py-3">
+          <h5 className="text-[10px] sm:text-[11px] text-muted-foreground mb-1.5 sm:mb-2 uppercase tracking-wider">custom settings</h5>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 sm:gap-y-1.5 text-[10px] sm:text-[11px]">
             <div className="flex justify-between">
               <span className="text-muted-foreground">period length:</span>
               <span className="text-primary font-medium">days</span>
@@ -127,7 +127,7 @@ const InsideBarReport = ({ result, symbol }: InsideBarReportProps) => {
 
       {/* Right: Insights Card */}
       <div className="border border-border rounded-xl bg-card overflow-hidden">
-        <div className="px-5 pt-4 pb-3 border-b border-border">
+        <div className="px-3 sm:px-5 pt-3 sm:pt-4 pb-2 sm:pb-3 border-b border-border">
           <div className="flex items-start justify-between">
             <div>
               <h4 className="text-[13px] font-semibold text-foreground lowercase">insights</h4>
@@ -138,9 +138,9 @@ const InsideBarReport = ({ result, symbol }: InsideBarReportProps) => {
           </div>
         </div>
 
-        <div className="px-5 py-5 space-y-4">
+        <div className="px-3 sm:px-5 py-4 sm:py-5 space-y-3 sm:space-y-4">
           {/* Stayed Inside Insight */}
-          <div className="border border-border rounded-lg p-5 text-center">
+          <div className="border border-border rounded-lg p-3 sm:p-5 text-center">
             {/* Progress bar - muted */}
             <div className="w-full h-1.5 rounded-full bg-muted mb-4">
               <div
@@ -148,10 +148,10 @@ const InsideBarReport = ({ result, symbol }: InsideBarReportProps) => {
                 style={{ width: `${Math.min(result.stayedPct, 100)}%` }}
               />
             </div>
-            <p className="text-[28px] font-bold text-foreground">
+            <p className="text-[24px] sm:text-[28px] font-bold text-foreground">
               {result.stayedPct.toFixed(2)}%
             </p>
-            <p className="text-[13px] text-muted-foreground mt-1">
+            <p className="text-[12px] sm:text-[13px] text-muted-foreground mt-1">
               opened within yesterday's range
             </p>
             <p className="text-[13px] text-muted-foreground">
@@ -163,7 +163,7 @@ const InsideBarReport = ({ result, symbol }: InsideBarReportProps) => {
           </div>
 
           {/* Broke Out Insight */}
-          <div className="border border-border rounded-lg p-5 text-center">
+          <div className="border border-border rounded-lg p-3 sm:p-5 text-center">
             {/* Progress bar - primary */}
             <div className="w-full h-1.5 rounded-full bg-muted mb-4">
               <div
@@ -171,7 +171,7 @@ const InsideBarReport = ({ result, symbol }: InsideBarReportProps) => {
                 style={{ width: `${Math.min(result.breakoutPct, 100)}%` }}
               />
             </div>
-            <p className="text-[28px] font-bold text-primary">
+            <p className="text-[24px] sm:text-[28px] font-bold text-primary">
               {result.breakoutPct.toFixed(2)}%
             </p>
             <p className="text-[13px] text-muted-foreground mt-1">
