@@ -225,11 +225,6 @@ BEHAVIORAL RULES:
     if (customKnowledge && typeof customKnowledge === "string" && customKnowledge.trim()) {
       systemPrompt += `\n\n## USER'S CUSTOM KNOWLEDGE BASE\nThe user has provided the following personal trading notes, rules, and insights. Incorporate this knowledge when answering:\n\n${customKnowledge}`;
     }
-      for (const [mode, data] of Object.entries(confluenceData)) {
-        const d = data as { symbol: string; summary: string };
-        systemPrompt += `\n- ${mode.toUpperCase()} (${d.symbol}): ${d.summary}`;
-      }
-    }
 
     const body: Record<string, unknown> = {
       model: "google/gemini-3-flash-preview",
