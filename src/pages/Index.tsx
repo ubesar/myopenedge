@@ -158,7 +158,10 @@ const Index = () => {
     if (isFree) {
       effectiveMaxDays = Math.min(maxDays, 20);
       effectiveIbWindow = Math.min(ibWindow, 60);
-      effectiveMode = "ib";
+      const freeAllowedModes: AnalysisMode[] = ["ib", "occ"];
+      if (!freeAllowedModes.includes(mode)) {
+        effectiveMode = "ib";
+      }
     }
 
     setLoading(true);
