@@ -38,7 +38,8 @@ Maksimal 120 kata. Padat & actionable.`;
 async function streamChat(
   prompt: string,
   onChunk: (text: string) => void,
-  signal: AbortSignal
+  signal: AbortSignal,
+  customKnowledge?: string
 ): Promise<void> {
   const session = await supabase.auth.getSession();
   const token = session.data.session?.access_token;
@@ -120,7 +121,8 @@ const AITradingInsight = ({ mode, symbol, analysisData }: AITradingInsightProps)
           accumulated += chunk;
           setInsight(accumulated);
         },
-        controller.signal
+        controller.signal,
+        knowledgeText || undefined
       );
     } catch (err: any) {
       if (err.name === "AbortError") return;
