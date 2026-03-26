@@ -27,14 +27,14 @@ const StackedBar = ({
   const notFilledH = Math.max((notFilledPct / 100) * BAR_HEIGHT, notFilledPct > 0 ? 6 : 0);
 
   return (
-    <div className="flex flex-col items-center gap-2" style={{ width: 140 }}>
+    <div className="flex flex-col items-center gap-2" style={{ width: "clamp(90px, 30vw, 140px)" }}>
       <div
         className="w-full flex flex-col rounded-t-md overflow-hidden"
         style={{ height: BAR_HEIGHT }}
       >
         {/* Not filled (top) */}
         <div
-          className="w-full flex items-center justify-center text-[12px] font-semibold"
+          className="w-full flex items-center justify-center text-[10px] sm:text-[12px] font-semibold"
           style={{
             height: notFilledH,
             backgroundColor: NOT_FILLED_COLOR_VAR,
@@ -47,7 +47,7 @@ const StackedBar = ({
         <div className="flex-1" />
         {/* Filled (bottom) */}
         <div
-          className="w-full flex items-center justify-center text-[13px] font-bold text-primary-foreground"
+          className="w-full flex items-center justify-center text-[10px] sm:text-[13px] font-bold text-primary-foreground"
           style={{
             height: filledH,
             backgroundColor: FILLED_COLOR_VAR,
@@ -56,7 +56,7 @@ const StackedBar = ({
           {filledPct >= 4 && `${filledPct.toFixed(0)}% filled`}
         </div>
       </div>
-      <span className="text-[11px] text-muted-foreground lowercase">{label}</span>
+      <span className="text-[10px] sm:text-[11px] text-muted-foreground lowercase">{label}</span>
     </div>
   );
 };
@@ -96,10 +96,10 @@ const GapFillDashboard = ({ result, symbol, dateRange, weekdays }: GapFillDashbo
   return (
     <div className="space-y-4">
       {/* ═══ TOP SUMMARY BAR ═══ */}
-      <div className="border border-border rounded-xl bg-card px-5 py-4 flex flex-wrap items-center gap-x-6 gap-y-3">
+      <div className="border border-border rounded-xl bg-card px-3 sm:px-5 py-3 sm:py-4 flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2 sm:gap-y-3">
         {/* Symbol */}
         <div className="flex items-center gap-3">
-          <span className="text-[18px] font-bold text-foreground uppercase tracking-wide">
+          <span className="text-[16px] sm:text-[18px] font-bold text-foreground uppercase tracking-wide">
             {symbol}
           </span>
           <div className="flex flex-col">
@@ -150,7 +150,7 @@ const GapFillDashboard = ({ result, symbol, dateRange, weekdays }: GapFillDashbo
         {/* ── LEFT: Charts ── */}
         <div className="border border-border rounded-xl bg-card overflow-hidden">
           {/* Header */}
-          <div className="px-5 pt-4 pb-3 border-b border-border">
+          <div className="px-3 sm:px-5 pt-3 sm:pt-4 pb-2 sm:pb-3 border-b border-border">
             <h4 className="text-[13px] font-semibold text-foreground lowercase">charts</h4>
             <p className="text-[10px] text-muted-foreground mt-0.5">
               {symbol.toLowerCase()} gap fill&nbsp;&nbsp;|&nbsp;&nbsp;by size
@@ -161,11 +161,11 @@ const GapFillDashboard = ({ result, symbol, dateRange, weekdays }: GapFillDashbo
           </div>
 
           {/* Chart area */}
-          <div className="px-5 py-6">
+          <div className="px-3 sm:px-5 py-4 sm:py-6">
             <div className="flex items-end gap-0">
               {/* Y-axis labels */}
               <div
-                className="flex flex-col justify-between pr-3 text-[11px] text-muted-foreground"
+                className="flex flex-col justify-between pr-1 sm:pr-3 text-[9px] sm:text-[11px] text-muted-foreground"
                 style={{ height: BAR_HEIGHT }}
               >
                 {["100%", "75%", "50%", "25%", "0%"].map((l) => (
@@ -186,7 +186,7 @@ const GapFillDashboard = ({ result, symbol, dateRange, weekdays }: GapFillDashbo
                 </div>
                 {/* Stacked bars */}
                 <div
-                  className="relative flex items-end justify-center gap-16"
+                  className="relative flex items-end justify-center gap-4 sm:gap-16"
                   style={{ height: BAR_HEIGHT }}
                 >
                   <StackedBar label="gap up" filledPct={upFillPct} notFilledPct={upNotPct} />
@@ -209,13 +209,13 @@ const GapFillDashboard = ({ result, symbol, dateRange, weekdays }: GapFillDashbo
           </div>
 
           {/* Gap size bucket buttons */}
-          <div className="border-t border-border px-5 py-4">
-            <div className="flex flex-wrap gap-2">
+          <div className="border-t border-border px-3 sm:px-5 py-3 sm:py-4">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {GAP_SIZE_BUCKETS.map((b) => (
                 <button
                   key={b.key}
                   onClick={() => setActiveBucket(activeBucket === b.key ? "all" : b.key)}
-                  className={`px-3.5 py-2 rounded-full text-[11px] font-medium border transition-all duration-200 ${
+                  className={`px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-[11px] font-medium border transition-all duration-200 ${
                     activeBucket === b.key
                       ? "bg-primary text-primary-foreground border-primary shadow-[0_0_12px_hsl(217,91%,60%,0.25)]"
                       : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
