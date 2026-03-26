@@ -268,40 +268,40 @@ const AIAssistant = () => {
 
   const quickActions = [
     {
-      label: "Analisis Lengkap",
-      icon: Activity,
-      description: "Jalankan semua 6 mode analisis dan dapatkan laporan confluence",
-      prompt: "Jalankan semua 6 mode analisis (IB, Momentum, OCC, Gap Fill, Inside Bar, Outside Day) untuk QQQ menggunakan 60 hari trading. Berikan laporan confluence lengkap dengan directional bias dan confidence level.",
-    },
-    {
-      label: "IB + OCC Confluence",
-      icon: Layers,
-      description: "Gabungkan IB tell dan OCC direction untuk sinyal lebih kuat",
-      prompt: "Jalankan analisis IB dan OCC untuk QQQ menggunakan 60 hari trading. Bandingkan apakah IB tell (high/low first) sejalan dengan arah OCC continuation. Berikan assessment confluence-nya.",
-    },
-    {
-      label: "IB + Gap Fill",
+      label: "IB Single Break Edge",
       icon: TrendingUp,
-      description: "Cek apakah gap direction memperkuat IB breakout bias",
-      prompt: "Jalankan analisis IB dan Gap Fill untuk QQQ menggunakan 60 hari trading. Apakah hari gap down cenderung break low di IB? Apakah gap up cenderung break high? Berikan edge gabungannya.",
+      description: "73-80% single break on NQ — trade continuation, bukan reversal",
+      prompt: "Jalankan analisis IB untuk NQ menggunakan 60 hari trading. Fokus pada probabilitas single break vs double break vs no break. Apakah sejalan dengan benchmark Edgeful (single break ~73-80%)? Jika single break terjadi, berikan directional bias berdasarkan 'The Tell' (high/low formed first).",
     },
     {
-      label: "Gap Down + OCC Bullish",
+      label: "OCC Continuation Bias",
+      icon: Activity,
+      description: "First candle predicts daily close ~70-75% of the time",
+      prompt: "Jalankan analisis OCC untuk NQ menggunakan 60 hari trading dengan opening candle 30m. Berapa persen green opening candle diikuti green day (continuation)? Berapa persen red opening candle diikuti red day? Bandingkan dengan benchmark Edgeful (~70-75% continuation rate).",
+    },
+    {
+      label: "Gap Size & Fill Rate",
       icon: Zap,
-      description: "Cari reversal edge: gap down tapi OCC menunjukkan bullish",
-      prompt: "Jalankan analisis Gap Fill dan OCC untuk QQQ menggunakan 60 hari trading. Fokus pada hari gap down — apakah OCC menunjukkan bullish continuation? Jika ya, seberapa kuat edge reversal ini?",
+      description: "Small gap fill 83-93%, large gap rarely fills — size matters",
+      prompt: "Jalankan analisis Gap Fill untuk NQ menggunakan 120 hari trading. Fokus pada gap size breakdown: seberapa sering gap kecil (<0.2%) vs gap besar (>0.6%) terisi? Bandingkan dengan data Edgeful. Berikan juga 'by close' analysis — setelah gap fill, apakah session close green atau red?",
     },
     {
-      label: "IB + Inside Bar",
+      label: "3 Powerful Reports",
+      icon: Layers,
+      description: "OCC + IB + Gap Fill = confluence strategy ala Edgeful",
+      prompt: "Jalankan analisis OCC, IB, dan Gap Fill untuk NQ menggunakan 60 hari trading. Terapkan strategi '3 Powerful Reports' dari Edgeful: 1) Cek OCC untuk directional bias, 2) Cek IB single break direction, 3) Cek gap fill probability. Jika ketiga sinyal ALIGN, state 'HIGH PROBABILITY SETUP'. Jika conflict, state 'PROTECT CAPITAL'.",
+    },
+    {
+      label: "Inside Bar Breakout",
       icon: Target,
-      description: "Analisis breakout setelah konsolidasi inside bar",
-      prompt: "Jalankan analisis IB dan Inside Bar untuk QQQ menggunakan 60 hari trading. Apakah hari setelah inside bar cenderung break high atau break low di IB? Berikan probabilitas dan trading plan-nya.",
+      description: "Rare pattern (~22%) tapi 78% break previous range",
+      prompt: "Jalankan analisis Inside Bar untuk SPY menggunakan 120 hari trading. Berapa occurrence rate-nya? Ketika inside bar terbentuk, berapa persen break upside vs downside? Bandingkan dengan benchmark Edgeful (~78% break rate, ~52% upside). Berikan trading plan: entry on 30min breakout, target previous day's high/low.",
     },
     {
-      label: "Buat Trading Plan",
-      icon: BookOpen,
-      description: "Generate trading plan lengkap berbasis data statistik",
-      prompt: "Jalankan analisis IB, Momentum, dan OCC untuk QQQ menggunakan 60 hari. Buat trading plan lengkap dengan entry criteria, stop loss, profit target, dan risk management berdasarkan statistical edge yang ditemukan.",
+      label: "Outside Day Reversal",
+      icon: Share2,
+      description: "Open di luar range kemarin — retrace or continue?",
+      prompt: "Jalankan analisis Outside Day untuk NQ menggunakan 120 hari trading. Berapa persen bullish outside day (open > yesterday's high) yang retrace ke prior high? Berapa persen bearish outside day yang retrace ke prior low? Bandingkan dengan Edgeful (~65% bullish retrace, ~58% bearish retrace). Analisis juga berdasarkan gap size — apakah gap kecil lebih sering fill?",
     },
   ];
 
