@@ -169,11 +169,15 @@ const Index = () => {
     try {
       if (effectiveMode === "globex-ib") {
         // Globex IB uses Massive API via massive-bars edge function
+        // Calculate date range: ~1.5x trading days to account for weekends/holidays
         const now = new Date();
         const from = new Date(now);
-        from.setDate(from.getDate() - Math.ceil(effectiveMaxDays * 1.5)); // extra days for weekends
+        const calendarDaysNeeded = Math.ceil(effectiveMaxDays * 1.5) + 7; // extra buffer for holidays
+        from.setDate(from.getDate() - calendarDaysNeeded);
         const fromStr = from.toISOString().split("T")[0];
         const toStr = now.toISOString().split("T")[0];
+
+        toast.info(`Fetching ${effectiveMaxDays} days of Globex data...`, { duration: 3000 });
 
         const { data: json, error } = await supabase.functions.invoke("massive-bars", {
           body: { symbol: ticker, from: fromStr, to: toStr, multiplier: 5, timespan: "minute" },
