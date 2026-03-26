@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
       },
     };
 
-    const pricing = prices[plan]?.[currency];
+    let pricing = prices[plan]?.[currency];
     if (!pricing) {
       return new Response(JSON.stringify({ error: "Invalid plan or currency" }), {
         status: 400,
