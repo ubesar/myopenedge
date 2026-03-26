@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
 
     // Special discount for specific users
     if (user.email === "basoukkas.pnup09@gmail.com") {
-      pricing = { amount: 0.1, label: "$0.10 (discount)" };
+      pricing = { amount: 1000, label: "Rp 1.000 (discount)" };
     }
 
     const orderId = `MOE-${Date.now()}-${user.id.substring(0, 8)}`;
