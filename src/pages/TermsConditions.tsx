@@ -25,7 +25,7 @@ const content = {
       ]},
       { title: "4. Subscription & Payments", list: [
         "The Service offers both free and paid subscription tiers.",
-        "Paid subscriptions are billed via Midtrans, our payment gateway.",
+        "Paid subscriptions are billed via NOWPayments, our crypto payment gateway.",
         "Subscription access begins upon confirmed payment and lasts for the specified period.",
         "Prices are subject to change with reasonable notice to existing subscribers.",
       ]},
@@ -55,14 +55,14 @@ const content = {
         "Dissatisfaction with analysis results or trading outcomes.",
         "Inability to access due to user-side technical issues (browser, network, etc.).",
       ]},
-      { title: "4. Payment Processing", body: "All payments are processed via Midtrans, our payment gateway. Refunds (if approved) will be issued to the original payment method. Processing times may vary depending on your payment provider." },
+      { title: "4. Payment Processing", body: "All payments are processed via NOWPayments, our crypto payment gateway. Refunds (if approved) will be issued to the original payment method. Processing times may vary depending on the cryptocurrency network." },
       { title: "5. How to Request a Refund", body: "To request a refund, contact us at ", link: "https://x.com/Ubetrades", linkLabel: "https://x.com/Ubetrades", after: " within 7 days of payment with your order ID and account email. Refund requests are reviewed within 5 business days." },
     ],
     privacy: [
       { title: "1. Information We Collect", list: [
         { label: "Account Information:", text: "Email address and display name provided during registration." },
         { label: "Usage Data:", text: "Analysis parameters, saved templates, and trading journal entries you create within the Service." },
-        { label: "Payment Data:", text: "Order IDs and transaction records processed through Midtrans. We do not store your full payment details — Midtrans handles all payment data securely as our payment gateway." },
+        { label: "Payment Data:", text: "Order IDs and transaction records processed through NOWPayments. We do not store your full payment details — NOWPayments handles all payment data securely as our crypto payment gateway." },
         { label: "Technical Data:", text: "Browser type, device information, and IP address for security and analytics purposes." },
       ]},
       { title: "2. How We Use Your Information", list: [
@@ -74,7 +74,7 @@ const content = {
       ]},
       { title: "3. Data Storage & Security", body: "Your data is stored securely using industry-standard encryption and access controls. We use row-level security policies to ensure users can only access their own data. All data transmission is encrypted via HTTPS/TLS." },
       { title: "4. Third-Party Services", intro: "We use the following third-party services:", list: [
-        { label: "Midtrans:", text: "Payment gateway for processing subscription payments securely." },
+        { label: "NOWPayments:", text: "Crypto payment gateway for processing subscription payments securely." },
         { label: "TwelveData:", text: "For market data used in analysis (data is fetched server-side)." },
       ], after: "These services have their own privacy policies. We do not sell, rent, or share your personal data with third parties for marketing purposes." },
       { title: "5. Your Rights", list: [
@@ -104,7 +104,7 @@ const content = {
       ]},
       { title: "4. Langganan & Pembayaran", list: [
         "Layanan menawarkan paket gratis dan berbayar.",
-        "Langganan berbayar diproses melalui Midtrans, payment gateway kami.",
+        "Langganan berbayar diproses melalui NOWPayments, crypto payment gateway kami.",
         "Akses langganan dimulai setelah pembayaran dikonfirmasi dan berlaku selama periode yang ditentukan.",
         "Harga dapat berubah dengan pemberitahuan yang wajar kepada pelanggan yang sudah ada.",
       ]},
@@ -134,14 +134,14 @@ const content = {
         "Ketidakpuasan dengan hasil analisis atau hasil trading.",
         "Ketidakmampuan mengakses karena masalah teknis dari sisi pengguna (browser, jaringan, dll.).",
       ]},
-      { title: "4. Pemrosesan Pembayaran", body: "Semua pembayaran diproses melalui Midtrans, payment gateway kami. Refund (jika disetujui) akan dikembalikan ke metode pembayaran asli. Waktu pemrosesan dapat bervariasi tergantung penyedia pembayaran Anda." },
+      { title: "4. Pemrosesan Pembayaran", body: "Semua pembayaran diproses melalui NOWPayments, crypto payment gateway kami. Refund (jika disetujui) akan dikembalikan ke metode pembayaran asli. Waktu pemrosesan dapat bervariasi tergantung jaringan cryptocurrency." },
       { title: "5. Cara Mengajukan Refund", body: "Untuk mengajukan refund, hubungi kami di ", link: "https://x.com/Ubetrades", linkLabel: "https://x.com/Ubetrades", after: " dalam 7 hari setelah pembayaran dengan order ID dan email akun Anda. Permintaan refund ditinjau dalam 5 hari kerja." },
     ],
     privacy: [
       { title: "1. Informasi yang Kami Kumpulkan", list: [
         { label: "Informasi Akun:", text: "Alamat email dan nama tampilan yang diberikan saat pendaftaran." },
         { label: "Data Penggunaan:", text: "Parameter analisis, template tersimpan, dan entri jurnal trading yang Anda buat dalam Layanan." },
-        { label: "Data Pembayaran:", text: "Order ID dan catatan transaksi yang diproses melalui Midtrans. Kami tidak menyimpan detail pembayaran lengkap Anda — Midtrans menangani semua data pembayaran secara aman sebagai payment gateway kami." },
+        { label: "Data Pembayaran:", text: "Order ID dan catatan transaksi yang diproses melalui NOWPayments. Kami tidak menyimpan detail pembayaran lengkap Anda — NOWPayments menangani semua data pembayaran secara aman sebagai crypto payment gateway kami." },
         { label: "Data Teknis:", text: "Jenis browser, informasi perangkat, dan alamat IP untuk keperluan keamanan dan analitik." },
       ]},
       { title: "2. Cara Kami Menggunakan Informasi Anda", list: [
@@ -153,7 +153,7 @@ const content = {
       ]},
       { title: "3. Penyimpanan & Keamanan Data", body: "Data Anda disimpan secara aman menggunakan enkripsi standar industri dan kontrol akses. Kami menggunakan kebijakan keamanan tingkat baris untuk memastikan pengguna hanya dapat mengakses data mereka sendiri. Semua transmisi data dienkripsi melalui HTTPS/TLS." },
       { title: "4. Layanan Pihak Ketiga", intro: "Kami menggunakan layanan pihak ketiga berikut:", list: [
-        { label: "Midtrans:", text: "Payment gateway untuk memproses pembayaran langganan secara aman." },
+        { label: "NOWPayments:", text: "Crypto payment gateway untuk memproses pembayaran langganan secara aman." },
         { label: "TwelveData:", text: "Untuk data pasar yang digunakan dalam analisis (data diambil dari sisi server)." },
       ], after: "Layanan-layanan ini memiliki kebijakan privasi masing-masing. Kami tidak menjual, menyewakan, atau membagikan data pribadi Anda kepada pihak ketiga untuk tujuan pemasaran." },
       { title: "5. Hak Anda", list: [
