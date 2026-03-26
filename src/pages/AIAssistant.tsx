@@ -313,15 +313,15 @@ const AIAssistant = () => {
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <div className="flex items-center gap-3 px-6 py-4 border-b border-border/30">
-          <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center">
-            <Bot className="h-4.5 w-4.5 text-primary" />
+        <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-6 py-3 sm:py-4 border-b border-border/30">
+          <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+            <Bot className="h-4 w-4 text-primary" />
           </div>
-          <div className="flex-1">
-            <h1 className="text-sm font-semibold text-foreground">AI Trading Assistant</h1>
-            <div className="flex items-center gap-2">
-              <p className="text-[11px] text-muted-foreground">live analysis · confluence detection · trade planning</p>
-              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium border border-primary/20">⚡ gemini 3 flash</span>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-[13px] sm:text-sm font-semibold text-foreground">AI Trading Assistant</h1>
+            <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground hidden sm:block">live analysis · confluence detection · trade planning</p>
+              <span className="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium border border-primary/20">⚡ gemini 3 flash</span>
             </div>
           </div>
           {messages.length > 0 && (
@@ -329,10 +329,10 @@ const AIAssistant = () => {
               variant="ghost"
               size="sm"
               onClick={() => setMessages([])}
-              className="text-muted-foreground hover:text-foreground text-xs gap-1.5"
+              className="text-muted-foreground hover:text-foreground text-xs gap-1 px-2 sm:px-3"
             >
               <Trash2 className="h-3.5 w-3.5" />
-              Clear
+              <span className="hidden sm:inline">Clear</span>
             </Button>
           )}
         </div>
@@ -340,52 +340,52 @@ const AIAssistant = () => {
         {/* Messages Area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full px-6 py-12">
-              <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-5">
-                <Bot className="h-7 w-7 text-primary opacity-60" />
+            <div className="flex flex-col items-center justify-center h-full px-4 sm:px-6 py-8 sm:py-12">
+              <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 sm:mb-5">
+                <Bot className="h-6 w-6 sm:h-7 sm:w-7 text-primary opacity-60" />
               </div>
-              <h2 className="text-lg font-semibold text-foreground mb-1">apa yang bisa saya bantu hari ini?</h2>
-              <p className="text-sm text-muted-foreground mb-8 text-center max-w-md">
-                saya bisa menjalankan live analysis, menggabungkan beberapa mode untuk confluence, dan membuat trading plan berbasis data. langsung tanya saja!
+              <h2 className="text-base sm:text-lg font-semibold text-foreground mb-1">apa yang bisa saya bantu hari ini?</h2>
+              <p className="text-[12px] sm:text-sm text-muted-foreground mb-6 sm:mb-8 text-center max-w-md">
+                saya bisa menjalankan live analysis, menggabungkan beberapa mode untuk confluence, dan membuat trading plan berbasis data.
               </p>
 
               {/* Quick Actions Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-3xl w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 max-w-3xl w-full">
                 {quickActions.map((action) => (
                   <button
                     key={action.label}
                     onClick={() => handleQuickAction(action.prompt)}
-                    className="flex items-start gap-3 p-4 rounded-xl border border-border/40 bg-card/50 hover:bg-card hover:border-border/70 transition-all text-left group"
+                    className="flex items-start gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-xl border border-border/40 bg-card/50 hover:bg-card hover:border-border/70 transition-all text-left group"
                   >
-                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
-                      <action.icon className="h-4 w-4 text-primary" />
+                    <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                      <action.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                     </div>
-                    <div>
-                      <p className="text-[13px] font-medium text-foreground">{action.label}</p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{action.description}</p>
+                    <div className="min-w-0">
+                      <p className="text-[12px] sm:text-[13px] font-medium text-foreground">{action.label}</p>
+                      <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{action.description}</p>
                     </div>
                   </button>
                 ))}
               </div>
             </div>
           ) : (
-            <div className="max-w-3xl mx-auto px-6 py-6 space-y-5">
+            <div className="max-w-3xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5">
               {messages.filter(m => m.role !== "tool").map((msg, i) => (
-                <div key={i} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div key={i} className={`flex gap-2 sm:gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                   {msg.role === "assistant" && (
-                    <div className="h-7 w-7 rounded-lg bg-primary/15 flex items-center justify-center shrink-0 mt-1">
-                      <Bot className="h-4 w-4 text-primary" />
+                    <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg bg-primary/15 flex items-center justify-center shrink-0 mt-1">
+                      <Bot className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                     </div>
                   )}
                   <div
-                    className={`rounded-xl px-4 py-3 text-sm leading-relaxed max-w-[85%] ${
+                    className={`rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-[13px] sm:text-sm leading-relaxed max-w-[90%] sm:max-w-[85%] ${
                       msg.role === "user"
                         ? "bg-primary text-primary-foreground"
                         : "bg-card border border-border/30 text-card-foreground"
                     }`}
                   >
                     {msg.role === "assistant" ? (
-                      <div className="prose prose-sm prose-invert max-w-none [&>p]:mb-2 [&>ul]:mb-2 [&>ol]:mb-2 [&>h1]:text-base [&>h2]:text-sm [&>h3]:text-sm [&>li]:text-sm">
+                      <div className="prose prose-sm prose-invert max-w-none [&>p]:mb-2 [&>ul]:mb-2 [&>ol]:mb-2 [&>h1]:text-base [&>h2]:text-sm [&>h3]:text-sm [&>li]:text-[13px] sm:[&>li]:text-sm">
                         <ReactMarkdown>{msg.content}</ReactMarkdown>
                       </div>
                     ) : (
@@ -395,14 +395,14 @@ const AIAssistant = () => {
                 </div>
               ))}
               {isLoading && (
-                <div className="flex gap-3">
-                  <div className="h-7 w-7 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
-                    <Bot className="h-4 w-4 text-primary" />
+                <div className="flex gap-2 sm:gap-3">
+                  <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+                    <Bot className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                   </div>
-                  <div className="rounded-xl px-4 py-3 bg-card border border-border/30 flex items-center gap-2">
+                  <div className="rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 bg-card border border-border/30 flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin text-primary" />
                     {statusText && (
-                      <span className="text-xs text-muted-foreground">{statusText}</span>
+                      <span className="text-[11px] sm:text-xs text-muted-foreground">{statusText}</span>
                     )}
                   </div>
                 </div>
@@ -413,13 +413,13 @@ const AIAssistant = () => {
 
         {/* Quick actions bar when in conversation */}
         {messages.length > 0 && !isLoading && (
-          <div className="px-6 py-2 border-t border-border/20">
-            <div className="max-w-3xl mx-auto flex gap-2 overflow-x-auto pb-1">
+          <div className="px-3 sm:px-6 py-2 border-t border-border/20">
+            <div className="max-w-3xl mx-auto flex gap-1.5 sm:gap-2 overflow-x-auto pb-1">
               {quickActions.map((action) => (
                 <button
                   key={action.label}
                   onClick={() => handleQuickAction(action.prompt)}
-                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border/30 bg-muted/20 hover:bg-muted/50 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex-shrink-0 flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border border-border/30 bg-muted/20 hover:bg-muted/50 text-[10px] sm:text-[11px] text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <action.icon className="h-3 w-3" />
                   {action.label}
@@ -430,25 +430,25 @@ const AIAssistant = () => {
         )}
 
         {/* Input Area */}
-        <div className="px-6 py-4 border-t border-border/30 bg-card/30">
+        <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-border/30 bg-card/30">
           <form
             onSubmit={(e) => { e.preventDefault(); send(); }}
-            className="max-w-3xl mx-auto flex gap-3"
+            className="max-w-3xl mx-auto flex gap-2 sm:gap-3"
           >
             <input
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="contoh: 'analisis IB dan OCC untuk QQQ 60 hari' atau 'apakah gap down + OCC bullish setup bagus untuk SPY?'"
-              className="flex-1 bg-muted/50 border border-border/40 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+              placeholder="contoh: 'analisis IB dan OCC untuk QQQ 60 hari'"
+              className="flex-1 min-w-0 bg-muted/50 border border-border/40 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-[13px] sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
               disabled={isLoading}
             />
-            <Button type="submit" disabled={isLoading || !input.trim()} className="h-[46px] px-5 rounded-xl">
+            <Button type="submit" disabled={isLoading || !input.trim()} className="h-[42px] sm:h-[46px] px-4 sm:px-5 rounded-xl shrink-0">
               <Send className="h-4 w-4" />
             </Button>
           </form>
-          <p className="text-[10px] text-muted-foreground text-center mt-2 max-w-3xl mx-auto">
-            AI mengambil data live & menjalankan analisis nyata — bukan saran keuangan. selalu terapkan risk management yang ketat.
+          <p className="text-[9px] sm:text-[10px] text-muted-foreground text-center mt-1.5 sm:mt-2 max-w-3xl mx-auto">
+            AI mengambil data live & menjalankan analisis nyata — bukan saran keuangan.
           </p>
         </div>
       </div>

@@ -22,7 +22,6 @@ const GAP_FILTERS = [
 function calcFiltered(days: OutsideDayData[], type: "bullish" | "bearish") {
   const typed = days.filter(d => d.type === type);
   const total = typed.length;
-  // "did not reverse" = bullish closed green, bearish closed red
   const didNotReverse = type === "bullish"
     ? typed.filter(d => d.closedGreen === true).length
     : typed.filter(d => d.closedGreen === false).length;
@@ -61,21 +60,21 @@ const OutsideDayReport = ({ result, symbol, dateRange = "" }: OutsideDayReportPr
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
         {/* Charts panel */}
         <div className="xl:col-span-3 border border-border rounded-xl bg-card overflow-hidden">
-          <div className="px-5 pt-4 pb-2">
-            <p className="text-[11px] text-muted-foreground font-medium lowercase">charts</p>
-            <h3 className="text-sm font-semibold text-foreground mt-1">
+          <div className="px-3 sm:px-5 pt-3 sm:pt-4 pb-2">
+            <p className="text-[10px] sm:text-[11px] text-muted-foreground font-medium lowercase">charts</p>
+            <h3 className="text-[13px] sm:text-sm font-semibold text-foreground mt-1">
               outside days | {symbol} | 9:30 am – 4:00 pm
             </h3>
             {dateRange && (
-              <p className="text-[11px] text-muted-foreground mt-0.5">{dateRange}</p>
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5">{dateRange}</p>
             )}
           </div>
 
           {/* Stacked bar chart */}
-          <div className="px-5 pb-4 pt-2">
-            <div className="flex items-end gap-8 justify-center" style={{ height: 280 }}>
+          <div className="px-3 sm:px-5 pb-4 pt-2">
+            <div className="flex items-end gap-3 sm:gap-8 justify-center" style={{ height: 220 }}>
               {/* Y-axis labels */}
-              <div className="flex flex-col justify-between h-full text-[10px] text-muted-foreground pr-1">
+              <div className="flex flex-col justify-between h-full text-[9px] sm:text-[10px] text-muted-foreground pr-1">
                 <span>100%</span>
                 <span>75%</span>
                 <span>50%</span>
@@ -84,27 +83,25 @@ const OutsideDayReport = ({ result, symbol, dateRange = "" }: OutsideDayReportPr
               </div>
 
               {/* Bullish bar */}
-              <div className="flex flex-col items-center gap-2">
-                <div className="relative w-36 sm:w-44" style={{ height: 250 }}>
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="relative w-[120px] sm:w-44" style={{ height: 190 }}>
                   {bull.total > 0 ? (
                     <>
-                      {/* Reversal (top - dark) */}
                       <div
-                        className="absolute top-0 left-0 right-0 bg-[#374151] rounded-t-md flex items-center justify-center"
+                        className="absolute top-0 left-0 right-0 bg-[#374151] rounded-t-md flex items-center justify-center px-1"
                         style={{ height: `${bull.reversedPct}%` }}
                       >
-                        {bull.reversedPct >= 10 && (
-                          <span className="text-[11px] font-semibold text-white/90">
-                            {bull.reversedPct.toFixed(0)}% reversal back down
+                        {bull.reversedPct >= 15 && (
+                          <span className="text-[9px] sm:text-[11px] font-semibold text-white/90 text-center leading-tight">
+                            {bull.reversedPct.toFixed(0)}% reversal
                           </span>
                         )}
                       </div>
-                      {/* Did not reverse (bottom - blue) */}
                       <div
-                        className="absolute bottom-0 left-0 right-0 bg-[#3b82f6] rounded-b-md flex items-center justify-center"
+                        className="absolute bottom-0 left-0 right-0 bg-[#3b82f6] rounded-b-md flex items-center justify-center px-1"
                         style={{ height: `${bull.didNotReversePct}%` }}
                       >
-                        <span className="text-[11px] font-semibold text-white">
+                        <span className="text-[9px] sm:text-[11px] font-semibold text-white text-center leading-tight">
                           {bull.didNotReversePct.toFixed(0)}% did not reverse
                         </span>
                       </div>
@@ -115,31 +112,29 @@ const OutsideDayReport = ({ result, symbol, dateRange = "" }: OutsideDayReportPr
                     </div>
                   )}
                 </div>
-                <span className="text-[11px] text-muted-foreground">bullish outside day</span>
+                <span className="text-[9px] sm:text-[11px] text-muted-foreground">bullish outside day</span>
               </div>
 
               {/* Bearish bar */}
-              <div className="flex flex-col items-center gap-2">
-                <div className="relative w-36 sm:w-44" style={{ height: 250 }}>
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="relative w-[120px] sm:w-44" style={{ height: 190 }}>
                   {bear.total > 0 ? (
                     <>
-                      {/* Reversal (top - dark) */}
                       <div
-                        className="absolute top-0 left-0 right-0 bg-[#374151] rounded-t-md flex items-center justify-center"
+                        className="absolute top-0 left-0 right-0 bg-[#374151] rounded-t-md flex items-center justify-center px-1"
                         style={{ height: `${bear.reversedPct}%` }}
                       >
-                        {bear.reversedPct >= 10 && (
-                          <span className="text-[11px] font-semibold text-white/90">
-                            {bear.reversedPct.toFixed(0)}% reversal back up
+                        {bear.reversedPct >= 15 && (
+                          <span className="text-[9px] sm:text-[11px] font-semibold text-white/90 text-center leading-tight">
+                            {bear.reversedPct.toFixed(0)}% reversal
                           </span>
                         )}
                       </div>
-                      {/* Did not reverse (bottom - blue) */}
                       <div
-                        className="absolute bottom-0 left-0 right-0 bg-[#3b82f6] rounded-b-md flex items-center justify-center"
+                        className="absolute bottom-0 left-0 right-0 bg-[#3b82f6] rounded-b-md flex items-center justify-center px-1"
                         style={{ height: `${bear.didNotReversePct}%` }}
                       >
-                        <span className="text-[11px] font-semibold text-white">
+                        <span className="text-[9px] sm:text-[11px] font-semibold text-white text-center leading-tight">
                           {bear.didNotReversePct.toFixed(0)}% did not reverse
                         </span>
                       </div>
@@ -150,17 +145,17 @@ const OutsideDayReport = ({ result, symbol, dateRange = "" }: OutsideDayReportPr
                     </div>
                   )}
                 </div>
-                <span className="text-[11px] text-muted-foreground">bearish outside day</span>
+                <span className="text-[9px] sm:text-[11px] text-muted-foreground">bearish outside day</span>
               </div>
             </div>
 
             {/* Gap size filter buttons */}
-            <div className="flex flex-wrap gap-2 mt-5">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-4 sm:mt-5">
               {GAP_FILTERS.map((f, i) => (
                 <button
                   key={f.label}
                   onClick={() => setActiveFilter(i)}
-                  className={`px-3 py-1.5 text-[11px] rounded-md border transition-colors ${
+                  className={`px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-[11px] rounded-md border transition-colors ${
                     activeFilter === i
                       ? "border-[#3b82f6] text-[#3b82f6] bg-[#3b82f6]/10"
                       : "border-border text-muted-foreground hover:border-muted-foreground/50"
@@ -175,37 +170,37 @@ const OutsideDayReport = ({ result, symbol, dateRange = "" }: OutsideDayReportPr
 
         {/* Insights panel */}
         <div className="xl:col-span-2 border border-border rounded-xl bg-card overflow-hidden">
-          <div className="px-5 pt-4 pb-2">
-            <p className="text-[11px] text-muted-foreground font-medium lowercase">insights</p>
+          <div className="px-3 sm:px-5 pt-3 sm:pt-4 pb-2">
+            <p className="text-[10px] sm:text-[11px] text-muted-foreground font-medium lowercase">insights</p>
           </div>
 
           {/* Bullish table */}
-          <div className="px-4">
-            <table className="w-full text-[12px]">
+          <div className="px-2 sm:px-4 overflow-x-auto">
+            <table className="w-full text-[10px] sm:text-[12px]">
               <thead>
                 <tr className="bg-[#3b82f6] text-white">
-                  <th className="px-3 py-2 text-left font-medium rounded-tl-md">category</th>
-                  <th className="px-3 py-2 text-right font-medium">frequency</th>
-                  <th className="px-3 py-2 text-right font-medium rounded-tr-md">percentage</th>
+                  <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left font-medium rounded-tl-md">category</th>
+                  <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-right font-medium">freq</th>
+                  <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-right font-medium rounded-tr-md">%</th>
                 </tr>
               </thead>
               <tbody>
                 <tr className="border-b border-border/30">
-                  <td className="px-3 py-2.5 text-foreground">bullish outside day</td>
-                  <td className="px-3 py-2.5 text-right text-foreground font-mono">{bull.total}</td>
-                  <td className="px-3 py-2.5 text-right text-foreground font-mono">{bullPctOfAll.toFixed(0)}%</td>
+                  <td className="px-2 sm:px-3 py-2 text-foreground">bullish outside day</td>
+                  <td className="px-2 sm:px-3 py-2 text-right text-foreground font-mono">{bull.total}</td>
+                  <td className="px-2 sm:px-3 py-2 text-right text-foreground font-mono">{bullPctOfAll.toFixed(0)}%</td>
                 </tr>
                 <tr className="border-b border-border/30">
-                  <td className="px-3 py-2.5 text-foreground">bullish outside day did not reverse</td>
-                  <td className="px-3 py-2.5 text-right text-foreground font-mono">{bull.didNotReverse}</td>
-                  <td className="px-3 py-2.5 text-right text-foreground font-mono">
+                  <td className="px-2 sm:px-3 py-2 text-foreground">did not reverse</td>
+                  <td className="px-2 sm:px-3 py-2 text-right text-foreground font-mono">{bull.didNotReverse}</td>
+                  <td className="px-2 sm:px-3 py-2 text-right text-foreground font-mono">
                     {bull.total > 0 ? bull.didNotReversePct.toFixed(0) : 0}%
                   </td>
                 </tr>
                 <tr className="border-b border-border/50">
-                  <td className="px-3 py-2.5 text-foreground">bullish outside day reversal down</td>
-                  <td className="px-3 py-2.5 text-right text-foreground font-mono">{bull.reversed}</td>
-                  <td className="px-3 py-2.5 text-right text-foreground font-mono">
+                  <td className="px-2 sm:px-3 py-2 text-foreground">reversal down</td>
+                  <td className="px-2 sm:px-3 py-2 text-right text-foreground font-mono">{bull.reversed}</td>
+                  <td className="px-2 sm:px-3 py-2 text-right text-foreground font-mono">
                     {bull.total > 0 ? bull.reversedPct.toFixed(0) : 0}%
                   </td>
                 </tr>
@@ -214,32 +209,32 @@ const OutsideDayReport = ({ result, symbol, dateRange = "" }: OutsideDayReportPr
           </div>
 
           {/* Bearish table */}
-          <div className="px-4 mt-4 pb-4">
-            <table className="w-full text-[12px]">
+          <div className="px-2 sm:px-4 mt-3 sm:mt-4 pb-3 sm:pb-4 overflow-x-auto">
+            <table className="w-full text-[10px] sm:text-[12px]">
               <thead>
                 <tr className="bg-[#3b82f6] text-white">
-                  <th className="px-3 py-2 text-left font-medium rounded-tl-md">category</th>
-                  <th className="px-3 py-2 text-right font-medium">frequency</th>
-                  <th className="px-3 py-2 text-right font-medium rounded-tr-md">percentage</th>
+                  <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left font-medium rounded-tl-md">category</th>
+                  <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-right font-medium">freq</th>
+                  <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-right font-medium rounded-tr-md">%</th>
                 </tr>
               </thead>
               <tbody>
                 <tr className="border-b border-border/30">
-                  <td className="px-3 py-2.5 text-foreground">bearish outside day</td>
-                  <td className="px-3 py-2.5 text-right text-foreground font-mono">{bear.total}</td>
-                  <td className="px-3 py-2.5 text-right text-foreground font-mono">{bearPctOfAll.toFixed(0)}%</td>
+                  <td className="px-2 sm:px-3 py-2 text-foreground">bearish outside day</td>
+                  <td className="px-2 sm:px-3 py-2 text-right text-foreground font-mono">{bear.total}</td>
+                  <td className="px-2 sm:px-3 py-2 text-right text-foreground font-mono">{bearPctOfAll.toFixed(0)}%</td>
                 </tr>
                 <tr className="border-b border-border/30">
-                  <td className="px-3 py-2.5 text-foreground">bearish outside day did not reverse</td>
-                  <td className="px-3 py-2.5 text-right text-foreground font-mono">{bear.didNotReverse}</td>
-                  <td className="px-3 py-2.5 text-right text-foreground font-mono">
+                  <td className="px-2 sm:px-3 py-2 text-foreground">did not reverse</td>
+                  <td className="px-2 sm:px-3 py-2 text-right text-foreground font-mono">{bear.didNotReverse}</td>
+                  <td className="px-2 sm:px-3 py-2 text-right text-foreground font-mono">
                     {bear.total > 0 ? bear.didNotReversePct.toFixed(0) : 0}%
                   </td>
                 </tr>
                 <tr>
-                  <td className="px-3 py-2.5 text-foreground">bearish outside day reversal up</td>
-                  <td className="px-3 py-2.5 text-right text-foreground font-mono">{bear.reversed}</td>
-                  <td className="px-3 py-2.5 text-right text-foreground font-mono">
+                  <td className="px-2 sm:px-3 py-2 text-foreground">reversal up</td>
+                  <td className="px-2 sm:px-3 py-2 text-right text-foreground font-mono">{bear.reversed}</td>
+                  <td className="px-2 sm:px-3 py-2 text-right text-foreground font-mono">
                     {bear.total > 0 ? bear.reversedPct.toFixed(0) : 0}%
                   </td>
                 </tr>
