@@ -131,7 +131,7 @@ const AITradingInsight = ({ mode, symbol, analysisData }: AITradingInsightProps)
     } finally {
       setLoading(false);
     }
-  }, [mode, symbol, analysisData]);
+  }, [mode, symbol, analysisData, knowledgeText]);
 
   // Auto-generate when mode+symbol changes
   useEffect(() => {
