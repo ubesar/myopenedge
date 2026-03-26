@@ -155,7 +155,7 @@ const ParameterPanel = ({
         <div className="space-y-2">
           <p className="section-label">reports & customizations</p>
           <p className="text-[11px] text-muted-foreground">report</p>
-          <Select value={isFree ? "ib" : mode} onValueChange={(v) => { if (!isFree) { setMode(v as AnalysisMode); setSelectedTemplateId("custom"); } }} disabled={isFree}>
+          <Select value={isFree && mode !== "ib" && mode !== "occ" ? "ib" : mode} onValueChange={(v) => { const freeAllowed = ["ib", "occ"]; if (!isFree || freeAllowed.includes(v)) { setMode(v as AnalysisMode); setSelectedTemplateId("custom"); } }} disabled={isFree && mode !== "ib" && mode !== "occ" ? true : false}>
             <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
               <SelectValue />
             </SelectTrigger>
@@ -163,7 +163,7 @@ const ParameterPanel = ({
               <SelectItem value="ib">IB: initial balance breakout</SelectItem>
               {!isFree && <SelectItem value="globex-ib">IB: globex overnight</SelectItem>}
               {!isFree && <SelectItem value="momentum">momentum candle</SelectItem>}
-              {!isFree && <SelectItem value="occ">opening candle continuation</SelectItem>}
+              <SelectItem value="occ">opening candle continuation</SelectItem>
               {!isFree && <SelectItem value="gapfill">gap fill statistics</SelectItem>}
               {!isFree && <SelectItem value="insidebar">inside bar</SelectItem>}
               {!isFree && <SelectItem value="outsideday">outside day</SelectItem>}
@@ -210,13 +210,13 @@ const ParameterPanel = ({
           />
 
           <p className="text-[11px] text-muted-foreground">date range</p>
-          <Select value={isFree ? "7" : maxDays} onValueChange={(v) => { if (!isFree) { setMaxDays(v); setSelectedTemplateId("custom"); } }} disabled={isFree}>
+          <Select value={isFree ? "20" : maxDays} onValueChange={(v) => { if (!isFree) { setMaxDays(v); setSelectedTemplateId("custom"); } }} disabled={isFree}>
             <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {isFree
-                ? <SelectItem value="22">1 Month</SelectItem>
+                ? <SelectItem value="20">1 Month</SelectItem>
                 : DAY_OPTIONS.map((d) => (
                     <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
                   ))
