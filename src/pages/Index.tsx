@@ -61,7 +61,7 @@ const Index = () => {
   const [symbol, setSymbol] = useState("");
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
   const [selectedRunId, setSelectedRunId] = useState<string | undefined>();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [occCandleSize, setOccCandleSize] = useState<import("@/lib/occ-analysis").OCCCandleSize>("30m");
   const [momentumTimeframe, setMomentumTimeframe] = useState<OCCTimeframe>("M15");
   const [analysisMaxDays, setAnalysisMaxDays] = useState<number>(0);

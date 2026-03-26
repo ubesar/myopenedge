@@ -42,7 +42,7 @@ const Watchlist = () => {
   const [loading, setLoading] = useState(true);
   const [addingSymbol, setAddingSymbol] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const fetchItems = useCallback(async () => {
     if (!user) return;
