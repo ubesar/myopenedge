@@ -63,6 +63,11 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Special discount for specific users
+    if (user.email === "basoukkas.pnup09@gmail.com") {
+      pricing = { amount: 0.1, label: "$0.10 (discount)" };
+    }
+
     const orderId = `MOE-${Date.now()}-${user.id.substring(0, 8)}`;
     const daysToAdd = plan === "yearly" ? 365 : 30;
 
