@@ -489,7 +489,7 @@ const Index = () => {
             weekdays={formatWeekdays(analysisWeekdays)}
           />
           <AITradingInsight
-            mode="insidebar"
+            mode="outsideday"
             symbol={symbol}
             analysisData={{
               type: "outsideday",
