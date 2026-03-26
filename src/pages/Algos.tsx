@@ -14,7 +14,7 @@ const Algos = () => {
   const { isActive, loading: subLoading } = useSubscription();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
 
   if (loading || subLoading) {
