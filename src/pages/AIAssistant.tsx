@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Bot, Send, Loader2, TrendingUp, Target, Layers, BookOpen, Share2, Zap, Trash2, Lock, Crown, Activity } from "lucide-react";
+import { Bot, Send, Loader2, TrendingUp, Target, Layers, BookOpen, Share2, Zap, Trash2, Lock, Crown, Activity, Database } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -10,6 +10,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
 import { useAIAnalysis, type ToolCallArgs } from "@/hooks/useAIAnalysis";
+import KnowledgeManager from "@/components/KnowledgeManager";
+import { useKnowledge } from "@/hooks/useKnowledge";
 
 type Message = { role: "user" | "assistant" | "tool"; content: string; tool_call_id?: string; name?: string };
 
@@ -39,6 +41,8 @@ const AIAssistant = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { executeAnalysis } = useAIAnalysis();
+  const { knowledgeText, refreshKnowledge } = useKnowledge();
+  const [showKnowledge, setShowKnowledge] = useState(false);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -86,7 +90,7 @@ const AIAssistant = () => {
         Authorization: `Bearer ${accessToken}`,
         apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
       },
-      body: JSON.stringify({ messages: allMessages, enableTools: true }),
+      body: JSON.stringify({ messages: allMessages, enableTools: true, customKnowledge: knowledgeText || undefined }),
     });
 
     if (!resp.ok) {
@@ -324,17 +328,29 @@ const AIAssistant = () => {
               <span className="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium border border-primary/20">⚡ gemini 3 flash</span>
             </div>
           </div>
-          {messages.length > 0 && (
+          <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setMessages([])}
+              onClick={() => { setShowKnowledge(true); refreshKnowledge(); }}
               className="text-muted-foreground hover:text-foreground text-xs gap-1 px-2 sm:px-3"
+              title="Custom Knowledge Base"
             >
-              <Trash2 className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Clear</span>
+              <Database className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Knowledge</span>
             </Button>
-          )}
+            {messages.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMessages([])}
+                className="text-muted-foreground hover:text-foreground text-xs gap-1 px-2 sm:px-3"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Clear</span>
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Messages Area */}
@@ -452,6 +468,7 @@ const AIAssistant = () => {
           </p>
         </div>
       </div>
+      <KnowledgeManager open={showKnowledge} onClose={() => setShowKnowledge(false)} />
     </div>
   );
 };

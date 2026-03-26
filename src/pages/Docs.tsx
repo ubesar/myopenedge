@@ -53,8 +53,7 @@ export default function Docs() {
           <Card>
             <CardContent className="pt-6 text-sm text-muted-foreground leading-relaxed space-y-3">
               <p>
-                <strong className="text-foreground">MyOpenEdge</strong> is a data-driven trading analysis platform inspired by{" "}
-                <a href="https://www.edgeful.com/blog" target="_blank" rel="noopener noreferrer" className="text-primary underline">Edgeful's methodology</a>.
+                <strong className="text-foreground">MyOpenEdge</strong> is a data-driven trading analysis platform.
                 It provides traders with statistical probabilities based on historical price data to build trading plans rooted in data, not emotions.
               </p>
               <p>
@@ -106,9 +105,8 @@ export default function Docs() {
                 On NQ during the NY session, price single breaks <strong className="text-foreground">73% of the time</strong> over the last 6 months.
                 That means once it breaks to one side, you should expect continuation in that direction. The IB provides your directional bias for the rest of the day.
               </p>
-              <p className="text-xs italic">
-                Source: <a href="https://www.edgeful.com/blog/posts/initial-balance-indicator-tradingview" target="_blank" rel="noopener noreferrer" className="text-primary underline">Edgeful — Initial Balance Indicator</a>
-              </p>
+
+
             </CardContent>
           </Card>
         </section>
@@ -155,9 +153,8 @@ export default function Docs() {
                 <li>Red box → lean bearish for the session, look for short setups</li>
                 <li>Combine with IB report: OCC gives bias, IB gives breakout levels</li>
               </ul>
-              <p className="text-xs italic">
-                Source: <a href="https://www.edgeful.com/blog/posts/opening-candle-continuation-indicator-tradingview" target="_blank" rel="noopener noreferrer" className="text-primary underline">Edgeful — Opening Candle Continuation</a>
-              </p>
+
+
             </CardContent>
           </Card>
         </section>
@@ -208,9 +205,8 @@ export default function Docs() {
                 <li>Target: Previous session close (PSC)</li>
                 <li>Stop: Above/below current day's high/low</li>
               </ol>
-              <p className="text-xs italic">
-                Source: <a href="https://www.edgeful.com/blog/posts/trading-gap-fills" target="_blank" rel="noopener noreferrer" className="text-primary underline">Edgeful — Gap Fill Trading Strategy</a>
-              </p>
+
+
             </CardContent>
           </Card>
         </section>
@@ -250,9 +246,8 @@ export default function Docs() {
                 <li><strong>Target:</strong> Previous day's high (longs) or low (shorts)</li>
                 <li><strong>Runners:</strong> Hold partial position through close — breakouts tend to continue</li>
               </ol>
-              <p className="text-xs italic">
-                Source: <a href="https://www.edgeful.com/blog/posts/inside-bar-pattern-day-trading-strategy" target="_blank" rel="noopener noreferrer" className="text-primary underline">Edgeful — Inside Bar Day Trading Strategy</a>
-              </p>
+
+
             </CardContent>
           </Card>
         </section>
@@ -314,9 +309,8 @@ export default function Docs() {
                 <li>Set profit targets at prior day's high (bullish) or low (bearish)</li>
                 <li>Manage position using weekday-specific data</li>
               </ol>
-              <p className="text-xs italic">
-                Source: <a href="https://www.edgeful.com/blog/posts/trading-bullish-bearish-outside-days" target="_blank" rel="noopener noreferrer" className="text-primary underline">Edgeful — Bullish & Bearish Outside Days</a>
-              </p>
+
+
             </CardContent>
           </Card>
         </section>
@@ -407,9 +401,8 @@ export default function Docs() {
                 The AI Trading Assistant can automatically run multiple analyses and combine signals for you.
                 Use quick actions like "IB + OCC Analysis" to get instant confluence reads.
               </p>
-              <p className="text-xs italic">
-                Source: <a href="https://www.edgeful.com/blog/posts/market-session-breakout-report-trading-strategy" target="_blank" rel="noopener noreferrer" className="text-primary underline">Edgeful — 3 Powerful Reports to Trade Market Session Breakouts</a>
-              </p>
+
+
             </CardContent>
           </Card>
         </section>

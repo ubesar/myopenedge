@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useKnowledge } from "@/hooks/useKnowledge";
 import { Sparkles, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { motion, AnimatePresence } from "framer-motion";
@@ -37,7 +38,8 @@ Maksimal 120 kata. Padat & actionable.`;
 async function streamChat(
   prompt: string,
   onChunk: (text: string) => void,
-  signal: AbortSignal
+  signal: AbortSignal,
+  customKnowledge?: string
 ): Promise<void> {
   const session = await supabase.auth.getSession();
   const token = session.data.session?.access_token;
@@ -53,6 +55,7 @@ async function streamChat(
     },
     body: JSON.stringify({
       messages: [{ role: "user", content: prompt }],
+      customKnowledge,
     }),
     signal,
   });
@@ -98,6 +101,7 @@ const AITradingInsight = ({ mode, symbol, analysisData }: AITradingInsightProps)
   const [expanded, setExpanded] = useState(true);
   const abortRef = useRef<AbortController | null>(null);
   const generatedKeyRef = useRef("");
+  const { knowledgeText } = useKnowledge();
 
   const generateInsight = useCallback(async () => {
     abortRef.current?.abort();
@@ -117,7 +121,8 @@ const AITradingInsight = ({ mode, symbol, analysisData }: AITradingInsightProps)
           accumulated += chunk;
           setInsight(accumulated);
         },
-        controller.signal
+        controller.signal,
+        knowledgeText || undefined
       );
     } catch (err: any) {
       if (err.name === "AbortError") return;
@@ -126,7 +131,7 @@ const AITradingInsight = ({ mode, symbol, analysisData }: AITradingInsightProps)
     } finally {
       setLoading(false);
     }
-  }, [mode, symbol, analysisData]);
+  }, [mode, symbol, analysisData, knowledgeText]);
 
   // Auto-generate when mode+symbol changes
   useEffect(() => {

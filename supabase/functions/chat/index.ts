@@ -122,7 +122,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, analysisContext, confluenceData, enableTools } = await req.json();
+    const { messages, analysisContext, confluenceData, enableTools, customKnowledge } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -216,6 +216,15 @@ BEHAVIORAL RULES:
 
     if (confluenceData && Object.keys(confluenceData).length > 1) {
       systemPrompt += `\n\n## CONFLUENCE DATA (Multiple Analysis Modes)\n`;
+      for (const [mode, data] of Object.entries(confluenceData)) {
+        const d = data as { symbol: string; summary: string };
+        systemPrompt += `\n- ${mode.toUpperCase()} (${d.symbol}): ${d.summary}`;
+      }
+    }
+
+    if (customKnowledge && typeof customKnowledge === "string" && customKnowledge.trim()) {
+      systemPrompt += `\n\n## USER'S CUSTOM KNOWLEDGE BASE\nThe user has provided the following personal trading notes, rules, and insights. Incorporate this knowledge when answering:\n\n${customKnowledge}`;
+    }
       for (const [mode, data] of Object.entries(confluenceData)) {
         const d = data as { symbol: string; summary: string };
         systemPrompt += `\n- ${mode.toUpperCase()} (${d.symbol}): ${d.summary}`;
