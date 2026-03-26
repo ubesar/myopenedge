@@ -21,8 +21,3 @@ verify_jwt = false
 [functions.chat]
 verify_jwt = false
 
-[functions.midtrans-create-transaction]
-verify_jwt = false
-
-[functions.midtrans-webhook]
-verify_jwt = false

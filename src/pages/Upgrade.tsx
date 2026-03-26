@@ -1,10 +1,12 @@
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useNowPayment } from "@/hooks/useNowPayment";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronLeft, Loader2, Lock, Shield, Zap } from "lucide-react";
+import { Check, ChevronLeft, Loader2, Lock, Shield, Zap, Bitcoin } from "lucide-react";
+import { toast } from "sonner";
 import logo from "@/assets/logo.png";
-import { MidtransCheckout } from "@/components/MidtransCheckout";
 
 const features = [
   "unlimited IB, momentum & OCC analysis",
@@ -19,8 +21,26 @@ const features = [
 
 const Upgrade = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const { isActive, loading: subLoading } = useSubscription();
+  const { status, error, createInvoice } = useNowPayment();
+  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("monthly");
+  const [selectedCurrency, setSelectedCurrency] = useState<"idr" | "usd">("idr");
+
+  // Handle return from payment
+  useEffect(() => {
+    const paymentStatus = searchParams.get("status");
+    if (paymentStatus === "success") {
+      toast.success("Payment received! Your Pro account will be activated shortly.");
+    } else if (paymentStatus === "cancel") {
+      toast.info("Payment cancelled.");
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (error) toast.error(error);
+  }, [error]);
 
   if (!authLoading && !user) {
     navigate("/auth?redirect=/upgrade");
@@ -52,9 +72,16 @@ const Upgrade = () => {
     );
   }
 
+  const pricing = {
+    monthly: { idr: "Rp 49.000", usd: "$2.99", label: "/ month" },
+    yearly: { idr: "Rp 490.000", usd: "$29.90", label: "/ year", save: "save 20%" },
+  };
+
+  const currentPrice = pricing[selectedPlan][selectedCurrency];
+  const isProcessing = status === "creating" || status === "redirecting";
+
   return (
     <div className="min-h-screen bg-[#0A0D14] text-white overflow-x-hidden font-sans">
-      {/* Gradient overlays */}
       <div className="fixed inset-0 bg-gradient-to-b from-[#0A0D14] via-[#0d1120] to-[#0A0D14] pointer-events-none" />
       <div className="fixed inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(0,102,255,0.08),transparent)] pointer-events-none" />
 
@@ -66,12 +93,7 @@ const Upgrade = () => {
               <img src={logo} alt="MyOpenEdge" className="h-8 w-8 rounded-full object-cover" />
               <span className="text-xl font-bold tracking-tight">MyOpenEdge</span>
             </button>
-            <Button
-              onClick={() => navigate("/")}
-              variant="ghost"
-              size="sm"
-              className="text-gray-400 hover:text-white hover:bg-white/5"
-            >
+            <Button onClick={() => navigate("/")} variant="ghost" size="sm" className="text-gray-400 hover:text-white hover:bg-white/5">
               <ChevronLeft className="h-4 w-4 mr-1" /> back
             </Button>
           </div>
@@ -79,15 +101,11 @@ const Upgrade = () => {
 
         {/* Header */}
         <section className="pt-16 pb-4 px-6 text-center">
-          <p className="text-[#0066FF] text-sm font-bold uppercase tracking-wide mb-3">
-            UPGRADE TO PRO
-          </p>
+          <p className="text-[#0066FF] text-sm font-bold uppercase tracking-wide mb-3">UPGRADE TO PRO</p>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white lowercase mb-3">
             unlock your full <span className="text-[#0066FF]">trading edge</span>
           </h1>
-          <p className="text-gray-400 text-lg lowercase">
-            full access to all analysis tools & features
-          </p>
+          <p className="text-gray-400 text-lg lowercase">full access to all analysis tools & features</p>
         </section>
 
         {/* Pricing Grid */}
@@ -96,17 +114,79 @@ const Upgrade = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
               {/* Left - Price & CTA */}
               <div className="flex flex-col items-center justify-center lg:pt-12">
-                <div className="flex items-start justify-center mb-2">
-                  <span className="text-gray-400 text-2xl font-medium mt-4 mr-1">Rp</span>
-                  <span className="text-white text-8xl md:text-9xl font-bold tracking-tighter">
-                    49
-                  </span>
-                  <span className="text-white text-3xl md:text-4xl font-bold mt-6 ml-1">rb</span>
+                {/* Currency Toggle */}
+                <div className="flex items-center gap-2 mb-6 bg-[#111827] rounded-lg p-1 border border-gray-800">
+                  <button
+                    onClick={() => setSelectedCurrency("idr")}
+                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      selectedCurrency === "idr" ? "bg-[#0066FF] text-white" : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    🇮🇩 IDR
+                  </button>
+                  <button
+                    onClick={() => setSelectedCurrency("usd")}
+                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      selectedCurrency === "usd" ? "bg-[#0066FF] text-white" : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    🇺🇸 USD
+                  </button>
                 </div>
-                <p className="text-gray-400 text-sm mb-8 lowercase">per bulan</p>
 
+                {/* Price Display */}
+                <div className="text-center mb-2">
+                  <span className="text-white text-6xl md:text-7xl font-bold tracking-tighter">
+                    {currentPrice}
+                  </span>
+                </div>
+                <p className="text-gray-400 text-sm mb-2 lowercase">{pricing[selectedPlan].label}</p>
+
+                {/* Plan Toggle */}
+                <div className="flex items-center gap-2 mb-8 bg-[#111827] rounded-lg p-1 border border-gray-800">
+                  <button
+                    onClick={() => setSelectedPlan("monthly")}
+                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      selectedPlan === "monthly" ? "bg-[#0066FF] text-white" : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    monthly
+                  </button>
+                  <button
+                    onClick={() => setSelectedPlan("yearly")}
+                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      selectedPlan === "yearly" ? "bg-[#0066FF] text-white" : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    yearly
+                    {pricing.yearly.save && (
+                      <span className="ml-1.5 text-[10px] text-green-400 font-bold">{pricing.yearly.save}</span>
+                    )}
+                  </button>
+                </div>
+
+                {/* Pay Button */}
                 <div className="w-full max-w-xs">
-                  <MidtransCheckout />
+                  <Button
+                    onClick={() => createInvoice(selectedPlan, selectedCurrency)}
+                    disabled={isProcessing}
+                    className="w-full bg-[#0066FF] hover:bg-[#0052CC] text-white"
+                    size="lg"
+                  >
+                    {status === "creating" ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> creating invoice…</>
+                    ) : status === "redirecting" ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> redirecting…</>
+                    ) : (
+                      <><Bitcoin className="mr-2 h-4 w-4" /> pay with crypto</>
+                    )}
+                  </Button>
+                  <p className="text-[10px] text-muted-foreground mt-3 text-center">
+                    BTC · ETH · USDT · LTC · and 200+ cryptocurrencies
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-1 text-center">
+                    fiat payments also available via NOWPayments
+                  </p>
                 </div>
               </div>
 
@@ -132,9 +212,7 @@ const Upgrade = () => {
                 <div className="mt-6 pt-4 border-t border-gray-800">
                   <div className="flex items-center gap-2 text-gray-500 text-xs">
                     <Lock className="w-3 h-3" />
-                    <span className="lowercase">
-                      cancel anytime · secure payment via midtrans
-                    </span>
+                    <span className="lowercase">cancel anytime · secure payment via nowpayments</span>
                   </div>
                 </div>
               </div>
