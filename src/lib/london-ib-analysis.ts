@@ -149,7 +149,7 @@ export function analyzeLondonIB(
     // Post-IB bars: after IB window until London close
     const postIBBars = londonBars.filter((b) => {
       const m = getTimeMinutes(parseDateTime(b.datetime));
-      return m >= ibEnd && m < LONDON_CLOSE;
+      return m >= ibEndMinutes && m < LONDON_CLOSE;
     });
 
     // Track breaks (by rejection / candle close)
