@@ -66,8 +66,6 @@ const WhatsInPlay = () => {
 
   const isFree = !isActive;
 
-  if (!authLoading && !user) return <Navigate to="/auth" replace />;
-
   const switchMarket = (type: "futures" | "stocks") => {
     setMarketType(type);
     setTickers(type === "futures" ? DEFAULT_TICKERS_FUTURES : DEFAULT_TICKERS_STOCKS);
