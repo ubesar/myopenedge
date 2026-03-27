@@ -210,6 +210,32 @@ function formatAnalysisResult(mode: string, result: any): string {
         bearishContinuationPct: r.bearishContinuationPct,
       });
     }
+    case "london-ib": {
+      const r = result;
+      const hf = r.highFirst;
+      const lf = r.lowFirst;
+      const hfTotal = hf.breakHigh + hf.breakLow + hf.inside;
+      const lfTotal = lf.breakHigh + lf.breakLow + lf.inside;
+      return JSON.stringify({
+        mode: "london-ib",
+        totalDays: r.totalDays,
+        ibWindowMinutes: r.ibWindowMinutes,
+        session: "03:00 AM – 11:30 AM ET",
+        highFirst: {
+          total: hfTotal,
+          breakHighPct: hfTotal > 0 ? Math.round((hf.breakHigh / hfTotal) * 100) : 0,
+          breakLowPct: hfTotal > 0 ? Math.round((hf.breakLow / hfTotal) * 100) : 0,
+          insidePct: hfTotal > 0 ? Math.round((hf.inside / hfTotal) * 100) : 0,
+        },
+        lowFirst: {
+          total: lfTotal,
+          breakHighPct: lfTotal > 0 ? Math.round((lf.breakHigh / lfTotal) * 100) : 0,
+          breakLowPct: lfTotal > 0 ? Math.round((lf.breakLow / lfTotal) * 100) : 0,
+          insidePct: lfTotal > 0 ? Math.round((lf.inside / lfTotal) * 100) : 0,
+        },
+        breakTypeStats: r.breakTypeStats,
+      });
+    }
     default:
       return JSON.stringify({ error: "Unknown mode" });
   }
