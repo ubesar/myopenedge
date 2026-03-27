@@ -124,6 +124,8 @@ export function analyzeLondonIB(
       return m >= actualIBStart && m < ibEndMinutes;
     });
 
+    if (ibBars.length < 2) continue;
+
     let ibHigh = -Infinity;
     let ibLow = Infinity;
 
