@@ -253,7 +253,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
           }
 
           const toTs = (dt: string) =>
-            Math.floor(new Date(dt.replace(" ", "T") + "+00:00").getTime() / 1000) as Time;
+            Math.floor(new Date(dt.replace(" ", "T") + "-05:00").getTime() / 1000) as Time;
 
           const lineBaseOpts = { priceScaleId: "right", lastValueVisible: false, crosshairMarkerVisible: false, priceLineVisible: false };
 
@@ -311,7 +311,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
           const mcTimestamps = new Map<number, boolean>();
 
           const toTs = (dt: string) =>
-            Math.floor(new Date(dt.replace(" ", "T") + "+00:00").getTime() / 1000);
+            Math.floor(new Date(dt.replace(" ", "T") + "-05:00").getTime() / 1000);
 
           for (const date of Object.keys(dayBarsMap).sort()) {
             const bars = dayBarsMap[date];
