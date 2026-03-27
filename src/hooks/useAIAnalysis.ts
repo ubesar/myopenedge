@@ -22,7 +22,7 @@ const TwelveDataResponseSchema = z.object({
 
 export interface ToolCallArgs {
   symbol: string;
-  mode: "ib" | "momentum" | "occ" | "gapfill" | "insidebar" | "outsideday";
+  mode: "ib" | "momentum" | "occ" | "gapfill" | "insidebar" | "outsideday" | "london-ib";
   max_days?: number;
   ib_window?: number;
 }

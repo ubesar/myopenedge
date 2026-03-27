@@ -552,6 +552,17 @@ const Index = () => {
       );
     }
 
+    if (activeMode === "london-ib" && londonIBResult) {
+      return (
+        <LondonIBDashboard
+          result={londonIBResult}
+          symbol={symbol}
+          dateRange={formatDateRange(analysisMaxDays)}
+          weekdays={formatWeekdays(analysisWeekdays)}
+        />
+      );
+    }
+
     return null;
   };
 
