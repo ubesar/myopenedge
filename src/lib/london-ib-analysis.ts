@@ -64,8 +64,11 @@ function getTimeMinutes(dt: Date): number {
 }
 
 // London session times in ET
-const LONDON_OPEN = 3 * 60;       // 03:00 AM ET
+const LONDON_OPEN = 3 * 60;        // 03:00 AM ET (earliest; actual bars may start at 04:00)
 const LONDON_CLOSE = 11 * 60 + 30; // 11:30 AM ET
+
+// Minimum time to consider as London session start (pre-market usually starts 04:00 AM ET)
+const LONDON_PREMARKET_START = 4 * 60; // 04:00 AM ET fallback
 
 export function analyzeLondonIB(
   bars: LondonBar[],
@@ -101,19 +104,25 @@ export function analyzeLondonIB(
     const dayBars = byDate.get(date)!;
     dayBars.sort((a, b) => parseDateTime(a.datetime).getTime() - parseDateTime(b.datetime).getTime());
 
-    // Filter London session bars (03:00 – 11:30 ET)
+    // Filter London session bars (03:00/04:00 – 11:30 ET)
+    // Use LONDON_OPEN (03:00) as the earliest, but data may only start at 04:00
     const londonBars = dayBars.filter((b) => {
       const m = getTimeMinutes(parseDateTime(b.datetime));
       return m >= LONDON_OPEN && m < LONDON_CLOSE;
     });
 
-    // IB bars: first N minutes from London open
+    if (londonBars.length < 4) continue;
+
+    // Detect actual session start from first available bar
+    const firstBarMinutes = getTimeMinutes(parseDateTime(londonBars[0].datetime));
+    const actualIBStart = firstBarMinutes;
+    const ibEndMinutes = actualIBStart + ibWindowMinutes;
+
+    // IB bars: first N minutes from actual session start
     const ibBars = londonBars.filter((b) => {
       const m = getTimeMinutes(parseDateTime(b.datetime));
-      return m >= LONDON_OPEN && m < ibEnd;
+      return m >= actualIBStart && m < ibEndMinutes;
     });
-
-    if (ibBars.length < 2) continue;
 
     let ibHigh = -Infinity;
     let ibLow = Infinity;
