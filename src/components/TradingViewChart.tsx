@@ -154,13 +154,51 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
           return;
         }
 
-        // Use TwelveData proxy edge function
         const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const outputSize = interval === "1day" ? 365 : 390;
-        const res = await fetch(
-          `${baseUrl}/functions/v1/twelvedata-proxy?symbol=${symbol}&interval=${interval}&outputsize=${outputSize}`,
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
+
+        // Map interval to Polygon multiplier/timespan
+        const intervalMap: Record<string, { multiplier: number; timespan: string }> = {
+          "5min": { multiplier: 5, timespan: "minute" },
+          "15min": { multiplier: 15, timespan: "minute" },
+          "30min": { multiplier: 30, timespan: "minute" },
+          "1h": { multiplier: 1, timespan: "hour" },
+          "1day": { multiplier: 1, timespan: "day" },
+        };
+
+        const mapped = intervalMap[interval] || { multiplier: 5, timespan: "minute" };
+
+        // Calculate date range
+        const now = new Date();
+        const to = now.toISOString().split("T")[0];
+        let fromDate: Date;
+        if (interval === "1day") {
+          fromDate = new Date(now);
+          fromDate.setFullYear(fromDate.getFullYear() - 1);
+        } else if (interval === "1h") {
+          fromDate = new Date(now);
+          fromDate.setDate(fromDate.getDate() - 15);
+        } else {
+          fromDate = new Date(now);
+          fromDate.setDate(fromDate.getDate() - 5);
+        }
+        const from = fromDate.toISOString().split("T")[0];
+
+        // Use massive-bars edge function (Polygon API)
+        const res = await fetch(`${baseUrl}/functions/v1/massive-bars`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            symbol,
+            from,
+            to,
+            multiplier: mapped.multiplier,
+            timespan: mapped.timespan,
+          }),
+        });
 
         if (!res.ok) throw new Error("Failed to fetch data");
 
@@ -169,17 +207,17 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
           throw new Error("No data returned");
         }
 
-        // Parse and sort ascending
+        // massive-bars already returns sorted ascending ET datetimes
+        const sorted = json.values;
+
+        // Parse bars
         const candles: CandlestickData<Time>[] = [];
         const volumes: { time: Time; value: number; color: string }[] = [];
 
-        const sorted = [...json.values].reverse();
-
         for (const bar of sorted) {
-          // lightweight-charts needs unix timestamp for intraday
           const time = (interval === "1day"
-            ? bar.datetime
-            : Math.floor(new Date(bar.datetime.replace(" ", "T") + "+00:00").getTime() / 1000)) as Time;
+            ? bar.datetime.split(" ")[0]
+            : Math.floor(new Date(bar.datetime.replace(" ", "T") + "-05:00").getTime() / 1000)) as Time;
 
           const o = parseFloat(bar.open);
           const h = parseFloat(bar.high);
@@ -215,7 +253,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
           }
 
           const toTs = (dt: string) =>
-            Math.floor(new Date(dt.replace(" ", "T") + "+00:00").getTime() / 1000) as Time;
+            Math.floor(new Date(dt.replace(" ", "T") + "-05:00").getTime() / 1000) as Time;
 
           const lineBaseOpts = { priceScaleId: "right", lastValueVisible: false, crosshairMarkerVisible: false, priceLineVisible: false };
 
@@ -273,7 +311,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
           const mcTimestamps = new Map<number, boolean>();
 
           const toTs = (dt: string) =>
-            Math.floor(new Date(dt.replace(" ", "T") + "+00:00").getTime() / 1000);
+            Math.floor(new Date(dt.replace(" ", "T") + "-05:00").getTime() / 1000);
 
           for (const date of Object.keys(dayBarsMap).sort()) {
             const bars = dayBarsMap[date];

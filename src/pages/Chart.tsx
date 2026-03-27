@@ -10,6 +10,7 @@ const intervals = [
   { label: "15m", value: "15min" },
   { label: "30m", value: "30min" },
   { label: "1h", value: "1h" },
+  { label: "1D", value: "1day" },
 ];
 
 const popularSymbols = ["QQQ", "GLD", "SPY", "AAPL", "TSLA", "NVDA", "BTC/USD", "ETH/USD"];
