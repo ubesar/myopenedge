@@ -22,7 +22,7 @@ const workspaceItems = [
   { icon: Bot, label: "ai assistant", href: "/ai-assistant" },
   { icon: FlaskConical, label: "edge lab", href: "/app" },
   { icon: CandlestickChart, label: "chart", href: "/chart" },
-  { icon: TrendingUp, label: "whats in play", href: null },
+  { icon: TrendingUp, label: "whats in play", href: "/whats-in-play" },
   { icon: Cpu, label: "algos", href: "/algos" },
   { icon: Eye, label: "watchlist", href: "/watchlist" },
 ];

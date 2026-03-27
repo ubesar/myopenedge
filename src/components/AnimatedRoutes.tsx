@@ -14,6 +14,7 @@ import NotFound from "@/pages/NotFound";
 import TermsConditions from "@/pages/TermsConditions";
 import PaddleLiveGuide from "@/pages/PaddleLiveGuide";
 import ResetPassword from "@/pages/ResetPassword";
+import WhatsInPlay from "@/pages/WhatsInPlay";
 
 const AnimatedRoutes = () => {
   const location = useLocation();
