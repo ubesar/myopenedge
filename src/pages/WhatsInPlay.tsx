@@ -64,9 +64,9 @@ const WhatsInPlay = () => {
   const [results, setResults] = useState<TickerResult[]>([]);
   const [running, setRunning] = useState(false);
 
-  if (!authLoading && !user) return <Navigate to="/auth" replace />;
-
   const isFree = !isActive;
+
+  if (!authLoading && !user) return <Navigate to="/auth" replace />;
 
   const switchMarket = (type: "futures" | "stocks") => {
     setMarketType(type);
@@ -115,8 +115,8 @@ const WhatsInPlay = () => {
         try {
           const gf = analyzeGapFill(values, MAX_DAYS, weekdays);
           if (gf.totalDays > 0) {
-            const fillPct = gf.stats.gapUpFillPct;
-            const fillDownPct = gf.stats.gapDownFillPct;
+          const fillPct = gf.stats.gapUpFillRate;
+            const fillDownPct = gf.stats.gapDownFillRate;
             const avgFill = (fillPct + fillDownPct) / 2;
             reports.push({
               key: "gapfill",
@@ -159,8 +159,8 @@ const WhatsInPlay = () => {
         try {
           const occ = analyzeOCC(values, MAX_DAYS, "30m", weekdays);
           if (occ.totalDays > 0) {
-            const greenPct = occ.greenCandle.continuationPct;
-            const redPct = occ.redCandle.continuationPct;
+            const greenPct = occ.greenCandle.greenDayPct;
+            const redPct = occ.redCandle.redDayPct;
             const bias = greenPct > 60 ? "bullish" : redPct > 60 ? "bearish" : "neutral";
             reports.push({
               key: "occ",
@@ -202,12 +202,12 @@ const WhatsInPlay = () => {
             reports.push({
               key: "outsideday",
               label: REPORT_LABELS.outsideday,
-              bias: od.bullish.count > od.bearish.count ? "bullish" : od.bearish.count > od.bullish.count ? "bearish" : "neutral",
+              bias: od.bullish.total > od.bearish.total ? "bullish" : od.bearish.total > od.bullish.total ? "bearish" : "neutral",
               mainStat: `${od.outsidePct.toFixed(0)}%`,
               subStats: [
                 { label: "occurrence", value: `${od.outsidePct.toFixed(0)}%` },
-                { label: "bullish", value: `${od.bullish.count}` },
-                { label: "bearish", value: `${od.bearish.count}` },
+                { label: "bullish", value: `${od.bullish.total}` },
+                { label: "bearish", value: `${od.bearish.total}` },
               ],
             });
           }
