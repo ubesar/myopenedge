@@ -162,6 +162,7 @@ const ParameterPanel = ({
             <SelectContent>
               <SelectItem value="ib">IB: initial balance breakout</SelectItem>
               {!isFree && <SelectItem value="globex-ib">IB: globex overnight</SelectItem>}
+              {!isFree && <SelectItem value="london-ib">IB: london session</SelectItem>}
               {!isFree && <SelectItem value="momentum">momentum candle</SelectItem>}
               <SelectItem value="occ">opening candle continuation</SelectItem>
               {!isFree && <SelectItem value="gapfill">gap fill statistics</SelectItem>}
@@ -225,7 +226,7 @@ const ParameterPanel = ({
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for more days</p>}
 
-          {(mode === "ib" || mode === "momentum" || mode === "globex-ib") && (
+          {(mode === "ib" || mode === "momentum" || mode === "globex-ib" || mode === "london-ib") && (
             <>
               <p className="text-[11px] text-muted-foreground">IB window</p>
               <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => { if (!isFree) { setIbWindow(v); setSelectedTemplateId("custom"); } }} disabled={isFree}>

@@ -24,9 +24,11 @@ import GapFillDashboard from "@/components/GapFillDashboard";
 import { analyzeInsideBar, type InsideBarResult } from "@/lib/insidebar-analysis";
 import { analyzeOutsideDay, type OutsideDayResult } from "@/lib/outsideday-analysis";
 import { analyzeGlobexIB, type GlobexIBResult } from "@/lib/globex-ib-analysis";
+import { analyzeLondonIB, type LondonIBResult } from "@/lib/london-ib-analysis";
 import InsideBarReport from "@/components/InsideBarReport";
 import OutsideDayReport from "@/components/OutsideDayReport";
 import GlobexIBDashboard from "@/components/GlobexIBDashboard";
+import LondonIBDashboard from "@/components/LondonIBDashboard";
 import { useSubscription } from "@/hooks/useSubscription";
 import { z } from "zod";
 
@@ -55,6 +57,7 @@ const Index = () => {
   const [insideBarResult, setInsideBarResult] = useState<InsideBarResult | null>(null);
   const [outsideDayResult, setOutsideDayResult] = useState<OutsideDayResult | null>(null);
   const [globexIBResult, setGlobexIBResult] = useState<GlobexIBResult | null>(null);
+  const [londonIBResult, setLondonIBResult] = useState<LondonIBResult | null>(null);
   const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
   const [occMaxDays, setOccMaxDays] = useState<number>(0);
   const [occWeekdays, setOccWeekdays] = useState<number[]>([1,2,3,4,5]);
@@ -165,7 +168,7 @@ const Index = () => {
     }
 
     setLoading(true);
-    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null);
+    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null);
     setSymbol(ticker); setActiveMode(effectiveMode); setAnalysisMaxDays(effectiveMaxDays); setAnalysisWeekdays(weekdays);
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
