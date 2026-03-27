@@ -220,6 +220,8 @@ const WhatsInPlay = () => {
   }, [tickers, isFree]);
 
   if (!authLoading && !user) return <Navigate to="/auth" replace />;
+
+  const biasIcon = (bias: "bullish" | "bearish" | "neutral") => {
     if (bias === "bullish") return <ArrowUpRight className="h-3.5 w-3.5 text-profit" />;
     if (bias === "bearish") return <ArrowDownRight className="h-3.5 w-3.5 text-loss" />;
     return <Minus className="h-3.5 w-3.5 text-muted-foreground" />;
