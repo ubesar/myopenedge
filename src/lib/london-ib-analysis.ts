@@ -76,7 +76,7 @@ export function analyzeLondonIB(
   maxDays: number = 0,
   weekdays: number[] = [1, 2, 3, 4, 5]
 ): LondonIBResult {
-  const ibEnd = LONDON_OPEN + ibWindowMinutes;
+  
 
   // Group bars by calendar date
   const byDate = new Map<string, LondonBar[]>();
