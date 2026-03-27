@@ -6,6 +6,7 @@ import { analyzeOCC } from "@/lib/occ-analysis";
 import { analyzeGapFill } from "@/lib/gapfill-analysis";
 import { analyzeInsideBar } from "@/lib/insidebar-analysis";
 import { analyzeOutsideDay } from "@/lib/outsideday-analysis";
+import { analyzeLondonIB } from "@/lib/london-ib-analysis";
 import { z } from "zod";
 
 const BarSchema = z.object({
@@ -251,6 +252,9 @@ export function useAIAnalysis() {
           break;
         case "outsideday":
           result = analyzeOutsideDay(values, max_days);
+          break;
+        case "london-ib":
+          result = analyzeLondonIB(values, ib_window, max_days);
           break;
         default:
           return JSON.stringify({ error: "Unknown analysis mode: " + mode });
