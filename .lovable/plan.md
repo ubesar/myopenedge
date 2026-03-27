@@ -1,55 +1,39 @@
 
 
-## IB London Analysis
+## Update Chart Page: 24-Hour Data via Massive API
 
 ### Konsep
-Mode baru "IB London" yang menganalisis Initial Balance sesi London (03:00 AM - 11:30 AM ET), lalu melacak breakout setelah IB window. Data diambil dari Massive API (seperti Globex IB) karena sesi London terjadi di luar jam RTH.
+Saat ini chart hanya menampilkan data RTH (jam pasar) via TwelveData. Dengan beralih ke Massive API (Polygon), chart bisa menampilkan data 24 jam termasuk pre-market, after-hours, dan overnight — karena Polygon menyediakan bar di luar jam reguler.
 
-### Waktu Sesi London (dalam ET)
-- **London Open**: 03:00 AM ET
-- **London Close**: 11:30 AM ET  
-- **IB Window**: 15/30/60/90 menit pertama dari 03:00 AM
-- **Post-IB tracking**: Setelah IB window sampai London close (11:30 AM)
+### Perubahan
 
-### File yang Dibuat/Diubah
+**1. TradingViewChart.tsx — Ganti data source ke massive-bars**
+- Ganti fetch dari `twelvedata-proxy` ke `massive-bars` edge function
+- Hitung `from`/`to` date range otomatis (misal: 5 hari terakhir untuk intraday, 365 hari untuk daily)
+- Map interval UI ke Polygon format: `5min→(5,minute)`, `15min→(15,minute)`, `30min→(30,minute)`, `1h→(1,hour)`
+- Parse response: massive-bars mengembalikan datetime dalam ET string, convert ke unix timestamp untuk lightweight-charts
+- Volume data tetap ditampilkan
 
-1. **`src/lib/london-ib-analysis.ts`** (baru)
-   - Clone dari `ib-analysis.ts` dengan konstanta waktu London:
-     - `IB_START = 3 * 60` (03:00 AM ET)
-     - `SESSION_CLOSE = 11 * 60 + 30` (11:30 AM ET)
-   - Sama persis logikanya: IB range, high-first/low-first detection, single/double/no break classification
+**2. Chart.tsx — Tambah timeframe 1D**
+- Tambah opsi `{ label: "1D", value: "1day" }` ke array intervals
+- Massive API support daily bars juga (`timespan: "day"`)
 
-2. **`src/components/LondonIBDashboard.tsx`** (baru)
-   - Clone dari existing IB dashboard (SummaryTable + IBChart + IBReportHistory pattern)
-   - Label disesuaikan: "London IB", waktu sesi London
-
-3. **`src/components/ControlPanel.tsx`**
-   - Tambah `"london-ib"` ke type `AnalysisMode`
-
-4. **`src/components/ParameterPanel.tsx`**
-   - Tambah opsi `<SelectItem value="london-ib">IB: london session</SelectItem>` (pro only)
-   - Tampilkan IB Window selector untuk mode `london-ib`
-
-5. **`src/pages/Index.tsx`**
-   - Tambah state `londonIBResult`
-   - Di `handleRun`: untuk mode `london-ib`, fetch via `massive-bars` (sama seperti `globex-ib`), lalu panggil `analyzeLondonIB()`
-   - Render `LondonIBDashboard` saat mode aktif
-
-6. **`src/hooks/useAIAnalysis.ts`**
-   - Tambah case `london-ib` untuk AI analysis support
+**3. Sesuaikan IB & MC overlay logic**
+- IB overlay: sudah filter berdasarkan waktu 09:30-16:00, tetap bekerja
+- MC overlay: sudah filter 09:30-12:00, tetap bekerja
+- Kedua overlay menggunakan datetime string yang di-parse, compatible dengan format massive-bars
 
 ### Data Flow
 ```text
-User selects "IB: london session"
-  → massive-bars edge function (Polygon API, 5min bars)
-  → analyzeLondonIB() filters 03:00-11:30 ET bars
-  → IB range from first X minutes
-  → Track breakouts post-IB until 11:30 AM ET
-  → Display via LondonIBDashboard
+User pilih symbol + interval
+  → POST massive-bars { symbol, from, to, multiplier, timespan }
+  → Polygon API returns 24h bars (pre/post/overnight)
+  → Parse datetime ET → unix timestamp
+  → Display di lightweight-charts
 ```
 
 ### Catatan
-- Hanya untuk Pro users (locked untuk free)
-- Reuse komponen IBChart, IBReportHistory, SummaryTable yang sudah ada
-- Massive API sudah support pengambilan bar di luar RTH
+- MASSIVE_API_KEY sudah dikonfigurasi sebagai secret
+- massive-bars edge function sudah support batching untuk range panjang
+- Tidak perlu edge function baru
 
