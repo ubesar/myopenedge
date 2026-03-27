@@ -24,9 +24,11 @@ import GapFillDashboard from "@/components/GapFillDashboard";
 import { analyzeInsideBar, type InsideBarResult } from "@/lib/insidebar-analysis";
 import { analyzeOutsideDay, type OutsideDayResult } from "@/lib/outsideday-analysis";
 import { analyzeGlobexIB, type GlobexIBResult } from "@/lib/globex-ib-analysis";
+import { analyzeLondonIB, type LondonIBResult } from "@/lib/london-ib-analysis";
 import InsideBarReport from "@/components/InsideBarReport";
 import OutsideDayReport from "@/components/OutsideDayReport";
 import GlobexIBDashboard from "@/components/GlobexIBDashboard";
+import LondonIBDashboard from "@/components/LondonIBDashboard";
 import { useSubscription } from "@/hooks/useSubscription";
 import { z } from "zod";
 
@@ -55,6 +57,7 @@ const Index = () => {
   const [insideBarResult, setInsideBarResult] = useState<InsideBarResult | null>(null);
   const [outsideDayResult, setOutsideDayResult] = useState<OutsideDayResult | null>(null);
   const [globexIBResult, setGlobexIBResult] = useState<GlobexIBResult | null>(null);
+  const [londonIBResult, setLondonIBResult] = useState<LondonIBResult | null>(null);
   const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
   const [occMaxDays, setOccMaxDays] = useState<number>(0);
   const [occWeekdays, setOccWeekdays] = useState<number[]>([1,2,3,4,5]);
@@ -165,33 +168,40 @@ const Index = () => {
     }
 
     setLoading(true);
-    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null);
+    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null);
     setSymbol(ticker); setActiveMode(effectiveMode); setAnalysisMaxDays(effectiveMaxDays); setAnalysisWeekdays(weekdays);
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
     try {
-      if (effectiveMode === "globex-ib") {
-        // Globex IB uses Massive API via massive-bars edge function
-        // Calculate date range: ~1.5x trading days to account for weekends/holidays
+      if (effectiveMode === "globex-ib" || effectiveMode === "london-ib") {
+        // Both use Massive API via massive-bars edge function
         const now = new Date();
         const from = new Date(now);
-        const calendarDaysNeeded = Math.ceil(effectiveMaxDays * 1.5) + 7; // extra buffer for holidays
+        const calendarDaysNeeded = Math.ceil(effectiveMaxDays * 1.5) + 7;
         from.setDate(from.getDate() - calendarDaysNeeded);
         const fromStr = from.toISOString().split("T")[0];
         const toStr = now.toISOString().split("T")[0];
 
-        toast.info(`Fetching ${effectiveMaxDays} days of Globex data...`, { duration: 3000 });
+        const label = effectiveMode === "london-ib" ? "London" : "Globex";
+        toast.info(`Fetching ${effectiveMaxDays} days of ${label} data...`, { duration: 3000 });
 
         const { data: json, error } = await supabase.functions.invoke("massive-bars", {
           body: { symbol: ticker, from: fromStr, to: toStr, multiplier: 5, timespan: "minute" },
         });
-        if (error) throw new Error("Failed to fetch Globex data from Massive API");
+        if (error) throw new Error(`Failed to fetch ${label} data from Massive API`);
         if (!json?.values || json.values.length === 0) { toast.error("No data returned from Massive API."); return; }
 
-        const a = analyzeGlobexIB(json.values, effectiveIbWindow, effectiveMaxDays, weekdays);
-        if (a.totalDays === 0) { toast.error("Not enough overnight data."); return; }
-        setGlobexIBResult(a);
-        addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
+        if (effectiveMode === "globex-ib") {
+          const a = analyzeGlobexIB(json.values, effectiveIbWindow, effectiveMaxDays, weekdays);
+          if (a.totalDays === 0) { toast.error("Not enough overnight data."); return; }
+          setGlobexIBResult(a);
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
+        } else {
+          const a = analyzeLondonIB(json.values, effectiveIbWindow, effectiveMaxDays, weekdays);
+          if (a.totalDays === 0) { toast.error("Not enough London session data."); return; }
+          setLondonIBResult(a);
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
+        }
       } else {
         const json = await fetchMarketData(ticker, effectiveMaxDays);
         if (json.status === "error") { toast.error(json.message || "API error"); return; }
@@ -242,10 +252,10 @@ const Index = () => {
     }
   };
 
-  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult;
+  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult;
 
   const reportTitle = hasResults
-    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
+    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
     : "";
 
   const renderCharts = () => {
@@ -539,6 +549,17 @@ const Index = () => {
             }}
           />
         </div>
+      );
+    }
+
+    if (activeMode === "london-ib" && londonIBResult) {
+      return (
+        <LondonIBDashboard
+          result={londonIBResult}
+          symbol={symbol}
+          dateRange={formatDateRange(analysisMaxDays)}
+          weekdays={formatWeekdays(analysisWeekdays)}
+        />
       );
     }
 
