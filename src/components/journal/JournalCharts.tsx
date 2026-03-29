@@ -96,17 +96,38 @@ const JournalCharts = ({ trades }: JournalChartsProps) => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-      {/* Score Radar */}
-      {chartCard(
-        "Score",
-        <ResponsiveContainer width="100%" height="100%">
-          <RadarChart data={radarData}>
-            <PolarGrid stroke="hsl(var(--border))" />
-            <PolarAngleAxis dataKey="metric" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-            <Radar dataKey="value" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} />
-          </RadarChart>
-        </ResponsiveContainer>
-      )}
+      {/* Score Radar + Score Bar */}
+      <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+        <p className="text-[12px] font-semibold text-foreground">Score</p>
+        <div className="h-[140px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <RadarChart data={radarData}>
+              <PolarGrid stroke="hsl(var(--border))" />
+              <PolarAngleAxis dataKey="metric" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+              <Radar dataKey="value" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} />
+            </RadarChart>
+          </ResponsiveContainer>
+        </div>
+        {/* Score gauge */}
+        <div className="space-y-1.5">
+          <div className="flex items-baseline gap-1">
+            <span className="text-lg font-bold" style={{ color: scoreColor }}>{score}</span>
+            <span className="text-[11px] text-muted-foreground">/ 100</span>
+          </div>
+          <div className="relative h-2 w-full rounded-full overflow-hidden bg-secondary">
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: "linear-gradient(90deg, #ef4444 0%, #eab308 40%, #22c55e 100%)",
+              }}
+            />
+            <div
+              className="absolute top-0 right-0 h-full bg-secondary/80 rounded-r-full transition-all duration-500"
+              style={{ width: `${100 - Math.min(score, 100)}%` }}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Cumulative PNL */}
       {chartCard(
