@@ -126,7 +126,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
 
   // FIFO matching per product
   const trades: ParsedTrade[] = [];
-  const positionQueue: { side: "Buy" | "Sell"; price: number; qty: number; time: string; product: string }[] = [];
+  const positionQueue: { side: "Buy" | "Sell"; price: number; qty: number; time: string; product: string; account: string }[] = [];
 
   for (const order of filledOrders) {
     let remaining = order.filledQty;
@@ -146,6 +146,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
           qty: remaining,
           time: order.fillTime,
           product,
+          account: order.account,
         });
         break;
       }
@@ -179,8 +180,9 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
         open_time: parseTradovateDate(openTime),
         close_time: parseTradovateDate(closeTime),
         pnl_gross: pnl,
-        pnl_net: pnl, // no fee data in CSV
+        pnl_net: pnl,
         source: "TRADOVATE",
+        account_name: order.account,
       });
 
       remaining -= matchQty;
