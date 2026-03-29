@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowRight, X, FileText } from "lucide-react";
+import { Eye, X, FileText } from "lucide-react";
 import TradeDetailDialog from "./TradeDetailDialog";
 
 interface Trade {
@@ -93,7 +93,7 @@ const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogPr
                 <table className="w-full text-[12px]">
                   <thead>
                     <tr className="border-b border-border bg-background">
-                      {["Time", "Symbol", "Side", "Qty", "Net P&L", "Playbook", "R", ""].map((h) => (
+                      {["Time", "Symbol", "Side", "Qty", "Net P&L", ""].map((h) => (
                         <th key={h} className="text-left px-4 py-3 font-medium text-muted-foreground">{h}</th>
                       ))}
                     </tr>
@@ -116,14 +116,13 @@ const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogPr
                         <td className={`px-4 py-3 font-bold ${t.pnl_net >= 0 ? "text-green-400" : "text-red-400"}`}>
                           {fmtPnl(t.pnl_net)}
                         </td>
-                        <td className="px-4 py-3 text-muted-foreground">{t.playbook || "-"}</td>
-                        <td className="px-4 py-3 text-muted-foreground">{t.r_multiple?.toFixed(1) || "-"}</td>
                         <td className="px-4 py-3">
                           <button
                             onClick={() => setSelectedTrade(t)}
                             className="text-primary hover:text-primary/80 transition-colors"
+                            title="View details & screenshots"
                           >
-                            <ArrowRight className="h-4 w-4" />
+                            <Eye className="h-4 w-4" />
                           </button>
                         </td>
                       </tr>
