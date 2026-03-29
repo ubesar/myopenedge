@@ -61,7 +61,7 @@ const Journal = () => {
       setLoading(false);
     };
     fetchTrades();
-  }, [user, dateFilter]);
+  }, [user, dateFilter, refreshKey]);
 
   if (authLoading) {
     return (
