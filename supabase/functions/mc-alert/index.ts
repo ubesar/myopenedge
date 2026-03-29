@@ -23,25 +23,36 @@ serve(async () => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check if market is open (Mon-Fri, 09:30-16:00 ET)
+    // Globex opens Sun 6PM ET, closes Fri 4PM ET
+    // Mon-Fri: active from 00:00 to 16:00 (NY session close)
+    // Sun: active from 18:00 onwards (Globex open)
+    // Sat: skip entirely
     const nowET = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
     const etDate = new Date(nowET);
-    const dayOfWeek = etDate.getDay();
+    const dayOfWeek = etDate.getDay(); // 0=Sun, 6=Sat
     const hours = etDate.getHours();
     const minutes = etDate.getMinutes();
     const timeMinutes = hours * 60 + minutes;
 
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
-      return new Response(JSON.stringify({ status: "weekend", skipped: true }));
+    if (dayOfWeek === 6) {
+      return new Response(JSON.stringify({ status: "saturday", skipped: true }));
     }
-    if (timeMinutes < 9 * 60 + 30 || timeMinutes >= 16 * 60) {
-      return new Response(JSON.stringify({ status: "market_closed", skipped: true }));
+    // Sunday: only active after 18:00 (Globex open)
+    if (dayOfWeek === 0 && timeMinutes < 18 * 60) {
+      return new Response(JSON.stringify({ status: "sunday_before_globex", skipped: true }));
+    }
+    // Mon-Fri: skip after 16:00 (NY close) until 18:00 (next Globex open)
+    if (dayOfWeek >= 1 && dayOfWeek <= 5 && timeMinutes >= 16 * 60 && timeMinutes < 18 * 60) {
+      return new Response(JSON.stringify({ status: "between_sessions", skipped: true }));
     }
 
-    // Fetch today's 15m bars from Polygon via massive-bars pattern
+    // Fetch 15m bars — need today + yesterday to cover overnight Globex
     const today = etDate.toISOString().split("T")[0];
-    // Use today as from/to for intraday
-    const url = `https://api.polygon.io/v2/aggs/ticker/${SYMBOL}/range/15/minute/${today}/${today}?adjusted=true&sort=asc&limit=50000&apiKey=${MASSIVE_API_KEY}`;
+    const yesterday = new Date(etDate);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+    const url = `https://api.polygon.io/v2/aggs/ticker/${SYMBOL}/range/15/minute/${yesterdayStr}/${today}?adjusted=true&sort=asc&limit=50000&apiKey=${MASSIVE_API_KEY}`;
     const resp = await fetch(url);
     if (!resp.ok) {
       const errData = await resp.json().catch(() => ({}));
@@ -50,26 +61,24 @@ serve(async () => {
     const data = await resp.json();
     const results = data.results || [];
 
-    if (results.length < 2) {
+    if (results.length < 1) {
       return new Response(JSON.stringify({ status: "not_enough_bars", count: results.length }));
     }
 
-    // Convert to candles with ET time
+    // Convert to candles with ET time — include ALL bars (Globex + RTH)
     const candles = results.map((bar: any) => {
       const dt = new Date(bar.t);
       const etStr = dt.toLocaleString("en-US", { timeZone: "America/New_York", hour12: false });
       const [datePart, timePart] = etStr.split(", ");
       return {
         time: timePart,
+        date: datePart,
         open: bar.o,
         high: bar.h,
         low: bar.l,
         close: bar.c,
         datetime: etStr,
       };
-    }).filter((c: any) => {
-      // Only RTH bars (09:30-16:00)
-      return c.time >= "09:30:00" && c.time < "16:00:00";
     });
 
     if (candles.length < 1) {
