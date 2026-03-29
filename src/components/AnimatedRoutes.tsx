@@ -15,6 +15,7 @@ import TermsConditions from "@/pages/TermsConditions";
 import PaddleLiveGuide from "@/pages/PaddleLiveGuide";
 import ResetPassword from "@/pages/ResetPassword";
 import WhatsInPlay from "@/pages/WhatsInPlay";
+import Journal from "@/pages/Journal";
 
 const AnimatedRoutes = () => {
   const location = useLocation();
