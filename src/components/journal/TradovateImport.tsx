@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Upload, FileText, Check, AlertCircle, Loader2 } from "lucide-react";
+import { Upload, FileText, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { parseTradovateCSV, type ParsedTrade } from "@/lib/tradovate-parser";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,11 @@ const TradovateImport = ({ onImportComplete }: TradovateImportProps) => {
   const [fileName, setFileName] = useState("");
   const [importing, setImporting] = useState(false);
 
+  // Detected accounts from CSV
+  const detectedAccounts = parsed
+    ? [...new Set(parsed.map((t) => t.account_name))]
+    : [];
+
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -26,6 +31,9 @@ const TradovateImport = ({ onImportComplete }: TradovateImportProps) => {
     setParsed(trades);
     if (trades.length === 0) {
       toast.error("No filled trades found in this CSV.");
+    } else {
+      const accounts = [...new Set(trades.map((t) => t.account_name))];
+      toast.info(`Detected ${accounts.length} account(s): ${accounts.join(", ")}`);
     }
   };
 
@@ -34,16 +42,55 @@ const TradovateImport = ({ onImportComplete }: TradovateImportProps) => {
     setImporting(true);
 
     try {
-      // Create import batch
+      // 1. Get or create accounts for each detected account name
+      const accountIdMap = new Map<string, string>();
+
+      for (const accountName of detectedAccounts) {
+        // Check if account already exists
+        const { data: existing } = await supabase
+          .from("accounts")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("name", accountName)
+          .maybeSingle();
+
+        if (existing) {
+          accountIdMap.set(accountName, existing.id);
+        } else {
+          // Auto-create account
+          const { data: created, error } = await supabase
+            .from("accounts")
+            .insert({
+              user_id: user.id,
+              name: accountName,
+              broker: "Tradovate",
+              account_type: "propfirm",
+              currency: "USD",
+            })
+            .select("id")
+            .single();
+
+          if (error) throw error;
+          accountIdMap.set(accountName, created.id);
+        }
+      }
+
+      // 2. Create import batch
       const { data: batch, error: batchErr } = await supabase
         .from("import_batches")
-        .insert({ user_id: user.id, source: "TRADOVATE", file_name: fileName, status: "processing", rows_count: parsed.length })
+        .insert({
+          user_id: user.id,
+          source: "TRADOVATE",
+          file_name: fileName,
+          status: "processing",
+          rows_count: parsed.length,
+        })
         .select("id")
         .single();
 
       if (batchErr) throw batchErr;
 
-      // Insert trades
+      // 3. Insert trades with account_id
       const rows = parsed.map((t) => ({
         user_id: user.id,
         symbol: t.symbol,
@@ -57,18 +104,19 @@ const TradovateImport = ({ onImportComplete }: TradovateImportProps) => {
         pnl_net: t.pnl_net,
         source: "TRADOVATE",
         import_batch_id: batch.id,
+        account_id: accountIdMap.get(t.account_name) || null,
       }));
 
       const { error: insertErr } = await supabase.from("trades").insert(rows);
       if (insertErr) throw insertErr;
 
-      // Update batch status
+      // 4. Update batch status
       await supabase
         .from("import_batches")
         .update({ status: "completed", completed_at: new Date().toISOString() })
         .eq("id", batch.id);
 
-      toast.success(`${parsed.length} trades imported from Tradovate!`);
+      toast.success(`${parsed.length} trades imported across ${detectedAccounts.length} account(s)!`);
       setParsed(null);
       setFileName("");
       onImportComplete();
@@ -83,7 +131,6 @@ const TradovateImport = ({ onImportComplete }: TradovateImportProps) => {
 
   return (
     <div className="space-y-4">
-      {/* Upload area */}
       <input ref={fileRef} type="file" accept=".csv" onChange={handleFile} className="hidden" />
 
       {!parsed ? (
@@ -95,26 +142,52 @@ const TradovateImport = ({ onImportComplete }: TradovateImportProps) => {
           <div className="text-center">
             <p className="text-sm font-medium text-foreground">Upload Tradovate Orders CSV</p>
             <p className="text-[11px] text-muted-foreground mt-1">
-              Export from Tradovate → Orders → Download CSV
+              Accounts are auto-detected from CSV
             </p>
           </div>
         </button>
       ) : (
         <div className="space-y-3">
-          {/* File info */}
+          {/* File info + detected accounts */}
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary">
             <FileText className="h-4 w-4 text-primary" />
             <span className="text-[12px] font-medium text-foreground flex-1 truncate">{fileName}</span>
             <span className="text-[11px] text-muted-foreground">{parsed.length} trades</span>
           </div>
 
-          {/* Preview */}
+          {/* Detected accounts */}
+          {detectedAccounts.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {detectedAccounts.map((acc) => {
+                const accTrades = parsed.filter((t) => t.account_name === acc);
+                const accPnl = accTrades.reduce((s, t) => s + t.pnl_net, 0);
+                return (
+                  <div
+                    key={acc}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-card"
+                  >
+                    <div className="h-2 w-2 rounded-full bg-primary" />
+                    <span className="text-[11px] font-mono font-medium text-foreground">{acc}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {accTrades.length}t
+                    </span>
+                    <span className={`text-[10px] font-bold ${accPnl >= 0 ? "text-green-400" : "text-red-400"}`}>
+                      {fmt(accPnl)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Preview table */}
           {parsed.length > 0 && (
             <div className="rounded-lg border border-border overflow-hidden">
               <div className="overflow-x-auto max-h-[300px]">
                 <table className="w-full text-[11px]">
                   <thead>
                     <tr className="bg-secondary/50 text-muted-foreground">
+                      <th className="px-3 py-2 text-left font-medium">Account</th>
                       <th className="px-3 py-2 text-left font-medium">Symbol</th>
                       <th className="px-3 py-2 text-left font-medium">Side</th>
                       <th className="px-3 py-2 text-right font-medium">Qty</th>
@@ -127,6 +200,9 @@ const TradovateImport = ({ onImportComplete }: TradovateImportProps) => {
                   <tbody>
                     {parsed.map((t, i) => (
                       <tr key={i} className="border-t border-border/50 hover:bg-accent/30">
+                        <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">
+                          {t.account_name.slice(0, 10)}…
+                        </td>
                         <td className="px-3 py-2 font-medium text-foreground">{t.symbol}</td>
                         <td className={`px-3 py-2 font-medium ${t.side === "long" ? "text-green-400" : "text-red-400"}`}>
                           {t.side.toUpperCase()}
@@ -143,10 +219,9 @@ const TradovateImport = ({ onImportComplete }: TradovateImportProps) => {
                   </tbody>
                 </table>
               </div>
-              {/* Summary */}
               <div className="px-3 py-2 bg-secondary/30 border-t border-border flex items-center justify-between">
                 <span className="text-[11px] text-muted-foreground">
-                  Total: {parsed.length} trades
+                  {parsed.length} trades · {detectedAccounts.length} account(s)
                 </span>
                 <span className={`text-[12px] font-bold ${parsed.reduce((s, t) => s + t.pnl_net, 0) >= 0 ? "text-green-400" : "text-red-400"}`}>
                   {fmt(parsed.reduce((s, t) => s + t.pnl_net, 0))}
