@@ -27,6 +27,7 @@ export interface ParsedTrade {
   pnl_gross: number;
   pnl_net: number;
   source: string;
+  account_name: string; // auto-detected from CSV
 }
 
 // Point values for common futures products
