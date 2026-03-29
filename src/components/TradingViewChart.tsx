@@ -315,15 +315,15 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
 
           for (const date of Object.keys(dayBarsMap).sort()) {
             const bars = dayBarsMap[date];
-            const morningBars = bars.filter(b => {
+            const sessionBars = bars.filter(b => {
               const t = b.datetime.split(" ")[1];
-              return t >= "09:30:00" && t < "12:00:00";
+              return t >= "09:30:00" && t < "16:00:00";
             });
 
-            let foundMC = false;
-            for (let i = 0; i < morningBars.length - 1 && !foundMC; i++) {
-              const prev = morningBars[i];
-              const curr = morningBars[i + 1];
+            let i = 0;
+            while (i < sessionBars.length - 1) {
+              const prev = sessionBars[i];
+              const curr = sessionBars[i + 1];
 
               const pO = parseFloat(prev.open), pH = parseFloat(prev.high), pL = parseFloat(prev.low), pC = parseFloat(prev.close);
               const cO = parseFloat(curr.open), cH = parseFloat(curr.high), cL = parseFloat(curr.low), cC = parseFloat(curr.close);
@@ -344,7 +344,9 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
               ) {
                 mcTimestamps.set(toTs(prev.datetime), pBull);
                 mcTimestamps.set(toTs(curr.datetime), pBull);
-                foundMC = true;
+                i += 2;
+              } else {
+                i++;
               }
             }
           }
