@@ -126,10 +126,10 @@ const SidebarContent = ({ collapsed, onToggle, onNavigate }: { collapsed: boolea
       {/* Bottom actions */}
       <div className="border-t border-border px-3 py-2 flex items-center gap-2">
         {isActive ? (
-          <div className="flex items-center gap-2 text-[12px] text-primary font-semibold" title="Pro Member">
-            <Crown className="h-4 w-4 text-primary" />
+          <div className="flex items-center gap-2 text-[12px] font-semibold" style={{ color: '#D4A017' }} title="Pro Member">
+            <Crown className="h-4 w-4" style={{ color: '#D4A017' }} />
             {!collapsed && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/15 text-primary text-[11px] font-bold tracking-wide uppercase">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase" style={{ backgroundColor: 'rgba(212, 160, 23, 0.15)', color: '#D4A017' }}>
                 Pro
               </span>
             )}
