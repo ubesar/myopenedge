@@ -8,7 +8,7 @@ import JournalStatsCards from "@/components/journal/JournalStatsCards";
 import JournalCharts from "@/components/journal/JournalCharts";
 import JournalCalendar from "@/components/journal/JournalCalendar";
 import TradovateImport from "@/components/journal/TradovateImport";
-import { Loader2, Calendar, BarChart3, Upload, X } from "lucide-react";
+import { Loader2, Calendar, BarChart3, Upload, X, ChevronDown } from "lucide-react";
 
 interface Trade {
   id: string;
@@ -17,6 +17,14 @@ interface Trade {
   close_time: string;
   open_time: string;
   symbol: string;
+  account_id: string | null;
+}
+
+interface Account {
+  id: string;
+  name: string;
+  broker: string | null;
+  account_type: string | null;
 }
 
 const Journal = () => {
@@ -27,24 +35,43 @@ const Journal = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const [trades, setTrades] = useState<Trade[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState<"all" | "30d" | "7d">("all");
+  const [selectedAccount, setSelectedAccount] = useState<string>("all");
   const [showImport, setShowImport] = useState(false);
+  const [showAccountPicker, setShowAccountPicker] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?redirect=/journal");
   }, [user, authLoading, navigate]);
 
+  // Fetch accounts
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("accounts")
+      .select("id, name, broker, account_type")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setAccounts((data as Account[]) || []));
+  }, [user, refreshKey]);
+
+  // Fetch trades
   useEffect(() => {
     if (!user) return;
     const fetchTrades = async () => {
       setLoading(true);
       let query = supabase
         .from("trades")
-        .select("id, pnl_net, side, close_time, open_time, symbol")
+        .select("id, pnl_net, side, close_time, open_time, symbol, account_id")
         .eq("user_id", user.id)
         .order("close_time", { ascending: false });
+
+      if (selectedAccount !== "all") {
+        query = query.eq("account_id", selectedAccount);
+      }
 
       if (dateFilter === "30d") {
         const d = new Date();
@@ -61,7 +88,7 @@ const Journal = () => {
       setLoading(false);
     };
     fetchTrades();
-  }, [user, dateFilter, refreshKey]);
+  }, [user, dateFilter, selectedAccount, refreshKey]);
 
   if (authLoading) {
     return (
@@ -76,6 +103,11 @@ const Journal = () => {
     { label: "30 Days", value: "30d" as const },
     { label: "7 Days", value: "7d" as const },
   ];
+
+  const selectedAccountName =
+    selectedAccount === "all"
+      ? "All Accounts"
+      : accounts.find((a) => a.id === selectedAccount)?.name || "Account";
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -93,10 +125,57 @@ const Journal = () => {
           <div className="max-w-[1600px] mx-auto p-4 md:p-6 space-y-5">
             {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <Calendar className="h-5 w-5 text-primary" />
                 <h1 className="text-lg font-bold text-foreground">Trading Journal</h1>
+
+                {/* Account picker */}
+                {accounts.length > 0 && (
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowAccountPicker(!showAccountPicker)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium bg-card border border-border hover:border-primary/50 transition-colors"
+                    >
+                      <div className="h-2 w-2 rounded-full bg-primary" />
+                      <span className="text-foreground max-w-[140px] truncate">{selectedAccountName}</span>
+                      <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                    </button>
+
+                    {showAccountPicker && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setShowAccountPicker(false)} />
+                        <div className="absolute top-full left-0 mt-1 z-50 w-[240px] rounded-lg border border-border bg-card shadow-xl py-1">
+                          <button
+                            onClick={() => { setSelectedAccount("all"); setShowAccountPicker(false); }}
+                            className={`w-full text-left px-3 py-2 text-[12px] hover:bg-accent transition-colors ${
+                              selectedAccount === "all" ? "text-primary font-semibold" : "text-foreground"
+                            }`}
+                          >
+                            All Accounts
+                          </button>
+                          {accounts.map((acc) => (
+                            <button
+                              key={acc.id}
+                              onClick={() => { setSelectedAccount(acc.id); setShowAccountPicker(false); }}
+                              className={`w-full text-left px-3 py-2 text-[12px] hover:bg-accent transition-colors flex items-center justify-between ${
+                                selectedAccount === acc.id ? "text-primary font-semibold" : "text-foreground"
+                              }`}
+                            >
+                              <span className="truncate">{acc.name}</span>
+                              {acc.account_type && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground ml-2 shrink-0">
+                                  {acc.account_type}
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
+
               <div className="flex items-center gap-2">
                 {filters.map((f) => (
                   <button
@@ -136,7 +215,7 @@ const Journal = () => {
             ) : trades.length === 0 && !showImport ? (
               <div className="flex flex-col items-center justify-center h-64 text-muted-foreground space-y-3">
                 <BarChart3 className="h-10 w-10 opacity-40" />
-                <p className="text-sm">No trades found.</p>
+                <p className="text-sm">No trades found{selectedAccount !== "all" ? " for this account" : ""}.</p>
                 <button
                   onClick={() => setShowImport(true)}
                   className="text-[12px] text-primary hover:text-primary/80 font-medium flex items-center gap-1.5"
