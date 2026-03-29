@@ -8,7 +8,8 @@ import JournalStatsCards from "@/components/journal/JournalStatsCards";
 import JournalCharts from "@/components/journal/JournalCharts";
 import JournalCalendar from "@/components/journal/JournalCalendar";
 import TradovateImport from "@/components/journal/TradovateImport";
-import { Loader2, Calendar, BarChart3, Upload, X, ChevronDown } from "lucide-react";
+import ImportHistory from "@/components/journal/ImportHistory";
+import { Loader2, Calendar, BarChart3, Upload, X, ChevronDown, History } from "lucide-react";
 
 interface Trade {
   id: string;
@@ -40,6 +41,7 @@ const Journal = () => {
   const [dateFilter, setDateFilter] = useState<"all" | "30d" | "7d">("all");
   const [selectedAccount, setSelectedAccount] = useState<string>("all");
   const [showImport, setShowImport] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [showAccountPicker, setShowAccountPicker] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -191,7 +193,18 @@ const Journal = () => {
                   </button>
                 ))}
                 <button
-                  onClick={() => setShowImport(!showImport)}
+                  onClick={() => { setShowHistory(!showHistory); if (!showHistory) setShowImport(false); }}
+                  className={`px-3 py-1.5 rounded-lg text-[12px] font-medium gap-1.5 flex items-center transition-colors ${
+                    showHistory
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <History className="h-3 w-3" />
+                  History
+                </button>
+                <button
+                  onClick={() => { setShowImport(!showImport); if (!showImport) setShowHistory(false); }}
                   className={`px-3 py-1.5 rounded-lg text-[12px] font-medium gap-1.5 flex items-center transition-colors ${
                     showImport
                       ? "bg-primary text-primary-foreground"
@@ -206,6 +219,10 @@ const Journal = () => {
 
             {showImport && (
               <TradovateImport onImportComplete={() => { setShowImport(false); setRefreshKey((k) => k + 1); }} />
+            )}
+
+            {showHistory && (
+              <ImportHistory refreshKey={refreshKey} onDelete={() => setRefreshKey((k) => k + 1)} />
             )}
 
             {loading ? (
