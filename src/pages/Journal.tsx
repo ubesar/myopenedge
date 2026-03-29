@@ -7,6 +7,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import JournalStatsCards from "@/components/journal/JournalStatsCards";
 import JournalCharts from "@/components/journal/JournalCharts";
 import JournalCalendar from "@/components/journal/JournalCalendar";
+import DayDetailDialog from "@/components/journal/DayDetailDialog";
 import TradovateImport from "@/components/journal/TradovateImport";
 import ImportHistory from "@/components/journal/ImportHistory";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -20,6 +21,10 @@ interface Trade {
   open_time: string;
   symbol: string;
   account_id: string | null;
+  qty: number;
+  playbook: string | null;
+  r_multiple: number | null;
+  notes: string | null;
 }
 
 interface Account {
@@ -45,6 +50,7 @@ const Journal = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [showAccountPicker, setShowAccountPicker] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?redirect=/journal");
@@ -66,7 +72,7 @@ const Journal = () => {
       setLoading(true);
       let query = supabase
         .from("trades")
-        .select("id, pnl_net, side, close_time, open_time, symbol, account_id")
+        .select("id, pnl_net, side, close_time, open_time, symbol, account_id, qty, playbook, r_multiple, notes")
         .eq("user_id", user.id)
         .order("close_time", { ascending: false });
 
@@ -226,12 +232,20 @@ const Journal = () => {
               <>
                 <JournalStatsCards trades={trades} />
                 <JournalCharts trades={trades} />
-                <JournalCalendar trades={trades} />
+                <JournalCalendar trades={trades} onDayClick={(d) => setSelectedDay(d)} />
               </>
             )}
           </div>
         </div>
       </div>
+
+      {/* Day Detail Dialog */}
+      <DayDetailDialog
+        open={!!selectedDay}
+        onOpenChange={(o) => !o && setSelectedDay(null)}
+        date={selectedDay || ""}
+        trades={trades}
+      />
 
       {/* Import Dialog */}
       <Dialog open={showImport} onOpenChange={setShowImport}>
