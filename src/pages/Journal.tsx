@@ -8,7 +8,8 @@ import JournalStatsCards from "@/components/journal/JournalStatsCards";
 import JournalCharts from "@/components/journal/JournalCharts";
 import JournalCalendar from "@/components/journal/JournalCalendar";
 import TradovateImport from "@/components/journal/TradovateImport";
-import { Loader2, Calendar, BarChart3, Upload, X, ChevronDown } from "lucide-react";
+import ImportHistory from "@/components/journal/ImportHistory";
+import { Loader2, Calendar, BarChart3, Upload, X, ChevronDown, History } from "lucide-react";
 
 interface Trade {
   id: string;
