@@ -107,7 +107,7 @@ const TradeDetailDialog = ({ open, onOpenChange, trade }: TradeDetailDialogProps
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto bg-card border-border">
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto bg-card border-border">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-foreground text-[14px]">
               Trade Detail — {trade.symbol}
@@ -175,20 +175,20 @@ const TradeDetailDialog = ({ open, onOpenChange, trade }: TradeDetailDialogProps
               </div>
 
               {attachments.length > 0 ? (
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   {attachments.map((att) => (
                     <div key={att.id} className="relative group rounded-lg overflow-hidden border border-border">
                       <img
                         src={att.file_url}
                         alt={att.file_name || "screenshot"}
-                        className="w-full h-24 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                        className="w-full h-48 object-cover cursor-pointer hover:opacity-80 transition-opacity"
                         onClick={() => setPreviewImg(att.file_url)}
                       />
                       <button
                         onClick={() => handleDelete(att)}
-                        className="absolute top-1 right-1 p-1 rounded bg-destructive/80 text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-1.5 right-1.5 p-1.5 rounded bg-destructive/80 text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   ))}
