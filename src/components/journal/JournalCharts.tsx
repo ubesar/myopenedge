@@ -69,7 +69,10 @@ const JournalCharts = ({ trades }: JournalChartsProps) => {
       { metric: "Win/Loss", value: winLossRatio },
     ];
 
-    return { cumulativeData, drawdownData, pnlBarData, radarData };
+    // Overall score 0-100
+    const score = Math.round(winRate * 0.4 + profitFactor * 0.35 + winLossRatio * 0.25);
+
+    return { cumulativeData, drawdownData, pnlBarData, radarData, score };
   }, [trades]);
 
   const chartCard = (title: string, children: React.ReactNode) => (
