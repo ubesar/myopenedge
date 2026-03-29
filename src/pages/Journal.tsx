@@ -193,7 +193,18 @@ const Journal = () => {
                   </button>
                 ))}
                 <button
-                  onClick={() => setShowImport(!showImport)}
+                  onClick={() => { setShowHistory(!showHistory); if (!showHistory) setShowImport(false); }}
+                  className={`px-3 py-1.5 rounded-lg text-[12px] font-medium gap-1.5 flex items-center transition-colors ${
+                    showHistory
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <History className="h-3 w-3" />
+                  History
+                </button>
+                <button
+                  onClick={() => { setShowImport(!showImport); if (!showImport) setShowHistory(false); }}
                   className={`px-3 py-1.5 rounded-lg text-[12px] font-medium gap-1.5 flex items-center transition-colors ${
                     showImport
                       ? "bg-primary text-primary-foreground"
@@ -208,6 +219,10 @@ const Journal = () => {
 
             {showImport && (
               <TradovateImport onImportComplete={() => { setShowImport(false); setRefreshKey((k) => k + 1); }} />
+            )}
+
+            {showHistory && (
+              <ImportHistory refreshKey={refreshKey} onDelete={() => setRefreshKey((k) => k + 1)} />
             )}
 
             {loading ? (
