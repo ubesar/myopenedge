@@ -41,6 +41,7 @@ const Journal = () => {
   const [dateFilter, setDateFilter] = useState<"all" | "30d" | "7d">("all");
   const [selectedAccount, setSelectedAccount] = useState<string>("all");
   const [showImport, setShowImport] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [showAccountPicker, setShowAccountPicker] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
