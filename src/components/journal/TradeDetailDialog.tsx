@@ -4,6 +4,7 @@ import { ImagePlus, Trash2, Loader2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { extractTradeScreenshotPath, resolveTradeScreenshotUrl } from "@/lib/trade-screenshot-url";
 
 interface Trade {
   id: string;
@@ -22,6 +23,7 @@ interface Attachment {
   id: string;
   file_url: string;
   file_name: string | null;
+  preview_url: string;
 }
 
 interface TradeDetailDialogProps {
@@ -42,28 +44,42 @@ const TradeDetailDialog = ({ open, onOpenChange, trade }: TradeDetailDialogProps
   useEffect(() => {
     if (!open) return;
     setNotes(trade.notes || "");
-    fetchAttachments();
+    void fetchAttachments();
   }, [open, trade.id]);
 
   const fetchAttachments = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("attachments")
       .select("id, file_url, file_name")
       .eq("trade_id", trade.id)
       .order("created_at", { ascending: false });
-    setAttachments((data as Attachment[]) || []);
+
+    if (error) {
+      toast.error("Failed to load screenshots");
+      return;
+    }
+
+    const resolved = await Promise.all(
+      ((data as Omit<Attachment, "preview_url">[]) || []).map(async (att) => ({
+        ...att,
+        preview_url: await resolveTradeScreenshotUrl(att.file_url),
+      }))
+    );
+
+    setAttachments(resolved);
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+
     setUploading(true);
     const ext = file.name.split(".").pop();
     const path = `${user.id}/${trade.id}/${Date.now()}.${ext}`;
 
     const { error: uploadErr } = await supabase.storage
       .from("trade-screenshots")
-      .upload(path, file);
+      .upload(path, file, { upsert: false });
 
     if (uploadErr) {
       toast.error("Upload failed");
@@ -71,17 +87,19 @@ const TradeDetailDialog = ({ open, onOpenChange, trade }: TradeDetailDialogProps
       return;
     }
 
-    const { data: urlData } = supabase.storage
-      .from("trade-screenshots")
-      .getPublicUrl(path);
-
-    await supabase.from("attachments").insert({
+    const { error: insertErr } = await supabase.from("attachments").insert({
       user_id: user.id,
       trade_id: trade.id,
-      file_url: urlData.publicUrl,
+      file_url: path,
       file_name: file.name,
       file_type: file.type,
     });
+
+    if (insertErr) {
+      toast.error("Failed to save image");
+      setUploading(false);
+      return;
+    }
 
     await fetchAttachments();
     setUploading(false);
@@ -90,19 +108,37 @@ const TradeDetailDialog = ({ open, onOpenChange, trade }: TradeDetailDialogProps
   };
 
   const handleDelete = async (att: Attachment) => {
-    await supabase.from("attachments").delete().eq("id", att.id);
+    const { error: deleteErr } = await supabase.from("attachments").delete().eq("id", att.id);
+
+    if (deleteErr) {
+      toast.error("Failed to delete");
+      return;
+    }
+
+    const path = extractTradeScreenshotPath(att.file_url);
+    if (path) {
+      await supabase.storage.from("trade-screenshots").remove([path]);
+    }
+
     setAttachments((prev) => prev.filter((a) => a.id !== att.id));
     toast.success("Deleted");
   };
 
   const saveNotes = async () => {
     setSaving(true);
-    await supabase.from("trades").update({ notes }).eq("id", trade.id);
+    const { error } = await supabase.from("trades").update({ notes }).eq("id", trade.id);
     setSaving(false);
+
+    if (error) {
+      toast.error("Failed to save notes");
+      return;
+    }
+
     toast.success("Notes saved");
   };
 
-  const fmtPnl = (n: number) => `${n >= 0 ? "+" : ""}$${Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  const fmtPnl = (n: number) =>
+    `${n >= 0 ? "+" : ""}$${Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
   return (
     <>
@@ -118,7 +154,6 @@ const TradeDetailDialog = ({ open, onOpenChange, trade }: TradeDetailDialogProps
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Trade info */}
             <div className="grid grid-cols-3 gap-3 text-[12px]">
               {[
                 { label: "Side", value: trade.side },
@@ -135,7 +170,6 @@ const TradeDetailDialog = ({ open, onOpenChange, trade }: TradeDetailDialogProps
               ))}
             </div>
 
-            {/* Notes */}
             <div className="space-y-2">
               <label className="text-[12px] font-medium text-foreground">Notes</label>
               <textarea
@@ -153,7 +187,6 @@ const TradeDetailDialog = ({ open, onOpenChange, trade }: TradeDetailDialogProps
               </button>
             </div>
 
-            {/* Screenshots */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[12px] font-medium text-foreground">Screenshots</label>
@@ -179,10 +212,10 @@ const TradeDetailDialog = ({ open, onOpenChange, trade }: TradeDetailDialogProps
                   {attachments.map((att) => (
                     <div key={att.id} className="relative group rounded-lg overflow-hidden border border-border">
                       <img
-                        src={att.file_url}
+                        src={att.preview_url}
                         alt={att.file_name || "screenshot"}
                         className="w-full h-48 object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => setPreviewImg(att.file_url)}
+                        onClick={() => setPreviewImg(att.preview_url)}
                       />
                       <button
                         onClick={() => handleDelete(att)}
@@ -201,7 +234,6 @@ const TradeDetailDialog = ({ open, onOpenChange, trade }: TradeDetailDialogProps
         </DialogContent>
       </Dialog>
 
-      {/* Full-size image preview */}
       {previewImg && (
         <div
           className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center cursor-pointer"
@@ -213,7 +245,7 @@ const TradeDetailDialog = ({ open, onOpenChange, trade }: TradeDetailDialogProps
           >
             <X className="h-5 w-5" />
           </button>
-          <img src={previewImg} alt="preview" className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg" />
+          <img src={previewImg} alt="preview" className="max-w-[95vw] max-h-[92vh] object-contain rounded-lg" />
         </div>
       )}
     </>
