@@ -2,8 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const TELEGRAM_GATEWAY = "https://connector-gateway.lovable.dev/telegram";
-const BODY_RATIO = 0.50;
-const SECOND_BODY_RATIO = 0.30;
+const BODY_RATIO = 0.60;
 const SYMBOL = "QQQ";
 
 serve(async () => {
@@ -73,34 +72,24 @@ serve(async () => {
       return c.time >= "09:30:00" && c.time < "16:00:00";
     });
 
-    if (candles.length < 2) {
+    if (candles.length < 1) {
       return new Response(JSON.stringify({ status: "not_enough_rth_bars", count: candles.length }));
     }
 
-    // Check the last 2 candles for MC pattern
-    const prev = candles[candles.length - 2];
-    const curr = candles[candles.length - 1];
+    // Check the last candle for MC pattern (single candle, body ratio ≥60%)
+    const lastCandle = candles[candles.length - 1];
 
-    const pBody = Math.abs(prev.close - prev.open);
-    const pRange = prev.high - prev.low;
-    const cBody = Math.abs(curr.close - curr.open);
-    const cRange = curr.high - curr.low;
+    const body = Math.abs(lastCandle.close - lastCandle.open);
+    const range = lastCandle.high - lastCandle.low;
 
-    const pBull = prev.close >= prev.open;
-    const cBull = curr.close >= curr.open;
-
-    const isMC =
-      pRange > 0 && cRange > 0 &&
-      pBody / pRange >= BODY_RATIO &&
-      cBody / cRange >= SECOND_BODY_RATIO &&
-      pBull === cBull;
+    const isMC = range > 0 && body / range >= BODY_RATIO;
 
     if (!isMC) {
-      return new Response(JSON.stringify({ status: "no_mc", lastBars: [prev.time, curr.time] }));
+      return new Response(JSON.stringify({ status: "no_mc", lastBar: lastCandle.time }));
     }
 
-    const signalType = pBull ? "bullish" : "bearish";
-    const alertKey = `${today}_${prev.time}_${curr.time}_${signalType}`;
+    const signalType = lastCandle.close >= lastCandle.open ? "bullish" : "bearish";
+    const alertKey = `${today}_${lastCandle.time}_${signalType}`;
 
     // Check if we already sent this alert
     const { data: state } = await supabase
@@ -116,14 +105,14 @@ serve(async () => {
     // Send Telegram alert
     const emoji = signalType === "bullish" ? "🟢" : "🔴";
     const direction = signalType === "bullish" ? "BULLISH" : "BEARISH";
+    const bodyRatioPct = (body / range * 100).toFixed(0);
     const message = [
       `${emoji} <b>MC Alert — ${SYMBOL} 15m</b>`,
       ``,
       `<b>Signal:</b> ${direction} Momentum Candle`,
-      `<b>Time:</b> ${prev.time} → ${curr.time} ET`,
-      `<b>Candle 1:</b> O:${prev.open.toFixed(2)} H:${prev.high.toFixed(2)} L:${prev.low.toFixed(2)} C:${prev.close.toFixed(2)}`,
-      `<b>Candle 2:</b> O:${curr.open.toFixed(2)} H:${curr.high.toFixed(2)} L:${curr.low.toFixed(2)} C:${curr.close.toFixed(2)}`,
-      `<b>Body Ratio:</b> ${(pBody / pRange * 100).toFixed(0)}% / ${(cBody / cRange * 100).toFixed(0)}%`,
+      `<b>Time:</b> ${lastCandle.time} ET`,
+      `<b>OHLC:</b> O:${lastCandle.open.toFixed(2)} H:${lastCandle.high.toFixed(2)} L:${lastCandle.low.toFixed(2)} C:${lastCandle.close.toFixed(2)}`,
+      `<b>Body Ratio:</b> ${bodyRatioPct}%`,
       ``,
       `📊 <i>MyOpenEdge — Momentum Candle Monitor</i>`,
     ].join("\n");
