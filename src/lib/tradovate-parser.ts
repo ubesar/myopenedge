@@ -5,6 +5,7 @@
 
 interface TradovateOrder {
   orderId: string;
+  account: string;
   side: "Buy" | "Sell";
   product: string;
   productDescription: string;
@@ -27,6 +28,7 @@ export interface ParsedTrade {
   pnl_gross: number;
   pnl_net: number;
   source: string;
+  account_name: string; // auto-detected from CSV
 }
 
 // Point values for common futures products
@@ -89,6 +91,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
   const iTimestamp = colIdx("Timestamp");
   const iOrderId = colIdx("orderId");
   const iContract = colIdx("Contract");
+  const iAccount = colIdx("Account");
 
   // Parse only filled orders
   const filledOrders: TradovateOrder[] = [];
@@ -103,6 +106,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
 
     filledOrders.push({
       orderId: cols[iOrderId],
+      account: cols[iAccount]?.trim() || "Unknown",
       side: cols[iBS]?.trim() as "Buy" | "Sell",
       product: cols[iProduct]?.trim(),
       productDescription: cols[iProductDesc]?.trim(),
@@ -122,7 +126,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
 
   // FIFO matching per product
   const trades: ParsedTrade[] = [];
-  const positionQueue: { side: "Buy" | "Sell"; price: number; qty: number; time: string; product: string }[] = [];
+  const positionQueue: { side: "Buy" | "Sell"; price: number; qty: number; time: string; product: string; account: string }[] = [];
 
   for (const order of filledOrders) {
     let remaining = order.filledQty;
@@ -142,6 +146,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
           qty: remaining,
           time: order.fillTime,
           product,
+          account: order.account,
         });
         break;
       }
@@ -175,8 +180,9 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
         open_time: parseTradovateDate(openTime),
         close_time: parseTradovateDate(closeTime),
         pnl_gross: pnl,
-        pnl_net: pnl, // no fee data in CSV
+        pnl_net: pnl,
         source: "TRADOVATE",
+        account_name: order.account,
       });
 
       remaining -= matchQty;
