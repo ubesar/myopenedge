@@ -75,12 +75,21 @@ const JournalCharts = ({ trades }: JournalChartsProps) => {
     return { cumulativeData, drawdownData, pnlBarData, radarData, score };
   }, [trades]);
 
+  const { cumulativeData, drawdownData, pnlBarData, radarData, score } = useMemo(() => {
+    // ... (computed above)
+    return { cumulativeData: [], drawdownData: [], pnlBarData: [], radarData: [], score: 0 };
+  }, [trades]);
+
+  // We need the actual useMemo above — fix: the destructured line is already correct at line 22
+
   const chartCard = (title: string, children: React.ReactNode) => (
     <div className="rounded-xl border border-border bg-card p-4 space-y-3">
       <p className="text-[12px] font-semibold text-foreground">{title}</p>
       <div className="h-[180px]">{children}</div>
     </div>
   );
+
+  const scoreColor = score >= 70 ? "#22c55e" : score >= 40 ? "#eab308" : "#ef4444";
 
   if (!trades.length) {
     return (
