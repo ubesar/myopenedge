@@ -90,8 +90,40 @@ const TradovateImport = ({ onImportComplete }: TradovateImportProps) => {
 
       if (batchErr) throw batchErr;
 
-      // 3. Insert trades with account_id
-      const rows = parsed.map((t) => ({
+      // 3. Deduplicate — check existing trades by key fields
+      const { data: existingTrades } = await supabase
+        .from("trades")
+        .select("symbol, side, qty, entry_price, exit_price, open_time, close_time")
+        .eq("user_id", user.id)
+        .eq("source", "TRADOVATE");
+
+      const existingKeys = new Set(
+        (existingTrades || []).map((t) =>
+          `${t.symbol}|${t.side}|${t.qty}|${t.entry_price}|${t.exit_price}|${t.open_time}|${t.close_time}`
+        )
+      );
+
+      const newTrades = parsed.filter((t) => {
+        const key = `${t.symbol}|${t.side}|${t.qty}|${t.entry_price}|${t.exit_price}|${t.open_time}|${t.close_time}`;
+        return !existingKeys.has(key);
+      });
+
+      if (newTrades.length === 0) {
+        toast.info("Semua trade sudah pernah di-import sebelumnya. Tidak ada data baru.");
+        await supabase.from("import_batches").update({ status: "skipped", completed_at: new Date().toISOString() }).eq("id", batch.id);
+        setParsed(null);
+        setFileName("");
+        setImporting(false);
+        return;
+      }
+
+      const skipped = parsed.length - newTrades.length;
+      if (skipped > 0) {
+        toast.info(`${skipped} trade duplikat dilewati.`);
+      }
+
+      // 4. Insert only new trades
+      const rows = newTrades.map((t) => ({
         user_id: user.id,
         symbol: t.symbol,
         side: t.side,
@@ -116,7 +148,7 @@ const TradovateImport = ({ onImportComplete }: TradovateImportProps) => {
         .update({ status: "completed", completed_at: new Date().toISOString() })
         .eq("id", batch.id);
 
-      toast.success(`${parsed.length} trades imported across ${detectedAccounts.length} account(s)!`);
+      toast.success(`${newTrades.length} trade baru di-import${skipped > 0 ? ` (${skipped} duplikat dilewati)` : ""} across ${detectedAccounts.length} account(s)!`);
       setParsed(null);
       setFileName("");
       onImportComplete();
