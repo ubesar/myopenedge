@@ -34,6 +34,8 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
   const [maxDays, setMaxDays] = useState("20");
   const [mode, setMode] = useState<AnalysisMode>("ib");
 
+  const isFreeMode = isFree && mode !== "ib" && mode !== "occ";
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!symbol.trim()) return;
@@ -49,21 +51,21 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
 
       <div className="space-y-2">
         <Label className="text-sm text-muted-foreground">Analysis Type</Label>
-        <Select value={isFree ? "ib" : mode} onValueChange={(v) => !isFree && setMode(v as AnalysisMode)} disabled={isFree}>
+        <Select value={mode} onValueChange={(v) => setMode(v as AnalysisMode)}>
           <SelectTrigger className="bg-muted border-border text-foreground">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ib">Initial Balance (IB)</SelectItem>
+            <SelectItem value="occ">Opening Candle Continuation</SelectItem>
             {!isFree && <SelectItem value="globex-ib">Globex IB (Overnight)</SelectItem>}
             {!isFree && <SelectItem value="momentum">Momentum Candle</SelectItem>}
-            {!isFree && <SelectItem value="occ">Opening Candle Continuation</SelectItem>}
             {!isFree && <SelectItem value="gapfill">Gap Fill Statistics</SelectItem>}
             {!isFree && <SelectItem value="insidebar">Inside Bar</SelectItem>}
             {!isFree && <SelectItem value="outsideday">Outside Day</SelectItem>}
           </SelectContent>
         </Select>
-        {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for Momentum analysis</p>}
+        {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for more analysis types</p>}
       </div>
 
       <div className="space-y-2">
