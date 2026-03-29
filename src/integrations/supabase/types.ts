@@ -562,6 +562,7 @@ export type Database = {
           instrument_id: string | null
           notes: string | null
           open_time: string
+          order_ids: string[] | null
           playbook: string | null
           playbook_id: string | null
           pnl_gross: number
@@ -592,6 +593,7 @@ export type Database = {
           instrument_id?: string | null
           notes?: string | null
           open_time: string
+          order_ids?: string[] | null
           playbook?: string | null
           playbook_id?: string | null
           pnl_gross: number
@@ -622,6 +624,7 @@ export type Database = {
           instrument_id?: string | null
           notes?: string | null
           open_time?: string
+          order_ids?: string[] | null
           playbook?: string | null
           playbook_id?: string | null
           pnl_gross?: number
