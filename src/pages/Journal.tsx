@@ -9,7 +9,8 @@ import JournalCharts from "@/components/journal/JournalCharts";
 import JournalCalendar from "@/components/journal/JournalCalendar";
 import TradovateImport from "@/components/journal/TradovateImport";
 import ImportHistory from "@/components/journal/ImportHistory";
-import { Loader2, Calendar, BarChart3, Upload, X, ChevronDown, History } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Loader2, Calendar, BarChart3, Upload, ChevronDown, History } from "lucide-react";
 
 interface Trade {
   id: string;
@@ -49,7 +50,6 @@ const Journal = () => {
     if (!authLoading && !user) navigate("/auth?redirect=/journal");
   }, [user, authLoading, navigate]);
 
-  // Fetch accounts
   useEffect(() => {
     if (!user) return;
     supabase
@@ -60,7 +60,6 @@ const Journal = () => {
       .then(({ data }) => setAccounts((data as Account[]) || []));
   }, [user, refreshKey]);
 
-  // Fetch trades
   useEffect(() => {
     if (!user) return;
     const fetchTrades = async () => {
@@ -131,7 +130,6 @@ const Journal = () => {
                 <Calendar className="h-5 w-5 text-primary" />
                 <h1 className="text-lg font-bold text-foreground">Trading Journal</h1>
 
-                {/* Account picker */}
                 {accounts.length > 0 && (
                   <div className="relative">
                     <button
@@ -193,43 +191,27 @@ const Journal = () => {
                   </button>
                 ))}
                 <button
-                  onClick={() => { setShowHistory(!showHistory); if (!showHistory) setShowImport(false); }}
-                  className={`px-3 py-1.5 rounded-lg text-[12px] font-medium gap-1.5 flex items-center transition-colors ${
-                    showHistory
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-muted-foreground hover:text-foreground"
-                  }`}
+                  onClick={() => setShowHistory(true)}
+                  className="px-3 py-1.5 rounded-lg text-[12px] font-medium gap-1.5 flex items-center transition-colors bg-secondary text-muted-foreground hover:text-foreground"
                 >
                   <History className="h-3 w-3" />
                   History
                 </button>
                 <button
-                  onClick={() => { setShowImport(!showImport); if (!showImport) setShowHistory(false); }}
-                  className={`px-3 py-1.5 rounded-lg text-[12px] font-medium gap-1.5 flex items-center transition-colors ${
-                    showImport
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-muted-foreground hover:text-foreground"
-                  }`}
+                  onClick={() => setShowImport(true)}
+                  className="px-3 py-1.5 rounded-lg text-[12px] font-medium gap-1.5 flex items-center transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
                 >
-                  {showImport ? <X className="h-3 w-3" /> : <Upload className="h-3 w-3" />}
+                  <Upload className="h-3 w-3" />
                   Import
                 </button>
               </div>
             </div>
 
-            {showImport && (
-              <TradovateImport onImportComplete={() => { setShowImport(false); setRefreshKey((k) => k + 1); }} />
-            )}
-
-            {showHistory && (
-              <ImportHistory refreshKey={refreshKey} onDelete={() => setRefreshKey((k) => k + 1)} />
-            )}
-
             {loading ? (
               <div className="flex items-center justify-center h-64">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
-            ) : trades.length === 0 && !showImport ? (
+            ) : trades.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-64 text-muted-foreground space-y-3">
                 <BarChart3 className="h-10 w-10 opacity-40" />
                 <p className="text-sm">No trades found{selectedAccount !== "all" ? " for this account" : ""}.</p>
@@ -250,6 +232,32 @@ const Journal = () => {
           </div>
         </div>
       </div>
+
+      {/* Import Dialog */}
+      <Dialog open={showImport} onOpenChange={setShowImport}>
+        <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-foreground">
+              <Upload className="h-4 w-4 text-primary" />
+              Import CSV
+            </DialogTitle>
+          </DialogHeader>
+          <TradovateImport onImportComplete={() => { setShowImport(false); setRefreshKey((k) => k + 1); }} />
+        </DialogContent>
+      </Dialog>
+
+      {/* History Dialog */}
+      <Dialog open={showHistory} onOpenChange={setShowHistory}>
+        <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-foreground">
+              <History className="h-4 w-4 text-primary" />
+              Import History
+            </DialogTitle>
+          </DialogHeader>
+          <ImportHistory refreshKey={refreshKey} onDelete={() => setRefreshKey((k) => k + 1)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
