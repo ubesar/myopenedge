@@ -117,7 +117,7 @@ serve(async (req) => {
 
         // Small delay between chunks to avoid rate limiting
         if (i < chunks.length - 1) {
-          await new Promise(r => setTimeout(r, 500));
+          await new Promise(r => setTimeout(r, 15000));
         }
       }
     }

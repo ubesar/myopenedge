@@ -173,7 +173,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
         let fromDate: Date;
         if (interval === "1day") {
           fromDate = new Date(now);
-          fromDate.setFullYear(fromDate.getFullYear() - 1);
+          fromDate.setDate(fromDate.getDate() - 180);
         } else if (interval === "1h") {
           fromDate = new Date(now);
           fromDate.setDate(fromDate.getDate() - 15);
