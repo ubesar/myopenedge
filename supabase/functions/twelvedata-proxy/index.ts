@@ -18,7 +18,7 @@ function getCorsHeaders(origin: string | null) {
 }
 
 // Free-tier limits
-const FREE_OUTPUTSIZE = 390; // ~1 day of 5min bars
+const FREE_OUTPUTSIZE = 1800; // ~20 trading days of 5min bars
 const FREE_MAX_INTERVAL = "5min";
 
 Deno.serve(async (req) => {
