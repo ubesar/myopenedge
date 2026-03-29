@@ -148,6 +148,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
           time: order.fillTime,
           product,
           account: order.account,
+          orderIds: [order.orderId],
         });
         break;
       }
@@ -172,6 +173,9 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
       const priceDiff = isLong ? closePrice - openPrice : openPrice - closePrice;
       const pnl = priceDiff * matchQty * pointValue;
 
+      // Collect unique orderIds from both sides
+      const tradeOrderIds = [...new Set([...opposite.orderIds, order.orderId])];
+
       trades.push({
         symbol: product,
         side: isLong ? "long" : "short",
@@ -184,6 +188,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
         pnl_net: pnl,
         source: "TRADOVATE",
         account_name: order.account,
+        order_ids: tradeOrderIds,
       });
 
       remaining -= matchQty;
