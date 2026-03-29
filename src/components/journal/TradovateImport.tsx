@@ -97,14 +97,20 @@ const TradovateImport = ({ onImportComplete }: TradovateImportProps) => {
         .eq("user_id", user.id)
         .eq("source", "TRADOVATE");
 
+      // Normalize timestamp for comparison: strip timezone suffix, use consistent format
+      const normalizeKey = (symbol: string, side: string, qty: number, entry: number, exit: number, open: string, close: string) => {
+        const normTime = (t: string) => new Date(t).getTime();
+        return `${symbol}|${side}|${qty}|${Number(entry)}|${Number(exit)}|${normTime(open)}|${normTime(close)}`;
+      };
+
       const existingKeys = new Set(
         (existingTrades || []).map((t) =>
-          `${t.symbol}|${t.side}|${t.qty}|${t.entry_price}|${t.exit_price}|${t.open_time}|${t.close_time}`
+          normalizeKey(t.symbol, t.side, Number(t.qty), Number(t.entry_price), Number(t.exit_price), t.open_time, t.close_time)
         )
       );
 
       const newTrades = parsed.filter((t) => {
-        const key = `${t.symbol}|${t.side}|${t.qty}|${t.entry_price}|${t.exit_price}|${t.open_time}|${t.close_time}`;
+        const key = normalizeKey(t.symbol, t.side, t.qty, t.entry_price, t.exit_price, t.open_time, t.close_time);
         return !existingKeys.has(key);
       });
 
