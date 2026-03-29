@@ -29,6 +29,7 @@ export interface ParsedTrade {
   pnl_net: number;
   source: string;
   account_name: string; // auto-detected from CSV
+  order_ids: string[]; // Tradovate orderIds used in this trade
 }
 
 // Point values for common futures products
@@ -126,7 +127,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
 
   // FIFO matching per product
   const trades: ParsedTrade[] = [];
-  const positionQueue: { side: "Buy" | "Sell"; price: number; qty: number; time: string; product: string; account: string }[] = [];
+  const positionQueue: { side: "Buy" | "Sell"; price: number; qty: number; time: string; product: string; account: string; orderIds: string[] }[] = [];
 
   for (const order of filledOrders) {
     let remaining = order.filledQty;
@@ -147,6 +148,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
           time: order.fillTime,
           product,
           account: order.account,
+          orderIds: [order.orderId],
         });
         break;
       }
@@ -171,6 +173,9 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
       const priceDiff = isLong ? closePrice - openPrice : openPrice - closePrice;
       const pnl = priceDiff * matchQty * pointValue;
 
+      // Collect unique orderIds from both sides
+      const tradeOrderIds = [...new Set([...opposite.orderIds, order.orderId])];
+
       trades.push({
         symbol: product,
         side: isLong ? "long" : "short",
@@ -183,6 +188,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
         pnl_net: pnl,
         source: "TRADOVATE",
         account_name: order.account,
+        order_ids: tradeOrderIds,
       });
 
       remaining -= matchQty;
