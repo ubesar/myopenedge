@@ -111,6 +111,17 @@ const Journal = () => {
                     {f.label}
                   </button>
                 ))}
+                <button
+                  onClick={() => setShowImport(!showImport)}
+                  className={`px-3 py-1.5 rounded-lg text-[12px] font-medium gap-1.5 flex items-center transition-colors ${
+                    showImport
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {showImport ? <X className="h-3 w-3" /> : <Upload className="h-3 w-3" />}
+                  Import
+                </button>
               </div>
             </div>
 
