@@ -82,7 +82,7 @@ serve(async () => {
     });
 
     if (candles.length < 1) {
-      return new Response(JSON.stringify({ status: "not_enough_rth_bars", count: candles.length }));
+      return new Response(JSON.stringify({ status: "no_bars", count: candles.length }));
     }
 
     // Check the last candle for MC pattern (single candle, body ratio ≥60%)
