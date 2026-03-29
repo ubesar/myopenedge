@@ -90,32 +90,28 @@ const TradovateImport = ({ onImportComplete }: TradovateImportProps) => {
 
       if (batchErr) throw batchErr;
 
-      // 3. Deduplicate — check existing trades by key fields
+      // 3. Deduplicate — check existing trades by orderId
       const { data: existingTrades } = await supabase
         .from("trades")
-        .select("symbol, side, qty, entry_price, exit_price, open_time, close_time")
+        .select("order_ids")
         .eq("user_id", user.id)
         .eq("source", "TRADOVATE");
 
-      // Normalize timestamp for comparison: strip timezone suffix, use consistent format
-      const normalizeKey = (symbol: string, side: string, qty: number, entry: number, exit: number, open: string, close: string) => {
-        const normTime = (t: string) => new Date(t).getTime();
-        return `${symbol}|${side}|${qty}|${Number(entry)}|${Number(exit)}|${normTime(open)}|${normTime(close)}`;
-      };
-
-      const existingKeys = new Set(
-        (existingTrades || []).map((t) =>
-          normalizeKey(t.symbol, t.side, Number(t.qty), Number(t.entry_price), Number(t.exit_price), t.open_time, t.close_time)
-        )
-      );
-
-      const newTrades = parsed.filter((t) => {
-        const key = normalizeKey(t.symbol, t.side, t.qty, t.entry_price, t.exit_price, t.open_time, t.close_time);
-        return !existingKeys.has(key);
+      // Collect all orderIds already in DB
+      const existingOrderIds = new Set<string>();
+      (existingTrades || []).forEach((t: any) => {
+        if (Array.isArray(t.order_ids)) {
+          t.order_ids.forEach((id: string) => existingOrderIds.add(id));
+        }
       });
 
+      // A trade is duplicate if ANY of its orderIds already exists
+      const newTrades = parsed.filter((t) =>
+        !t.order_ids.some((id) => existingOrderIds.has(id))
+      );
+
       if (newTrades.length === 0) {
-        toast.info("Semua trade sudah pernah di-import sebelumnya. Tidak ada data baru.");
+        toast.info("Semua order sudah pernah di-import (orderId match). Tidak ada data baru.");
         await supabase.from("import_batches").update({ status: "skipped", completed_at: new Date().toISOString() }).eq("id", batch.id);
         setParsed(null);
         setFileName("");
@@ -125,7 +121,7 @@ const TradovateImport = ({ onImportComplete }: TradovateImportProps) => {
 
       const skipped = parsed.length - newTrades.length;
       if (skipped > 0) {
-        toast.info(`${skipped} trade duplikat dilewati.`);
+        toast.info(`${skipped} trade duplikat dilewati (orderId sudah ada).`);
       }
 
       // 4. Insert only new trades
@@ -143,6 +139,7 @@ const TradovateImport = ({ onImportComplete }: TradovateImportProps) => {
         source: "TRADOVATE",
         import_batch_id: batch.id,
         account_id: accountIdMap.get(t.account_name) || null,
+        order_ids: t.order_ids,
       }));
 
       const { error: insertErr } = await supabase.from("trades").insert(rows);
