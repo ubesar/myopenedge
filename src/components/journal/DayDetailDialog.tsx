@@ -1,8 +1,9 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Eye, Pencil, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import TradeDetailDialog from "./TradeDetailDialog";
+import { resolveTradeScreenshotUrl } from "@/lib/trade-screenshot-url";
 
 interface Trade {
   id: string;
@@ -13,8 +14,6 @@ interface Trade {
   symbol: string;
   account_id?: string | null;
   qty?: number;
-  playbook?: string | null;
-  r_multiple?: number | null;
   notes?: string | null;
 }
 
@@ -23,6 +22,7 @@ interface Attachment {
   file_url: string;
   file_name: string | null;
   trade_id: string | null;
+  preview_url: string;
 }
 
 interface DayDetailDialogProps {
@@ -30,7 +30,6 @@ interface DayDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   date: string;
   trades: Trade[];
-  onNoteClick?: () => void;
 }
 
 const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogProps) => {
@@ -45,25 +44,44 @@ const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogPr
       .sort((a, b) => new Date(b.close_time).getTime() - new Date(a.close_time).getTime());
   }, [trades, date]);
 
-  // Fetch attachments for all day trades
-  useEffect(() => {
-    if (!open || dayTrades.length === 0) return;
+  const loadDayAttachments = useCallback(async () => {
+    if (dayTrades.length === 0) {
+      setAttachmentMap({});
+      return;
+    }
+
     const ids = dayTrades.map((t) => t.id);
-    supabase
+    const { data, error } = await supabase
       .from("attachments")
       .select("id, file_url, file_name, trade_id")
-      .in("trade_id", ids)
-      .then(({ data }) => {
-        const map: Record<string, Attachment[]> = {};
-        (data || []).forEach((a: Attachment) => {
-          if (a.trade_id) {
-            if (!map[a.trade_id]) map[a.trade_id] = [];
-            map[a.trade_id].push(a);
-          }
-        });
-        setAttachmentMap(map);
-      });
-  }, [open, dayTrades]);
+      .in("trade_id", ids);
+
+    if (error) {
+      setAttachmentMap({});
+      return;
+    }
+
+    const resolved = await Promise.all(
+      ((data as Omit<Attachment, "preview_url">[]) || []).map(async (a) => ({
+        ...a,
+        preview_url: await resolveTradeScreenshotUrl(a.file_url),
+      }))
+    );
+
+    const map: Record<string, Attachment[]> = {};
+    resolved.forEach((a) => {
+      if (!a.trade_id) return;
+      if (!map[a.trade_id]) map[a.trade_id] = [];
+      map[a.trade_id].push(a);
+    });
+
+    setAttachmentMap(map);
+  }, [dayTrades]);
+
+  useEffect(() => {
+    if (!open) return;
+    void loadDayAttachments();
+  }, [open, loadDayAttachments]);
 
   const stats = useMemo(() => {
     const winners = dayTrades.filter((t) => t.pnl_net > 0).length;
@@ -88,7 +106,7 @@ const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogPr
   const openPreview = (tradeId: string) => {
     const atts = attachmentMap[tradeId];
     if (!atts || atts.length === 0) return;
-    setPreviewImages(atts.map((a) => a.file_url));
+    setPreviewImages(atts.map((a) => a.preview_url));
     setPreviewIdx(0);
   };
 
@@ -110,7 +128,6 @@ const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogPr
           </DialogHeader>
 
           <div className="p-5 space-y-5">
-            {/* Stat cards */}
             <div className="grid grid-cols-4 gap-3">
               {[
                 { label: "Total Trades", value: stats.total, color: "text-foreground" },
@@ -125,7 +142,6 @@ const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogPr
               ))}
             </div>
 
-            {/* Trade table */}
             {dayTrades.length > 0 && (
               <div className="rounded-lg border border-border overflow-hidden">
                 <table className="w-full text-[12px]">
@@ -190,7 +206,6 @@ const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogPr
         </DialogContent>
       </Dialog>
 
-      {/* Full-size image preview */}
       {previewImages.length > 0 && (
         <div
           className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center"
@@ -198,14 +213,17 @@ const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogPr
         >
           <button
             className="absolute top-4 right-4 p-2 rounded-full bg-background/20 text-foreground hover:bg-background/40 z-10"
-            onClick={(e) => { e.stopPropagation(); setPreviewImages([]); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setPreviewImages([]);
+            }}
           >
             <X className="h-5 w-5" />
           </button>
           <img
             src={previewImages[previewIdx]}
             alt="preview"
-            className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg"
+            className="max-w-[95vw] max-h-[92vh] object-contain rounded-lg"
             onClick={(e) => e.stopPropagation()}
           />
           {previewImages.length > 1 && (
@@ -213,7 +231,10 @@ const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogPr
               {previewImages.map((_, i) => (
                 <button
                   key={i}
-                  onClick={(e) => { e.stopPropagation(); setPreviewIdx(i); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPreviewIdx(i);
+                  }}
                   className={`w-2.5 h-2.5 rounded-full transition-colors ${i === previewIdx ? "bg-primary" : "bg-muted-foreground/40"}`}
                 />
               ))}
@@ -228,22 +249,7 @@ const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogPr
           onOpenChange={(o) => {
             if (!o) {
               setSelectedTrade(null);
-              // Refresh attachments after closing detail
-              const ids = dayTrades.map((t) => t.id);
-              supabase
-                .from("attachments")
-                .select("id, file_url, file_name, trade_id")
-                .in("trade_id", ids)
-                .then(({ data }) => {
-                  const map: Record<string, Attachment[]> = {};
-                  (data || []).forEach((a: Attachment) => {
-                    if (a.trade_id) {
-                      if (!map[a.trade_id]) map[a.trade_id] = [];
-                      map[a.trade_id].push(a);
-                    }
-                  });
-                  setAttachmentMap(map);
-                });
+              void loadDayAttachments();
             }
           }}
           trade={selectedTrade}
