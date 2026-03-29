@@ -125,14 +125,24 @@ const Journal = () => {
               </div>
             </div>
 
+            {showImport && (
+              <TradovateImport onImportComplete={() => { setShowImport(false); setRefreshKey((k) => k + 1); }} />
+            )}
+
             {loading ? (
               <div className="flex items-center justify-center h-64">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
-            ) : trades.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-muted-foreground space-y-2">
+            ) : trades.length === 0 && !showImport ? (
+              <div className="flex flex-col items-center justify-center h-64 text-muted-foreground space-y-3">
                 <BarChart3 className="h-10 w-10 opacity-40" />
-                <p className="text-sm">No trades found. Start logging your trades!</p>
+                <p className="text-sm">No trades found.</p>
+                <button
+                  onClick={() => setShowImport(true)}
+                  className="text-[12px] text-primary hover:text-primary/80 font-medium flex items-center gap-1.5"
+                >
+                  <Upload className="h-3 w-3" /> Import from Tradovate
+                </button>
               </div>
             ) : (
               <>
