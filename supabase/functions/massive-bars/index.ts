@@ -101,7 +101,7 @@ serve(async (req) => {
       allResults = await fetchChunk(MASSIVE_API_KEY, symbol, from, to, multiplier, timespan, limit);
     } else {
       // Batch requests for long ranges (>90 days)
-      const chunks = splitDateRange(from, to, 90).slice(0, 3); // Max 3 chunks to avoid CPU timeout
+      const chunks = splitDateRange(from, to, 90);
       console.log(`Batching ${chunks.length} chunks for ${spanDays}-day range`);
 
       for (let i = 0; i < chunks.length; i++) {

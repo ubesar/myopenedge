@@ -175,29 +175,65 @@ const Index = () => {
     try {
       if (effectiveMode === "globex-ib" || effectiveMode === "london-ib") {
         // Both use Massive API via massive-bars edge function
+        // Split into 90-day client-side batches to avoid CPU timeout
+        const MASSIVE_BATCH_DAYS = 90;
+        const MASSIVE_BATCH_DELAY = 2000;
         const now = new Date();
-        const from = new Date(now);
         const calendarDaysNeeded = Math.ceil(effectiveMaxDays * 1.5) + 7;
-        from.setDate(from.getDate() - calendarDaysNeeded);
-        const fromStr = from.toISOString().split("T")[0];
-        const toStr = now.toISOString().split("T")[0];
+        const globalFrom = new Date(now);
+        globalFrom.setDate(globalFrom.getDate() - calendarDaysNeeded);
 
         const label = effectiveMode === "london-ib" ? "London" : "Globex";
-        toast.info(`Fetching ${effectiveMaxDays} days of ${label} data...`, { duration: 3000 });
+        const totalBatches = Math.ceil(calendarDaysNeeded / MASSIVE_BATCH_DAYS);
+        toast.info(`Fetching ${effectiveMaxDays} days of ${label} data (${totalBatches} batch${totalBatches > 1 ? "es" : ""})...`, { duration: 5000 });
 
-        const { data: json, error } = await supabase.functions.invoke("massive-bars", {
-          body: { symbol: ticker, from: fromStr, to: toStr, multiplier: 5, timespan: "minute" },
+        let allValues: any[] = [];
+        let currentFrom = new Date(globalFrom);
+
+        for (let i = 0; i < totalBatches; i++) {
+          const batchEnd = new Date(currentFrom);
+          batchEnd.setDate(batchEnd.getDate() + MASSIVE_BATCH_DAYS);
+          if (batchEnd > now) batchEnd.setTime(now.getTime());
+
+          const fromStr = currentFrom.toISOString().split("T")[0];
+          const toStr = batchEnd.toISOString().split("T")[0];
+
+          try {
+            const { data: json, error } = await supabase.functions.invoke("massive-bars", {
+              body: { symbol: ticker, from: fromStr, to: toStr, multiplier: 5, timespan: "minute" },
+            });
+            if (!error && json?.values) {
+              allValues = allValues.concat(json.values);
+            }
+          } catch (e) {
+            console.error(`Batch ${i + 1} failed:`, e);
+          }
+
+          currentFrom = new Date(batchEnd);
+          currentFrom.setDate(currentFrom.getDate() + 1);
+
+          if (i < totalBatches - 1) {
+            await sleep(MASSIVE_BATCH_DELAY);
+          }
+        }
+
+        // Deduplicate by datetime
+        const seen = new Set<string>();
+        const deduped = allValues.filter((v) => {
+          if (seen.has(v.datetime)) return false;
+          seen.add(v.datetime);
+          return true;
         });
-        if (error) throw new Error(`Failed to fetch ${label} data from Massive API`);
-        if (!json?.values || json.values.length === 0) { toast.error("No data returned from Massive API."); return; }
+
+        if (deduped.length === 0) { toast.error("No data returned from Massive API."); return; }
 
         if (effectiveMode === "globex-ib") {
-          const a = analyzeGlobexIB(json.values, effectiveIbWindow, effectiveMaxDays, weekdays);
+          const a = analyzeGlobexIB(deduped, effectiveIbWindow, effectiveMaxDays, weekdays);
           if (a.totalDays === 0) { toast.error("Not enough overnight data."); return; }
           setGlobexIBResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
         } else {
-          const a = analyzeLondonIB(json.values, effectiveIbWindow, effectiveMaxDays, weekdays);
+          const a = analyzeLondonIB(deduped, effectiveIbWindow, effectiveMaxDays, weekdays);
           if (a.totalDays === 0) { toast.error("Not enough London session data."); return; }
           setLondonIBResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
