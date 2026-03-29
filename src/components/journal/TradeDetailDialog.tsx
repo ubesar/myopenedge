@@ -1,0 +1,223 @@
+import { useState, useEffect, useRef } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ImagePlus, Trash2, Loader2, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+
+interface Trade {
+  id: string;
+  pnl_net: number;
+  side: string;
+  close_time: string;
+  open_time: string;
+  symbol: string;
+  qty?: number;
+  playbook?: string | null;
+  r_multiple?: number | null;
+  notes?: string | null;
+}
+
+interface Attachment {
+  id: string;
+  file_url: string;
+  file_name: string | null;
+}
+
+interface TradeDetailDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  trade: Trade;
+}
+
+const TradeDetailDialog = ({ open, onOpenChange, trade }: TradeDetailDialogProps) => {
+  const { user } = useAuth();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [notes, setNotes] = useState(trade.notes || "");
+  const [saving, setSaving] = useState(false);
+  const [previewImg, setPreviewImg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setNotes(trade.notes || "");
+    fetchAttachments();
+  }, [open, trade.id]);
+
+  const fetchAttachments = async () => {
+    const { data } = await supabase
+      .from("attachments")
+      .select("id, file_url, file_name")
+      .eq("trade_id", trade.id)
+      .order("created_at", { ascending: false });
+    setAttachments((data as Attachment[]) || []);
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/${trade.id}/${Date.now()}.${ext}`;
+
+    const { error: uploadErr } = await supabase.storage
+      .from("trade-screenshots")
+      .upload(path, file);
+
+    if (uploadErr) {
+      toast.error("Upload failed");
+      setUploading(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from("trade-screenshots")
+      .getPublicUrl(path);
+
+    await supabase.from("attachments").insert({
+      user_id: user.id,
+      trade_id: trade.id,
+      file_url: urlData.publicUrl,
+      file_name: file.name,
+      file_type: file.type,
+    });
+
+    await fetchAttachments();
+    setUploading(false);
+    toast.success("Image uploaded");
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const handleDelete = async (att: Attachment) => {
+    await supabase.from("attachments").delete().eq("id", att.id);
+    setAttachments((prev) => prev.filter((a) => a.id !== att.id));
+    toast.success("Deleted");
+  };
+
+  const saveNotes = async () => {
+    setSaving(true);
+    await supabase.from("trades").update({ notes }).eq("id", trade.id);
+    setSaving(false);
+    toast.success("Notes saved");
+  };
+
+  const fmtPnl = (n: number) => `${n >= 0 ? "+" : ""}$${Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-foreground text-[14px]">
+              Trade Detail — {trade.symbol}
+              <span className={`text-[12px] font-bold ${trade.pnl_net >= 0 ? "text-green-400" : "text-red-400"}`}>
+                {fmtPnl(trade.pnl_net)}
+              </span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Trade info */}
+            <div className="grid grid-cols-3 gap-3 text-[12px]">
+              {[
+                { label: "Side", value: trade.side },
+                { label: "Qty", value: trade.qty || 1 },
+                { label: "Open", value: new Date(trade.open_time).toLocaleString() },
+                { label: "Close", value: new Date(trade.close_time).toLocaleString() },
+                { label: "Playbook", value: trade.playbook || "-" },
+                { label: "R Multiple", value: trade.r_multiple?.toFixed(1) || "-" },
+              ].map((item) => (
+                <div key={item.label} className="rounded-lg border border-border bg-background p-2.5">
+                  <p className="text-[10px] text-muted-foreground">{item.label}</p>
+                  <p className="font-medium text-foreground mt-0.5">{item.value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <label className="text-[12px] font-medium text-foreground">Notes</label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add trade notes..."
+                className="w-full rounded-lg border border-border bg-background p-3 text-[12px] text-foreground placeholder:text-muted-foreground resize-none h-20 focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <button
+                onClick={saveNotes}
+                disabled={saving}
+                className="px-3 py-1.5 rounded-lg text-[11px] font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                {saving ? "Saving..." : "Save Notes"}
+              </button>
+            </div>
+
+            {/* Screenshots */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[12px] font-medium text-foreground">Screenshots</label>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleUpload}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-secondary text-foreground hover:bg-accent transition-colors disabled:opacity-50"
+                >
+                  {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImagePlus className="h-3 w-3" />}
+                  Add Image
+                </button>
+              </div>
+
+              {attachments.length > 0 ? (
+                <div className="grid grid-cols-3 gap-2">
+                  {attachments.map((att) => (
+                    <div key={att.id} className="relative group rounded-lg overflow-hidden border border-border">
+                      <img
+                        src={att.file_url}
+                        alt={att.file_name || "screenshot"}
+                        className="w-full h-24 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => setPreviewImg(att.file_url)}
+                      />
+                      <button
+                        onClick={() => handleDelete(att)}
+                        className="absolute top-1 right-1 p-1 rounded bg-destructive/80 text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">No screenshots yet.</p>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Full-size image preview */}
+      {previewImg && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center cursor-pointer"
+          onClick={() => setPreviewImg(null)}
+        >
+          <button
+            className="absolute top-4 right-4 p-2 rounded-full bg-background/20 text-foreground hover:bg-background/40"
+            onClick={() => setPreviewImg(null)}
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <img src={previewImg} alt="preview" className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg" />
+        </div>
+      )}
+    </>
+  );
+};
+
+export default TradeDetailDialog;
