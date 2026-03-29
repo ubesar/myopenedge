@@ -91,6 +91,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
   const iTimestamp = colIdx("Timestamp");
   const iOrderId = colIdx("orderId");
   const iContract = colIdx("Contract");
+  const iAccount = colIdx("Account");
 
   // Parse only filled orders
   const filledOrders: TradovateOrder[] = [];
@@ -105,6 +106,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
 
     filledOrders.push({
       orderId: cols[iOrderId],
+      account: cols[iAccount]?.trim() || "Unknown",
       side: cols[iBS]?.trim() as "Buy" | "Sell",
       product: cols[iProduct]?.trim(),
       productDescription: cols[iProductDesc]?.trim(),
