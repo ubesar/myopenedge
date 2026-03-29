@@ -19,7 +19,7 @@ interface JournalChartsProps {
 }
 
 const JournalCharts = ({ trades }: JournalChartsProps) => {
-  const { cumulativeData, drawdownData, pnlBarData, radarData } = useMemo(() => {
+  const { cumulativeData, drawdownData, pnlBarData, radarData, score } = useMemo(() => {
     if (!trades.length) return { cumulativeData: [], drawdownData: [], pnlBarData: [], radarData: [] };
 
     // Sort by close_time
@@ -74,13 +74,6 @@ const JournalCharts = ({ trades }: JournalChartsProps) => {
 
     return { cumulativeData, drawdownData, pnlBarData, radarData, score };
   }, [trades]);
-
-  const { cumulativeData, drawdownData, pnlBarData, radarData, score } = useMemo(() => {
-    // ... (computed above)
-    return { cumulativeData: [], drawdownData: [], pnlBarData: [], radarData: [], score: 0 };
-  }, [trades]);
-
-  // We need the actual useMemo above — fix: the destructured line is already correct at line 22
 
   const chartCard = (title: string, children: React.ReactNode) => (
     <div className="rounded-xl border border-border bg-card p-4 space-y-3">
