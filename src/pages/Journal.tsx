@@ -7,7 +7,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import JournalStatsCards from "@/components/journal/JournalStatsCards";
 import JournalCharts from "@/components/journal/JournalCharts";
 import JournalCalendar from "@/components/journal/JournalCalendar";
-import { Loader2, Calendar, BarChart3 } from "lucide-react";
+import TradovateImport from "@/components/journal/TradovateImport";
+import { Loader2, Calendar, BarChart3, Upload, X } from "lucide-react";
 
 interface Trade {
   id: string;
@@ -28,6 +29,8 @@ const Journal = () => {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState<"all" | "30d" | "7d">("all");
+  const [showImport, setShowImport] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?redirect=/journal");
@@ -58,7 +61,7 @@ const Journal = () => {
       setLoading(false);
     };
     fetchTrades();
-  }, [user, dateFilter]);
+  }, [user, dateFilter, refreshKey]);
 
   if (authLoading) {
     return (
@@ -108,17 +111,38 @@ const Journal = () => {
                     {f.label}
                   </button>
                 ))}
+                <button
+                  onClick={() => setShowImport(!showImport)}
+                  className={`px-3 py-1.5 rounded-lg text-[12px] font-medium gap-1.5 flex items-center transition-colors ${
+                    showImport
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {showImport ? <X className="h-3 w-3" /> : <Upload className="h-3 w-3" />}
+                  Import
+                </button>
               </div>
             </div>
+
+            {showImport && (
+              <TradovateImport onImportComplete={() => { setShowImport(false); setRefreshKey((k) => k + 1); }} />
+            )}
 
             {loading ? (
               <div className="flex items-center justify-center h-64">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
-            ) : trades.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-muted-foreground space-y-2">
+            ) : trades.length === 0 && !showImport ? (
+              <div className="flex flex-col items-center justify-center h-64 text-muted-foreground space-y-3">
                 <BarChart3 className="h-10 w-10 opacity-40" />
-                <p className="text-sm">No trades found. Start logging your trades!</p>
+                <p className="text-sm">No trades found.</p>
+                <button
+                  onClick={() => setShowImport(true)}
+                  className="text-[12px] text-primary hover:text-primary/80 font-medium flex items-center gap-1.5"
+                >
+                  <Upload className="h-3 w-3" /> Import from Tradovate
+                </button>
               </div>
             ) : (
               <>
