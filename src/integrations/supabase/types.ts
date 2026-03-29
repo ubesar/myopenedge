@@ -397,6 +397,27 @@ export type Database = {
         }
         Relationships: []
       }
+      mc_alert_state: {
+        Row: {
+          id: number
+          last_alert_time: string
+          last_signal_type: string
+          updated_at: string
+        }
+        Insert: {
+          id: number
+          last_alert_time?: string
+          last_signal_type?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          last_alert_time?: string
+          last_signal_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       midtrans_webhook_logs: {
         Row: {
           created_at: string | null
