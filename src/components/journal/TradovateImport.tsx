@@ -148,7 +148,7 @@ const TradovateImport = ({ onImportComplete }: TradovateImportProps) => {
         .update({ status: "completed", completed_at: new Date().toISOString() })
         .eq("id", batch.id);
 
-      toast.success(`${parsed.length} trades imported across ${detectedAccounts.length} account(s)!`);
+      toast.success(`${newTrades.length} trade baru di-import${skipped > 0 ? ` (${skipped} duplikat dilewati)` : ""} across ${detectedAccounts.length} account(s)!`);
       setParsed(null);
       setFileName("");
       onImportComplete();
