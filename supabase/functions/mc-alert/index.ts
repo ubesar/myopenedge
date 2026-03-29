@@ -154,7 +154,7 @@ serve(async () => {
     return new Response(JSON.stringify({
       status: "alert_sent",
       signal: signalType,
-      times: [prev.time, curr.time],
+      time: lastCandle.time,
       key: alertKey,
     }), {
       headers: { "Content-Type": "application/json" },
