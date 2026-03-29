@@ -93,7 +93,7 @@ const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogPr
                 <table className="w-full text-[12px]">
                   <thead>
                     <tr className="border-b border-border bg-background">
-                      {["Time", "Symbol", "Side", "Qty", "Net P&L", "Playbook", "R", ""].map((h) => (
+                      {["Time", "Symbol", "Side", "Qty", "Net P&L", ""].map((h) => (
                         <th key={h} className="text-left px-4 py-3 font-medium text-muted-foreground">{h}</th>
                       ))}
                     </tr>
