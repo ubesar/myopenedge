@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Eye, X, FileText } from "lucide-react";
+import { Eye, Pencil, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import TradeDetailDialog from "./TradeDetailDialog";
 
 interface Trade {
@@ -17,6 +18,13 @@ interface Trade {
   notes?: string | null;
 }
 
+interface Attachment {
+  id: string;
+  file_url: string;
+  file_name: string | null;
+  trade_id: string | null;
+}
+
 interface DayDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -27,12 +35,35 @@ interface DayDetailDialogProps {
 
 const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogProps) => {
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
+  const [previewIdx, setPreviewIdx] = useState(0);
+  const [attachmentMap, setAttachmentMap] = useState<Record<string, Attachment[]>>({});
 
   const dayTrades = useMemo(() => {
     return trades
       .filter((t) => t.close_time.slice(0, 10) === date)
       .sort((a, b) => new Date(b.close_time).getTime() - new Date(a.close_time).getTime());
   }, [trades, date]);
+
+  // Fetch attachments for all day trades
+  useEffect(() => {
+    if (!open || dayTrades.length === 0) return;
+    const ids = dayTrades.map((t) => t.id);
+    supabase
+      .from("attachments")
+      .select("id, file_url, file_name, trade_id")
+      .in("trade_id", ids)
+      .then(({ data }) => {
+        const map: Record<string, Attachment[]> = {};
+        (data || []).forEach((a: Attachment) => {
+          if (a.trade_id) {
+            if (!map[a.trade_id]) map[a.trade_id] = [];
+            map[a.trade_id].push(a);
+          }
+        });
+        setAttachmentMap(map);
+      });
+  }, [open, dayTrades]);
 
   const stats = useMemo(() => {
     const winners = dayTrades.filter((t) => t.pnl_net > 0).length;
@@ -52,6 +83,13 @@ const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogPr
   const fmtTime = (t: string) => {
     const dt = new Date(t);
     return dt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+  };
+
+  const openPreview = (tradeId: string) => {
+    const atts = attachmentMap[tradeId];
+    if (!atts || atts.length === 0) return;
+    setPreviewImages(atts.map((a) => a.file_url));
+    setPreviewIdx(0);
   };
 
   return (
@@ -99,34 +137,47 @@ const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogPr
                     </tr>
                   </thead>
                   <tbody>
-                    {dayTrades.map((t) => (
-                      <tr key={t.id} className="border-b border-border/50 hover:bg-accent/30 transition-colors">
-                        <td className="px-4 py-3 text-foreground">{fmtTime(t.close_time)}</td>
-                        <td className="px-4 py-3 font-semibold text-foreground">{t.symbol}</td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                            t.side === "BUY" || t.side === "LONG"
-                              ? "bg-green-500/20 text-green-400"
-                              : "bg-red-500/20 text-red-400"
-                          }`}>
-                            {t.side === "BUY" ? "LONG" : t.side === "SELL" ? "SHORT" : t.side}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-center text-foreground">{t.qty || 1}</td>
-                        <td className={`px-4 py-3 font-bold ${t.pnl_net >= 0 ? "text-green-400" : "text-red-400"}`}>
-                          {fmtPnl(t.pnl_net)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <button
-                            onClick={() => setSelectedTrade(t)}
-                            className="text-primary hover:text-primary/80 transition-colors"
-                            title="View details & screenshots"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {dayTrades.map((t) => {
+                      const hasImages = (attachmentMap[t.id]?.length || 0) > 0;
+                      return (
+                        <tr key={t.id} className="border-b border-border/50 hover:bg-accent/30 transition-colors">
+                          <td className="px-4 py-3 text-foreground">{fmtTime(t.close_time)}</td>
+                          <td className="px-4 py-3 font-semibold text-foreground">{t.symbol}</td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                              t.side === "BUY" || t.side === "LONG"
+                                ? "bg-green-500/20 text-green-400"
+                                : "bg-red-500/20 text-red-400"
+                            }`}>
+                              {t.side === "BUY" ? "LONG" : t.side === "SELL" ? "SHORT" : t.side}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-center text-foreground">{t.qty || 1}</td>
+                          <td className={`px-4 py-3 font-bold ${t.pnl_net >= 0 ? "text-green-400" : "text-red-400"}`}>
+                            {fmtPnl(t.pnl_net)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => openPreview(t.id)}
+                                disabled={!hasImages}
+                                className={`transition-colors ${hasImages ? "text-primary hover:text-primary/80" : "text-muted-foreground/30 cursor-not-allowed"}`}
+                                title={hasImages ? "View screenshots" : "No screenshots"}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => setSelectedTrade(t)}
+                                className="text-muted-foreground hover:text-foreground transition-colors"
+                                title="Edit details & upload"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -139,10 +190,62 @@ const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogPr
         </DialogContent>
       </Dialog>
 
+      {/* Full-size image preview */}
+      {previewImages.length > 0 && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center"
+          onClick={() => setPreviewImages([])}
+        >
+          <button
+            className="absolute top-4 right-4 p-2 rounded-full bg-background/20 text-foreground hover:bg-background/40 z-10"
+            onClick={(e) => { e.stopPropagation(); setPreviewImages([]); }}
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <img
+            src={previewImages[previewIdx]}
+            alt="preview"
+            className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+          {previewImages.length > 1 && (
+            <div className="flex items-center gap-3 mt-4">
+              {previewImages.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={(e) => { e.stopPropagation(); setPreviewIdx(i); }}
+                  className={`w-2.5 h-2.5 rounded-full transition-colors ${i === previewIdx ? "bg-primary" : "bg-muted-foreground/40"}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {selectedTrade && (
         <TradeDetailDialog
           open={!!selectedTrade}
-          onOpenChange={(o) => !o && setSelectedTrade(null)}
+          onOpenChange={(o) => {
+            if (!o) {
+              setSelectedTrade(null);
+              // Refresh attachments after closing detail
+              const ids = dayTrades.map((t) => t.id);
+              supabase
+                .from("attachments")
+                .select("id, file_url, file_name, trade_id")
+                .in("trade_id", ids)
+                .then(({ data }) => {
+                  const map: Record<string, Attachment[]> = {};
+                  (data || []).forEach((a: Attachment) => {
+                    if (a.trade_id) {
+                      if (!map[a.trade_id]) map[a.trade_id] = [];
+                      map[a.trade_id].push(a);
+                    }
+                  });
+                  setAttachmentMap(map);
+                });
+            }
+          }}
           trade={selectedTrade}
         />
       )}
