@@ -50,6 +50,27 @@ const ImportHistory = ({ refreshKey, onDelete }: ImportHistoryProps) => {
       });
   }, [user, refreshKey]);
 
+  const cleanupOrphanAccounts = async () => {
+    if (!user) return;
+    // Get all accounts
+    const { data: accts } = await supabase
+      .from("accounts")
+      .select("id")
+      .eq("user_id", user.id);
+    if (!accts || accts.length === 0) return;
+
+    // For each account, check if any trades remain
+    for (const acct of accts) {
+      const { count } = await supabase
+        .from("trades")
+        .select("id", { count: "exact", head: true })
+        .eq("account_id", acct.id);
+      if (count === 0) {
+        await supabase.from("accounts").delete().eq("id", acct.id).eq("user_id", user.id);
+      }
+    }
+  };
+
   const handleDelete = async (batchId: string, fileName: string | null) => {
     if (!user) return;
     setDeleting(batchId);
@@ -69,6 +90,9 @@ const ImportHistory = ({ refreshKey, onDelete }: ImportHistoryProps) => {
         .eq("id", batchId)
         .eq("user_id", user.id);
       if (batchErr) throw batchErr;
+
+      // 3. Cleanup orphan accounts (no trades left)
+      await cleanupOrphanAccounts();
 
       toast.success(`Import "${fileName || "batch"}" dan semua trade-nya berhasil dihapus.`);
       setBatches((prev) => prev.filter((b) => b.id !== batchId));
