@@ -15,6 +15,7 @@ import TermsConditions from "@/pages/TermsConditions";
 import PaddleLiveGuide from "@/pages/PaddleLiveGuide";
 import ResetPassword from "@/pages/ResetPassword";
 import WhatsInPlay from "@/pages/WhatsInPlay";
+import Journal from "@/pages/Journal";
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -30,6 +31,7 @@ const AnimatedRoutes = () => {
         <Route path="/chart" element={<PageTransition><Chart /></PageTransition>} />
         <Route path="/watchlist" element={<PageTransition><Watchlist /></PageTransition>} />
         <Route path="/whats-in-play" element={<PageTransition><WhatsInPlay /></PageTransition>} />
+        <Route path="/journal" element={<PageTransition><Journal /></PageTransition>} />
         <Route path="/upgrade" element={<PageTransition><Upgrade /></PageTransition>} />
         <Route path="/docs" element={<PageTransition><Docs /></PageTransition>} />
         <Route path="/docs/paddle-guide" element={<PageTransition><PaddleLiveGuide /></PageTransition>} />
