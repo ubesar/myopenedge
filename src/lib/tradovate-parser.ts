@@ -5,6 +5,7 @@
 
 interface TradovateOrder {
   orderId: string;
+  account: string;
   side: "Buy" | "Sell";
   product: string;
   productDescription: string;
