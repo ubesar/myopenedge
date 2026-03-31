@@ -6,260 +6,177 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
 import { toast } from "sonner";
-import { Crown, TrendingUp } from "lucide-react";
-
-import WIPControls from "@/components/whats-in-play/WIPControls";
-import WIPTickerRow from "@/components/whats-in-play/WIPTickerRow";
-import WIPSummaryBar from "@/components/whats-in-play/WIPSummaryBar";
-import type { ReportCardData } from "@/components/whats-in-play/WIPReportCard";
-
-import { analyzeIB } from "@/lib/ib-analysis";
-import { analyzeOCC } from "@/lib/occ-analysis";
-import { analyzeGapFill } from "@/lib/gapfill-analysis";
-import { analyzeInsideBar } from "@/lib/insidebar-analysis";
-import { analyzeOutsideDay } from "@/lib/outsideday-analysis";
+import { Crown, Play, Loader2, Combine, Plus } from "lucide-react";
 import { z } from "zod";
 
-const BarSchema = z.object({ datetime: z.string(), open: z.string(), high: z.string(), low: z.string(), close: z.string() }).passthrough();
+import ConditionPicker from "@/components/whats-in-play/ConditionPicker";
+import ComboResults from "@/components/whats-in-play/ComboResults";
+import type { ConditionConfig, ComboResult } from "@/lib/combo-analysis";
+import { analyzeCombo } from "@/lib/combo-analysis";
+
+const BarSchema = z.object({
+  datetime: z.string(),
+  open: z.string(),
+  high: z.string(),
+  low: z.string(),
+  close: z.string(),
+}).passthrough();
 const ResponseSchema = z.object({ values: z.array(BarSchema).min(1) }).passthrough();
 
-const MAX_DAYS = 60;
-const BATCH_SIZE = 5000;
-const DEFAULT_TICKERS_FUTURES = ["MNQ", "MES", "MGC", "MYM"];
-const DEFAULT_TICKERS_STOCKS = ["QQQ", "SPY", "TSLA", "NVDA"];
-
-interface TickerResult {
-  symbol: string;
-  loading: boolean;
-  reports: ReportCardData[];
-}
-
-/* ─── Build report cards from raw analysis ─── */
-function buildReports(values: any[]): ReportCardData[] {
-  const weekdays = [1, 2, 3, 4, 5];
-  const reports: ReportCardData[] = [];
-
-  try {
-    const gf = analyzeGapFill(values, MAX_DAYS, weekdays);
-    if (gf.totalDays > 0) {
-      const upFill = gf.stats.gapUpFillRate;
-      const downFill = gf.stats.gapDownFillRate;
-      const avg = (upFill + downFill) / 2;
-      reports.push({
-        key: "gapfill", label: "gap fill",
-        bias: avg > 65 ? "bullish" : avg < 45 ? "bearish" : "neutral",
-        mainStat: `${avg.toFixed(0)}%`, mainLabel: "average fill rate",
-        subStats: [
-          { label: "gap up fill", value: `${upFill.toFixed(0)}%` },
-          { label: "gap down fill", value: `${downFill.toFixed(0)}%` },
-          { label: "sample days", value: `${gf.totalDays}` },
-        ],
-        description: avg > 65 ? "high gap fill probability — fades tend to work" : avg < 45 ? "gaps rarely fill — trend continuation likely" : "mixed gap fill behavior",
-      });
-    }
-  } catch {}
-
-  try {
-    const ib = analyzeIB(values, 60, MAX_DAYS, weekdays);
-    if (ib.totalDays > 0) {
-      const hf = ib.highFirst;
-      const lf = ib.lowFirst;
-      const hfPct = hf.total > 0 ? (hf.breakHigh / hf.total) * 100 : 0;
-      const lfPct = lf.total > 0 ? (lf.breakLow / lf.total) * 100 : 0;
-      const bias = hfPct > 55 ? "bullish" : lfPct > 55 ? "bearish" : "neutral";
-      reports.push({
-        key: "ib", label: "initial balance",
-        bias, mainStat: `${hfPct.toFixed(0)}%`, mainLabel: "HF → break high rate",
-        subStats: [
-          { label: "HF → break high", value: `${hfPct.toFixed(0)}%` },
-          { label: "LF → break low", value: `${lfPct.toFixed(0)}%` },
-          { label: "sample days", value: `${ib.totalDays}` },
-        ],
-        description: bias === "bullish" ? "strong high-first breakout tendency" : bias === "bearish" ? "low-first breakdown dominates" : "balanced IB behavior",
-      });
-    }
-  } catch {}
-
-  try {
-    const occ = analyzeOCC(values, MAX_DAYS, "30m", weekdays);
-    if (occ.totalDays > 0) {
-      const gPct = occ.greenCandle.greenDayPct;
-      const rPct = occ.redCandle.redDayPct;
-      const bias = gPct > 60 ? "bullish" : rPct > 60 ? "bearish" : "neutral";
-      reports.push({
-        key: "occ", label: "opening candle",
-        bias, mainStat: `${gPct.toFixed(0)}%`, mainLabel: "green candle continuation",
-        subStats: [
-          { label: "green cont.", value: `${gPct.toFixed(0)}%` },
-          { label: "red cont.", value: `${rPct.toFixed(0)}%` },
-          { label: "sample days", value: `${occ.totalDays}` },
-        ],
-        description: bias === "bullish" ? "opening candle color tends to predict direction" : bias === "bearish" ? "red opens signal continued selling" : "opening candle not strongly predictive",
-      });
-    }
-  } catch {}
-
-  try {
-    const isb = analyzeInsideBar(values, MAX_DAYS, weekdays);
-    if (isb.totalDays > 0) {
-      const bPct = isb.breakoutPct;
-      reports.push({
-        key: "insidebar", label: "inside bar",
-        bias: isb.brokeHighPct > 55 ? "bullish" : isb.brokeLowPct > 55 ? "bearish" : "neutral",
-        mainStat: `${bPct.toFixed(0)}%`, mainLabel: "breakout rate",
-        subStats: [
-          { label: "breakout", value: `${bPct.toFixed(0)}%` },
-          { label: "broke high", value: `${isb.brokeHighPct.toFixed(0)}%` },
-          { label: "broke low", value: `${isb.brokeLowPct.toFixed(0)}%` },
-        ],
-        description: isb.brokeHighPct > 55 ? "breakouts tend to go up" : isb.brokeLowPct > 55 ? "breakdowns more common" : "balanced breakout direction",
-      });
-    }
-  } catch {}
-
-  try {
-    const od = analyzeOutsideDay(values, MAX_DAYS, weekdays);
-    if (od.totalDays > 0 && od.outsideDays > 0) {
-      reports.push({
-        key: "outsideday", label: "outside day",
-        bias: od.bullish.total > od.bearish.total ? "bullish" : od.bearish.total > od.bullish.total ? "bearish" : "neutral",
-        mainStat: `${od.outsidePct.toFixed(0)}%`, mainLabel: "occurrence rate",
-        subStats: [
-          { label: "occurrence", value: `${od.outsidePct.toFixed(0)}%` },
-          { label: "bullish", value: `${od.bullish.total}` },
-          { label: "bearish", value: `${od.bearish.total}` },
-        ],
-        description: od.bullish.total > od.bearish.total ? "outside days lean bullish" : "outside days lean bearish",
-      });
-    }
-  } catch {}
-
-  return reports;
-}
+const DATE_RANGES = [
+  { label: "1 month", days: 20 },
+  { label: "2 months", days: 40 },
+  { label: "3 months", days: 60 },
+  { label: "6 months", days: 120 },
+];
 
 const WhatsInPlay = () => {
   const { user, loading: authLoading } = useAuth();
   const { isActive } = useSubscription();
   const isMobile = useIsMobile();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [marketType, setMarketType] = useState<"futures" | "stocks">("futures");
-  const [tickers, setTickers] = useState<string[]>(DEFAULT_TICKERS_FUTURES);
-  const [customTicker, setCustomTicker] = useState("");
-  const [results, setResults] = useState<TickerResult[]>([]);
+
+  const [symbol, setSymbol] = useState("QQQ");
+  const [maxDays, setMaxDays] = useState(60);
+  const [condA, setCondA] = useState<ConditionConfig>({ type: "ib_breakout", window: 60, direction: "any" });
+  const [condB, setCondB] = useState<ConditionConfig>({ type: "bb_breakout", timeframe: 15, band: "upper", period: 20, timing: "during_ib" });
   const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<ComboResult | null>(null);
 
   const isFree = !isActive;
 
-  const switchMarket = (type: "futures" | "stocks") => {
-    setMarketType(type);
-    setTickers(type === "futures" ? DEFAULT_TICKERS_FUTURES : DEFAULT_TICKERS_STOCKS);
-    setResults([]);
-  };
-
-  const addTicker = () => {
-    const t = customTicker.trim().toUpperCase();
-    if (t && !tickers.includes(t)) setTickers([...tickers, t]);
-    setCustomTicker("");
-  };
-
-  const removeTicker = (t: string) => setTickers(tickers.filter((x) => x !== t));
-
-  const runAll = useCallback(async () => {
+  const runAnalysis = useCallback(async () => {
     if (isFree) {
-      toast.error("What's in Play is a Pro feature. Upgrade to access.");
+      toast.error("Combo Builder is a Pro feature. Upgrade to access.");
       return;
     }
     setRunning(true);
-    const initial: TickerResult[] = tickers.map((s) => ({ symbol: s, loading: true, reports: [] }));
-    setResults(initial);
+    setResult(null);
 
-    for (let i = 0; i < tickers.length; i++) {
-      const ticker = tickers[i];
-      try {
-        const { data: json, error } = await supabase.functions.invoke("twelvedata-proxy", {
-          body: { symbol: ticker, outputsize: String(BATCH_SIZE), key_index: i % 3 },
-        });
-        if (error) throw new Error("API error");
-        const parsed = ResponseSchema.safeParse(json);
-        if (!parsed.success) {
-          setResults((prev) => prev.map((r) => (r.symbol === ticker ? { ...r, loading: false } : r)));
-          continue;
-        }
-        const reports = buildReports(parsed.data.values as any);
-        setResults((prev) => prev.map((r) => (r.symbol === ticker ? { ...r, loading: false, reports } : r)));
-      } catch {
-        setResults((prev) => prev.map((r) => (r.symbol === ticker ? { ...r, loading: false } : r)));
+    try {
+      const batchSize = 5000;
+      const { data: json, error } = await supabase.functions.invoke("twelvedata-proxy", {
+        body: { symbol, outputsize: String(batchSize), key_index: 0 },
+      });
+      if (error) throw new Error("API error");
+
+      const parsed = ResponseSchema.safeParse(json);
+      if (!parsed.success) {
+        toast.error("Failed to parse market data");
+        setRunning(false);
+        return;
       }
+
+      const comboResult = analyzeCombo(parsed.data.values as any, condA, condB, maxDays);
+      setResult(comboResult);
+
+      if (comboResult.bothFired === 0) {
+        toast.info("No days found where both conditions fired simultaneously.");
+      }
+    } catch (err) {
+      toast.error("Failed to fetch data. Try again.");
     }
     setRunning(false);
-  }, [tickers, isFree]);
+  }, [symbol, condA, condB, maxDays, isFree]);
 
   if (!authLoading && !user) return <Navigate to="/auth" replace />;
+
+  const selectClass = "bg-card border border-border rounded-lg px-2.5 py-1.5 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 
   return (
     <div className="h-screen w-full flex flex-col lg:flex-row overflow-hidden bg-background">
       {isMobile && (
-        <MobileHeader onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)} title="what's in play" />
+        <MobileHeader onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)} title="combo builder" />
       )}
       <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
 
       <main className="flex-1 min-w-0 overflow-y-auto p-4 lg:p-6 space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-[18px] lg:text-[22px] font-bold text-foreground lowercase">what's in play</h1>
+          <div className="flex items-center gap-2">
+            <Combine className="h-5 w-5 text-primary" />
+            <h1 className="text-[18px] lg:text-[22px] font-bold text-foreground lowercase">combo builder</h1>
+          </div>
           <p className="text-[12px] text-muted-foreground mt-1 max-w-xl">
-            consolidated view across all reports for your selected tickers. stack probabilities to identify the highest-edge setups instantly.
+            combine two conditions and backtest the probability of continuation. build your edge by stacking indicators.
           </p>
         </div>
-
-        {/* Controls */}
-        <WIPControls
-          marketType={marketType}
-          onSwitchMarket={switchMarket}
-          tickers={tickers}
-          onRemoveTicker={removeTicker}
-          customTicker={customTicker}
-          onCustomTickerChange={setCustomTicker}
-          onAddTicker={addTicker}
-          running={running}
-          onRun={runAll}
-        />
 
         {/* Pro gate */}
         {isFree && (
           <div className="rounded-xl border border-border bg-card/50 p-8 text-center max-w-md mx-auto">
-            <Crown className="h-8 w-8 text-primary mx-auto mb-3" />
+            <Crown className="h-8 w-8 text-amber-400 mx-auto mb-3" />
             <h3 className="text-[14px] font-semibold text-foreground mb-1">pro feature</h3>
             <p className="text-[12px] text-muted-foreground">
-              what's in play is available for pro members. upgrade to access consolidated multi-ticker analysis.
+              combo builder is available for pro members. upgrade to access custom backtesting combinations.
             </p>
           </div>
         )}
 
-        {/* Summary bar */}
-        {!isFree && !running && results.length > 0 && (
-          <WIPSummaryBar results={results} />
-        )}
-
-        {/* Results */}
-        {!isFree && results.length > 0 && (
-          <div className="space-y-8">
-            {results.map((tr) => (
-              <WIPTickerRow key={tr.symbol} symbol={tr.symbol} loading={tr.loading} reports={tr.reports} />
-            ))}
-          </div>
-        )}
-
-        {/* Empty state */}
-        {!isFree && results.length === 0 && !running && (
-          <div className="flex items-center justify-center h-[50vh]">
-            <div className="border border-dashed border-border rounded-xl p-8 text-center max-w-sm">
-              <TrendingUp className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-[13px] text-muted-foreground">
-                select your tickers and hit "run all reports" to see what's in play across all reports
-              </p>
+        {!isFree && (
+          <>
+            {/* Controls row */}
+            <div className="flex flex-wrap items-end gap-3">
+              <div>
+                <label className="text-[10px] text-muted-foreground block mb-1">symbol</label>
+                <input
+                  value={symbol}
+                  onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                  placeholder="QQQ"
+                  className={selectClass + " w-[100px]"}
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-muted-foreground block mb-1">date range</label>
+                <select
+                  value={maxDays}
+                  onChange={(e) => setMaxDays(Number(e.target.value))}
+                  className={selectClass}
+                >
+                  {DATE_RANGES.map((r) => (
+                    <option key={r.days} value={r.days}>{r.label} ({r.days}d)</option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={runAnalysis}
+                disabled={running || !symbol.trim()}
+                className="flex items-center gap-2 bg-primary text-primary-foreground rounded-lg px-5 py-1.5 text-[12px] font-semibold disabled:opacity-50 transition-colors hover:bg-primary/90"
+              >
+                {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                {running ? "analyzing..." : "run backtest"}
+              </button>
             </div>
-          </div>
+
+            {/* Condition pickers */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <ConditionPicker label="condition A" value={condA} onChange={setCondA} otherCondition={condB} />
+              <div className="flex items-center justify-center md:hidden">
+                <div className="flex items-center gap-2 text-primary">
+                  <Plus className="h-4 w-4" />
+                  <span className="text-[11px] font-bold uppercase tracking-widest">and</span>
+                </div>
+              </div>
+              <ConditionPicker label="condition B" value={condB} onChange={setCondB} otherCondition={condA} />
+            </div>
+
+            {/* Results */}
+            {result && (
+              <ComboResults result={result} condA={condA} condB={condB} symbol={symbol} />
+            )}
+
+            {/* Empty state */}
+            {!result && !running && (
+              <div className="flex items-center justify-center h-[30vh]">
+                <div className="border border-dashed border-border rounded-xl p-8 text-center max-w-sm">
+                  <Combine className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-[13px] text-muted-foreground">
+                    configure your two conditions above and hit "run backtest" to see the probability of continuation
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>
