@@ -263,32 +263,28 @@ export function analyzeCombo(
   if (condA.type === "bb_breakout") { bbTimeframe = condA.timeframe; bbPeriod = condA.period; }
   if (condB.type === "bb_breakout") { bbTimeframe = condB.timeframe; bbPeriod = condB.period; }
 
-  // Aggregate all RTH bars for BB computation
-  const allRTHBars = dates.flatMap((d) => {
-    const bars = byDate.get(d) || [];
-    return bars.map((b) => ({ ...b, _date: d }));
-  });
-
-  const aggBars = aggregateBars(
-    allRTHBars.map((b) => ({ time: b.time, open: b.open, high: b.high, low: b.low, close: b.close })),
-    bbTimeframe
-  );
-  const bbSeries = computeBBSeries(aggBars, bbPeriod, 2);
-
-  // Map BB bars back to dates (approximate by time pattern reset)
-  const bbByDate = new Map<string, BBBar[]>();
-  let bbIdx = 0;
+  // Aggregate PER DAY first (respect day boundaries), then compute BB across all days
+  const perDayAgg = new Map<string, CandleBar[]>();
   for (const date of dates) {
     const dayBars5m = byDate.get(date) || [];
-    const dayAgg = aggregateBars(dayBars5m, bbTimeframe);
-    const dayBB: BBBar[] = [];
-    for (let j = 0; j < dayAgg.length; j++) {
-      if (bbIdx < bbSeries.length) {
-        dayBB.push(bbSeries[bbIdx]);
-        bbIdx++;
-      }
-    }
-    bbByDate.set(date, dayBB);
+    perDayAgg.set(date, aggregateBars(dayBars5m, bbTimeframe));
+  }
+
+  // Concatenate all per-day aggregated bars in order for BB rolling window
+  const allAggBars: CandleBar[] = [];
+  const dayStartIndices: Array<{ date: string; start: number; count: number }> = [];
+  for (const date of dates) {
+    const dayAgg = perDayAgg.get(date) || [];
+    dayStartIndices.push({ date, start: allAggBars.length, count: dayAgg.length });
+    allAggBars.push(...dayAgg);
+  }
+
+  const bbSeries = computeBBSeries(allAggBars, bbPeriod, 2);
+
+  // Map BB bars back to dates using exact indices
+  const bbByDate = new Map<string, BBBar[]>();
+  for (const { date, start, count } of dayStartIndices) {
+    bbByDate.set(date, bbSeries.slice(start, start + count));
   }
 
   // Analyze each day
