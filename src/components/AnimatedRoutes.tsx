@@ -16,6 +16,7 @@ import PaddleLiveGuide from "@/pages/PaddleLiveGuide";
 import ResetPassword from "@/pages/ResetPassword";
 import WhatsInPlay from "@/pages/WhatsInPlay";
 import Journal from "@/pages/Journal";
+import AdminPanel from "@/pages/AdminPanel";
 
 const AnimatedRoutes = () => {
   const location = useLocation();
