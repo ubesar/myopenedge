@@ -70,12 +70,6 @@ Deno.serve(async (req) => {
         .from("profiles")
         .select("user_id, email, display_name, subscription_status, subscription_end_date, created_at");
 
-      // Get trade counts per user
-      const { data: tradeCounts } = await adminClient
-        .rpc("", {}) // We'll do it differently
-        .from("trades")
-        .select("user_id");
-
       const profileMap = new Map(
         (profiles || []).map((p) => [p.user_id, p])
       );
