@@ -16,6 +16,7 @@ import PaddleLiveGuide from "@/pages/PaddleLiveGuide";
 import ResetPassword from "@/pages/ResetPassword";
 import WhatsInPlay from "@/pages/WhatsInPlay";
 import Journal from "@/pages/Journal";
+import AdminPanel from "@/pages/AdminPanel";
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -37,6 +38,7 @@ const AnimatedRoutes = () => {
         <Route path="/docs/paddle-guide" element={<PageTransition><PaddleLiveGuide /></PageTransition>} />
         <Route path="/terms_conditions" element={<PageTransition><TermsConditions /></PageTransition>} />
         <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
+        <Route path="/admin-x9k7" element={<PageTransition><AdminPanel /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>
