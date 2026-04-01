@@ -56,6 +56,20 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Rate limiting: 30 requests/hour for admin
+    const { data: allowed, error: rlError } = await adminClient.rpc("check_rate_limit", {
+      _user_id: user.id,
+      _endpoint: "admin-users",
+      _max_requests: 30,
+    });
+
+    if (rlError || allowed === false) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later.", retryAfterMinutes: 60 }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { action, ...params } = await req.json();
 
     // LIST USERS
