@@ -81,6 +81,7 @@ const ParameterPanel = ({
     setMaxDays(String(tpl.max_days));
     setBodyRatio((tpl.body_ratio || "0.50") as MomentumBodyRatio);
     setOccBodyRatio((tpl.occ_body_ratio || "0.50") as OCCBodyRatio);
+    setWeekdays(tpl.weekdays || [1, 2, 3, 4, 5]);
     onLoadTemplate?.({
       mode: tpl.mode as AnalysisMode,
       symbol: tpl.symbol,
