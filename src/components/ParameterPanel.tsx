@@ -89,6 +89,7 @@ const ParameterPanel = ({
       bodyRatio: (tpl.body_ratio || "0.50") as MomentumBodyRatio,
       occBodyRatio: (tpl.occ_body_ratio || "0.50") as OCCBodyRatio,
       occTimeframe: (tpl.occ_timeframe || "M15") as OCCTimeframe,
+      weekdays: tpl.weekdays || [1, 2, 3, 4, 5],
     });
   };
 
