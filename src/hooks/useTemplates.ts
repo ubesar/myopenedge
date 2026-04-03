@@ -27,6 +27,7 @@ export interface TemplateParams {
   bodyRatio: MomentumBodyRatio;
   occBodyRatio: OCCBodyRatio;
   occTimeframe: OCCTimeframe;
+  weekdays: number[];
 }
 
 export const useTemplates = () => {
