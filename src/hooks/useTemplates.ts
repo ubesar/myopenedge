@@ -63,6 +63,7 @@ export const useTemplates = () => {
         body_ratio: params.bodyRatio,
         occ_body_ratio: params.occBodyRatio,
         occ_timeframe: params.occTimeframe,
+        weekdays: params.weekdays,
       },
       { onConflict: "user_id,name" }
     );
