@@ -317,7 +317,7 @@ const ParameterPanel = ({
               onKeyDown={(e) => e.key === "Enter" && handleSave()}
             />
             <p className="text-[11px] text-muted-foreground">
-              Mode: {mode} · {symbol || "QQQ"} · {maxDays === "0" ? "All" : maxDays} days · IB {ibWindow}min
+              Mode: {mode} · {symbol || "QQQ"} · {maxDays === "0" ? "All" : maxDays} days · IB {ibWindow}min · Days: {weekdays.length === 5 ? "All" : weekdays.map(d => ["","Mon","Tue","Wed","Thu","Fri"][d]).join(",")}
             </p>
           </div>
           <DialogFooter>
