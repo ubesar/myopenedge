@@ -63,6 +63,7 @@ const ParameterPanel = ({
   const [selectedTemplateId, setSelectedTemplateId] = useState("custom");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [templateName, setTemplateName] = useState("");
+  const isTemplateLocked = selectedTemplateId !== "custom";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -248,11 +249,12 @@ const ParameterPanel = ({
               {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for more windows</p>}
             </>
           )}
-          <p className="text-[11px] text-muted-foreground mt-2">weekdays to use</p>
+          <p className="text-[11px] text-muted-foreground mt-2">weekdays to use {isTemplateLocked && <span className="text-[10px] text-primary/70">🔒 locked by template</span>}</p>
           <div className="flex flex-wrap gap-2">
-            <label className="flex items-center gap-1.5 cursor-pointer">
+            <label className={`flex items-center gap-1.5 ${isTemplateLocked ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}>
               <Checkbox
                 checked={weekdays.length === 5}
+                disabled={isTemplateLocked}
                 onCheckedChange={(checked) => {
                   setSelectedTemplateId("custom");
                   setWeekdays(checked ? [1, 2, 3, 4, 5] : []);
@@ -261,13 +263,13 @@ const ParameterPanel = ({
               <span className="text-[12px] text-foreground font-medium">All</span>
             </label>
             {WEEKDAYS.map((wd) => (
-              <label key={wd.value} className="flex items-center gap-1.5 cursor-pointer">
+              <label key={wd.value} className={`flex items-center gap-1.5 ${isTemplateLocked ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}>
                 <Checkbox
                   checked={weekdays.includes(wd.value)}
+                  disabled={isTemplateLocked}
                   onCheckedChange={(checked) => {
                     setSelectedTemplateId("custom");
                     if (checked) {
-                      // If clicking a single day, set ONLY that day
                       setWeekdays([wd.value]);
                     } else {
                       setWeekdays((prev) => prev.filter((d) => d !== wd.value));
