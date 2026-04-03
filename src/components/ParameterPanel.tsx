@@ -270,7 +270,7 @@ const ParameterPanel = ({
                   onCheckedChange={(checked) => {
                     setSelectedTemplateId("custom");
                     if (checked) {
-                      setWeekdays([wd.value]);
+                      setWeekdays((prev) => [...prev.filter((d) => d !== wd.value), wd.value].sort());
                     } else {
                       setWeekdays((prev) => prev.filter((d) => d !== wd.value));
                     }
