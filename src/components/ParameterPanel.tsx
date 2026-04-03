@@ -103,6 +103,7 @@ const ParameterPanel = ({
       bodyRatio,
       occBodyRatio,
       occTimeframe,
+      weekdays,
     });
     setTemplateName("");
     setShowSaveDialog(false);
