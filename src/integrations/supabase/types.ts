@@ -141,6 +141,7 @@ export type Database = {
           occ_timeframe: string | null
           symbol: string
           user_id: string
+          weekdays: number[]
         }
         Insert: {
           body_ratio?: string | null
@@ -154,6 +155,7 @@ export type Database = {
           occ_timeframe?: string | null
           symbol?: string
           user_id: string
+          weekdays?: number[]
         }
         Update: {
           body_ratio?: string | null
@@ -167,6 +169,7 @@ export type Database = {
           occ_timeframe?: string | null
           symbol?: string
           user_id?: string
+          weekdays?: number[]
         }
         Relationships: []
       }
