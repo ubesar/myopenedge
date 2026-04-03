@@ -15,6 +15,7 @@ export interface AnalysisTemplate {
   body_ratio: string;
   occ_body_ratio: string;
   occ_timeframe: string;
+  weekdays: number[];
   created_at: string;
 }
 
