@@ -38,6 +38,8 @@ const DAY_OPTIONS = [
   { value: "60", label: "3 Months" },
   { value: "120", label: "6 Months" },
   { value: "240", label: "12 Months" },
+  { value: "480", label: "2 Years" },
+  { value: "720", label: "3 Years" },
 ];
 
 const WEEKDAYS = [
