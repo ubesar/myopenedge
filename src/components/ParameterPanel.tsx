@@ -63,6 +63,7 @@ const ParameterPanel = ({
   const [selectedTemplateId, setSelectedTemplateId] = useState("custom");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [templateName, setTemplateName] = useState("");
+  const isTemplateLocked = selectedTemplateId !== "custom";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
