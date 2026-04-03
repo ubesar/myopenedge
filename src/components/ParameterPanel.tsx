@@ -125,25 +125,24 @@ const ParameterPanel = ({
             <SelectContent>
               <SelectItem value="custom">custom – not saved</SelectItem>
               {templates.map((t) => (
-                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                <div key={t.id} className="flex items-center group relative">
+                  <SelectItem value={t.id} className="flex-1 pr-8">{t.name}</SelectItem>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      if (selectedTemplateId === t.id) setSelectedTemplateId("custom");
+                      onDeleteTemplate?.(t.id);
+                    }}
+                    className="absolute right-1.5 p-1 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all z-10"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
               ))}
             </SelectContent>
           </Select>
-
-          {/* Delete selected template */}
-          {selectedTemplateId !== "custom" && (
-            <button
-              type="button"
-              onClick={() => {
-                onDeleteTemplate?.(selectedTemplateId);
-                setSelectedTemplateId("custom");
-              }}
-              className="w-full flex items-center justify-center gap-1.5 bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg px-3 py-2 text-[13px] transition-colors"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              delete template
-            </button>
-          )}
 
           <button
             type="button"
