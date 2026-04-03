@@ -15,6 +15,7 @@ export interface AnalysisTemplate {
   body_ratio: string;
   occ_body_ratio: string;
   occ_timeframe: string;
+  weekdays: number[];
   created_at: string;
 }
 
@@ -26,6 +27,7 @@ export interface TemplateParams {
   bodyRatio: MomentumBodyRatio;
   occBodyRatio: OCCBodyRatio;
   occTimeframe: OCCTimeframe;
+  weekdays: number[];
 }
 
 export const useTemplates = () => {
@@ -61,6 +63,7 @@ export const useTemplates = () => {
         body_ratio: params.bodyRatio,
         occ_body_ratio: params.occBodyRatio,
         occ_timeframe: params.occTimeframe,
+        weekdays: params.weekdays,
       },
       { onConflict: "user_id,name" }
     );

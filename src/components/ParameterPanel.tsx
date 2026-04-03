@@ -81,6 +81,7 @@ const ParameterPanel = ({
     setMaxDays(String(tpl.max_days));
     setBodyRatio((tpl.body_ratio || "0.50") as MomentumBodyRatio);
     setOccBodyRatio((tpl.occ_body_ratio || "0.50") as OCCBodyRatio);
+    setWeekdays(tpl.weekdays || [1, 2, 3, 4, 5]);
     onLoadTemplate?.({
       mode: tpl.mode as AnalysisMode,
       symbol: tpl.symbol,
@@ -89,6 +90,7 @@ const ParameterPanel = ({
       bodyRatio: (tpl.body_ratio || "0.50") as MomentumBodyRatio,
       occBodyRatio: (tpl.occ_body_ratio || "0.50") as OCCBodyRatio,
       occTimeframe: (tpl.occ_timeframe || "M15") as OCCTimeframe,
+      weekdays: tpl.weekdays || [1, 2, 3, 4, 5],
     });
   };
 
@@ -102,6 +104,7 @@ const ParameterPanel = ({
       bodyRatio,
       occBodyRatio,
       occTimeframe,
+      weekdays,
     });
     setTemplateName("");
     setShowSaveDialog(false);
@@ -314,7 +317,7 @@ const ParameterPanel = ({
               onKeyDown={(e) => e.key === "Enter" && handleSave()}
             />
             <p className="text-[11px] text-muted-foreground">
-              Mode: {mode} · {symbol || "QQQ"} · {maxDays === "0" ? "All" : maxDays} days · IB {ibWindow}min
+              Mode: {mode} · {symbol || "QQQ"} · {maxDays === "0" ? "All" : maxDays} days · IB {ibWindow}min · Days: {weekdays.length === 5 ? "All" : weekdays.map(d => ["","Mon","Tue","Wed","Thu","Fri"][d]).join(",")}
             </p>
           </div>
           <DialogFooter>
