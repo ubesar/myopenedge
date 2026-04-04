@@ -26,8 +26,8 @@ const DAY_OPTIONS = [
   { value: "60", label: "3 Months" },
   { value: "120", label: "6 Months" },
   { value: "240", label: "12 Months" },
-  { value: "480", label: "2 Years" },
-  { value: "720", label: "3 Years" },
+  { value: "480", label: "24 Months" },
+  { value: "720", label: "36 Months" },
 ];
 
 const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => {

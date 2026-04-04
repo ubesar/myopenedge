@@ -29,8 +29,8 @@ const DATE_RANGES = [
   { label: "3 months", days: 60 },
   { label: "6 months", days: 120 },
   { label: "12 months", days: 240 },
-  { label: "2 years", days: 480 },
-  { label: "3 years", days: 720 },
+  { label: "24 months", days: 480 },
+  { label: "36 months", days: 720 },
 ];
 
 const WhatsInPlay = () => {
