@@ -48,7 +48,7 @@ const WhatsInPlay = () => {
 
   const [symbol, setSymbol] = useState("QQQ");
   const [ibWindow, setIbWindow] = useState<"30" | "60">("60");
-  const [pullbackWindow, setPullbackWindow] = useState<"30" | "60">("30");
+  
   const [maxDays, setMaxDays] = useState("240");
   const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [running, setRunning] = useState(false);
