@@ -11,41 +11,31 @@ interface BarData {
   close: string;
 }
 
+export type BreakType = "single_high" | "single_low" | "double" | "no_break";
+
 export interface ExtensionDayDetail {
   date: string;
   ibHigh: number;
   ibLow: number;
   ibRange: number;
-  ib50: number;
-  breakDirection: "bullish" | "bearish" | "none";
-  reached25: boolean;
-  reached50: boolean;
-  reached100: boolean;
-  pulledBackToIB50: boolean;
-  continuedAfterPullback: boolean;
-  dayClose: number;
+  breakType: BreakType;
+  /** highest extension multiple reached (e.g. 0.3 means 0.3x IB range) */
+  maxExtMultiple: number;
 }
 
-export interface ExtensionLevelStats {
-  reached: number;
+export interface ExtensionLevelStat {
+  level: number; // e.g. 0.1, 0.2, …
+  label: string; // "-0.8" … "0.8"
+  reachedCount: number;
   reachedPct: number;
-  withPullback: number;
-  withPullbackPct: number;
-  continuedAfterPullback: number;
-  continuationPct: number;
 }
 
 export interface ExtensionResult {
   totalDays: number;
   ibWindow: 30 | 60;
-  pullbackWindow: 30 | 60;
-  bullishBreaks: number;
-  bearishBreaks: number;
-  noBreaks: number;
-  ext25: ExtensionLevelStats;
-  ext50: ExtensionLevelStats;
-  ext100: ExtensionLevelStats;
+  levels: ExtensionLevelStat[];
   details: ExtensionDayDetail[];
+  breakCounts: { all: number; breakout: number; breakdown: number; double: number; noBreak: number };
 }
 
 /* ─── Helpers ─── */
@@ -57,15 +47,17 @@ function getTimeMin(dt: Date): number {
   return dt.getHours() * 60 + dt.getMinutes();
 }
 
-const IB_START = 9 * 60 + 30; // 09:30
-const MARKET_CLOSE = 16 * 60; // 16:00
+const IB_START = 9 * 60 + 30;
+const MARKET_CLOSE = 16 * 60;
+
+const EXTENSION_LEVELS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
 
 /* ─── Main Analysis ─── */
 
 export function analyzeIBExtension(
   rawBars: BarData[],
   ibWindow: 30 | 60 = 60,
-  pullbackWindow: 30 | 60 = 30,
+  _pullbackWindow: 30 | 60 = 30,
   maxDays: number = 240,
   weekdays: number[] = [1, 2, 3, 4, 5]
 ): ExtensionResult {
@@ -122,148 +114,80 @@ export function analyzeIBExtension(
     const ibRange = ibHigh - ibLow;
     if (ibRange <= 0) continue;
 
-    const ib50 = (ibHigh + ibLow) / 2;
-
     // Post-IB bars
     const postIBBars = dayBars.filter((b) => {
       const [h, m] = b.time.split(":").map(Number);
       return h * 60 + m >= ibEnd && h * 60 + m < MARKET_CLOSE;
     });
 
-    // Determine initial breakout direction
-    let breakDirection: "bullish" | "bearish" | "none" = "none";
-    let firstBreakIdx = -1;
-
-    for (let i = 0; i < postIBBars.length; i++) {
-      const bar = postIBBars[i];
-      if (bar.close > ibHigh) {
-        breakDirection = "bullish";
-        firstBreakIdx = i;
-        break;
-      }
-      if (bar.close < ibLow) {
-        breakDirection = "bearish";
-        firstBreakIdx = i;
-        break;
-      }
+    // Determine break type
+    let brokeHigh = false;
+    let brokeLow = false;
+    for (const bar of postIBBars) {
+      if (bar.high > ibHigh) brokeHigh = true;
+      if (bar.low < ibLow) brokeLow = true;
     }
 
-    // Extension levels
-    const ext25Level = breakDirection === "bullish" ? ibHigh + ibRange * 0.25 : ibLow - ibRange * 0.25;
-    const ext50Level = breakDirection === "bullish" ? ibHigh + ibRange * 0.5 : ibLow - ibRange * 0.5;
-    const ext100Level = breakDirection === "bullish" ? ibHigh + ibRange : ibLow - ibRange;
+    let breakType: BreakType = "no_break";
+    if (brokeHigh && brokeLow) breakType = "double";
+    else if (brokeHigh) breakType = "single_high";
+    else if (brokeLow) breakType = "single_low";
 
-    let reached25 = false;
-    let reached50 = false;
-    let reached100 = false;
-
-    if (breakDirection !== "none") {
-      for (const bar of postIBBars) {
-        if (breakDirection === "bullish") {
-          if (bar.high >= ext25Level) reached25 = true;
-          if (bar.high >= ext50Level) reached50 = true;
-          if (bar.high >= ext100Level) reached100 = true;
-        } else {
-          if (bar.low <= ext25Level) reached25 = true;
-          if (bar.low <= ext50Level) reached50 = true;
-          if (bar.low <= ext100Level) reached100 = true;
-        }
-      }
+    // Calculate max extension multiple in either direction
+    let maxExt = 0;
+    for (const bar of postIBBars) {
+      const extUp = (bar.high - ibHigh) / ibRange;
+      const extDown = (ibLow - bar.low) / ibRange;
+      maxExt = Math.max(maxExt, extUp, extDown);
     }
-
-    // Pullback to IB 50% detection: after breakout, check if price returns to IB midpoint
-    // within the pullbackWindow minutes after breakout
-    let pulledBackToIB50 = false;
-    let continuedAfterPullback = false;
-
-    if (breakDirection !== "none" && firstBreakIdx >= 0) {
-      const breakBar = postIBBars[firstBreakIdx];
-      const [bh, bm] = breakBar.time.split(":").map(Number);
-      const breakTime = bh * 60 + bm;
-      const pullbackDeadline = breakTime + pullbackWindow;
-
-      // Check bars after breakout within pullback window
-      const pullbackBars = postIBBars.filter((b, idx) => {
-        if (idx <= firstBreakIdx) return false;
-        const [h, m] = b.time.split(":").map(Number);
-        const t = h * 60 + m;
-        return t <= pullbackDeadline;
-      });
-
-      for (const bar of pullbackBars) {
-        if (breakDirection === "bullish" && bar.low <= ib50) {
-          pulledBackToIB50 = true;
-          break;
-        }
-        if (breakDirection === "bearish" && bar.high >= ib50) {
-          pulledBackToIB50 = true;
-          break;
-        }
-      }
-
-      // After pullback, check if price continued in original direction
-      if (pulledBackToIB50) {
-        const afterPullbackBars = postIBBars.filter((b) => {
-          const [h, m] = b.time.split(":").map(Number);
-          const t = h * 60 + m;
-          return t > pullbackDeadline;
-        });
-
-        const dayClose = dayBars[dayBars.length - 1].close;
-        if (breakDirection === "bullish") {
-          continuedAfterPullback = dayClose > ibHigh;
-        } else {
-          continuedAfterPullback = dayClose < ibLow;
-        }
-      }
-    }
-
-    const dayClose = dayBars[dayBars.length - 1].close;
 
     details.push({
       date,
       ibHigh,
       ibLow,
       ibRange,
-      ib50,
-      breakDirection,
-      reached25,
-      reached50,
-      reached100,
-      pulledBackToIB50,
-      continuedAfterPullback,
-      dayClose,
+      breakType,
+      maxExtMultiple: maxExt,
     });
   }
 
-  const breakDays = details.filter((d) => d.breakDirection !== "none");
-  const bullish = details.filter((d) => d.breakDirection === "bullish");
-  const bearish = details.filter((d) => d.breakDirection === "bearish");
+  const breakCounts = {
+    all: details.length,
+    breakout: details.filter((d) => d.breakType === "single_high").length,
+    breakdown: details.filter((d) => d.breakType === "single_low").length,
+    double: details.filter((d) => d.breakType === "double").length,
+    noBreak: details.filter((d) => d.breakType === "no_break").length,
+  };
 
-  function calcLevel(field: "reached25" | "reached50" | "reached100"): ExtensionLevelStats {
-    const reached = breakDays.filter((d) => d[field]);
-    const withPullback = reached.filter((d) => d.pulledBackToIB50);
-    const continued = withPullback.filter((d) => d.continuedAfterPullback);
+  // Calculate levels stats (based on ALL days by default; filtering happens in UI)
+  const levels: ExtensionLevelStat[] = EXTENSION_LEVELS.map((lvl) => {
+    const reached = details.filter((d) => d.maxExtMultiple >= lvl).length;
     return {
-      reached: reached.length,
-      reachedPct: breakDays.length > 0 ? (reached.length / breakDays.length) * 100 : 0,
-      withPullback: withPullback.length,
-      withPullbackPct: reached.length > 0 ? (withPullback.length / reached.length) * 100 : 0,
-      continuedAfterPullback: continued.length,
-      continuationPct: withPullback.length > 0 ? (continued.length / withPullback.length) * 100 : 0,
+      level: lvl,
+      label: lvl.toFixed(1),
+      reachedCount: reached,
+      reachedPct: details.length > 0 ? (reached / details.length) * 100 : 0,
     };
-  }
+  });
 
   return {
     totalDays: details.length,
     ibWindow,
-    pullbackWindow,
-    bullishBreaks: bullish.length,
-    bearishBreaks: bearish.length,
-    noBreaks: details.filter((d) => d.breakDirection === "none").length,
-    ext25: calcLevel("reached25"),
-    ext50: calcLevel("reached50"),
-    ext100: calcLevel("reached100"),
+    levels,
     details,
+    breakCounts,
   };
+}
+
+/** Recalculate level stats for a filtered subset of details */
+export function calcLevelsForFilter(details: ExtensionDayDetail[]): ExtensionLevelStat[] {
+  return EXTENSION_LEVELS.map((lvl) => {
+    const reached = details.filter((d) => d.maxExtMultiple >= lvl).length;
+    return {
+      level: lvl,
+      label: lvl.toFixed(1),
+      reachedCount: reached,
+      reachedPct: details.length > 0 ? (reached / details.length) * 100 : 0,
+    };
+  });
 }
