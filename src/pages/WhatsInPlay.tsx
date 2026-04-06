@@ -87,7 +87,7 @@ const WhatsInPlay = () => {
       const extResult = analyzeIBExtension(
         parsed.data.values as any,
         Number(ibWindow) as 30 | 60,
-        Number(pullbackWindow) as 30 | 60,
+        30,
         Number(maxDays),
         weekdays
       );
