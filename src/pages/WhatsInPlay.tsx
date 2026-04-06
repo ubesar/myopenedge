@@ -146,16 +146,8 @@ const WhatsInPlay = () => {
                 </SelectContent>
               </Select>
 
-              <p className="text-[11px] text-muted-foreground">pullback window</p>
-              <Select value={pullbackWindow} onValueChange={(v) => setPullbackWindow(v as "30" | "60")}>
-                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="30">30 min after breakout</SelectItem>
-                  <SelectItem value="60">60 min after breakout</SelectItem>
-                </SelectContent>
-              </Select>
+
+
 
               <p className="text-[11px] text-muted-foreground">date range</p>
               <Select value={maxDays} onValueChange={setMaxDays}>
