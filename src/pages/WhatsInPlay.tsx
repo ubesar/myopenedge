@@ -6,13 +6,14 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
 import { toast } from "sonner";
-import { Crown, Play, Loader2, Combine, Plus } from "lucide-react";
+import { Crown, Play, Loader2, Combine } from "lucide-react";
 import { z } from "zod";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 
-import ConditionPicker from "@/components/whats-in-play/ConditionPicker";
-import ComboResults from "@/components/whats-in-play/ComboResults";
-import type { ConditionConfig, ComboResult } from "@/lib/combo-analysis";
-import { analyzeCombo } from "@/lib/combo-analysis";
+import ExtensionResults from "@/components/whats-in-play/ExtensionResults";
+import { analyzeIBExtension, type ExtensionResult } from "@/lib/ib-extension-analysis";
 
 const BarSchema = z.object({
   datetime: z.string(),
@@ -23,14 +24,20 @@ const BarSchema = z.object({
 }).passthrough();
 const ResponseSchema = z.object({ values: z.array(BarSchema).min(1) }).passthrough();
 
-const DATE_RANGES = [
-  { label: "1 month", days: 20 },
-  { label: "2 months", days: 40 },
-  { label: "3 months", days: 60 },
-  { label: "6 months", days: 120 },
-  { label: "12 months", days: 240 },
-  { label: "24 months", days: 480 },
-  { label: "36 months", days: 720 },
+const DAY_OPTIONS = [
+  { value: "20", label: "1 Month" },
+  { value: "40", label: "2 Months" },
+  { value: "60", label: "3 Months" },
+  { value: "120", label: "6 Months" },
+  { value: "240", label: "12 Months" },
+];
+
+const WEEKDAYS = [
+  { value: 1, label: "Mon" },
+  { value: 2, label: "Tue" },
+  { value: 3, label: "Wed" },
+  { value: 4, label: "Thu" },
+  { value: 5, label: "Fri" },
 ];
 
 const WhatsInPlay = () => {
@@ -40,13 +47,20 @@ const WhatsInPlay = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const [symbol, setSymbol] = useState("QQQ");
-  const [maxDays, setMaxDays] = useState(60);
-  const [condA, setCondA] = useState<ConditionConfig>({ type: "ib_breakout", window: 60, direction: "any" });
-  const [condB, setCondB] = useState<ConditionConfig>({ type: "bb_breakout", timeframe: 15, band: "upper", period: 20, timing: "during_ib" });
+  const [ibWindow, setIbWindow] = useState<"30" | "60">("60");
+  const [pullbackWindow, setPullbackWindow] = useState<"30" | "60">("30");
+  const [maxDays, setMaxDays] = useState("240");
+  const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [running, setRunning] = useState(false);
-  const [result, setResult] = useState<ComboResult | null>(null);
+  const [result, setResult] = useState<ExtensionResult | null>(null);
 
   const isFree = !isActive;
+
+  const dateRangeLabel = DAY_OPTIONS.find((d) => d.value === maxDays)?.label || maxDays + " days";
+  const weekdaysLabel =
+    weekdays.length === 5
+      ? "Mon–Fri"
+      : weekdays.map((d) => ["", "Mon", "Tue", "Wed", "Thu", "Fri"][d]).join(", ");
 
   const runAnalysis = useCallback(async () => {
     if (isFree) {
@@ -70,21 +84,25 @@ const WhatsInPlay = () => {
         return;
       }
 
-      const comboResult = analyzeCombo(parsed.data.values as any, condA, condB, maxDays);
-      setResult(comboResult);
+      const extResult = analyzeIBExtension(
+        parsed.data.values as any,
+        Number(ibWindow) as 30 | 60,
+        Number(pullbackWindow) as 30 | 60,
+        Number(maxDays),
+        weekdays
+      );
+      setResult(extResult);
 
-      if (comboResult.bothFired === 0) {
-        toast.info("No days found where both conditions fired simultaneously.");
+      if (extResult.totalDays === 0) {
+        toast.info("No trading days found in the selected range.");
       }
     } catch (err) {
       toast.error("Failed to fetch data. Try again.");
     }
     setRunning(false);
-  }, [symbol, condA, condB, maxDays, isFree]);
+  }, [symbol, ibWindow, pullbackWindow, maxDays, weekdays, isFree]);
 
   if (!authLoading && !user) return <Navigate to="/auth" replace />;
-
-  const selectClass = "bg-card border border-border rounded-lg px-2.5 py-1.5 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary";
 
   return (
     <div className="h-screen w-full flex flex-col lg:flex-row overflow-hidden bg-background">
@@ -93,89 +111,168 @@ const WhatsInPlay = () => {
       )}
       <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
 
-      <main className="flex-1 min-w-0 overflow-y-auto p-4 lg:p-6 space-y-6">
-        {/* Header */}
-        <div>
-          <div className="flex items-center gap-2">
-            <Combine className="h-5 w-5 text-primary" />
-            <h1 className="text-[18px] lg:text-[22px] font-bold text-foreground lowercase">combo builder</h1>
-          </div>
-          <p className="text-[12px] text-muted-foreground mt-1 max-w-xl">
-            combine two conditions and backtest the probability of continuation. build your edge by stacking indicators.
-          </p>
-        </div>
+      {/* Parameter Panel (left sidebar) */}
+      {!isFree && (
+        <div className="h-full border-r border-border bg-surface overflow-y-auto w-full lg:w-[260px] shrink-0">
+          <div className="p-4 space-y-5">
+            {/* Header */}
+            <div className="flex items-center gap-2">
+              <Combine className="h-4 w-4 text-primary" />
+              <p className="section-label">combo builder</p>
+            </div>
+            <p className="text-[10px] text-muted-foreground -mt-3">
+              IB extension & pullback probability analysis
+            </p>
 
+            {/* Ticker */}
+            <div className="space-y-2">
+              <p className="section-label">ticker & timeframe</p>
+              <p className="text-[11px] text-muted-foreground">asset & ticker</p>
+              <Input
+                placeholder="QQQ"
+                value={symbol}
+                onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                className="bg-input border-border text-[13px] text-foreground placeholder:text-muted-foreground uppercase"
+              />
+
+              <p className="text-[11px] text-muted-foreground">IB window</p>
+              <Select value={ibWindow} onValueChange={(v) => setIbWindow(v as "30" | "60")}>
+                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="30">First 30 min</SelectItem>
+                  <SelectItem value="60">First 60 min</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <p className="text-[11px] text-muted-foreground">pullback window</p>
+              <Select value={pullbackWindow} onValueChange={(v) => setPullbackWindow(v as "30" | "60")}>
+                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="30">30 min after breakout</SelectItem>
+                  <SelectItem value="60">60 min after breakout</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <p className="text-[11px] text-muted-foreground">date range</p>
+              <Select value={maxDays} onValueChange={setMaxDays}>
+                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DAY_OPTIONS.map((d) => (
+                    <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <p className="text-[11px] text-muted-foreground mt-2">weekdays to use</p>
+              <div className="flex flex-wrap gap-2">
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <Checkbox
+                    checked={weekdays.length === 5}
+                    onCheckedChange={(checked) => setWeekdays(checked ? [1, 2, 3, 4, 5] : [])}
+                  />
+                  <span className="text-[12px] text-foreground font-medium">All</span>
+                </label>
+                {WEEKDAYS.map((wd) => (
+                  <label key={wd.value} className="flex items-center gap-1.5 cursor-pointer">
+                    <Checkbox
+                      checked={weekdays.includes(wd.value)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setWeekdays((prev) => [...prev.filter((d) => d !== wd.value), wd.value].sort());
+                        } else {
+                          setWeekdays((prev) => prev.filter((d) => d !== wd.value));
+                        }
+                      }}
+                    />
+                    <span className="text-[12px] text-foreground">{wd.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Run button */}
+            <button
+              onClick={runAnalysis}
+              disabled={running || !symbol.trim() || weekdays.length === 0}
+              className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground rounded-lg px-3 py-2.5 text-[13px] font-medium transition-colors"
+            >
+              {running ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  analyzing…
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4" />
+                  run analysis
+                </>
+              )}
+            </button>
+
+            {/* Info */}
+            <div className="rounded-lg border border-border bg-background/50 p-3 space-y-1.5">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">what this analyzes</p>
+              <ul className="text-[10px] text-muted-foreground space-y-1 list-disc list-inside">
+                <li>IB extension levels: 25%, 50%, 100%</li>
+                <li>pullback to IB 50% (midpoint) after breakout</li>
+                <li>continuation probability after pullback</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main content */}
+      <main className="flex-1 min-w-0 overflow-y-auto p-4 lg:p-6 space-y-6">
         {/* Pro gate */}
         {isFree && (
-          <div className="rounded-xl border border-border bg-card/50 p-8 text-center max-w-md mx-auto">
-            <Crown className="h-8 w-8 text-amber-400 mx-auto mb-3" />
-            <h3 className="text-[14px] font-semibold text-foreground mb-1">pro feature</h3>
-            <p className="text-[12px] text-muted-foreground">
-              combo builder is available for pro members. upgrade to access custom backtesting combinations.
-            </p>
+          <div className="flex items-center justify-center h-full">
+            <div className="rounded-xl border border-border bg-card/50 p-8 text-center max-w-md">
+              <Crown className="h-8 w-8 text-amber-400 mx-auto mb-3" />
+              <h3 className="text-[14px] font-semibold text-foreground mb-1">pro feature</h3>
+              <p className="text-[12px] text-muted-foreground">
+                combo builder is available for pro members. upgrade to access IB extension & pullback analysis.
+              </p>
+            </div>
           </div>
         )}
 
         {!isFree && (
           <>
-            {/* Controls row */}
-            <div className="flex flex-wrap items-end gap-3">
-              <div>
-                <label className="text-[10px] text-muted-foreground block mb-1">symbol</label>
-                <input
-                  value={symbol}
-                  onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                  placeholder="QQQ"
-                  className={selectClass + " w-[100px]"}
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-muted-foreground block mb-1">date range</label>
-                <select
-                  value={maxDays}
-                  onChange={(e) => setMaxDays(Number(e.target.value))}
-                  className={selectClass}
-                >
-                  {DATE_RANGES.map((r) => (
-                    <option key={r.days} value={r.days}>{r.label} ({r.days}d)</option>
-                  ))}
-                </select>
-              </div>
-              <button
-                onClick={runAnalysis}
-                disabled={running || !symbol.trim()}
-                className="flex items-center gap-2 bg-primary text-primary-foreground rounded-lg px-5 py-1.5 text-[12px] font-semibold disabled:opacity-50 transition-colors hover:bg-primary/90"
-              >
-                {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                {running ? "analyzing..." : "run backtest"}
-              </button>
-            </div>
-
-            {/* Condition pickers */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <ConditionPicker label="condition A" value={condA} onChange={setCondA} otherCondition={condB} />
-              <div className="flex items-center justify-center md:hidden">
-                <div className="flex items-center gap-2 text-primary">
-                  <Plus className="h-4 w-4" />
-                  <span className="text-[11px] font-bold uppercase tracking-widest">and</span>
-                </div>
-              </div>
-              <ConditionPicker label="condition B" value={condB} onChange={setCondB} otherCondition={condA} />
-            </div>
-
             {/* Results */}
             {result && (
-              <ComboResults result={result} condA={condA} condB={condB} symbol={symbol} />
+              <ExtensionResults
+                result={result}
+                symbol={symbol}
+                dateRange={dateRangeLabel}
+                weekdays={weekdaysLabel}
+              />
             )}
 
             {/* Empty state */}
             {!result && !running && (
-              <div className="flex items-center justify-center h-[30vh]">
+              <div className="flex items-center justify-center h-[60vh]">
                 <div className="border border-dashed border-border rounded-xl p-8 text-center max-w-sm">
                   <Combine className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
                   <p className="text-[13px] text-muted-foreground">
-                    configure your two conditions above and hit "run backtest" to see the probability of continuation
+                    configure your parameters and hit "run analysis" to see IB extension & pullback probabilities
                   </p>
+                </div>
+              </div>
+            )}
+
+            {/* Loading state */}
+            {running && (
+              <div className="flex items-center justify-center h-[60vh]">
+                <div className="text-center space-y-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+                  <p className="text-[12px] text-muted-foreground">analyzing {symbol}...</p>
                 </div>
               </div>
             )}
