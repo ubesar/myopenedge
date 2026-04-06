@@ -48,7 +48,7 @@ const WhatsInPlay = () => {
 
   const [symbol, setSymbol] = useState("QQQ");
   const [ibWindow, setIbWindow] = useState<"30" | "60">("60");
-  const [pullbackWindow, setPullbackWindow] = useState<"30" | "60">("30");
+  
   const [maxDays, setMaxDays] = useState("240");
   const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [running, setRunning] = useState(false);
@@ -87,7 +87,7 @@ const WhatsInPlay = () => {
       const extResult = analyzeIBExtension(
         parsed.data.values as any,
         Number(ibWindow) as 30 | 60,
-        Number(pullbackWindow) as 30 | 60,
+        30,
         Number(maxDays),
         weekdays
       );
@@ -100,7 +100,7 @@ const WhatsInPlay = () => {
       toast.error("Failed to fetch data. Try again.");
     }
     setRunning(false);
-  }, [symbol, ibWindow, pullbackWindow, maxDays, weekdays, isFree]);
+  }, [symbol, ibWindow, maxDays, weekdays, isFree]);
 
   if (!authLoading && !user) return <Navigate to="/auth" replace />;
 
@@ -146,16 +146,8 @@ const WhatsInPlay = () => {
                 </SelectContent>
               </Select>
 
-              <p className="text-[11px] text-muted-foreground">pullback window</p>
-              <Select value={pullbackWindow} onValueChange={(v) => setPullbackWindow(v as "30" | "60")}>
-                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="30">30 min after breakout</SelectItem>
-                  <SelectItem value="60">60 min after breakout</SelectItem>
-                </SelectContent>
-              </Select>
+
+
 
               <p className="text-[11px] text-muted-foreground">date range</p>
               <Select value={maxDays} onValueChange={setMaxDays}>
