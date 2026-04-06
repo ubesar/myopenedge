@@ -100,7 +100,7 @@ const WhatsInPlay = () => {
       toast.error("Failed to fetch data. Try again.");
     }
     setRunning(false);
-  }, [symbol, ibWindow, pullbackWindow, maxDays, weekdays, isFree]);
+  }, [symbol, ibWindow, maxDays, weekdays, isFree]);
 
   if (!authLoading && !user) return <Navigate to="/auth" replace />;
 
