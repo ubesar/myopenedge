@@ -19,13 +19,15 @@ export interface ExtensionDayDetail {
   ibLow: number;
   ibRange: number;
   breakType: BreakType;
-  /** highest extension multiple reached (e.g. 0.3 means 0.3x IB range) */
-  maxExtMultiple: number;
+  /** highest upward extension multiple (breakout above IB high) */
+  maxExtUp: number;
+  /** highest downward extension multiple (breakdown below IB low) */
+  maxExtDown: number;
 }
 
 export interface ExtensionLevelStat {
-  level: number; // e.g. 0.1, 0.2, …
-  label: string; // "-0.8" … "0.8"
+  level: number;
+  label: string;
   reachedCount: number;
   reachedPct: number;
 }
@@ -33,7 +35,10 @@ export interface ExtensionLevelStat {
 export interface ExtensionResult {
   totalDays: number;
   ibWindow: 30 | 60;
-  levels: ExtensionLevelStat[];
+  /** Upward extension stats (positive levels: 0.3 to 1.0) */
+  levelsUp: ExtensionLevelStat[];
+  /** Downward extension stats (negative levels: -0.3 to -1.0) */
+  levelsDown: ExtensionLevelStat[];
   details: ExtensionDayDetail[];
   breakCounts: { all: number; breakout: number; breakdown: number; double: number; noBreak: number };
 }
@@ -50,7 +55,7 @@ function getTimeMin(dt: Date): number {
 const IB_START = 9 * 60 + 30;
 const MARKET_CLOSE = 16 * 60;
 
-const EXTENSION_LEVELS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
+const EXTENSION_LEVELS = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
 
 /* ─── Main Analysis ─── */
 
@@ -120,12 +125,23 @@ export function analyzeIBExtension(
       return h * 60 + m >= ibEnd && h * 60 + m < MARKET_CLOSE;
     });
 
-    // Determine break type
+    // Determine break type & directional extensions
     let brokeHigh = false;
     let brokeLow = false;
+    let maxExtUp = 0;
+    let maxExtDown = 0;
+
     for (const bar of postIBBars) {
-      if (bar.high > ibHigh) brokeHigh = true;
-      if (bar.low < ibLow) brokeLow = true;
+      if (bar.high > ibHigh) {
+        brokeHigh = true;
+        const extUp = (bar.high - ibHigh) / ibRange;
+        maxExtUp = Math.max(maxExtUp, extUp);
+      }
+      if (bar.low < ibLow) {
+        brokeLow = true;
+        const extDown = (ibLow - bar.low) / ibRange;
+        maxExtDown = Math.max(maxExtDown, extDown);
+      }
     }
 
     let breakType: BreakType = "no_break";
@@ -133,21 +149,14 @@ export function analyzeIBExtension(
     else if (brokeHigh) breakType = "single_high";
     else if (brokeLow) breakType = "single_low";
 
-    // Calculate max extension multiple in either direction
-    let maxExt = 0;
-    for (const bar of postIBBars) {
-      const extUp = (bar.high - ibHigh) / ibRange;
-      const extDown = (ibLow - bar.low) / ibRange;
-      maxExt = Math.max(maxExt, extUp, extDown);
-    }
-
     details.push({
       date,
       ibHigh,
       ibLow,
       ibRange,
       breakType,
-      maxExtMultiple: maxExt,
+      maxExtUp,
+      maxExtDown,
     });
   }
 
@@ -159,35 +168,41 @@ export function analyzeIBExtension(
     noBreak: details.filter((d) => d.breakType === "no_break").length,
   };
 
-  // Calculate levels stats (based on ALL days by default; filtering happens in UI)
-  const levels: ExtensionLevelStat[] = EXTENSION_LEVELS.map((lvl) => {
-    const reached = details.filter((d) => d.maxExtMultiple >= lvl).length;
-    return {
-      level: lvl,
-      label: lvl.toFixed(1),
-      reachedCount: reached,
-      reachedPct: details.length > 0 ? (reached / details.length) * 100 : 0,
-    };
-  });
+  const levelsUp = calcDirectionalLevels(details, "up");
+  const levelsDown = calcDirectionalLevels(details, "down");
 
   return {
     totalDays: details.length,
     ibWindow,
-    levels,
+    levelsUp,
+    levelsDown,
     details,
     breakCounts,
   };
 }
 
-/** Recalculate level stats for a filtered subset of details */
-export function calcLevelsForFilter(details: ExtensionDayDetail[]): ExtensionLevelStat[] {
+/** Calculate level stats for a specific direction */
+function calcDirectionalLevels(
+  details: ExtensionDayDetail[],
+  direction: "up" | "down"
+): ExtensionLevelStat[] {
   return EXTENSION_LEVELS.map((lvl) => {
-    const reached = details.filter((d) => d.maxExtMultiple >= lvl).length;
+    const reached = details.filter((d) =>
+      direction === "up" ? d.maxExtUp >= lvl : d.maxExtDown >= lvl
+    ).length;
     return {
       level: lvl,
-      label: lvl.toFixed(1),
+      label: direction === "down" ? `-${lvl.toFixed(1)}` : lvl.toFixed(1),
       reachedCount: reached,
       reachedPct: details.length > 0 ? (reached / details.length) * 100 : 0,
     };
   });
+}
+
+/** Recalculate level stats for a filtered subset of details */
+export function calcLevelsForFilter(
+  details: ExtensionDayDetail[],
+  direction: "up" | "down"
+): ExtensionLevelStat[] {
+  return calcDirectionalLevels(details, direction);
 }

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LabelList, Cell } from "recharts";
-import { Calendar, BarChart3, ArrowUpRight, ArrowDownRight, Layers, Minus } from "lucide-react";
+import { Calendar, ArrowUpRight, ArrowDownRight, Layers, Minus } from "lucide-react";
 import type { ExtensionResult, ExtensionDayDetail } from "@/lib/ib-extension-analysis";
 import { calcLevelsForFilter } from "@/lib/ib-extension-analysis";
 
@@ -18,24 +18,35 @@ export default function ExtensionResults({ result, symbol, dateRange, weekdays }
 
   const filteredDetails = useMemo(() => {
     switch (filter) {
-      case "breakout": return result.details.filter((d) => d.breakType === "single_high");
-      case "breakdown": return result.details.filter((d) => d.breakType === "single_low");
+      case "breakout": return result.details.filter((d) => d.breakType === "single_high" || d.breakType === "double");
+      case "breakdown": return result.details.filter((d) => d.breakType === "single_low" || d.breakType === "double");
       case "double": return result.details.filter((d) => d.breakType === "double");
       default: return result.details;
     }
   }, [result.details, filter]);
 
-  const levels = useMemo(() => calcLevelsForFilter(filteredDetails), [filteredDetails]);
+  const levelsUp = useMemo(() => calcLevelsForFilter(filteredDetails, "up"), [filteredDetails]);
+  const levelsDown = useMemo(() => calcLevelsForFilter(filteredDetails, "down"), [filteredDetails]);
 
-  const chartData = levels.map((l) => ({
-    name: l.label,
-    value: parseFloat(l.reachedPct.toFixed(2)),
-  }));
+  // Build combined chart data: negative levels (reversed) + positive levels
+  const chartData = useMemo(() => {
+    const downReversed = [...levelsDown].reverse(); // -1.0, -0.9, ... -0.3
+    return [
+      ...downReversed.map((l) => ({
+        name: l.label,
+        value: parseFloat(l.reachedPct.toFixed(2)),
+      })),
+      ...levelsUp.map((l) => ({
+        name: l.label,
+        value: parseFloat(l.reachedPct.toFixed(2)),
+      })),
+    ];
+  }, [levelsUp, levelsDown]);
 
   const tabs: { key: FilterTab; label: string; count: number }[] = [
     { key: "all", label: "all days", count: result.breakCounts.all },
-    { key: "breakout", label: "breakout days", count: result.breakCounts.breakout },
-    { key: "breakdown", label: "breakdown days", count: result.breakCounts.breakdown },
+    { key: "breakout", label: "breakout days", count: result.breakCounts.breakout + result.breakCounts.double },
+    { key: "breakdown", label: "breakdown days", count: result.breakCounts.breakdown + result.breakCounts.double },
     { key: "double", label: "double break days", count: result.breakCounts.double },
   ];
 
@@ -54,18 +65,39 @@ export default function ExtensionResults({ result, symbol, dateRange, weekdays }
 
       {/* Main chart card */}
       <div className="rounded-xl border border-border bg-card/50 p-4 sm:p-6 space-y-4">
-        {/* Title */}
-        <div>
-          <h3 className="text-[13px] font-bold text-foreground">charts</h3>
-          <p className="text-[11px] text-muted-foreground">
-            {symbol} {result.ibWindow}min initial balance breakout&ensp;|&ensp;by levels&ensp;|&ensp;{dateRange}&ensp;|&ensp;9:30 am - 4:00 pm
-          </p>
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-[11px] text-muted-foreground font-medium mb-1">charts</p>
+            <h3 className="text-[14px] sm:text-[15px] font-semibold text-foreground leading-tight">
+              IB: initial balance breakout by levels {result.ibWindow}min | {symbol} | 9:30 am – 4:00 pm
+            </h3>
+            <p className="text-[11px] text-primary mt-0.5">built by myopenedge</p>
+          </div>
+          <p className="text-[11px] text-muted-foreground whitespace-nowrap ml-4">{dateRange}</p>
+        </div>
+
+        {/* Filter tabs */}
+        <div className="flex flex-wrap gap-2">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setFilter(t.key)}
+              className={`px-4 py-2 rounded-lg border text-[11px] font-medium transition-colors ${
+                filter === t.key
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card border-border text-foreground hover:bg-accent"
+              }`}
+            >
+              {t.label} ({t.count})
+            </button>
+          ))}
         </div>
 
         {/* Chart */}
-        <div className="h-[340px] sm:h-[400px]">
+        <div className="h-[340px] sm:h-[420px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} barCategoryGap="15%">
+            <BarChart data={chartData} barCategoryGap="12%">
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
               <XAxis
                 dataKey="name"
@@ -80,7 +112,7 @@ export default function ExtensionResults({ result, symbol, dateRange, weekdays }
                 tickLine={false}
                 tickFormatter={(v) => `${v}%`}
               />
-              <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={56}>
+              <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={48}>
                 {chartData.map((_, i) => (
                   <Cell key={i} fill="hsl(var(--primary))" />
                 ))}
@@ -88,73 +120,34 @@ export default function ExtensionResults({ result, symbol, dateRange, weekdays }
                   dataKey="value"
                   position="top"
                   formatter={(v: number) => `${v}%`}
-                  style={{ fill: "hsl(var(--foreground))", fontSize: 11, fontWeight: 600 }}
+                  style={{ fill: "hsl(var(--foreground))", fontSize: 10, fontWeight: 600 }}
                 />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Filter tabs */}
-        <div className="flex flex-wrap gap-2 justify-center">
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setFilter(t.key)}
-              className={`px-4 py-2 rounded-lg border text-[11px] font-medium transition-colors ${
-                filter === t.key
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card border-border text-foreground hover:bg-accent"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        {/* Custom settings table */}
+        <div className="border-t border-border pt-3">
+          <p className="text-[11px] text-muted-foreground font-semibold text-center mb-3">custom settings</p>
+          <div className="rounded-lg border border-border overflow-hidden">
+            <div className="grid grid-cols-2 divide-x divide-border">
+              <SettingCell label="IB timeframe" value={`9:30 am to ${ibEndTime} ET`} />
+              <SettingCell label="candle timeframe" value="5min" />
+            </div>
+            <div className="grid grid-cols-2 divide-x divide-border border-t border-border">
+              <SettingCell label="IB breakout measure" value="by wick" />
+              <SettingCell label="day type" value={filter === "all" ? "all days" : `${filter} days`} />
+            </div>
+            <div className="grid grid-cols-2 divide-x divide-border border-t border-border">
+              <SettingCell label="date range" value={dateRange} />
+              <SettingCell label="break type" value={filter === "all" ? "all breaks" : filter} />
+            </div>
+            <div className="border-t border-border">
+              <SettingCell label="weekdays to use" value={weekdays} center />
+            </div>
+          </div>
         </div>
-
-        {/* Custom settings */}
-        <details className="border-t border-border pt-3">
-          <summary className="text-[11px] text-muted-foreground cursor-pointer hover:text-foreground transition-colors font-semibold text-center">
-            custom settings
-          </summary>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-3 text-[11px]">
-            <div className="flex justify-between border-b border-border/50 pb-1.5">
-              <span className="text-muted-foreground">IB timeframe:</span>
-              <span className="text-foreground font-medium">9:30 am to {ibEndTime} ET</span>
-            </div>
-            <div className="flex justify-between border-b border-border/50 pb-1.5">
-              <span className="text-muted-foreground">candle timeframe:</span>
-              <span className="text-foreground font-medium">5min</span>
-            </div>
-            <div className="flex justify-between border-b border-border/50 pb-1.5">
-              <span className="text-muted-foreground">IB breakout measure:</span>
-              <span className="text-foreground font-medium">by wick</span>
-            </div>
-            <div className="flex justify-between border-b border-border/50 pb-1.5">
-              <span className="text-muted-foreground">date range:</span>
-              <span className="text-foreground font-medium">{dateRange}</span>
-            </div>
-            <div className="flex justify-between border-b border-border/50 pb-1.5">
-              <span className="text-muted-foreground">break type:</span>
-              <span className="text-foreground font-medium">{filter === "all" ? "all breaks" : filter}</span>
-            </div>
-            <div className="flex justify-between border-b border-border/50 pb-1.5">
-              <span className="text-muted-foreground">weekdays to use:</span>
-              <span className="text-foreground font-medium">{weekdays}</span>
-            </div>
-          </div>
-        </details>
-      </div>
-
-      {/* Level breakdown cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {levels.map((l) => (
-          <div key={l.level} className="rounded-lg border border-border bg-card p-3 space-y-1">
-            <p className="text-[10px] uppercase tracking-widest text-primary font-semibold">{l.label}x extension</p>
-            <p className="text-[18px] font-bold text-foreground">{l.reachedPct.toFixed(1)}%</p>
-            <p className="text-[10px] text-muted-foreground">{l.reachedCount} / {filteredDetails.length} days</p>
-          </div>
-        ))}
       </div>
 
       {/* Day-by-day detail */}
@@ -168,7 +161,8 @@ export default function ExtensionResults({ result, symbol, dateRange, weekdays }
               <tr className="text-muted-foreground border-b border-border">
                 <th className="text-left py-2 font-semibold">date</th>
                 <th className="text-center py-2 font-semibold">break type</th>
-                <th className="text-center py-2 font-semibold">max ext</th>
+                <th className="text-center py-2 font-semibold">ext up</th>
+                <th className="text-center py-2 font-semibold">ext down</th>
                 <th className="text-center py-2 font-semibold">IB range</th>
               </tr>
             </thead>
@@ -187,7 +181,8 @@ export default function ExtensionResults({ result, symbol, dateRange, weekdays }
                       <span className="text-muted-foreground/40">— inside</span>
                     )}
                   </td>
-                  <td className="text-center font-semibold text-foreground">{d.maxExtMultiple.toFixed(2)}x</td>
+                  <td className="text-center font-semibold text-profit">{d.maxExtUp > 0 ? `${d.maxExtUp.toFixed(2)}x` : "—"}</td>
+                  <td className="text-center font-semibold text-loss">{d.maxExtDown > 0 ? `${d.maxExtDown.toFixed(2)}x` : "—"}</td>
                   <td className="text-center text-muted-foreground">{d.ibRange.toFixed(2)}</td>
                 </tr>
               ))}
@@ -208,6 +203,15 @@ function StatBox({ icon, label, value, highlight }: { icon: React.ReactNode; lab
         <span className="text-[9px] uppercase tracking-widest font-semibold">{label}</span>
       </div>
       <p className={`text-[18px] font-bold ${valColor}`}>{value}</p>
+    </div>
+  );
+}
+
+function SettingCell({ label, value, center }: { label: string; value: string; center?: boolean }) {
+  return (
+    <div className={`px-4 py-2.5 ${center ? "text-center" : "text-center"}`}>
+      <p className="text-[10px] text-muted-foreground font-semibold">{label}:</p>
+      <p className="text-[11px] text-foreground">{value}</p>
     </div>
   );
 }
