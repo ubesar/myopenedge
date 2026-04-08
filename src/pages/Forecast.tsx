@@ -33,7 +33,7 @@ const directionConfig = {
 };
 
 export default function Forecast() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { isActive } = useSubscription();
   const { executeAnalysis } = useAIAnalysis();
   const isMobile = useIsMobile();
@@ -46,6 +46,8 @@ export default function Forecast() {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState("");
   const [forecast, setForecast] = useState<Forecast | null>(null);
+
+  if (!authLoading && !user) return <Navigate to="/auth" replace />;
 
   const handleForecast = async () => {
     if (!user || !isActive) {
