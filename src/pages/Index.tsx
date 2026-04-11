@@ -153,7 +153,7 @@ const Index = () => {
     return { values: deduped };
   };
 
-  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50", weekdays: number[] = [1,2,3,4,5]) => {
+  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50", weekdays: number[] = [1,2,3,4,5], lookback: number = 3, sl: number = 2, tp: number = 4) => {
     let effectiveIbWindow = ibWindow;
     let effectiveMaxDays = maxDays;
     let effectiveMode = mode;
@@ -251,7 +251,7 @@ const Index = () => {
           setResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
         } else if (effectiveMode === "momentum") {
-          const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, parseFloat(bodyRatio), weekdays);
+          const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, lookback, weekdays, sl, tp);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setMomentumResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });
