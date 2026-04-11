@@ -10,10 +10,13 @@ import type { AnalysisTemplate, TemplateParams } from "@/hooks/useTemplates";
 
 export type OCCTimeframe = "M5" | "M15" | "M30" | "H1";
 export type MomentumBodyRatio = "0.40" | "0.50" | "0.60";
+export type MomentumLookback = "2" | "3" | "5" | "7";
+export type MomentumSL = "1" | "2" | "3" | "5";
+export type MomentumTP = "2" | "4" | "6" | "10";
 export type OCCBodyRatio = "0.40" | "0.50" | "0.60";
 
 interface ParameterPanelProps {
-  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio, weekdays: number[]) => void;
+  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio, weekdays: number[], lookback?: number, sl?: number, tp?: number) => void;
   loading: boolean;
   isFree?: boolean;
   occTimeframe?: OCCTimeframe;
