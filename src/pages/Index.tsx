@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import AITradingInsight from "@/components/AITradingInsight";
+import { EquityCurveChart } from "@/components/MomentumChart";
 import OCCDashboard from "@/components/OCCDashboard";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Navigate } from "react-router-dom";
