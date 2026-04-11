@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import AITradingInsight from "@/components/AITradingInsight";
+import { EquityCurveChart } from "@/components/MomentumChart";
 import OCCDashboard from "@/components/OCCDashboard";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Navigate } from "react-router-dom";
@@ -153,7 +154,7 @@ const Index = () => {
     return { values: deduped };
   };
 
-  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50", weekdays: number[] = [1,2,3,4,5]) => {
+  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50", weekdays: number[] = [1,2,3,4,5], lookback: number = 3, sl: number = 2, tp: number = 4) => {
     let effectiveIbWindow = ibWindow;
     let effectiveMaxDays = maxDays;
     let effectiveMode = mode;
@@ -251,7 +252,7 @@ const Index = () => {
           setResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
         } else if (effectiveMode === "momentum") {
-          const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, parseFloat(bodyRatio), weekdays);
+          const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, lookback, weekdays, sl, tp);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setMomentumResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });
@@ -396,6 +397,7 @@ const Index = () => {
       if (!stats) return null;
       const hf = stats.highFirst;
       const lf = stats.lowFirst;
+      const r = momentumResult;
       return (
         <div className="space-y-4">
           <div className="flex items-center gap-1.5">
@@ -414,6 +416,77 @@ const Index = () => {
               </button>
             ))}
           </div>
+
+          {/* Strategy Performance Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="rounded-lg border border-border/30 bg-card/40 p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">total trades</p>
+              <p className="text-lg font-bold text-foreground">{r.totalTrades}</p>
+            </div>
+            <div className="rounded-lg border border-border/30 bg-card/40 p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate</p>
+              <p className={`text-lg font-bold ${r.winRate >= 50 ? 'text-emerald-400' : 'text-red-400'}`}>{r.winRate.toFixed(1)}%</p>
+              <p className="text-[10px] text-muted-foreground">{r.wins}W / {r.losses}L</p>
+            </div>
+            <div className="rounded-lg border border-border/30 bg-card/40 p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">profit factor</p>
+              <p className={`text-lg font-bold ${r.profitFactor >= 1 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {r.profitFactor === Infinity ? '∞' : r.profitFactor.toFixed(2)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border/30 bg-card/40 p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">total p&l</p>
+              <p className={`text-lg font-bold ${r.totalPnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {r.totalPnl >= 0 ? '+' : ''}{r.totalPnl.toFixed(2)}
+              </p>
+            </div>
+          </div>
+
+          {/* Strategy Details */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="rounded-lg border border-border/30 bg-card/40 p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">avg win</p>
+              <p className="text-sm font-semibold text-emerald-400">+{r.avgWin.toFixed(2)}</p>
+            </div>
+            <div className="rounded-lg border border-border/30 bg-card/40 p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">avg loss</p>
+              <p className="text-sm font-semibold text-red-400">-{r.avgLoss.toFixed(2)}</p>
+            </div>
+            <div className="rounded-lg border border-border/30 bg-card/40 p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">expectancy</p>
+              <p className={`text-sm font-semibold ${r.expectancy >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {r.expectancy >= 0 ? '+' : ''}{r.expectancy.toFixed(2)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border/30 bg-card/40 p-3 text-center">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">lookback / SL / TP</p>
+              <p className="text-sm font-semibold text-foreground">{r.lookback} / {r.stopLoss} / {r.takeProfit}</p>
+            </div>
+          </div>
+
+          {/* Buy vs Sell Breakdown */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
+              <p className="text-[10px] uppercase tracking-wider text-emerald-400 mb-1">buy trades</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-lg font-bold text-foreground">{r.buyTrades}</span>
+                <span className="text-[11px] text-muted-foreground">win rate: <span className="text-emerald-400 font-semibold">{r.buyWinRate.toFixed(1)}%</span></span>
+              </div>
+            </div>
+            <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+              <p className="text-[10px] uppercase tracking-wider text-red-400 mb-1">sell trades</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-lg font-bold text-foreground">{r.sellTrades}</span>
+                <span className="text-[11px] text-muted-foreground">win rate: <span className="text-red-400 font-semibold">{r.sellWinRate.toFixed(1)}%</span></span>
+              </div>
+            </div>
+          </div>
+
+          {/* Equity Curve */}
+          {r.cumulativePnl.length > 0 && (
+            <EquityCurveChart data={r.cumulativePnl} />
+          )}
+
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
             <ChartCard
               title="high formed first"
@@ -429,7 +502,8 @@ const Index = () => {
               ]}
               settingsGrid={[
                 { label: "candle timeframe", value: tf },
-                { label: "session", value: "NY open" },
+                { label: "lookback", value: `${r.lookback} candles` },
+                { label: "SL / TP", value: `${r.stopLoss} / ${r.takeProfit} pts` },
                 { label: "date range", value: formatDateRange(analysisMaxDays) },
                 { label: "weekdays to use", value: formatWeekdays(analysisWeekdays) },
               ]}
@@ -448,7 +522,8 @@ const Index = () => {
               ]}
               settingsGrid={[
                 { label: "candle timeframe", value: tf },
-                { label: "session", value: "NY open" },
+                { label: "lookback", value: `${r.lookback} candles` },
+                { label: "SL / TP", value: `${r.stopLoss} / ${r.takeProfit} pts` },
                 { label: "date range", value: formatDateRange(analysisMaxDays) },
                 { label: "weekdays to use", value: formatWeekdays(analysisWeekdays) },
               ]}
@@ -458,11 +533,18 @@ const Index = () => {
             mode="momentum"
             symbol={symbol}
             analysisData={{
-              totalDays: momentumResult.totalDays,
+              totalDays: r.totalDays,
               currentTimeframe: tf,
+              totalTrades: r.totalTrades,
+              winRate: r.winRate,
+              profitFactor: r.profitFactor,
+              totalPnl: r.totalPnl,
+              lookback: r.lookback,
+              stopLoss: r.stopLoss,
+              takeProfit: r.takeProfit,
               highFirst: { total: hf.total, bullish: hf.bullish, bearish: hf.bearish, choppy: hf.choppy },
               lowFirst: { total: lf.total, bullish: lf.bullish, bearish: lf.bearish, choppy: lf.choppy },
-              lastDay: momentumResult.lastDay ? { date: momentumResult.lastDay.date, momentum: momentumResult.lastDay.momentum } : null,
+              lastDay: r.lastDay ? { date: r.lastDay.date, momentum: r.lastDay.momentum } : null,
             }}
           />
         </div>

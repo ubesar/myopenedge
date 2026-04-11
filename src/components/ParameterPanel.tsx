@@ -10,10 +10,13 @@ import type { AnalysisTemplate, TemplateParams } from "@/hooks/useTemplates";
 
 export type OCCTimeframe = "M5" | "M15" | "M30" | "H1";
 export type MomentumBodyRatio = "0.40" | "0.50" | "0.60";
+export type MomentumLookback = "2" | "3" | "5" | "7";
+export type MomentumSL = "1" | "2" | "3" | "5";
+export type MomentumTP = "2" | "4" | "6" | "10";
 export type OCCBodyRatio = "0.40" | "0.50" | "0.60";
 
 interface ParameterPanelProps {
-  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio, weekdays: number[]) => void;
+  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio, weekdays: number[], lookback?: number, sl?: number, tp?: number) => void;
   loading: boolean;
   isFree?: boolean;
   occTimeframe?: OCCTimeframe;
@@ -61,6 +64,9 @@ const ParameterPanel = ({
   const [bodyRatio, setBodyRatio] = useState<MomentumBodyRatio>("0.50");
   const [occBodyRatio, setOccBodyRatio] = useState<OCCBodyRatio>("0.50");
   const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
+  const [lookback, setLookback] = useState<MomentumLookback>("3");
+  const [momentumSL, setMomentumSL] = useState<MomentumSL>("2");
+  const [momentumTP, setMomentumTP] = useState<MomentumTP>("4");
 
   const [selectedTemplateId, setSelectedTemplateId] = useState("custom");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -70,7 +76,8 @@ const ParameterPanel = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!symbol.trim()) return;
-    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio, weekdays);
+    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio, weekdays, parseInt(lookback), parseFloat(momentumSL), parseFloat(momentumTP));
+  };
   };
 
   const handleTemplateSelect = (id: string) => {
@@ -179,15 +186,42 @@ const ParameterPanel = ({
 
           {mode === "momentum" && (
             <>
-              <p className="text-[11px] text-muted-foreground">subreport (candle 1 body)</p>
-              <Select value={bodyRatio} onValueChange={(v) => { setBodyRatio(v as MomentumBodyRatio); setSelectedTemplateId("custom"); }}>
+              <p className="text-[11px] text-muted-foreground">lookback candles (n-candle high/low)</p>
+              <Select value={lookback} onValueChange={(v) => { setLookback(v as MomentumLookback); setSelectedTemplateId("custom"); }}>
                 <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="0.40">body ≥ 40%</SelectItem>
-                  <SelectItem value="0.50">body ≥ 50%</SelectItem>
-                  <SelectItem value="0.60">body ≥ 60%</SelectItem>
+                  <SelectItem value="2">2 candles</SelectItem>
+                  <SelectItem value="3">3 candles</SelectItem>
+                  <SelectItem value="5">5 candles</SelectItem>
+                  <SelectItem value="7">7 candles</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <p className="text-[11px] text-muted-foreground">stop loss (points)</p>
+              <Select value={momentumSL} onValueChange={(v) => { setMomentumSL(v as MomentumSL); setSelectedTemplateId("custom"); }}>
+                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 point</SelectItem>
+                  <SelectItem value="2">2 points</SelectItem>
+                  <SelectItem value="3">3 points</SelectItem>
+                  <SelectItem value="5">5 points</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <p className="text-[11px] text-muted-foreground">take profit (points)</p>
+              <Select value={momentumTP} onValueChange={(v) => { setMomentumTP(v as MomentumTP); setSelectedTemplateId("custom"); }}>
+                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="2">2 points</SelectItem>
+                  <SelectItem value="4">4 points</SelectItem>
+                  <SelectItem value="6">6 points</SelectItem>
+                  <SelectItem value="10">10 points</SelectItem>
                 </SelectContent>
               </Select>
             </>
