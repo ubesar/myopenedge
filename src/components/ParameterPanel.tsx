@@ -78,7 +78,6 @@ const ParameterPanel = ({
     if (!symbol.trim()) return;
     onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio, weekdays, parseInt(lookback), parseFloat(momentumSL), parseFloat(momentumTP));
   };
-  };
 
   const handleTemplateSelect = (id: string) => {
     setSelectedTemplateId(id);
