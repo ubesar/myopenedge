@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import AITradingInsight from "@/components/AITradingInsight";
-import { EquityCurveChart } from "@/components/MomentumChart";
+import { EquityCurveChart, DailyPnlChart } from "@/components/MomentumChart";
 import OCCDashboard from "@/components/OCCDashboard";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Navigate } from "react-router-dom";
@@ -67,7 +67,7 @@ const Index = () => {
   const [selectedRunId, setSelectedRunId] = useState<string | undefined>();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [occCandleSize, setOccCandleSize] = useState<import("@/lib/occ-analysis").OCCCandleSize>("30m");
-  const [momentumTimeframe, setMomentumTimeframe] = useState<OCCTimeframe>("M15");
+  const [momentumSelectedDate, setMomentumSelectedDate] = useState<string>("");
   const [analysisMaxDays, setAnalysisMaxDays] = useState<number>(0);
   const [analysisWeekdays, setAnalysisWeekdays] = useState<number[]>([1,2,3,4,5]);
   const { runs: historyRuns, addRun, deleteRun } = useAnalysisHistory();
@@ -255,7 +255,8 @@ const Index = () => {
           const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, lookback, weekdays, sl, tp);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setMomentumResult(a);
-          addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });
+          if (a.lastDay) setMomentumSelectedDate(a.lastDay.date);
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, winRate: a.winRate, profitFactor: a.profitFactor, totalPnl: a.totalPnl });
         } else if (effectiveMode === "occ") {
           setOccRawBars(values as any);
           setOccMaxDays(effectiveMaxDays);
