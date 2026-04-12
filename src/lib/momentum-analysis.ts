@@ -11,7 +11,7 @@ interface BarData {
   close: string;
 }
 
-/** a single momentum trade signal */
+/** a single momentum trade */
 export interface MomentumTrade {
   entryTime: string;
   entryPrice: number;
@@ -23,7 +23,7 @@ export interface MomentumTrade {
   isWin: boolean;
 }
 
-/** per-day analysis result */
+/** per-day result */
 export interface MomentumDayData {
   date: string;
   bars: CandleBar[];
@@ -32,36 +32,18 @@ export interface MomentumDayData {
   highFirstFormed: boolean;
   trades: MomentumTrade[];
   dayPnl: number;
-  momentum: "bullish" | "bearish" | "choppy";
-  signals: { type: "bullish" | "bearish"; times: [string, string] }[];
-  timeframes: MomentumTFResult[];
-}
-
-export interface MomentumTFResult {
-  tf: string;
-  tfMinutes: number;
-  momentum: "bullish" | "bearish" | "choppy";
-  signals: { type: "bullish" | "bearish"; times: [string, string] }[];
-  trades: MomentumTrade[];
-  winRate: number;
-  totalTrades: number;
-}
-
-export interface MomentumTFStats {
-  highFirst: { total: number; bullish: number; bearish: number; choppy: number };
-  lowFirst: { total: number; bullish: number; bearish: number; choppy: number };
+  momentum: "bullish" | "bearish" | "neutral";
 }
 
 export interface MomentumResult {
   totalDays: number;
   bullishDays: number;
   bearishDays: number;
-  choppyDays: number;
+  neutralDays: number;
   ibWindowMinutes: number;
   lookback: number;
   stopLoss: number;
   takeProfit: number;
-  /** overall trade stats */
   totalTrades: number;
   wins: number;
   losses: number;
@@ -71,28 +53,21 @@ export interface MomentumResult {
   avgWin: number;
   avgLoss: number;
   expectancy: number;
-  /** by direction */
+  maxDrawdown: number;
   buyTrades: number;
   buyWins: number;
   buyWinRate: number;
   sellTrades: number;
   sellWins: number;
   sellWinRate: number;
-  highFirst: { total: number; bullish: number; bearish: number; choppy: number };
-  lowFirst: { total: number; bullish: number; bearish: number; choppy: number };
-  tfStats: Record<string, MomentumTFStats>;
+  highFirst: { total: number; bullish: number; bearish: number; neutral: number };
+  lowFirst: { total: number; bullish: number; bearish: number; neutral: number };
   allDays: MomentumDayData[];
   lastDay: MomentumDayData | null;
   allTrades: MomentumTrade[];
-  cumulativePnl: { time: string; pnl: number }[];
+  cumulativePnl: { trade: number; pnl: number }[];
+  dailyPnl: { date: string; pnl: number }[];
 }
-
-const TF_CONFIGS = [
-  { tf: "M5", minutes: 5 },
-  { tf: "M15", minutes: 15 },
-  { tf: "M30", minutes: 30 },
-  { tf: "H1", minutes: 60 },
-];
 
 function parseDateTime(dt: string): Date {
   return parse(dt, "yyyy-MM-dd HH:mm:ss", new Date());
@@ -102,50 +77,59 @@ function getTimeMinutes(dt: Date): number {
   return dt.getHours() * 60 + dt.getMinutes();
 }
 
-const IB_START = 9 * 60 + 30;
-const NOON = 12 * 60;
-const MARKET_CLOSE = 16 * 60;
+const IB_START = 9 * 60 + 30; // 09:30 ET
+const MARKET_CLOSE = 16 * 60; // 16:00 ET
 
 /**
- * IBKR-style N-candle breakout momentum strategy:
- * - Track rolling high/low of last N candles
- * - Buy when close > N-candle high
- * - Sell when close < N-candle low
- * - Apply SL/TP from entry price
- * - Only one position at a time
+ * IBKR N-Candle Breakout Momentum Strategy
+ * Reference: interactivebrokers.com/campus/ibkr-quant-news/candlestick-trading-a-momentum-strategy-with-example
+ *
+ * Rules:
+ * 1. compute rolling high of last N candles and rolling low of last N candles
+ * 2. if current close > N-candle high → BUY signal
+ * 3. if current close < N-candle low → SELL signal
+ * 4. once in position, check SL and TP each candle
+ *    - buy: SL if price drops to entry - SL, TP if price rises to entry + TP
+ *    - sell: SL if price rises to entry + SL, TP if price drops to entry - TP
+ * 5. only one position at a time; close at EOD if still open
+ * 6. trades only start AFTER IB window ends (IB is used for context/bias)
  */
-function runMomentumStrategy(
+function runStrategy(
   candles: CandleBar[],
   lookback: number,
   stopLoss: number,
-  takeProfit: number
+  takeProfit: number,
+  ibEndIndex: number
 ): MomentumTrade[] {
   const trades: MomentumTrade[] = [];
   if (candles.length <= lookback) return trades;
 
   let position: { direction: "buy" | "sell"; entryPrice: number; entryTime: string } | null = null;
 
-  for (let i = lookback; i < candles.length; i++) {
-    const curr = candles[i];
+  // start scanning from max(lookback, ibEndIndex) so we have enough history AND are past IB
+  const startIdx = Math.max(lookback, ibEndIndex);
 
-    // if in position, check SL/TP
+  for (let i = startIdx; i < candles.length; i++) {
+    const c = candles[i];
+
+    // check exit if in position
     if (position) {
       let exitReason: "tp" | "sl" | null = null;
       let exitPrice = 0;
 
       if (position.direction === "buy") {
-        if (curr.low <= position.entryPrice - stopLoss) {
+        if (c.low <= position.entryPrice - stopLoss) {
           exitReason = "sl";
           exitPrice = position.entryPrice - stopLoss;
-        } else if (curr.high >= position.entryPrice + takeProfit) {
+        } else if (c.high >= position.entryPrice + takeProfit) {
           exitReason = "tp";
           exitPrice = position.entryPrice + takeProfit;
         }
       } else {
-        if (curr.high >= position.entryPrice + stopLoss) {
+        if (c.high >= position.entryPrice + stopLoss) {
           exitReason = "sl";
           exitPrice = position.entryPrice + stopLoss;
-        } else if (curr.low <= position.entryPrice - takeProfit) {
+        } else if (c.low <= position.entryPrice - takeProfit) {
           exitReason = "tp";
           exitPrice = position.entryPrice - takeProfit;
         }
@@ -159,7 +143,7 @@ function runMomentumStrategy(
           entryTime: position.entryTime,
           entryPrice: position.entryPrice,
           direction: position.direction,
-          exitTime: curr.time,
+          exitTime: c.time,
           exitPrice,
           exitReason,
           pnl,
@@ -169,9 +153,8 @@ function runMomentumStrategy(
       }
     }
 
-    // if no position, check for new signal
+    // check entry if flat
     if (!position) {
-      // compute N-candle high/low
       let nHigh = -Infinity;
       let nLow = Infinity;
       for (let j = i - lookback; j < i; j++) {
@@ -179,26 +162,26 @@ function runMomentumStrategy(
         if (candles[j].low < nLow) nLow = candles[j].low;
       }
 
-      if (curr.close > nHigh) {
-        position = { direction: "buy", entryPrice: curr.close, entryTime: curr.time };
-      } else if (curr.close < nLow) {
-        position = { direction: "sell", entryPrice: curr.close, entryTime: curr.time };
+      if (c.close > nHigh) {
+        position = { direction: "buy", entryPrice: c.close, entryTime: c.time };
+      } else if (c.close < nLow) {
+        position = { direction: "sell", entryPrice: c.close, entryTime: c.time };
       }
     }
   }
 
-  // close open position at end of day
+  // close open position at EOD
   if (position && candles.length > 0) {
-    const lastCandle = candles[candles.length - 1];
+    const last = candles[candles.length - 1];
     const pnl = position.direction === "buy"
-      ? lastCandle.close - position.entryPrice
-      : position.entryPrice - lastCandle.close;
+      ? last.close - position.entryPrice
+      : position.entryPrice - last.close;
     trades.push({
       entryTime: position.entryTime,
       entryPrice: position.entryPrice,
       direction: position.direction,
-      exitTime: lastCandle.time,
-      exitPrice: lastCandle.close,
+      exitTime: last.time,
+      exitPrice: last.close,
       exitReason: "eod",
       pnl,
       isWin: pnl > 0,
@@ -206,46 +189,6 @@ function runMomentumStrategy(
   }
 
   return trades;
-}
-
-function evaluateMomentumTF(
-  momentumBars5min: CandleBar[],
-  tfMinutes: number,
-  lookback: number,
-  stopLoss: number,
-  takeProfit: number
-): MomentumTFResult {
-  const tf = TF_CONFIGS.find(t => t.minutes === tfMinutes)?.tf || `M${tfMinutes}`;
-  const candles = aggregateBars(momentumBars5min, tfMinutes);
-  const trades = runMomentumStrategy(candles, lookback, stopLoss, takeProfit);
-
-  const wins = trades.filter(t => t.isWin).length;
-  const winRate = trades.length > 0 ? (wins / trades.length) * 100 : 0;
-
-  // determine overall momentum from net pnl
-  const netPnl = trades.reduce((s, t) => s + t.pnl, 0);
-  const momentum: "bullish" | "bearish" | "choppy" =
-    trades.length === 0 ? "choppy" :
-    netPnl > 0 ? "bullish" : netPnl < 0 ? "bearish" : "choppy";
-
-  // backward-compatible signals
-  const signals = trades.map(t => ({
-    type: t.direction === "buy" ? "bullish" as const : "bearish" as const,
-    times: [t.entryTime, t.exitTime] as [string, string],
-  }));
-
-  return { tf, tfMinutes, momentum, signals, trades, winRate, totalTrades: trades.length };
-}
-
-function getOverallMomentum(timeframes: MomentumTFResult[]): "bullish" | "bearish" | "choppy" {
-  let bullish = 0, bearish = 0;
-  for (const tf of timeframes) {
-    if (tf.momentum === "bullish") bullish++;
-    else if (tf.momentum === "bearish") bearish++;
-  }
-  if (bullish > bearish) return "bullish";
-  if (bearish > bullish) return "bearish";
-  return "choppy";
 }
 
 export function analyzeMomentum(
@@ -259,6 +202,7 @@ export function analyzeMomentum(
 ): MomentumResult {
   const ibEnd = IB_START + ibWindowMinutes;
 
+  // group bars by date
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
     const date = bar.datetime.split(" ")[0];
@@ -279,7 +223,7 @@ export function analyzeMomentum(
     const dayBars = byDate.get(date)!;
     dayBars.sort((a, b) => parseDateTime(a.datetime).getTime() - parseDateTime(b.datetime).getTime());
 
-    // IB calculation
+    // compute IB range
     const ibBars = dayBars.filter(b => {
       const m = getTimeMinutes(parseDateTime(b.datetime));
       return m >= IB_START && m < ibEnd;
@@ -293,6 +237,7 @@ export function analyzeMomentum(
       if (l < ibLow) ibLow = l;
     }
 
+    // determine which formed first
     let firstHighTouch = "", firstLowTouch = "";
     for (const bar of ibBars) {
       if (!firstHighTouch && parseFloat(bar.high) >= ibHigh) firstHighTouch = bar.datetime;
@@ -300,7 +245,7 @@ export function analyzeMomentum(
     }
     const highFirstFormed = parseDateTime(firstHighTouch).getTime() < parseDateTime(firstLowTouch).getTime();
 
-    // momentum bars: 09:30–16:00 (full session for strategy)
+    // full session bars as CandleBar (5min)
     const sessionBars = dayBars.filter(b => {
       const m = getTimeMinutes(parseDateTime(b.datetime));
       return m >= IB_START && m < MARKET_CLOSE;
@@ -316,33 +261,23 @@ export function analyzeMomentum(
 
     if (bars5min.length === 0) continue;
 
-    // evaluate all timeframes
-    const timeframes = TF_CONFIGS.map(cfg =>
-      evaluateMomentumTF(bars5min, cfg.minutes, lookback, stopLoss, takeProfit)
-    );
-    const momentum = getOverallMomentum(timeframes);
+    // find IB end index (first candle AFTER IB window)
+    const ibEndIndex = bars5min.findIndex(b => {
+      const [hh, mm] = b.time.split(":").map(Number);
+      return hh * 60 + mm >= ibEnd;
+    });
 
-    // primary TF trades (M15 default)
-    const primaryTf = timeframes.find(t => t.tf === "M15") || timeframes[0];
-    const trades = primaryTf.trades;
-    const signals = primaryTf.signals;
+    const trades = runStrategy(bars5min, lookback, stopLoss, takeProfit, ibEndIndex >= 0 ? ibEndIndex : 0);
     const dayPnl = trades.reduce((s, t) => s + t.pnl, 0);
 
-    allDays.push({
-      date,
-      bars: bars5min,
-      ibHigh,
-      ibLow,
-      highFirstFormed,
-      trades,
-      dayPnl,
-      momentum,
-      signals,
-      timeframes,
-    });
+    const momentum: "bullish" | "bearish" | "neutral" =
+      trades.length === 0 ? "neutral" :
+      dayPnl > 0 ? "bullish" : dayPnl < 0 ? "bearish" : "neutral";
+
+    allDays.push({ date, bars: bars5min, ibHigh, ibLow, highFirstFormed, trades, dayPnl, momentum });
   }
 
-  // aggregate all trades
+  // aggregate
   const allTrades = allDays.flatMap(d => d.trades);
   const wins = allTrades.filter(t => t.isWin).length;
   const losses = allTrades.length - wins;
@@ -359,40 +294,45 @@ export function analyzeMomentum(
   const avgLoss = lossTrades.length > 0 ? Math.abs(lossTrades.reduce((s, t) => s + t.pnl, 0) / lossTrades.length) : 0;
   const expectancy = allTrades.length > 0 ? totalPnl / allTrades.length : 0;
 
+  // max drawdown
+  let peak = 0, dd = 0, maxDD = 0;
+  let cum = 0;
+  for (const t of allTrades) {
+    cum += t.pnl;
+    if (cum > peak) peak = cum;
+    dd = peak - cum;
+    if (dd > maxDD) maxDD = dd;
+  }
+
   // direction stats
-  const buyTrades = allTrades.filter(t => t.direction === "buy");
-  const sellTrades = allTrades.filter(t => t.direction === "sell");
+  const buyArr = allTrades.filter(t => t.direction === "buy");
+  const sellArr = allTrades.filter(t => t.direction === "sell");
 
   // cumulative pnl
   let cumPnl = 0;
-  const cumulativePnl = allTrades.map((t, i) => {
-    cumPnl += t.pnl;
-    return { time: `${i + 1}`, pnl: parseFloat(cumPnl.toFixed(2)) };
+  const cumulativePnl = allTrades.map((_, i) => {
+    cumPnl += allTrades[i].pnl;
+    return { trade: i + 1, pnl: parseFloat(cumPnl.toFixed(2)) };
   });
 
-  // highFirst/lowFirst
-  const highFirstDays = allDays.filter(d => d.highFirstFormed);
-  const lowFirstDays = allDays.filter(d => !d.highFirstFormed);
+  // daily pnl
+  const dailyPnl = allDays.map(d => ({ date: d.date, pnl: parseFloat(d.dayPnl.toFixed(2)) }));
 
-  // per-TF stats
-  const tfStats: Record<string, MomentumTFStats> = {};
-  for (const cfg of TF_CONFIGS) {
-    const hf = { total: 0, bullish: 0, bearish: 0, choppy: 0 };
-    const lf = { total: 0, bullish: 0, bearish: 0, choppy: 0 };
-    for (const day of allDays) {
-      const tfResult = day.timeframes.find(t => t.tf === cfg.tf);
-      if (!tfResult) continue;
-      if (day.highFirstFormed) { hf.total++; hf[tfResult.momentum]++; }
-      else { lf.total++; lf[tfResult.momentum]++; }
-    }
-    tfStats[cfg.tf] = { highFirst: hf, lowFirst: lf };
-  }
+  // highFirst/lowFirst breakdown
+  const hfDays = allDays.filter(d => d.highFirstFormed);
+  const lfDays = allDays.filter(d => !d.highFirstFormed);
+  const countMomentum = (arr: MomentumDayData[]) => ({
+    total: arr.length,
+    bullish: arr.filter(d => d.momentum === "bullish").length,
+    bearish: arr.filter(d => d.momentum === "bearish").length,
+    neutral: arr.filter(d => d.momentum === "neutral").length,
+  });
 
   return {
     totalDays: allDays.length,
     bullishDays: allDays.filter(d => d.momentum === "bullish").length,
     bearishDays: allDays.filter(d => d.momentum === "bearish").length,
-    choppyDays: allDays.filter(d => d.momentum === "choppy").length,
+    neutralDays: allDays.filter(d => d.momentum === "neutral").length,
     ibWindowMinutes,
     lookback,
     stopLoss,
@@ -406,28 +346,19 @@ export function analyzeMomentum(
     avgWin,
     avgLoss,
     expectancy,
-    buyTrades: buyTrades.length,
-    buyWins: buyTrades.filter(t => t.isWin).length,
-    buyWinRate: buyTrades.length > 0 ? (buyTrades.filter(t => t.isWin).length / buyTrades.length) * 100 : 0,
-    sellTrades: sellTrades.length,
-    sellWins: sellTrades.filter(t => t.isWin).length,
-    sellWinRate: sellTrades.length > 0 ? (sellTrades.filter(t => t.isWin).length / sellTrades.length) * 100 : 0,
-    highFirst: {
-      total: highFirstDays.length,
-      bullish: highFirstDays.filter(d => d.momentum === "bullish").length,
-      bearish: highFirstDays.filter(d => d.momentum === "bearish").length,
-      choppy: highFirstDays.filter(d => d.momentum === "choppy").length,
-    },
-    lowFirst: {
-      total: lowFirstDays.length,
-      bullish: lowFirstDays.filter(d => d.momentum === "bullish").length,
-      bearish: lowFirstDays.filter(d => d.momentum === "bearish").length,
-      choppy: lowFirstDays.filter(d => d.momentum === "choppy").length,
-    },
-    tfStats,
+    maxDrawdown: parseFloat(maxDD.toFixed(2)),
+    buyTrades: buyArr.length,
+    buyWins: buyArr.filter(t => t.isWin).length,
+    buyWinRate: buyArr.length > 0 ? (buyArr.filter(t => t.isWin).length / buyArr.length) * 100 : 0,
+    sellTrades: sellArr.length,
+    sellWins: sellArr.filter(t => t.isWin).length,
+    sellWinRate: sellArr.length > 0 ? (sellArr.filter(t => t.isWin).length / sellArr.length) * 100 : 0,
+    highFirst: countMomentum(hfDays),
+    lowFirst: countMomentum(lfDays),
     allDays,
     lastDay: allDays.length > 0 ? allDays[allDays.length - 1] : null,
     allTrades,
     cumulativePnl,
+    dailyPnl,
   };
 }
