@@ -11,16 +11,15 @@ interface BarData {
   close: string;
 }
 
-export interface MomentumSignal {
-  type: "bullish" | "bearish";
-  times: [string, string];
-}
-
-export interface MomentumTFResult {
-  tf: string;
-  tfMinutes: number;
-  momentum: "bullish" | "bearish" | "choppy";
-  signals: MomentumSignal[];
+export interface MomentumTrade {
+  entryTime: string;
+  entryPrice: number;
+  exitTime: string;
+  exitPrice: number;
+  direction: "buy" | "sell";
+  exitReason: "tp" | "sl" | "eod";
+  pnl: number;
+  cumPnl: number;
 }
 
 export interface MomentumDayData {
@@ -29,35 +28,32 @@ export interface MomentumDayData {
   ibHigh: number;
   ibLow: number;
   highFirstFormed: boolean;
-  momentum: "bullish" | "bearish" | "choppy";
-  signals: MomentumSignal[];
-  timeframes: MomentumTFResult[];
-}
-
-export interface MomentumTFStats {
-  highFirst: { total: number; bullish: number; bearish: number; choppy: number };
-  lowFirst: { total: number; bullish: number; bearish: number; choppy: number };
+  trades: MomentumTrade[];
+  dayPnl: number;
 }
 
 export interface MomentumResult {
   totalDays: number;
-  bullishDays: number;
-  bearishDays: number;
-  choppyDays: number;
   ibWindowMinutes: number;
-  highFirst: { total: number; bullish: number; bearish: number; choppy: number };
-  lowFirst: { total: number; bullish: number; bearish: number; choppy: number };
-  tfStats: Record<string, MomentumTFStats>;
+  lookback: number;
+  stopLoss: number;
+  takeProfit: number;
+  totalTrades: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  profitFactor: number;
+  expectancy: number;
+  grossProfit: number;
+  grossLoss: number;
+  netPnl: number;
+  maxDrawdown: number;
+  equityCurve: { trade: number; pnl: number }[];
+  highFirst: { total: number; trades: number; wins: number; winRate: number };
+  lowFirst: { total: number; trades: number; wins: number; winRate: number };
   allDays: MomentumDayData[];
   lastDay: MomentumDayData | null;
 }
-
-const TF_CONFIGS = [
-  { tf: "M5", minutes: 5 },
-  { tf: "M15", minutes: 15 },
-  { tf: "M30", minutes: 30 },
-  { tf: "H1", minutes: 60 },
-];
 
 function parseDateTime(dt: string): Date {
   return parse(dt, "yyyy-MM-dd HH:mm:ss", new Date());
@@ -68,63 +64,26 @@ function getTimeMinutes(dt: Date): number {
 }
 
 const IB_START = 9 * 60 + 30;
-const NOON = 12 * 60;
 const MARKET_CLOSE = 16 * 60;
 
-function detectSignals(candles: CandleBar[]): MomentumSignal[] {
-  const signals: MomentumSignal[] = [];
-  let i = 0;
-  while (i < candles.length - 1) {
-    const prev = candles[i];
-    const curr = candles[i + 1];
-
-    const prevBody = Math.abs(prev.close - prev.open);
-    const prevRange = prev.high - prev.low;
-    const currBody = Math.abs(curr.close - curr.open);
-    const currRange = curr.high - curr.low;
-
-    const prevBullish = prev.close >= prev.open;
-    const currBullish = curr.close >= curr.open;
-    const sameColor = prevBullish === currBullish;
-
-    if (
-      prevRange > 0 && currRange > 0 &&
-      prevBody / prevRange >= 0.50 &&
-      currBody / currRange >= 0.30 &&
-      sameColor
-    ) {
-      signals.push({
-        type: prevBullish ? "bullish" : "bearish",
-        times: [prev.time, curr.time],
-      });
-      i += 2;
-    } else {
-      i++;
-    }
-  }
-  return signals;
-}
-
-function evaluateMomentumTF(momentumBars5min: CandleBar[], tfMinutes: number): MomentumTFResult {
-  const tf = TF_CONFIGS.find(t => t.minutes === tfMinutes)?.tf || `M${tfMinutes}`;
-  const candles = aggregateBars(momentumBars5min, tfMinutes);
-  const signals = detectSignals(candles);
-  const momentum = signals.length > 0 ? signals[0].type : "choppy";
-  return { tf, tfMinutes, momentum, signals };
-}
-
-function getOverallMomentum(timeframes: MomentumTFResult[]): "bullish" | "bearish" | "choppy" {
-  let bullish = 0, bearish = 0;
-  for (const tf of timeframes) {
-    if (tf.momentum === "bullish") bullish++;
-    else if (tf.momentum === "bearish") bearish++;
-  }
-  if (bullish > bearish) return "bullish";
-  if (bearish > bullish) return "bearish";
-  return "choppy";
-}
-
-export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0): MomentumResult {
+/**
+ * IBKR N-Candle Breakout Momentum Strategy
+ * 
+ * After IB window ends, on each 5-min bar:
+ * - Calculate the highest high and lowest low of the previous N candles
+ * - Buy signal: Close > N-candle high
+ * - Sell signal: Close < N-candle low
+ * - Apply Stop Loss and Take Profit
+ * - Only one position at a time; close at EOD if still open
+ */
+export function analyzeMomentum(
+  bars: BarData[],
+  ibWindowMinutes: number = 60,
+  maxDays: number = 0,
+  lookback: number = 3,
+  stopLoss: number = 2,
+  takeProfit: number = 5
+): MomentumResult {
   const ibEnd = IB_START + ibWindowMinutes;
 
   const byDate = new Map<string, BarData[]>();
@@ -135,11 +94,21 @@ export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, m
   }
 
   let dates = Array.from(byDate.keys()).sort();
-  if (maxDays > 0) {
-    dates = dates.slice(-maxDays);
-  }
+  if (maxDays > 0) dates = dates.slice(-maxDays);
 
   const allDays: MomentumDayData[] = [];
+  let cumPnl = 0;
+  const equityCurve: { trade: number; pnl: number }[] = [{ trade: 0, pnl: 0 }];
+  let tradeCount = 0;
+
+  // global stats
+  let totalTrades = 0, wins = 0, losses = 0;
+  let grossProfit = 0, grossLoss = 0;
+  let peak = 0, maxDrawdown = 0;
+
+  // high/low first stats
+  const hfStats = { total: 0, trades: 0, wins: 0, winRate: 0 };
+  const lfStats = { total: 0, trades: 0, wins: 0, winRate: 0 };
 
   for (const date of dates) {
     const dayBars = byDate.get(date)!;
@@ -153,113 +122,187 @@ export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, m
 
     if (ibBars.length < 2) continue;
 
-    let ibHigh = -Infinity;
-    let ibLow = Infinity;
+    let ibHigh = -Infinity, ibLow = Infinity;
     for (const bar of ibBars) {
-      const h = parseFloat(bar.high);
-      const l = parseFloat(bar.low);
+      const h = parseFloat(bar.high), l = parseFloat(bar.low);
       if (h > ibHigh) ibHigh = h;
       if (l < ibLow) ibLow = l;
     }
 
-    let firstHighTouch = "";
-    let firstLowTouch = "";
+    // Determine high/low first formed
+    let firstHighTouch = "", firstLowTouch = "";
     for (const bar of ibBars) {
       if (!firstHighTouch && parseFloat(bar.high) >= ibHigh) firstHighTouch = bar.datetime;
       if (!firstLowTouch && parseFloat(bar.low) <= ibLow) firstLowTouch = bar.datetime;
     }
     const highFirstFormed = parseDateTime(firstHighTouch).getTime() < parseDateTime(firstLowTouch).getTime();
 
-    // Momentum detection: 09:30-12:00 window, multi-TF
-    const momentumBars = dayBars.filter((b) => {
+    // Trading bars: after IB ends until market close
+    const tradingBars = dayBars.filter((b) => {
       const m = getTimeMinutes(parseDateTime(b.datetime));
-      return m >= IB_START && m < NOON;
+      return m >= ibEnd && m < MARKET_CLOSE;
     });
 
-    const momentumBars5min: CandleBar[] = momentumBars.map(b => ({
+    if (tradingBars.length < lookback + 1) {
+      // Full day bars for chart display
+      const fullBars = dayBars.filter((b) => {
+        const m = getTimeMinutes(parseDateTime(b.datetime));
+        return m >= IB_START && m < MARKET_CLOSE;
+      });
+      if (fullBars.length > 0) {
+        allDays.push({
+          date, bars: fullBars.map(b => ({
+            time: b.datetime.split(" ")[1].slice(0, 5),
+            open: parseFloat(b.open), high: parseFloat(b.high),
+            low: parseFloat(b.low), close: parseFloat(b.close),
+          })),
+          ibHigh, ibLow, highFirstFormed, trades: [], dayPnl: 0,
+        });
+        if (highFirstFormed) hfStats.total++;
+        else lfStats.total++;
+      }
+      continue;
+    }
+
+    // Convert trading bars to CandleBar
+    const candles: CandleBar[] = tradingBars.map(b => ({
       time: b.datetime.split(" ")[1].slice(0, 5),
-      open: parseFloat(b.open),
-      high: parseFloat(b.high),
-      low: parseFloat(b.low),
-      close: parseFloat(b.close),
+      open: parseFloat(b.open), high: parseFloat(b.high),
+      low: parseFloat(b.low), close: parseFloat(b.close),
     }));
 
-    // Evaluate all 4 timeframes
-    const timeframes = TF_CONFIGS.map(cfg => evaluateMomentumTF(momentumBars5min, cfg.minutes));
-    const momentum = getOverallMomentum(timeframes);
+    // N-Candle Breakout Strategy
+    const trades: MomentumTrade[] = [];
+    let position: { direction: "buy" | "sell"; entryPrice: number; entryTime: string } | null = null;
+    let dayPnl = 0;
 
-    // Keep first signal set for backward compat
-    const firstTfWithSignal = timeframes.find(tf => tf.signals.length > 0);
-    const signals = firstTfWithSignal?.signals || [];
+    for (let i = lookback; i < candles.length; i++) {
+      const curr = candles[i];
+      const prevN = candles.slice(i - lookback, i);
+      const nHigh = Math.max(...prevN.map(c => c.high));
+      const nLow = Math.min(...prevN.map(c => c.low));
+      const isLastBar = i === candles.length - 1;
+
+      if (position) {
+        // Check exit conditions
+        let exitReason: "tp" | "sl" | "eod" | null = null;
+        let exitPrice = curr.close;
+
+        if (position.direction === "buy") {
+          if (curr.low <= position.entryPrice - stopLoss) {
+            exitReason = "sl";
+            exitPrice = position.entryPrice - stopLoss;
+          } else if (curr.high >= position.entryPrice + takeProfit) {
+            exitReason = "tp";
+            exitPrice = position.entryPrice + takeProfit;
+          } else if (isLastBar) {
+            exitReason = "eod";
+            exitPrice = curr.close;
+          }
+        } else {
+          if (curr.high >= position.entryPrice + stopLoss) {
+            exitReason = "sl";
+            exitPrice = position.entryPrice + stopLoss;
+          } else if (curr.low <= position.entryPrice - takeProfit) {
+            exitReason = "tp";
+            exitPrice = position.entryPrice - takeProfit;
+          } else if (isLastBar) {
+            exitReason = "eod";
+            exitPrice = curr.close;
+          }
+        }
+
+        if (exitReason) {
+          const pnl = position.direction === "buy"
+            ? exitPrice - position.entryPrice
+            : position.entryPrice - exitPrice;
+          cumPnl += pnl;
+          dayPnl += pnl;
+          tradeCount++;
+
+          trades.push({
+            entryTime: position.entryTime,
+            entryPrice: position.entryPrice,
+            exitTime: curr.time,
+            exitPrice,
+            direction: position.direction,
+            exitReason,
+            pnl,
+            cumPnl,
+          });
+
+          totalTrades++;
+          if (pnl > 0) { wins++; grossProfit += pnl; }
+          else { losses++; grossLoss += Math.abs(pnl); }
+
+          if (highFirstFormed) { hfStats.trades++; if (pnl > 0) hfStats.wins++; }
+          else { lfStats.trades++; if (pnl > 0) lfStats.wins++; }
+
+          equityCurve.push({ trade: tradeCount, pnl: cumPnl });
+          if (cumPnl > peak) peak = cumPnl;
+          const dd = peak - cumPnl;
+          if (dd > maxDrawdown) maxDrawdown = dd;
+
+          position = null;
+        }
+      }
+
+      // Check entry signals (only if no position)
+      if (!position && !isLastBar) {
+        if (curr.close > nHigh) {
+          position = { direction: "buy", entryPrice: curr.close, entryTime: curr.time };
+        } else if (curr.close < nLow) {
+          position = { direction: "sell", entryPrice: curr.close, entryTime: curr.time };
+        }
+      }
+    }
 
     // Full day bars for chart
-    const fullDayBars = dayBars.filter((b) => {
+    const fullBars = dayBars.filter((b) => {
       const m = getTimeMinutes(parseDateTime(b.datetime));
       return m >= IB_START && m < MARKET_CLOSE;
     });
 
-    if (fullDayBars.length === 0) continue;
+    if (highFirstFormed) hfStats.total++;
+    else lfStats.total++;
 
     allDays.push({
       date,
-      bars: fullDayBars.map(b => ({
+      bars: fullBars.map(b => ({
         time: b.datetime.split(" ")[1].slice(0, 5),
-        open: parseFloat(b.open),
-        high: parseFloat(b.high),
-        low: parseFloat(b.low),
-        close: parseFloat(b.close),
+        open: parseFloat(b.open), high: parseFloat(b.high),
+        low: parseFloat(b.low), close: parseFloat(b.close),
       })),
-      ibHigh,
-      ibLow,
-      highFirstFormed,
-      momentum,
-      signals,
-      timeframes,
+      ibHigh, ibLow, highFirstFormed, trades, dayPnl,
     });
   }
 
-  // Overall highFirst/lowFirst stats (based on overall momentum)
-  const highFirstDays = allDays.filter((d) => d.highFirstFormed);
-  const lowFirstDays = allDays.filter((d) => !d.highFirstFormed);
+  hfStats.winRate = hfStats.trades > 0 ? (hfStats.wins / hfStats.trades) * 100 : 0;
+  lfStats.winRate = lfStats.trades > 0 ? (lfStats.wins / lfStats.trades) * 100 : 0;
 
-  // Per-TF stats
-  const tfStats: Record<string, MomentumTFStats> = {};
-  for (const cfg of TF_CONFIGS) {
-    const hf = { total: 0, bullish: 0, bearish: 0, choppy: 0 };
-    const lf = { total: 0, bullish: 0, bearish: 0, choppy: 0 };
-    for (const day of allDays) {
-      const tfResult = day.timeframes.find(t => t.tf === cfg.tf);
-      if (!tfResult) continue;
-      if (day.highFirstFormed) {
-        hf.total++;
-        hf[tfResult.momentum]++;
-      } else {
-        lf.total++;
-        lf[tfResult.momentum]++;
-      }
-    }
-    tfStats[cfg.tf] = { highFirst: hf, lowFirst: lf };
-  }
+  const winRate = totalTrades > 0 ? (wins / totalTrades) * 100 : 0;
+  const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
+  const expectancy = totalTrades > 0 ? cumPnl / totalTrades : 0;
 
   return {
     totalDays: allDays.length,
-    bullishDays: allDays.filter((d) => d.momentum === "bullish").length,
-    bearishDays: allDays.filter((d) => d.momentum === "bearish").length,
-    choppyDays: allDays.filter((d) => d.momentum === "choppy").length,
     ibWindowMinutes,
-    highFirst: {
-      total: highFirstDays.length,
-      bullish: highFirstDays.filter((d) => d.momentum === "bullish").length,
-      bearish: highFirstDays.filter((d) => d.momentum === "bearish").length,
-      choppy: highFirstDays.filter((d) => d.momentum === "choppy").length,
-    },
-    lowFirst: {
-      total: lowFirstDays.length,
-      bullish: lowFirstDays.filter((d) => d.momentum === "bullish").length,
-      bearish: lowFirstDays.filter((d) => d.momentum === "bearish").length,
-      choppy: lowFirstDays.filter((d) => d.momentum === "choppy").length,
-    },
-    tfStats,
+    lookback,
+    stopLoss,
+    takeProfit,
+    totalTrades,
+    wins,
+    losses,
+    winRate,
+    profitFactor,
+    expectancy,
+    grossProfit,
+    grossLoss,
+    netPnl: cumPnl,
+    maxDrawdown,
+    equityCurve,
+    highFirst: hfStats,
+    lowFirst: lfStats,
     allDays,
     lastDay: allDays.length > 0 ? allDays[allDays.length - 1] : null,
   };
