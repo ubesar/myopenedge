@@ -186,11 +186,11 @@ const CustomAnalysis = () => {
         }
       }
 
-      // merge momentum data
+      // merge momentum data (day P&L based)
       for (const day of momentumResult.allDays) {
         const rec = dateMap.get(day.date);
         if (rec) {
-          rec.momentum = day.momentum;
+          rec.momentum = day.dayPnl > 0 ? "bullish" : day.dayPnl < 0 ? "bearish" : "choppy";
         }
       }
 

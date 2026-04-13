@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, Crown, FileText, Bot, Brain } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import logo from "@/assets/logo.png";
-import ControlPanel, { type AnalysisMode } from "@/components/ControlPanel";
+import ControlPanel, { type AnalysisMode, type MomentumParams } from "@/components/ControlPanel";
 import IBChart from "@/components/IBChart";
 import IBDayChart from "@/components/IBDayChart";
 import AnalysisHistory from "@/components/AnalysisHistory";
@@ -55,7 +55,7 @@ const Index = () => {
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
   const [occTf, setOccTf] = useState("M15");
-  const [momentumTf, setMomentumTf] = useState("M15");
+  const [momentumTf, setMomentumTf] = useState("M15"); // kept for backward compat, unused now
   const [selectedRunId, setSelectedRunId] = useState<string | undefined>();
   const { runs: historyRuns, addRun, deleteRun } = useAnalysisHistory();
 
@@ -80,12 +80,10 @@ const Index = () => {
     if (activeMode === "momentum" && momentumResult) {
       const hf = momentumResult.highFirst;
       const lf = momentumResult.lowFirst;
-      const hfT = hf.total || 1;
-      const lfT = lf.total || 1;
       return {
         mode: "momentum",
         symbol,
-        summary: `Symbol: ${symbol}\nTotal trading days: ${momentumResult.totalDays}\n\nHigh Formed First (${hf.total} days):\n- Bullish: ${hf.bullish} (${(hf.bullish / hfT * 100).toFixed(1)}%)\n- Bearish: ${hf.bearish} (${(hf.bearish / hfT * 100).toFixed(1)}%)\n- Choppy: ${hf.choppy} (${(hf.choppy / hfT * 100).toFixed(1)}%)\n\nLow Formed First (${lf.total} days):\n- Bullish: ${lf.bullish} (${(lf.bullish / lfT * 100).toFixed(1)}%)\n- Bearish: ${lf.bearish} (${(lf.bearish / lfT * 100).toFixed(1)}%)\n- Choppy: ${lf.choppy} (${(lf.choppy / lfT * 100).toFixed(1)}%)`
+        summary: `Symbol: ${symbol}\nIBKR N-Candle Breakout (lookback=${momentumResult.lookback}, SL=$${momentumResult.stopLoss}, TP=$${momentumResult.takeProfit})\nTotal days: ${momentumResult.totalDays}, Total trades: ${momentumResult.totalTrades}\nWin Rate: ${momentumResult.winRate.toFixed(1)}%, Profit Factor: ${momentumResult.profitFactor.toFixed(2)}\nNet P&L: $${momentumResult.netPnl.toFixed(2)}, Expectancy: $${momentumResult.expectancy.toFixed(2)}\nMax Drawdown: $${momentumResult.maxDrawdown.toFixed(2)}\n\nIB High First (${hf.total} days): ${hf.trades} trades, ${hf.winRate.toFixed(1)}% WR\nIB Low First (${lf.total} days): ${lf.trades} trades, ${lf.winRate.toFixed(1)}% WR`
       };
     }
     if (activeMode === "occ" && occResult) {
@@ -133,7 +131,7 @@ const Index = () => {
     return data;
   };
 
-  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => {
+  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, momentumParams?: MomentumParams) => {
     setLoading(true);
     setResult(null);
     setMomentumResult(null);
@@ -173,7 +171,10 @@ const Index = () => {
           highFirst: analysis.highFirst, lowFirst: analysis.lowFirst,
         });
       } else if (mode === "momentum") {
-        const analysis = analyzeMomentum(values as any, ibWindow, maxDays);
+        const lk = momentumParams?.lookback || 3;
+        const sl = momentumParams?.stopLoss || 2;
+        const tp = momentumParams?.takeProfit || 5;
+        const analysis = analyzeMomentum(values as any, ibWindow, maxDays, lk, sl, tp);
         if (analysis.totalDays === 0) {
           toast.error("Not enough trading days in the data to analyze.");
           return;
@@ -182,7 +183,9 @@ const Index = () => {
         setSelectedDate(analysis.lastDay?.date || "");
         addRun(mode, ticker, {
           totalDays: analysis.totalDays,
-          tfStats: analysis.tfStats,
+          totalTrades: analysis.totalTrades,
+          winRate: analysis.winRate,
+          netPnl: analysis.netPnl,
         });
       } else if (mode === "occ") {
         const analysis = analyzeOCC(values as any, maxDays);
@@ -362,62 +365,31 @@ const Index = () => {
 
             {/* Momentum Mode */}
             {activeMode === "momentum" && momentumResult && (
-              <div className="h-full flex flex-col gap-2">
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-[10px] text-muted-foreground">TF:</span>
-                  {["M5", "M15", "M30", "H1"].map((tf) => (
-                    <button
-                      key={tf}
-                      onClick={() => setMomentumTf(tf)}
-                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                        momentumTf === tf
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      }`}>
-                      {tf}
-                    </button>
-                  ))}
+              <div className="h-full grid grid-rows-2 gap-2">
+                {/* Top: Metrics + Equity Curve */}
+                <div className="min-h-0">
+                  <MomentumChart result={momentumResult} />
                 </div>
-                <div className="flex-1 min-h-0 grid grid-rows-2 gap-2">
-                  {momentumResult.tfStats[momentumTf] && (
-                    <div className="grid grid-cols-2 gap-2 min-h-0">
-                      <MomentumChart
-                        title="IB High Formed First"
-                        total={momentumResult.tfStats[momentumTf].highFirst.total}
-                        bullish={momentumResult.tfStats[momentumTf].highFirst.bullish}
-                        bearish={momentumResult.tfStats[momentumTf].highFirst.bearish}
-                        choppy={momentumResult.tfStats[momentumTf].highFirst.choppy} />
-                      <MomentumChart
-                        title="IB Low Formed First"
-                        total={momentumResult.tfStats[momentumTf].lowFirst.total}
-                        bullish={momentumResult.tfStats[momentumTf].lowFirst.bullish}
-                        bearish={momentumResult.tfStats[momentumTf].lowFirst.bearish}
-                        choppy={momentumResult.tfStats[momentumTf].lowFirst.choppy} />
-                    </div>
-                  )}
-                  <div className="min-h-0 overflow-hidden">
-                    {momentumResult.allDays.length > 0 && (() => {
-                      const dayData = momentumResult.allDays.find((d) => d.date === selectedDate) || momentumResult.allDays[momentumResult.allDays.length - 1];
-                      const tfData = dayData.timeframes.find(t => t.tf === momentumTf);
-                      const tfStatsHF = momentumResult.tfStats[momentumTf]?.highFirst || { total: 0, bullish: 0, bearish: 0, choppy: 0 };
-                      const tfStatsLF = momentumResult.tfStats[momentumTf]?.lowFirst || { total: 0, bullish: 0, bearish: 0, choppy: 0 };
-                      return (
-                        <MomentumDayChart
-                          date={dayData.date}
-                          bars={dayData.bars}
-                          symbol={symbol}
-                          momentum={tfData?.momentum || dayData.momentum}
-                          signals={tfData?.signals || dayData.signals}
-                          availableDates={momentumResult.allDays.map((d) => d.date)}
-                          selectedDate={selectedDate || dayData.date}
-                          onDateChange={setSelectedDate}
-                          statsHighFirst={tfStatsHF}
-                          statsLowFirst={tfStatsLF}
-                          highFirstFormed={dayData.highFirstFormed}
-                          selectedTf={momentumTf} />
-                      );
-                    })()}
-                  </div>
+                {/* Bottom: Day chart */}
+                <div className="min-h-0 overflow-hidden">
+                  {momentumResult.allDays.length > 0 && (() => {
+                    const dayData = momentumResult.allDays.find((d) => d.date === selectedDate) || momentumResult.allDays[momentumResult.allDays.length - 1];
+                    return (
+                      <MomentumDayChart
+                        date={dayData.date}
+                        bars={dayData.bars}
+                        symbol={symbol}
+                        ibHigh={dayData.ibHigh}
+                        ibLow={dayData.ibLow}
+                        highFirstFormed={dayData.highFirstFormed}
+                        trades={dayData.trades}
+                        dayPnl={dayData.dayPnl}
+                        availableDates={momentumResult.allDays.map((d) => d.date)}
+                        selectedDate={selectedDate || dayData.date}
+                        onDateChange={setSelectedDate}
+                        ibWindowMinutes={momentumResult.ibWindowMinutes} />
+                    );
+                  })()}
                 </div>
               </div>
             )}
