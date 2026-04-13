@@ -80,12 +80,10 @@ const Index = () => {
     if (activeMode === "momentum" && momentumResult) {
       const hf = momentumResult.highFirst;
       const lf = momentumResult.lowFirst;
-      const hfT = hf.total || 1;
-      const lfT = lf.total || 1;
       return {
         mode: "momentum",
         symbol,
-        summary: `Symbol: ${symbol}\nTotal trading days: ${momentumResult.totalDays}\n\nHigh Formed First (${hf.total} days):\n- Bullish: ${hf.bullish} (${(hf.bullish / hfT * 100).toFixed(1)}%)\n- Bearish: ${hf.bearish} (${(hf.bearish / hfT * 100).toFixed(1)}%)\n- Choppy: ${hf.choppy} (${(hf.choppy / hfT * 100).toFixed(1)}%)\n\nLow Formed First (${lf.total} days):\n- Bullish: ${lf.bullish} (${(lf.bullish / lfT * 100).toFixed(1)}%)\n- Bearish: ${lf.bearish} (${(lf.bearish / lfT * 100).toFixed(1)}%)\n- Choppy: ${lf.choppy} (${(lf.choppy / lfT * 100).toFixed(1)}%)`
+        summary: `Symbol: ${symbol}\nIBKR N-Candle Breakout (lookback=${momentumResult.lookback}, SL=$${momentumResult.stopLoss}, TP=$${momentumResult.takeProfit})\nTotal days: ${momentumResult.totalDays}, Total trades: ${momentumResult.totalTrades}\nWin Rate: ${momentumResult.winRate.toFixed(1)}%, Profit Factor: ${momentumResult.profitFactor.toFixed(2)}\nNet P&L: $${momentumResult.netPnl.toFixed(2)}, Expectancy: $${momentumResult.expectancy.toFixed(2)}\nMax Drawdown: $${momentumResult.maxDrawdown.toFixed(2)}\n\nIB High First (${hf.total} days): ${hf.trades} trades, ${hf.winRate.toFixed(1)}% WR\nIB Low First (${lf.total} days): ${lf.trades} trades, ${lf.winRate.toFixed(1)}% WR`
       };
     }
     if (activeMode === "occ" && occResult) {
