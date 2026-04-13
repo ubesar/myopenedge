@@ -1,1 +1,0 @@
-ALTER TABLE public.trades ADD COLUMN IF NOT EXISTS order_ids text[] DEFAULT NULL;

@@ -1,37 +1,32 @@
 import { useState, useMemo } from "react";
-import AITradingInsight from "@/components/AITradingInsight";
-import { EquityCurveChart, DailyPnlChart } from "@/components/MomentumChart";
-import MomentumDayChart from "@/components/MomentumDayChart";
-import OCCDashboard from "@/components/OCCDashboard";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { Bookmark, Loader2, SlidersHorizontal, PanelRightOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { LogOut, Crown, FileText, Bot, Brain } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import logo from "@/assets/logo.png";
-import { type AnalysisMode } from "@/components/ControlPanel";
-import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
-import ParameterPanel, { type OCCTimeframe, type MomentumBodyRatio, type OCCBodyRatio } from "@/components/ParameterPanel";
-import RightSidebar from "@/components/RightSidebar";
-import { useTemplates, type TemplateParams } from "@/hooks/useTemplates";
-import ChartCard from "@/components/ChartCard";
+import ControlPanel, { type AnalysisMode } from "@/components/ControlPanel";
+import IBChart from "@/components/IBChart";
+import IBDayChart from "@/components/IBDayChart";
+import AnalysisHistory from "@/components/AnalysisHistory";
 import { useAnalysisHistory, type AnalysisRun } from "@/hooks/useAnalysisHistory";
-import { useIsMobile } from "@/hooks/use-mobile";
-
+import SummaryTable from "@/components/SummaryTable";
+import MomentumChart from "@/components/MomentumChart";
+import MomentumDayChart from "@/components/MomentumDayChart";
+import OCCChart from "@/components/OCCChart";
+import OCCDayChart from "@/components/OCCDayChart";
+import AIChatAssistant, { type AnalysisContext } from "@/components/AIChatAssistant";
 import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
 import { analyzeOCC, type OCCResult } from "@/lib/occ-analysis";
 import { analyzeGapFill, type GapFillResult } from "@/lib/gapfill-analysis";
+import { analyzeNYGapM15, type NYGapM15Result } from "@/lib/nygap-m15-analysis";
 import GapFillDashboard from "@/components/GapFillDashboard";
-import { analyzeInsideBar, type InsideBarResult } from "@/lib/insidebar-analysis";
-import { analyzeOutsideDay, type OutsideDayResult } from "@/lib/outsideday-analysis";
-import { analyzeGlobexIB, type GlobexIBResult } from "@/lib/globex-ib-analysis";
-import { analyzeLondonIB, type LondonIBResult } from "@/lib/london-ib-analysis";
-import InsideBarReport from "@/components/InsideBarReport";
-import OutsideDayReport from "@/components/OutsideDayReport";
-import GlobexIBDashboard from "@/components/GlobexIBDashboard";
-import LondonIBDashboard from "@/components/LondonIBDashboard";
+import NYGapM15Dashboard from "@/components/NYGapM15Dashboard";
 import { useSubscription } from "@/hooks/useSubscription";
+
 import { z } from "zod";
 
 const BarSchema = z.object({
@@ -47,243 +42,184 @@ const TwelveDataResponseSchema = z.object({
 }).passthrough();
 
 const Index = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
-  const { isActive } = useSubscription();
-  const isMobile = useIsMobile();
+  const { isActive, endDate, loading: subLoading } = useSubscription();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [momentumResult, setMomentumResult] = useState<MomentumResult | null>(null);
   const [occResult, setOccResult] = useState<OCCResult | null>(null);
   const [gapFillResult, setGapFillResult] = useState<GapFillResult | null>(null);
-  const [insideBarResult, setInsideBarResult] = useState<InsideBarResult | null>(null);
-  const [outsideDayResult, setOutsideDayResult] = useState<OutsideDayResult | null>(null);
-  const [globexIBResult, setGlobexIBResult] = useState<GlobexIBResult | null>(null);
-  const [londonIBResult, setLondonIBResult] = useState<LondonIBResult | null>(null);
-  const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
-  const [occMaxDays, setOccMaxDays] = useState<number>(0);
-  const [occWeekdays, setOccWeekdays] = useState<number[]>([1,2,3,4,5]);
+  const [nyGapResult, setNyGapResult] = useState<NYGapM15Result | null>(null);
   const [symbol, setSymbol] = useState("");
+  const [selectedDate, setSelectedDate] = useState<string>("");
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
+  const [occTf, setOccTf] = useState("M15");
+  const [momentumTf, setMomentumTf] = useState("M15");
   const [selectedRunId, setSelectedRunId] = useState<string | undefined>();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [occCandleSize, setOccCandleSize] = useState<import("@/lib/occ-analysis").OCCCandleSize>("30m");
-  const [momentumSelectedDate, setMomentumSelectedDate] = useState<string>("");
-  const [analysisMaxDays, setAnalysisMaxDays] = useState<number>(0);
-  const [analysisWeekdays, setAnalysisWeekdays] = useState<number[]>([1,2,3,4,5]);
   const { runs: historyRuns, addRun, deleteRun } = useAnalysisHistory();
-  const { templates, saveTemplate, deleteTemplate, loading: templateLoading } = useTemplates();
-
-  // Mobile panels
-  const [showParams, setShowParams] = useState(false);
-  const [showRight, setShowRight] = useState(false);
 
   const isFree = !isActive;
 
-  const DAY_NAMES_SHORT = ["", "Mon", "Tue", "Wed", "Thu", "Fri"];
-  const formatDateRange = (days: number) => {
-    if (days <= 20) return "1 month";
-    if (days <= 40) return "2 months";
-    if (days <= 60) return "3 months";
-    if (days <= 120) return "6 months";
-    return "12 months";
-  };
-  const formatWeekdays = (wd: number[]) => {
-    if (wd.length === 5) return "all days";
-    return wd.map(d => DAY_NAMES_SHORT[d]).join(", ");
+  const handleSelectRun = (run: AnalysisRun) => {
+    setSelectedRunId(run.id);
   };
 
-  if (!authLoading && !user) return <Navigate to="/auth" replace />;
-
-  const MAX_BATCH_DAYS = 60; // ~3 months of 5min bars per request (approx 4680 bars)
-  const BATCH_OUTPUTSIZE = 5000;
-  const BATCH_DELAY_MS = 3000; // reduced delay since requests are distributed across API keys
-
-  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-  const fetchMarketData = async (ticker: string, totalDays: number) => {
-    if (totalDays <= MAX_BATCH_DAYS) {
-      const { data, error } = await supabase.functions.invoke("twelvedata-proxy", {
-        body: { symbol: ticker, outputsize: String(BATCH_OUTPUTSIZE), key_index: 0 },
-      });
-      if (error) throw new Error("Failed to fetch market data");
-      return data;
-    }
-
-    // Pagination: multiple batches, distributed across API keys via key_index
-    let allValues: any[] = [];
-    let endDate: string | null = null;
-    let remaining = totalDays;
-    let batchIndex = 0;
-
-    while (remaining > 0) {
-      const body: Record<string, any> = {
-        symbol: ticker,
-        outputsize: String(BATCH_OUTPUTSIZE),
-        key_index: batchIndex, // round-robin across API keys
+  const analysisContext = useMemo<AnalysisContext>(() => {
+    if (activeMode === "ib" && result) {
+      const hf = result.highFirst;
+      const lf = result.lowFirst;
+      const hfTotal = hf.total || 1;
+      const lfTotal = lf.total || 1;
+      return {
+        mode: "ib",
+        symbol,
+        summary: `Symbol: ${symbol}\nTotal trading days: ${result.totalDays}, Inside days: ${result.insideDays}\n\nIB High Formed First (${hf.total} days):\n- Break High: ${hf.breakHigh} (${(hf.breakHigh / hfTotal * 100).toFixed(1)}%)\n- Break Low: ${hf.breakLow} (${(hf.breakLow / hfTotal * 100).toFixed(1)}%)\n- Inside: ${hf.inside} (${(hf.inside / hfTotal * 100).toFixed(1)}%)\n\nIB Low Formed First (${lf.total} days):\n- Break High: ${lf.breakHigh} (${(lf.breakHigh / lfTotal * 100).toFixed(1)}%)\n- Break Low: ${lf.breakLow} (${(lf.breakLow / lfTotal * 100).toFixed(1)}%)\n- Inside: ${lf.inside} (${(lf.inside / lfTotal * 100).toFixed(1)}%)`
       };
-      if (endDate) body.end_date = endDate;
-
-      const { data, error } = await supabase.functions.invoke("twelvedata-proxy", { body });
-      if (error) throw new Error("Failed to fetch market data (batch " + (batchIndex + 1) + ")");
-      if (data?.status === "error") throw new Error(data.message || "API error on batch " + (batchIndex + 1));
-
-      const values = data?.values;
-      if (!values || !Array.isArray(values) || values.length === 0) break;
-
-      allValues = allValues.concat(values);
-
-      const oldestBar = values[values.length - 1];
-      endDate = oldestBar.datetime;
-
-      remaining -= MAX_BATCH_DAYS;
-      batchIndex++;
-
-      // Shorter delay since each batch uses a different API key
-      if (remaining > 0) {
-        await sleep(BATCH_DELAY_MS);
-      }
     }
+    if (activeMode === "momentum" && momentumResult) {
+      const hf = momentumResult.highFirst;
+      const lf = momentumResult.lowFirst;
+      const hfT = hf.total || 1;
+      const lfT = lf.total || 1;
+      return {
+        mode: "momentum",
+        symbol,
+        summary: `Symbol: ${symbol}\nTotal trading days: ${momentumResult.totalDays}\n\nHigh Formed First (${hf.total} days):\n- Bullish: ${hf.bullish} (${(hf.bullish / hfT * 100).toFixed(1)}%)\n- Bearish: ${hf.bearish} (${(hf.bearish / hfT * 100).toFixed(1)}%)\n- Choppy: ${hf.choppy} (${(hf.choppy / hfT * 100).toFixed(1)}%)\n\nLow Formed First (${lf.total} days):\n- Bullish: ${lf.bullish} (${(lf.bullish / lfT * 100).toFixed(1)}%)\n- Bearish: ${lf.bearish} (${(lf.bearish / lfT * 100).toFixed(1)}%)\n- Choppy: ${lf.choppy} (${(lf.choppy / lfT * 100).toFixed(1)}%)`
+      };
+    }
+    if (activeMode === "occ" && occResult) {
+      const tfStats = occResult.tfDirectionStats;
+      let summary = `Symbol: ${symbol}\nTotal trading days: ${occResult.totalDays}\n\nOCC Stats by Timeframe:\n`;
+      for (const tf of ["M5", "M15", "M30", "H1"]) {
+        const s = tfStats[tf];
+        if (s) {
+          const bT = s.bullishFirst.total || 1;
+          const brT = s.bearishFirst.total || 1;
+          summary += `\n${tf}:\n- Candle1 Bullish (${s.bullishFirst.total} days): Valid ${s.bullishFirst.valid} (${(s.bullishFirst.valid / bT * 100).toFixed(1)}%), Invalid ${s.bullishFirst.invalid} (${(s.bullishFirst.invalid / bT * 100).toFixed(1)}%)\n- Candle1 Bearish (${s.bearishFirst.total} days): Valid ${s.bearishFirst.valid} (${(s.bearishFirst.valid / brT * 100).toFixed(1)}%), Invalid ${s.bearishFirst.invalid} (${(s.bearishFirst.invalid / brT * 100).toFixed(1)}%)`;
+        }
+      }
+      return { mode: "occ", symbol, summary };
+    }
+    if (activeMode === "gapfill" && gapFillResult) {
+      const s = gapFillResult.stats;
+      return {
+        mode: "gapfill",
+        symbol,
+        summary: `Symbol: ${symbol}\nTotal gap days: ${gapFillResult.totalDays}\nOverall Fill Rate: ${s.overallFillRate.toFixed(1)}%\nGap Up Fill: ${s.gapUpFillRate.toFixed(1)}% (${s.filledGapUp}/${s.totalGapUp})\nGap Down Fill: ${s.gapDownFillRate.toFixed(1)}% (${s.filledGapDown}/${s.totalGapDown})\nBy Size: Small ${s.bySize.small.rate.toFixed(0)}%, Medium ${s.bySize.medium.rate.toFixed(0)}%, Large ${s.bySize.large.rate.toFixed(0)}%`
+      };
+    }
+    if (activeMode === "nygap" && nyGapResult) {
+      const s = nyGapResult.stats;
+      return {
+        mode: "nygap",
+        symbol,
+        summary: `Symbol: ${symbol}\nTotal days: ${s.totalDays}\nGap Up Days: ${s.gapUpDays} → M15 Bullish ${s.gapUp.bullishPct.toFixed(1)}%, Bearish ${s.gapUp.bearishPct.toFixed(1)}%\nGap Down Days: ${s.gapDownDays} → M15 Bullish ${s.gapDown.bullishPct.toFixed(1)}%, Bearish ${s.gapDown.bearishPct.toFixed(1)}%`
+      };
+    }
+    return { mode: null, symbol: "", summary: "" };
+  }, [activeMode, result, momentumResult, occResult, gapFillResult, nyGapResult, symbol]);
 
-    const seen = new Set<string>();
-    const deduped = allValues.filter((v) => {
-      if (seen.has(v.datetime)) return false;
-      seen.add(v.datetime);
-      return true;
+  if (!authLoading && !user) {
+    navigate("/auth");
+    return null;
+  }
+
+  const fetchMarketData = async (ticker: string) => {
+    const { data, error } = await supabase.functions.invoke("twelvedata-proxy", {
+      body: { symbol: ticker }
     });
-
-    return { values: deduped };
+    if (error) throw new Error("Failed to fetch market data");
+    return data;
   };
 
-  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50", weekdays: number[] = [1,2,3,4,5], lookback: number = 3, sl: number = 2, tp: number = 4) => {
-    let effectiveIbWindow = ibWindow;
-    let effectiveMaxDays = maxDays;
-    let effectiveMode = mode;
-
-    if (isFree) {
-      effectiveMaxDays = Math.min(maxDays, 20);
-      effectiveIbWindow = Math.min(ibWindow, 60);
-      const freeAllowedModes: AnalysisMode[] = ["ib", "occ"];
-      if (!freeAllowedModes.includes(mode)) {
-        effectiveMode = "ib";
-      }
-    }
-
+  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => {
     setLoading(true);
-    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null);
-    setSymbol(ticker); setActiveMode(effectiveMode); setAnalysisMaxDays(effectiveMaxDays); setAnalysisWeekdays(weekdays);
-    // Close mobile param panel after run
-    if (isMobile) setShowParams(false);
+    setResult(null);
+    setMomentumResult(null);
+    setOccResult(null);
+    setGapFillResult(null);
+    setNyGapResult(null);
+    setSymbol(ticker);
+    setActiveMode(mode);
+
     try {
-      if (effectiveMode === "globex-ib" || effectiveMode === "london-ib") {
-        // Both use Massive API via massive-bars edge function
-        // Split into 90-day client-side batches to avoid CPU timeout
-        const MASSIVE_BATCH_DAYS = 90;
-        const MASSIVE_BATCH_DELAY = 2000;
-        const now = new Date();
-        const calendarDaysNeeded = Math.ceil(effectiveMaxDays * 1.5) + 7;
-        const globalFrom = new Date(now);
-        globalFrom.setDate(globalFrom.getDate() - calendarDaysNeeded);
+      const json = await fetchMarketData(ticker);
 
-        const label = effectiveMode === "london-ib" ? "London" : "Globex";
-        const totalBatches = Math.ceil(calendarDaysNeeded / MASSIVE_BATCH_DAYS);
-        toast.info(`Fetching ${effectiveMaxDays} days of ${label} data (${totalBatches} batch${totalBatches > 1 ? "es" : ""})...`, { duration: 5000 });
-
-        let allValues: any[] = [];
-        let currentFrom = new Date(globalFrom);
-
-        for (let i = 0; i < totalBatches; i++) {
-          const batchEnd = new Date(currentFrom);
-          batchEnd.setDate(batchEnd.getDate() + MASSIVE_BATCH_DAYS);
-          if (batchEnd > now) batchEnd.setTime(now.getTime());
-
-          const fromStr = currentFrom.toISOString().split("T")[0];
-          const toStr = batchEnd.toISOString().split("T")[0];
-
-          try {
-            const { data: json, error } = await supabase.functions.invoke("massive-bars", {
-              body: { symbol: ticker, from: fromStr, to: toStr, multiplier: 5, timespan: "minute" },
-            });
-            if (!error && json?.values) {
-              allValues = allValues.concat(json.values);
-            }
-          } catch (e) {
-            console.error(`Batch ${i + 1} failed:`, e);
-          }
-
-          currentFrom = new Date(batchEnd);
-          currentFrom.setDate(currentFrom.getDate() + 1);
-
-          if (i < totalBatches - 1) {
-            await sleep(MASSIVE_BATCH_DELAY);
-          }
-        }
-
-        // Deduplicate by datetime
-        const seen = new Set<string>();
-        const deduped = allValues.filter((v) => {
-          if (seen.has(v.datetime)) return false;
-          seen.add(v.datetime);
-          return true;
-        });
-
-        if (deduped.length === 0) { toast.error("No data returned from Massive API."); return; }
-
-        if (effectiveMode === "globex-ib") {
-          const a = analyzeGlobexIB(deduped, effectiveIbWindow, effectiveMaxDays, weekdays);
-          if (a.totalDays === 0) { toast.error("Not enough overnight data."); return; }
-          setGlobexIBResult(a);
-          addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
-        } else {
-          const a = analyzeLondonIB(deduped, effectiveIbWindow, effectiveMaxDays, weekdays);
-          if (a.totalDays === 0) { toast.error("Not enough London session data."); return; }
-          setLondonIBResult(a);
-          addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
-        }
-      } else {
-        const json = await fetchMarketData(ticker, effectiveMaxDays);
-        if (json.status === "error") { toast.error(json.message || "API error"); return; }
-        const parsed = TwelveDataResponseSchema.safeParse(json);
-        if (!parsed.success) { toast.error("Invalid or empty data returned."); return; }
-        const values = parsed.data.values;
-
-        if (effectiveMode === "ib") {
-          const a = analyzeIB(values as any, effectiveIbWindow, effectiveMaxDays, weekdays);
-          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
-          setResult(a);
-          addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
-        } else if (effectiveMode === "momentum") {
-          const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, lookback, weekdays, sl, tp);
-          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
-          setMomentumResult(a);
-          if (a.lastDay) setMomentumSelectedDate(a.lastDay.date);
-          addRun(effectiveMode, ticker, { totalDays: a.totalDays, winRate: a.winRate, profitFactor: a.profitFactor, totalPnl: a.totalPnl });
-        } else if (effectiveMode === "occ") {
-          setOccRawBars(values as any);
-          setOccMaxDays(effectiveMaxDays);
-          setOccWeekdays(weekdays);
-          const a = analyzeOCC(values as any, effectiveMaxDays, occCandleSize, weekdays);
-          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
-          setOccResult(a);
-          addRun(effectiveMode, ticker, { totalDays: a.totalDays, candleSize: a.candleSize, greenCandle: a.greenCandle, redCandle: a.redCandle });
-        } else if (effectiveMode === "gapfill") {
-          const a = analyzeGapFill(values as any, effectiveMaxDays, weekdays);
-          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
-          setGapFillResult(a);
-          addRun(effectiveMode, ticker, { totalDays: a.totalDays, stats: a.stats });
-        } else if (effectiveMode === "insidebar") {
-          const a = analyzeInsideBar(values as any, effectiveMaxDays, weekdays);
-          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
-          setInsideBarResult(a);
-          addRun(effectiveMode, ticker, { totalDays: a.totalDays, insideBarPct: a.insideBarPct, breakoutPct: a.breakoutPct });
-        } else if (effectiveMode === "outsideday") {
-          const a = analyzeOutsideDay(values as any, effectiveMaxDays, weekdays);
-          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
-          setOutsideDayResult(a);
-          addRun(effectiveMode, ticker, { totalDays: a.totalDays, outsidePct: a.outsidePct, bullishFilledPct: a.bullish.filledGapPct, bearishFilledPct: a.bearish.filledGapPct });
-        }
+      if (json.status === "error") {
+        toast.error(json.message || "API error");
+        return;
       }
 
+      const parsed = TwelveDataResponseSchema.safeParse(json);
+      if (!parsed.success) {
+        toast.error("Invalid or empty data returned. Check ticker symbol.");
+        return;
+      }
+
+      const values = parsed.data.values;
+
+      if (mode === "ib") {
+        const analysis = analyzeIB(values as any, ibWindow, maxDays);
+        if (analysis.totalDays === 0 && analysis.insideDays === 0) {
+          toast.error("Not enough trading days in the data to analyze.");
+          return;
+        }
+        setResult(analysis);
+        setSelectedDate(analysis.lastDay?.date || "");
+        addRun(mode, ticker, {
+          totalDays: analysis.totalDays, insideDays: analysis.insideDays,
+          ibWindow,
+          highFirst: analysis.highFirst, lowFirst: analysis.lowFirst,
+        });
+      } else if (mode === "momentum") {
+        const analysis = analyzeMomentum(values as any, ibWindow, maxDays);
+        if (analysis.totalDays === 0) {
+          toast.error("Not enough trading days in the data to analyze.");
+          return;
+        }
+        setMomentumResult(analysis);
+        setSelectedDate(analysis.lastDay?.date || "");
+        addRun(mode, ticker, {
+          totalDays: analysis.totalDays,
+          tfStats: analysis.tfStats,
+        });
+      } else if (mode === "occ") {
+        const analysis = analyzeOCC(values as any, maxDays);
+        if (analysis.totalDays === 0) {
+          toast.error("Not enough trading days in the data to analyze.");
+          return;
+        }
+        setOccResult(analysis);
+        setSelectedDate(analysis.lastDay?.date || "");
+        addRun(mode, ticker, {
+          totalDays: analysis.totalDays,
+          tfDirectionStats: analysis.tfDirectionStats,
+        });
+      } else if (mode === "gapfill") {
+        const analysis = analyzeGapFill(values as any, maxDays);
+        if (analysis.totalDays === 0) {
+          toast.error("Not enough gap days in the data to analyze.");
+          return;
+        }
+        setGapFillResult(analysis);
+        setSelectedDate(analysis.lastDay?.date || "");
+        addRun(mode, ticker, {
+          totalDays: analysis.totalDays,
+          stats: analysis.stats,
+        });
+      } else if (mode === "nygap") {
+        const analysis = analyzeNYGapM15(values as any, maxDays);
+        if (analysis.allDays.length === 0) {
+          toast.error("Not enough gap days in the data to analyze.");
+          return;
+        }
+        setNyGapResult(analysis);
+        addRun(mode, ticker, {
+          totalDays: analysis.stats.totalDays,
+          stats: analysis.stats,
+        });
+      }
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch data");
     } finally {
@@ -291,516 +227,278 @@ const Index = () => {
     }
   };
 
-  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult;
-
-  const reportTitle = hasResults
-    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
-    : "";
-
-  const renderCharts = () => {
-    if (activeMode === "ib" && result) {
-      const hf = result.highFirst;
-      const lf = result.lowFirst;
-      const bs = result.breakTypeStats;
-      return (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <ChartCard
-              title="IB high formed first"
-              subtitle={`${symbol} · by rejection`}
-              totalDays={hf.total}
-              bars={[
-                { name: "first break IB high", value: hf.total > 0 ? (hf.breakHigh / hf.total * 100) : 0, color: "primary" },
-                { name: "first break IB low", value: hf.total > 0 ? (hf.breakLow / hf.total * 100) : 0, color: "muted" },
-              ]}
-              legendItems={[
-                { label: "first break IB high", color: "hsl(var(--chart-bar-a))" },
-                { label: "first break IB low", color: "hsl(var(--chart-bar-b))" },
-              ]}
-              settingsGrid={[
-                { label: "IB timeframe", value: `${result.ibWindowMinutes} min` },
-                { label: "candle timeframe", value: "5min" },
-                { label: "IB size", value: "any size" },
-                { label: "date range", value: formatDateRange(analysisMaxDays) },
-                { label: "IB breakout measure", value: "by rejection (M5 close)" },
-                { label: "weekdays to use", value: formatWeekdays(analysisWeekdays) },
-              ]}
-            />
-            <ChartCard
-              title="IB low formed first"
-              subtitle={`${symbol} · by rejection`}
-              totalDays={lf.total}
-              bars={[
-                { name: "first break IB high", value: lf.total > 0 ? (lf.breakHigh / lf.total * 100) : 0, color: "primary" },
-                { name: "first break IB low", value: lf.total > 0 ? (lf.breakLow / lf.total * 100) : 0, color: "muted" },
-              ]}
-              legendItems={[
-                { label: "first break IB high", color: "hsl(var(--chart-bar-a))" },
-                { label: "first break IB low", color: "hsl(var(--chart-bar-b))" },
-              ]}
-              settingsGrid={[
-                { label: "IB timeframe", value: `${result.ibWindowMinutes} min` },
-                { label: "candle timeframe", value: "5min" },
-                { label: "IB size", value: "any size" },
-                { label: "date range", value: formatDateRange(analysisMaxDays) },
-                { label: "IB breakout measure", value: "by rejection (M5 close)" },
-                { label: "weekdays to use", value: formatWeekdays(analysisWeekdays) },
-              ]}
-            />
-          </div>
-
-          {/* Break Type Stats — Edgeful Model */}
-          <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-4">
-            <h3 className="text-[13px] font-semibold text-foreground mb-3 lowercase">
-              IB break type statistics
-            </h3>
-            <p className="text-[11px] text-muted-foreground mb-3">
-              how often does price single break, double break, or stay inside the IB range?
-            </p>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="text-center p-3 rounded-lg bg-muted/30">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">single break</p>
-                <p className="text-lg font-semibold text-foreground">{bs.singleBreakPct.toFixed(0)}%</p>
-                <p className="text-[10px] text-muted-foreground">{bs.singleBreak} days</p>
-              </div>
-              <div className="text-center p-3 rounded-lg bg-muted/30">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">double break</p>
-                <p className="text-lg font-semibold text-foreground">{bs.doubleBreakPct.toFixed(0)}%</p>
-                <p className="text-[10px] text-muted-foreground">{bs.doubleBreak} days</p>
-              </div>
-              <div className="text-center p-3 rounded-lg bg-muted/30">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">no break</p>
-                <p className="text-lg font-semibold text-foreground">{bs.noBreakPct.toFixed(0)}%</p>
-                <p className="text-[10px] text-muted-foreground">{bs.noBreak} days</p>
-              </div>
-            </div>
-          </div>
-
-          <AITradingInsight
-            mode="ib"
-            symbol={symbol}
-            analysisData={{
-              totalDays: result.totalDays,
-              insideDays: result.insideDays,
-              ibWindowMinutes: result.ibWindowMinutes,
-              highFirst: { total: hf.total, breakHigh: hf.breakHigh, breakLow: hf.breakLow, inside: hf.inside },
-              lowFirst: { total: lf.total, breakHigh: lf.breakHigh, breakLow: lf.breakLow, inside: lf.inside },
-              breakTypeStats: { singleBreak: bs.singleBreak, doubleBreak: bs.doubleBreak, noBreak: bs.noBreak, singleBreakPct: bs.singleBreakPct, doubleBreakPct: bs.doubleBreakPct, noBreakPct: bs.noBreakPct },
-              lastDay: result.lastDay ? { date: result.lastDay.date, ibHigh: result.lastDay.ibHigh, ibLow: result.lastDay.ibLow, highFirstFormed: result.lastDay.highFirstFormed, breakout: result.lastDay.breakout, breakType: result.lastDay.breakType } : null,
-            }}
-          />
-        </div>
-      );
-    }
-
-    if (activeMode === "momentum" && momentumResult) {
-      const r = momentumResult;
-      const hf = r.highFirst;
-      const lf = r.lowFirst;
-      const availDates = r.allDays.map(d => d.date);
-      const selDate = momentumSelectedDate || (r.lastDay?.date ?? "");
-      const selDay = r.allDays.find(d => d.date === selDate) || r.lastDay;
-
-      return (
-        <div className="space-y-4">
-          {/* strategy performance cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-            <div className="rounded-lg border border-border/30 bg-card/40 p-3 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">total trades</p>
-              <p className="text-lg font-bold text-foreground">{r.totalTrades}</p>
-            </div>
-            <div className="rounded-lg border border-border/30 bg-card/40 p-3 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate</p>
-              <p className={`text-lg font-bold ${r.winRate >= 50 ? "text-emerald-400" : "text-red-400"}`}>{r.winRate.toFixed(1)}%</p>
-              <p className="text-[10px] text-muted-foreground">{r.wins}W / {r.losses}L</p>
-            </div>
-            <div className="rounded-lg border border-border/30 bg-card/40 p-3 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">profit factor</p>
-              <p className={`text-lg font-bold ${r.profitFactor >= 1 ? "text-emerald-400" : "text-red-400"}`}>
-                {r.profitFactor === Infinity ? "∞" : r.profitFactor.toFixed(2)}
-              </p>
-            </div>
-            <div className="rounded-lg border border-border/30 bg-card/40 p-3 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">total p&l</p>
-              <p className={`text-lg font-bold ${r.totalPnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                {r.totalPnl >= 0 ? "+" : ""}{r.totalPnl.toFixed(2)} pts
-              </p>
-            </div>
-            <div className="rounded-lg border border-border/30 bg-card/40 p-3 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">max drawdown</p>
-              <p className="text-lg font-bold text-red-400">-{r.maxDrawdown.toFixed(2)}</p>
-            </div>
-          </div>
-
-          {/* strategy details */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="rounded-lg border border-border/30 bg-card/40 p-3 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">avg win</p>
-              <p className="text-sm font-semibold text-emerald-400">+{r.avgWin.toFixed(2)}</p>
-            </div>
-            <div className="rounded-lg border border-border/30 bg-card/40 p-3 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">avg loss</p>
-              <p className="text-sm font-semibold text-red-400">-{r.avgLoss.toFixed(2)}</p>
-            </div>
-            <div className="rounded-lg border border-border/30 bg-card/40 p-3 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">expectancy</p>
-              <p className={`text-sm font-semibold ${r.expectancy >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                {r.expectancy >= 0 ? "+" : ""}{r.expectancy.toFixed(2)}
-              </p>
-            </div>
-            <div className="rounded-lg border border-border/30 bg-card/40 p-3 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">lookback / SL / TP</p>
-              <p className="text-sm font-semibold text-foreground">{r.lookback} / {r.stopLoss} / {r.takeProfit}</p>
-            </div>
-          </div>
-
-          {/* buy vs sell */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-border/30 bg-card/40 p-3">
-              <p className="text-[10px] uppercase tracking-wider text-emerald-400 mb-1">buy trades</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-lg font-bold text-foreground">{r.buyTrades}</span>
-                <span className="text-[11px] text-muted-foreground">win rate: <span className="text-emerald-400 font-semibold">{r.buyWinRate.toFixed(1)}%</span></span>
-              </div>
-            </div>
-            <div className="rounded-lg border border-border/30 bg-card/40 p-3">
-              <p className="text-[10px] uppercase tracking-wider text-red-400 mb-1">sell trades</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-lg font-bold text-foreground">{r.sellTrades}</span>
-                <span className="text-[11px] text-muted-foreground">win rate: <span className="text-red-400 font-semibold">{r.sellWinRate.toFixed(1)}%</span></span>
-              </div>
-            </div>
-          </div>
-
-          {/* equity curve + daily pnl */}
-          {r.cumulativePnl.length > 0 && <EquityCurveChart data={r.cumulativePnl} />}
-          {r.dailyPnl.length > 0 && <DailyPnlChart data={r.dailyPnl} />}
-
-          {/* IB high/low first charts */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <ChartCard
-              title="IB high formed first"
-              subtitle={`${symbol} · momentum`}
-              totalDays={hf.total}
-              bars={[
-                { name: "bullish", value: hf.total > 0 ? (hf.bullish / hf.total * 100) : 0, color: "primary" },
-                { name: "bearish", value: hf.total > 0 ? (hf.bearish / hf.total * 100) : 0, color: "muted" },
-              ]}
-              legendItems={[
-                { label: "bullish", color: "hsl(var(--chart-bar-a))" },
-                { label: "bearish", color: "hsl(var(--chart-bar-b))" },
-              ]}
-              settingsGrid={[
-                { label: "IB window", value: `${r.ibWindowMinutes} min` },
-                { label: "lookback", value: `${r.lookback} candles` },
-                { label: "SL / TP", value: `${r.stopLoss} / ${r.takeProfit} pts` },
-                { label: "date range", value: formatDateRange(analysisMaxDays) },
-                { label: "weekdays", value: formatWeekdays(analysisWeekdays) },
-              ]}
-            />
-            <ChartCard
-              title="IB low formed first"
-              subtitle={`${symbol} · momentum`}
-              totalDays={lf.total}
-              bars={[
-                { name: "bullish", value: lf.total > 0 ? (lf.bullish / lf.total * 100) : 0, color: "primary" },
-                { name: "bearish", value: lf.total > 0 ? (lf.bearish / lf.total * 100) : 0, color: "muted" },
-              ]}
-              legendItems={[
-                { label: "bullish", color: "hsl(var(--chart-bar-a))" },
-                { label: "bearish", color: "hsl(var(--chart-bar-b))" },
-              ]}
-              settingsGrid={[
-                { label: "IB window", value: `${r.ibWindowMinutes} min` },
-                { label: "lookback", value: `${r.lookback} candles` },
-                { label: "SL / TP", value: `${r.stopLoss} / ${r.takeProfit} pts` },
-                { label: "date range", value: formatDateRange(analysisMaxDays) },
-                { label: "weekdays", value: formatWeekdays(analysisWeekdays) },
-              ]}
-            />
-          </div>
-
-          {/* day chart */}
-          {selDay && (
-            <MomentumDayChart
-              date={selDay.date}
-              bars={selDay.bars}
-              symbol={symbol}
-              ibHigh={selDay.ibHigh}
-              ibLow={selDay.ibLow}
-              momentum={selDay.momentum}
-              trades={selDay.trades}
-              availableDates={availDates}
-              selectedDate={selDate}
-              onDateChange={setMomentumSelectedDate}
-            />
-          )}
-
-          <AITradingInsight
-            mode="momentum"
-            symbol={symbol}
-            analysisData={{
-              totalDays: r.totalDays,
-              totalTrades: r.totalTrades,
-              winRate: r.winRate,
-              profitFactor: r.profitFactor,
-              totalPnl: r.totalPnl,
-              maxDrawdown: r.maxDrawdown,
-              lookback: r.lookback,
-              stopLoss: r.stopLoss,
-              takeProfit: r.takeProfit,
-              highFirst: { total: hf.total, bullish: hf.bullish, bearish: hf.bearish, neutral: hf.neutral },
-              lowFirst: { total: lf.total, bullish: lf.bullish, bearish: lf.bearish, neutral: lf.neutral },
-              lastDay: r.lastDay ? { date: r.lastDay.date, momentum: r.lastDay.momentum } : null,
-            }}
-          />
-        </div>
-      );
-    }
-
-    if (activeMode === "occ" && occResult) {
-      return (
-        <div className="space-y-4">
-          <OCCDashboard
-            result={occResult}
-            symbol={symbol}
-            dateRange={formatDateRange(analysisMaxDays)}
-            weekdays={formatWeekdays(analysisWeekdays)}
-            candleSize={occCandleSize}
-            onCandleSizeChange={(size) => {
-              setOccCandleSize(size);
-              if (occRawBars) {
-                const a = analyzeOCC(occRawBars, occMaxDays, size, occWeekdays);
-                setOccResult(a);
-              }
-            }}
-          />
-          <AITradingInsight
-            mode="occ"
-            symbol={symbol}
-            analysisData={{
-              totalDays: occResult.totalDays,
-              candleSize: occResult.candleSize,
-              greenCandle: occResult.greenCandle,
-              redCandle: occResult.redCandle,
-            }}
-          />
-        </div>
-      );
-    }
-
-    if (activeMode === "gapfill" && gapFillResult) {
-      return (
-        <GapFillDashboard
-          result={gapFillResult}
-          symbol={symbol}
-          dateRange={formatDateRange(analysisMaxDays)}
-          weekdays={formatWeekdays(analysisWeekdays)}
-        />
-      );
-    }
-
-    if (activeMode === "insidebar" && insideBarResult) {
-      return (
-        <div className="space-y-4">
-          <InsideBarReport result={insideBarResult} symbol={symbol} />
-          <AITradingInsight
-            mode="insidebar"
-            symbol={symbol}
-            analysisData={{
-              totalDays: insideBarResult.totalDays,
-              insideBarDays: insideBarResult.insideBarDays,
-              insideBarPct: insideBarResult.insideBarPct,
-              breakoutPct: insideBarResult.breakoutPct,
-              brokeHighPct: insideBarResult.brokeHighPct,
-              brokeLowPct: insideBarResult.brokeLowPct,
-              stayedInsidePct: insideBarResult.stayedPct,
-            }}
-          />
-        </div>
-      );
-    }
-
-    if (activeMode === "outsideday" && outsideDayResult) {
-      return (
-        <div className="space-y-4">
-          <OutsideDayReport
-            result={outsideDayResult}
-            symbol={symbol}
-            dateRange={formatDateRange(analysisMaxDays)}
-            weekdays={formatWeekdays(analysisWeekdays)}
-          />
-          <AITradingInsight
-            mode="outsideday"
-            symbol={symbol}
-            analysisData={{
-              type: "outsideday",
-              totalDays: outsideDayResult.totalDays,
-              outsideDays: outsideDayResult.outsideDays,
-              outsidePct: outsideDayResult.outsidePct,
-              bullish: outsideDayResult.bullish,
-              bearish: outsideDayResult.bearish,
-            }}
-          />
-        </div>
-      );
-    }
-
-    if (activeMode === "globex-ib" && globexIBResult) {
-      return (
-        <div className="space-y-4">
-          <GlobexIBDashboard
-            result={globexIBResult}
-            symbol={symbol}
-            dateRange={formatDateRange(analysisMaxDays)}
-            weekdays={formatWeekdays(analysisWeekdays)}
-          />
-          <AITradingInsight
-            mode="ib"
-            symbol={symbol}
-            analysisData={{
-              totalDays: globexIBResult.totalDays,
-              insideDays: 0,
-              ibWindowMinutes: globexIBResult.ibWindowMinutes,
-              highFirst: globexIBResult.highFirst,
-              lowFirst: globexIBResult.lowFirst,
-              lastDay: globexIBResult.lastDay ? {
-                date: globexIBResult.lastDay.date,
-                ibHigh: globexIBResult.lastDay.globexIBHigh,
-                ibLow: globexIBResult.lastDay.globexIBLow,
-                highFirstFormed: globexIBResult.lastDay.highFirstFormed,
-                breakout: globexIBResult.lastDay.rthBreakout,
-              } : null,
-            }}
-          />
-        </div>
-      );
-    }
-
-    if (activeMode === "london-ib" && londonIBResult) {
-      return (
-        <LondonIBDashboard
-          result={londonIBResult}
-          symbol={symbol}
-          dateRange={formatDateRange(analysisMaxDays)}
-          weekdays={formatWeekdays(analysisWeekdays)}
-        />
-      );
-    }
-
-    return null;
-  };
+  const hasResults = result || momentumResult || occResult || gapFillResult || nyGapResult;
 
   return (
-    <div className="h-screen w-full flex flex-col lg:flex-row overflow-hidden bg-background">
+    <div className="h-screen flex flex-col overflow-hidden bg-background relative">
+      <AIChatAssistant analysisContext={analysisContext} />
+      
+      {/* Background Video */}
+      <video
+        autoPlay loop muted playsInline
+        className="fixed inset-0 w-full h-full object-cover opacity-20 z-0">
+        <source src="/videos/hero-bg.mp4" type="video/mp4" />
+      </video>
+      <div className="fixed inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background z-0" />
 
-      {/* Mobile Header */}
-      {isMobile && (
-        <MobileHeader
-          onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-          title="reports"
-          actions={
-            <>
-              <button
-                onClick={() => setShowParams(!showParams)}
-                className={`p-1.5 rounded-lg transition-colors ${showParams ? "bg-primary text-primary-foreground" : "hover:bg-accent text-muted-foreground"}`}
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-              </button>
-            </>
-          }
-        />
-      )}
-
-      {/* Column 1: Nav Sidebar — hidden on mobile, shown via drawer */}
-      {!isMobile && (
-        <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
-      )}
-      {isMobile && (
-        <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
-      )}
-
-      {/* Column 2: Parameter Panel — sheet on mobile */}
-      {isMobile ? (
-        showParams && (
-          <>
-            <div className="fixed inset-0 z-30 bg-black/50" onClick={() => setShowParams(false)} />
-            <div className="fixed inset-y-0 left-0 z-40 w-[280px] bg-surface border-r border-border shadow-2xl animate-in slide-in-from-left duration-200 overflow-y-auto">
-              <ParameterPanel
-                onRun={handleRun}
-                loading={loading}
-                isFree={isFree}
-                occTimeframe={momentumTimeframe}
-                onOccTimeframeChange={setMomentumTimeframe}
-                templates={templates}
-                onSaveTemplate={saveTemplate}
-                onDeleteTemplate={deleteTemplate}
-                templateLoading={templateLoading}
-              />
-            </div>
-          </>
-        )
-      ) : (
-        <ParameterPanel
-          onRun={handleRun}
-          loading={loading}
-          isFree={isFree}
-          occTimeframe={momentumTimeframe}
-          onOccTimeframeChange={setMomentumTimeframe}
-          templates={templates}
-          onSaveTemplate={saveTemplate}
-          onDeleteTemplate={deleteTemplate}
-          templateLoading={templateLoading}
-        />
-      )}
-
-      {/* Column 3: Main Content */}
-      <main className="flex-1 min-w-0 overflow-y-auto p-4 lg:p-6">
-        {hasResults && (
-          <div className="flex items-center gap-3 mb-5 flex-wrap">
-            <h2 className="text-[14px] lg:text-[15px] text-foreground font-medium lowercase">{reportTitle}</h2>
-            <button className="flex items-center gap-1.5 bg-primary text-primary-foreground rounded-lg px-3 py-1 text-[12px] font-medium">
-              <Bookmark className="h-3.5 w-3.5" />
-              bookmarked
-            </button>
-          </div>
-        )}
-
-        {!hasResults && !loading && (
-          <div className="flex items-center justify-center h-full">
-            <div className="border border-dashed border-border rounded-xl p-8 lg:p-12 text-center max-w-md">
-              <img src={logo} className="h-14 w-14 rounded-full object-cover mx-auto mb-4 opacity-40" alt="" />
-              <p className="text-[13px] text-muted-foreground">select a report type and ticker to begin analysis</p>
-              <p className="text-[11px] text-muted-foreground mt-1">powered by TwelveData API · 5000 bars intraday</p>
-              {isMobile && (
-                <button
-                  onClick={() => setShowParams(true)}
-                  className="mt-4 flex items-center gap-2 mx-auto bg-primary text-primary-foreground rounded-lg px-4 py-2 text-[12px] font-medium"
-                >
-                  <SlidersHorizontal className="h-4 w-4" />
-                  open parameters
-                </button>
+      {/* Header - compact */}
+      <header className="relative z-10 border-b border-border/40 px-3 sm:px-6 py-2 backdrop-blur-sm shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <img src={logo} alt="MyOpenEdge" className="h-7 w-7 rounded-full object-cover" />
+          <h1 className="text-base font-bold text-foreground tracking-tight">MyOpenEdge</h1>
+          <span className="text-xs text-muted-foreground ml-1 hidden sm:inline">IB & Momentum Analytics</span>
+          {isActive ? (
+            <div className="flex items-center gap-2 ml-1">
+              <Badge variant="secondary" className="gap-1 text-[10px] bg-primary/15 text-primary border-primary/30">
+                <Crown className="h-3 w-3" /> Pro
+              </Badge>
+              {endDate && (
+                <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                  exp {new Date(endDate).toLocaleDateString()}
+                </span>
               )}
             </div>
+          ) : (
+            <Badge
+              variant="outline"
+              className="gap-1 text-[10px] cursor-pointer hover:bg-primary/10"
+              onClick={() => navigate("/upgrade")}>
+              Free · Upgrade
+            </Badge>
+          )}
+          <div className="ml-auto flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/custom-analysis")} className="gap-1 text-muted-foreground h-7 px-2">
+              <Brain className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Custom AI</span>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/daily-briefing")} className="gap-1 text-muted-foreground h-7 px-2">
+              <Bot className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Daily AI</span>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/docs")} className="gap-1 text-muted-foreground h-7 px-2">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Docs</span>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={signOut} className="gap-1 text-muted-foreground h-7 px-2">
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Sign out</span>
+            </Button>
           </div>
-        )}
+        </div>
+      </header>
 
-        {loading && (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center space-y-3">
-              <Loader2 className="h-8 w-8 text-primary animate-spin mx-auto" />
-              <p className="text-[13px] text-muted-foreground">fetching & analyzing {symbol.toLowerCase()} data…</p>
-            </div>
-          </div>
-        )}
+      {/* Main content - fills remaining height, no scroll */}
+      <main className="relative z-10 flex-1 min-h-0 p-2 sm:p-3">
+        <div className="h-full grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] gap-2 sm:gap-3">
+          {/* Left: Control Panel */}
+          <aside className="min-h-0 overflow-y-auto scrollbar-thin">
+            <ControlPanel onRun={handleRun} loading={loading} isFree={isFree} />
+          </aside>
 
-        {hasResults && !loading && renderCharts()}
+          {/* Center: Results */}
+          <section className="min-h-0 overflow-y-auto scrollbar-thin">
+            {/* Empty state */}
+            {!hasResults && !loading && (
+              <div className="flex items-center justify-center h-full rounded-lg border border-dashed border-border/30">
+                <div className="text-center">
+                  <img src={logo} className="h-12 w-12 rounded-full object-cover mx-auto mb-3 opacity-40" alt="MyOpenEdge" />
+                  <p className="text-muted-foreground text-xs">Powered by TwelveData API with 5000 bars of intraday data.</p>
+                </div>
+              </div>
+            )}
+
+            {/* Loading */}
+            {loading && (
+              <div className="flex items-center justify-center h-full rounded-lg border border-border/20 bg-card/30">
+                <div className="text-center space-y-2">
+                  <div className="h-7 w-7 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+                  <p className="text-muted-foreground text-xs">Analyzing {symbol}…</p>
+                </div>
+              </div>
+            )}
+
+            {/* IB Mode */}
+            {activeMode === "ib" && result && (
+              <div className="h-full grid grid-rows-2 gap-2">
+                {/* Top: Two IB charts - 50% height */}
+                <div className="grid grid-cols-2 gap-2 min-h-0">
+                  <IBChart
+                    title="IB High Formed First"
+                    total={result.highFirst.total}
+                    breakHigh={result.highFirst.breakHigh}
+                    breakLow={result.highFirst.breakLow}
+                    inside={result.highFirst.inside} />
+                  <IBChart
+                    title="IB Low Formed First"
+                    total={result.lowFirst.total}
+                    breakHigh={result.lowFirst.breakHigh}
+                    breakLow={result.lowFirst.breakLow}
+                    inside={result.lowFirst.inside} />
+                </div>
+                {/* Bottom: Day chart - 50% height */}
+                <div className="min-h-0 overflow-hidden">
+                  {result.allDays.length > 0 && (() => {
+                    const dayData = result.allDays.find((d) => d.date === selectedDate) || result.allDays[result.allDays.length - 1];
+                    return (
+                      <IBDayChart
+                        date={dayData.date}
+                        bars={dayData.bars}
+                        ibHigh={dayData.ibHigh}
+                        ibLow={dayData.ibLow}
+                        symbol={symbol}
+                        ibWindowMinutes={result.ibWindowMinutes}
+                        highFirstFormed={dayData.highFirstFormed}
+                        breakout={dayData.breakout}
+                        availableDates={result.allDays.map((d) => d.date)}
+                        selectedDate={selectedDate || dayData.date}
+                        onDateChange={setSelectedDate}
+                        statsHighFirst={result.highFirst}
+                        statsLowFirst={result.lowFirst} />
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {/* Momentum Mode */}
+            {activeMode === "momentum" && momentumResult && (
+              <div className="h-full flex flex-col gap-2">
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] text-muted-foreground">TF:</span>
+                  {["M5", "M15", "M30", "H1"].map((tf) => (
+                    <button
+                      key={tf}
+                      onClick={() => setMomentumTf(tf)}
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                        momentumTf === tf
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}>
+                      {tf}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex-1 min-h-0 grid grid-rows-2 gap-2">
+                  {momentumResult.tfStats[momentumTf] && (
+                    <div className="grid grid-cols-2 gap-2 min-h-0">
+                      <MomentumChart
+                        title="IB High Formed First"
+                        total={momentumResult.tfStats[momentumTf].highFirst.total}
+                        bullish={momentumResult.tfStats[momentumTf].highFirst.bullish}
+                        bearish={momentumResult.tfStats[momentumTf].highFirst.bearish}
+                        choppy={momentumResult.tfStats[momentumTf].highFirst.choppy} />
+                      <MomentumChart
+                        title="IB Low Formed First"
+                        total={momentumResult.tfStats[momentumTf].lowFirst.total}
+                        bullish={momentumResult.tfStats[momentumTf].lowFirst.bullish}
+                        bearish={momentumResult.tfStats[momentumTf].lowFirst.bearish}
+                        choppy={momentumResult.tfStats[momentumTf].lowFirst.choppy} />
+                    </div>
+                  )}
+                  <div className="min-h-0 overflow-hidden">
+                    {momentumResult.allDays.length > 0 && (() => {
+                      const dayData = momentumResult.allDays.find((d) => d.date === selectedDate) || momentumResult.allDays[momentumResult.allDays.length - 1];
+                      const tfData = dayData.timeframes.find(t => t.tf === momentumTf);
+                      const tfStatsHF = momentumResult.tfStats[momentumTf]?.highFirst || { total: 0, bullish: 0, bearish: 0, choppy: 0 };
+                      const tfStatsLF = momentumResult.tfStats[momentumTf]?.lowFirst || { total: 0, bullish: 0, bearish: 0, choppy: 0 };
+                      return (
+                        <MomentumDayChart
+                          date={dayData.date}
+                          bars={dayData.bars}
+                          symbol={symbol}
+                          momentum={tfData?.momentum || dayData.momentum}
+                          signals={tfData?.signals || dayData.signals}
+                          availableDates={momentumResult.allDays.map((d) => d.date)}
+                          selectedDate={selectedDate || dayData.date}
+                          onDateChange={setSelectedDate}
+                          statsHighFirst={tfStatsHF}
+                          statsLowFirst={tfStatsLF}
+                          highFirstFormed={dayData.highFirstFormed}
+                          selectedTf={momentumTf} />
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* OCC Mode */}
+            {activeMode === "occ" && occResult && (
+              <div className="h-full flex flex-col gap-2">
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] text-muted-foreground">TF:</span>
+                  {["M5", "M15", "M30", "H1"].map((tf) => (
+                    <button
+                      key={tf}
+                      onClick={() => setOccTf(tf)}
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                        occTf === tf
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}>
+                      {tf}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex-1 min-h-0 grid grid-rows-2 gap-2">
+                  {occResult.tfDirectionStats[occTf] && (
+                    <div className="grid grid-cols-2 gap-2 min-h-0">
+                      <OCCChart
+                        title="Candle 1 Bullish"
+                        stats={occResult.tfDirectionStats[occTf].bullishFirst}
+                        color="emerald" />
+                      <OCCChart
+                        title="Candle 1 Bearish"
+                        stats={occResult.tfDirectionStats[occTf].bearishFirst}
+                        color="red" />
+                    </div>
+                  )}
+                  <div className="min-h-0 overflow-hidden">
+                    {occResult.allDays.length > 0 && (() => {
+                      const dayData = occResult.allDays.find((d) => d.date === selectedDate) || occResult.allDays[occResult.allDays.length - 1];
+                      return (
+                        <OCCDayChart
+                          date={dayData.date}
+                          bars={dayData.bars}
+                          symbol={symbol}
+                          timeframes={dayData.timeframes}
+                          overallBias={dayData.overallBias}
+                          availableDates={occResult.allDays.map((d) => d.date)}
+                          selectedDate={selectedDate || dayData.date}
+                          onDateChange={setSelectedDate}
+                          tfDirectionStats={occResult.tfDirectionStats} />
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Gap Fill Mode */}
+            {activeMode === "gapfill" && gapFillResult && (
+              <div className="h-full overflow-y-auto">
+                <GapFillDashboard result={gapFillResult} symbol={symbol} />
+              </div>
+            )}
+
+            {/* NY Gap M15 Mode */}
+            {activeMode === "nygap" && nyGapResult && (
+              <div className="h-full overflow-y-auto">
+                <NYGapM15Dashboard result={nyGapResult} symbol={symbol} />
+              </div>
+            )}
+          </section>
+
+          {/* Right: Report History */}
+          <aside className="hidden lg:flex min-h-0">
+            <AnalysisHistory
+              runs={historyRuns.slice(0, 10)}
+              onDelete={deleteRun}
+              onSelect={handleSelectRun}
+              selectedId={selectedRunId} />
+          </aside>
+        </div>
       </main>
-
-      {/* Column 4: Right Sidebar — hidden on mobile */}
-      {!isMobile && (
-        <RightSidebar templates={templates} activeMode={activeMode} />
-      )}
     </div>
   );
 };

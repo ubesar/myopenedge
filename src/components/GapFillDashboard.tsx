@@ -1,284 +1,281 @@
-import { useState, useMemo } from "react";
-import type { GapFillResult, GapSizeBucket, GapDayData } from "@/lib/gapfill-analysis";
-import { GAP_SIZE_BUCKETS } from "@/lib/gapfill-analysis";
+import { useState } from "react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LabelList, Cell } from "recharts";
+import { ArrowUpRight, ArrowDownRight, Target, TrendingUp, Calendar, Layers } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import type { GapFillResult, GapSize } from "@/lib/gapfill-analysis";
 
 interface GapFillDashboardProps {
   result: GapFillResult;
   symbol: string;
-  dateRange?: string;
-  weekdays?: string;
 }
 
-const FILLED_COLOR_VAR = "hsl(var(--chart-bar-a))";
-const NOT_FILLED_COLOR_VAR = "hsl(var(--chart-bar-b))";
-const BAR_HEIGHT = 340;
-
-/* ── Stacked Bar ── */
-const StackedBar = ({
-  label,
-  filledPct,
-  notFilledPct,
-}: {
-  label: string;
-  filledPct: number;
-  notFilledPct: number;
-}) => {
-  const filledH = Math.max((filledPct / 100) * BAR_HEIGHT, filledPct > 0 ? 6 : 0);
-  const notFilledH = Math.max((notFilledPct / 100) * BAR_HEIGHT, notFilledPct > 0 ? 6 : 0);
-
-  return (
-    <div className="flex flex-col items-center gap-2" style={{ width: "clamp(90px, 30vw, 140px)" }}>
-      <div
-        className="w-full flex flex-col rounded-t-md overflow-hidden"
-        style={{ height: BAR_HEIGHT }}
-      >
-        {/* Not filled (top) */}
-        <div
-          className="w-full flex items-center justify-center text-[10px] sm:text-[12px] font-semibold"
-          style={{
-            height: notFilledH,
-            backgroundColor: NOT_FILLED_COLOR_VAR,
-            color: "hsl(0, 0%, 100%)",
-          }}
-        >
-          {notFilledPct >= 4 && `${notFilledPct.toFixed(0)}% not filled`}
-        </div>
-        {/* Spacer */}
-        <div className="flex-1" />
-        {/* Filled (bottom) */}
-        <div
-          className="w-full flex items-center justify-center text-[10px] sm:text-[13px] font-bold text-primary-foreground"
-          style={{
-            height: filledH,
-            backgroundColor: FILLED_COLOR_VAR,
-          }}
-        >
-          {filledPct >= 4 && `${filledPct.toFixed(0)}% filled`}
-        </div>
-      </div>
-      <span className="text-[10px] sm:text-[11px] text-muted-foreground lowercase">{label}</span>
-    </div>
-  );
+const SIZE_LABELS: Record<GapSize, string> = {
+  small: "Small (0–0.5%)",
+  medium: "Medium (0.5–1%)",
+  large: "Large (>1%)",
 };
 
-/* ── Main ── */
-const GapFillDashboard = ({ result, symbol, dateRange, weekdays }: GapFillDashboardProps) => {
-  const [activeBucket, setActiveBucket] = useState<GapSizeBucket | "all">("all");
+const GapFillDashboard = ({ result, symbol }: GapFillDashboardProps) => {
+  const { stats } = result;
+  const [sizeFilter, setSizeFilter] = useState<GapSize | "all">("all");
 
-  const filtered = useMemo(() => {
-    if (activeBucket === "all") return result.allDays;
-    return result.allDays.filter((d) => d.sizeBucket === activeBucket);
-  }, [result.allDays, activeBucket]);
+  // Filtered stats by size
+  const filteredDays =
+    sizeFilter === "all"
+      ? result.allDays
+      : result.allDays.filter((d) => d.gapSize === sizeFilter);
 
-  const gapUpDays = useMemo(() => filtered.filter((d) => d.direction === "up"), [filtered]);
-  const gapDownDays = useMemo(() => filtered.filter((d) => d.direction === "down"), [filtered]);
+  const filteredGapUp = filteredDays.filter((d) => d.direction === "up");
+  const filteredGapDown = filteredDays.filter((d) => d.direction === "down");
+  const filteredUpFill = filteredGapUp.filter((d) => d.filled).length;
+  const filteredDownFill = filteredGapDown.filter((d) => d.filled).length;
+  const filteredUpRate = filteredGapUp.length > 0 ? (filteredUpFill / filteredGapUp.length) * 100 : 0;
+  const filteredDownRate = filteredGapDown.length > 0 ? (filteredDownFill / filteredGapDown.length) * 100 : 0;
+  const filteredOverall = filteredDays.length > 0
+    ? (filteredDays.filter((d) => d.filled).length / filteredDays.length) * 100
+    : 0;
 
-  const upFilled = gapUpDays.filter((d) => d.filled).length;
-  const downFilled = gapDownDays.filter((d) => d.filled).length;
-  const upFillPct = gapUpDays.length > 0 ? (upFilled / gapUpDays.length) * 100 : 0;
-  const downFillPct = gapDownDays.length > 0 ? (downFilled / gapDownDays.length) * 100 : 0;
-  const upNotPct = 100 - upFillPct;
-  const downNotPct = 100 - downFillPct;
+  // Bar chart data
+  const barData = [
+    { name: "Gap Up Fill", value: parseFloat(filteredUpRate.toFixed(1)), type: "up" },
+    { name: "Gap Down Fill", value: parseFloat(filteredDownRate.toFixed(1)), type: "down" },
+  ];
 
-  const totalGaps = gapUpDays.length + gapDownDays.length;
-  const upNotFilled = gapUpDays.length - upFilled;
-  const downNotFilled = gapDownDays.length - downFilled;
+  // By size chart data
+  const sizeData = (["small", "medium", "large"] as GapSize[]).map((s) => ({
+    name: SIZE_LABELS[s],
+    short: s.charAt(0).toUpperCase() + s.slice(1),
+    rate: parseFloat(stats.bySize[s].rate.toFixed(1)),
+    total: stats.bySize[s].total,
+    filled: stats.bySize[s].filled,
+  }));
 
-  const activeLabel =
-    activeBucket === "all"
-      ? "all sizes"
-      : GAP_SIZE_BUCKETS.find((b) => b.key === activeBucket)?.label ?? activeBucket;
+  // Heatmap color
+  const heatColor = (rate: number) => {
+    if (rate >= 80) return "bg-emerald-500/30 text-emerald-300";
+    if (rate >= 60) return "bg-emerald-500/15 text-emerald-400";
+    if (rate >= 40) return "bg-yellow-500/15 text-yellow-400";
+    if (rate >= 20) return "bg-orange-500/15 text-orange-400";
+    return "bg-red-500/15 text-red-400";
+  };
 
-  // Determine which direction + bucket is active for the top summary
-  const dominantDir = upFillPct >= downFillPct ? "up" : "down";
-  const dominantPct = Math.max(upFillPct, downFillPct);
+  const cs = stats.currentSession;
 
   return (
-    <div className="space-y-4">
-      {/* ═══ TOP SUMMARY BAR ═══ */}
-      <div className="border border-border rounded-xl bg-card px-3 sm:px-5 py-3 sm:py-4 flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2 sm:gap-y-3">
-        {/* Symbol */}
-        <div className="flex items-center gap-3">
-          <span className="text-[16px] sm:text-[18px] font-bold text-foreground uppercase tracking-wide">
-            {symbol}
-          </span>
-          <div className="flex flex-col">
-            <span className="text-[11px] text-muted-foreground lowercase">gap fill by size</span>
-            <span className="text-[10px] text-primary font-medium">myopenedge</span>
+    <div className="space-y-3">
+      {/* Current Session Status */}
+      {cs && cs.hasGap && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 backdrop-blur-md p-3 sm:p-4 shadow-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <Target className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-card-foreground">
+              Current Session — {symbol}
+            </h3>
           </div>
-        </div>
-
-        {/* Divider */}
-        <div className="h-8 w-px bg-border hidden sm:block" />
-
-        {/* Gap type info */}
-        <div className="text-center">
-          <span className="text-[10px] text-muted-foreground block lowercase">
-            gap {dominantDir} between
-          </span>
-          <span className="text-[12px] text-foreground font-semibold lowercase">{activeLabel}</span>
-          <span className="text-[10px] text-muted-foreground block">gap type</span>
-        </div>
-
-        {/* Fill rate highlight */}
-        <div className="bg-profit/10 border border-profit/30 rounded-lg px-4 py-2 text-center">
-          <span className="text-[22px] font-black text-profit">{dominantPct.toFixed(0)}%</span>
-          <span className="text-[10px] text-muted-foreground block">gap fill</span>
-        </div>
-
-        {/* Date range */}
-        {dateRange && (
-          <>
-            <div className="h-8 w-px bg-border hidden sm:block" />
-            <div className="text-center">
-              <span className="text-[12px] text-foreground font-medium lowercase">{dateRange}</span>
-              <span className="text-[10px] text-muted-foreground block">date range</span>
+          <div className="flex flex-wrap gap-3">
+            <div className="flex items-center gap-2">
+              {cs.direction === "up" ? (
+                <ArrowUpRight className="h-5 w-5 text-emerald-400" />
+              ) : (
+                <ArrowDownRight className="h-5 w-5 text-red-400" />
+              )}
+              <span className="text-sm font-medium text-card-foreground">
+                Gap {cs.direction === "up" ? "Up" : "Down"}{" "}
+                <span className="text-muted-foreground">
+                  ({Math.abs(cs.gapPercent).toFixed(2)}% · {cs.gapSize})
+                </span>
+              </span>
             </div>
-          </>
-        )}
-
-        {weekdays && (
-          <div className="text-center">
-            <span className="text-[12px] text-foreground font-medium lowercase">{weekdays}</span>
-            <span className="text-[10px] text-muted-foreground block">weekdays</span>
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                Historical Fill Probability:{" "}
+                <span className="font-bold text-primary">
+                  {cs.historicalFillRate.toFixed(1)}%
+                </span>
+              </span>
+            </div>
+            <div className={`px-2 py-0.5 rounded text-xs font-semibold ${cs.filled ? "bg-emerald-500/20 text-emerald-400" : "bg-yellow-500/20 text-yellow-400"}`}>
+              {cs.filled ? "✅ Filled" : "⏳ Not Filled Yet"}
+            </div>
           </div>
-        )}
+        </div>
+      )}
+
+      {/* Summary KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+        <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 shadow-lg text-center">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Overall Fill Rate</p>
+          <p className="text-2xl font-bold text-primary mt-1">{filteredOverall.toFixed(1)}%</p>
+          <p className="text-[10px] text-muted-foreground">{filteredDays.length} gaps</p>
+        </div>
+        <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 shadow-lg text-center">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Gap Up Fill</p>
+          <p className="text-2xl font-bold text-emerald-400 mt-1">{filteredUpRate.toFixed(1)}%</p>
+          <p className="text-[10px] text-muted-foreground">{filteredUpFill}/{filteredGapUp.length}</p>
+        </div>
+        <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 shadow-lg text-center">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Gap Down Fill</p>
+          <p className="text-2xl font-bold text-red-400 mt-1">{filteredDownRate.toFixed(1)}%</p>
+          <p className="text-[10px] text-muted-foreground">{filteredDownFill}/{filteredGapDown.length}</p>
+        </div>
+        <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 shadow-lg text-center">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Days</p>
+          <p className="text-2xl font-bold text-card-foreground mt-1">{result.totalDays}</p>
+          <p className="text-[10px] text-muted-foreground">analyzed</p>
+        </div>
       </div>
 
-      {/* ═══ MAIN 2-PANEL: CHARTS + INSIGHTS ═══ */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4">
-        {/* ── LEFT: Charts ── */}
-        <div className="border border-border rounded-xl bg-card overflow-hidden">
-          {/* Header */}
-          <div className="px-3 sm:px-5 pt-3 sm:pt-4 pb-2 sm:pb-3 border-b border-border">
-            <h4 className="text-[13px] font-semibold text-foreground lowercase">charts</h4>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
-              {symbol.toLowerCase()} gap fill&nbsp;&nbsp;|&nbsp;&nbsp;by size
-              {dateRange && <>&nbsp;&nbsp;|&nbsp;&nbsp;{dateRange}</>}
-              &nbsp;&nbsp;|&nbsp;&nbsp;9:30 am – 4:00 pm&nbsp;&nbsp;|&nbsp;&nbsp;
-              <span className="text-primary font-medium">myopenedge</span>
-            </p>
-          </div>
+      {/* Gap Size Filter */}
+      <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 shadow-lg">
+        <div className="flex items-center gap-2 mb-2">
+          <Layers className="h-4 w-4 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground font-medium">Filter by Gap Size</span>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {(["all", "small", "medium", "large"] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => setSizeFilter(s)}
+              className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                sizeFilter === s
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              {s === "all" ? "All Sizes" : SIZE_LABELS[s]}
+            </button>
+          ))}
+        </div>
+      </div>
 
-          {/* Chart area */}
-          <div className="px-3 sm:px-5 py-4 sm:py-6">
-            <div className="flex items-end gap-0">
-              {/* Y-axis labels */}
-              <div
-                className="flex flex-col justify-between pr-1 sm:pr-3 text-[9px] sm:text-[11px] text-muted-foreground"
-                style={{ height: BAR_HEIGHT }}
-              >
-                {["100%", "75%", "50%", "25%", "0%"].map((l) => (
-                  <span key={l}>{l}</span>
-                ))}
-              </div>
-
-              {/* Bars */}
-              <div className="flex-1 relative">
-                {/* Grid lines */}
-                <div
-                  className="absolute inset-0 flex flex-col justify-between pointer-events-none"
-                  style={{ height: BAR_HEIGHT }}
-                >
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} className="border-b border-border/40" />
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Gap Up vs Down Fill Bar Chart */}
+        <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 sm:p-4 shadow-lg sm:aspect-square flex flex-col">
+          <h3 className="text-sm font-semibold text-card-foreground mb-1">Gap Up vs Down Fill %</h3>
+          <p className="text-xs text-muted-foreground mb-2">{filteredDays.length} gap days</p>
+          <div className="flex-1 min-h-[180px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={barData} barCategoryGap="30%">
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,20%)" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fill: "hsl(0,0%,55%)", fontSize: 11 }}
+                  axisLine={{ stroke: "hsl(0,0%,20%)" }}
+                  tickLine={false}
+                />
+                <YAxis
+                  domain={[0, 100]}
+                  tick={{ fill: "hsl(0,0%,55%)", fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v) => `${v}%`}
+                />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={80}>
+                  {barData.map((entry, i) => (
+                    <Cell
+                      key={i}
+                      fill={entry.type === "up" ? "hsl(142,71%,45%)" : "hsl(0,84%,60%)"}
+                    />
                   ))}
-                </div>
-                {/* Stacked bars */}
-                <div
-                  className="relative flex items-end justify-center gap-4 sm:gap-16"
-                  style={{ height: BAR_HEIGHT }}
-                >
-                  <StackedBar label="gap up" filledPct={upFillPct} notFilledPct={upNotPct} />
-                  <StackedBar label="gap down" filledPct={downFillPct} notFilledPct={downNotPct} />
-                </div>
-              </div>
-            </div>
-
-            {/* Legend */}
-            <div className="flex items-center justify-center gap-6 mt-5 text-[11px]">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-chart-bar-a shrink-0" />
-                <span className="text-muted-foreground">% filled</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-chart-bar-b" />
-                <span className="text-muted-foreground">% not filled</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Gap size bucket buttons */}
-          <div className="border-t border-border px-3 sm:px-5 py-3 sm:py-4">
-            <div className="flex flex-wrap gap-1.5 sm:gap-2">
-              {GAP_SIZE_BUCKETS.map((b) => (
-                <button
-                  key={b.key}
-                  onClick={() => setActiveBucket(activeBucket === b.key ? "all" : b.key)}
-                  className={`px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-[11px] font-medium border transition-all duration-200 ${
-                    activeBucket === b.key
-                      ? "bg-primary text-primary-foreground border-primary shadow-[0_0_12px_hsl(217,91%,60%,0.25)]"
-                      : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
-                  }`}
-                >
-                  {b.label}
-                </button>
-              ))}
-            </div>
-            <p className="text-[10px] text-muted-foreground mt-3">
-              custom: <span className="text-primary font-medium">{activeLabel}</span>
-            </p>
+                  <LabelList
+                    dataKey="value"
+                    position="top"
+                    formatter={(v: number) => `${v}%`}
+                    style={{ fill: "hsl(0,0%,85%)", fontSize: 13, fontWeight: 600 }}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        {/* ── RIGHT: Insights ── */}
-        <div className="border border-border rounded-xl bg-card overflow-hidden">
-          <div className="px-5 pt-4 pb-3 border-b border-border">
-            <h4 className="text-[13px] font-semibold text-foreground lowercase">insights</h4>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
-              {symbol.toLowerCase()} gap fill&nbsp;&nbsp;|&nbsp;&nbsp;by size&nbsp;&nbsp;|&nbsp;&nbsp;
-              <span className="text-primary font-medium">myopenedge</span>
+        {/* Fill Rate by Gap Size */}
+        <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 sm:p-4 shadow-lg sm:aspect-square flex flex-col">
+          <h3 className="text-sm font-semibold text-card-foreground mb-1">Fill Rate by Gap Size</h3>
+          <p className="text-xs text-muted-foreground mb-2">probability varies with gap magnitude</p>
+          <div className="flex-1 min-h-[180px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={sizeData} barCategoryGap="20%">
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,20%)" vertical={false} />
+                <XAxis
+                  dataKey="short"
+                  tick={{ fill: "hsl(0,0%,55%)", fontSize: 11 }}
+                  axisLine={{ stroke: "hsl(0,0%,20%)" }}
+                  tickLine={false}
+                />
+                <YAxis
+                  domain={[0, 100]}
+                  tick={{ fill: "hsl(0,0%,55%)", fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v) => `${v}%`}
+                />
+                <Bar dataKey="rate" radius={[6, 6, 0, 0]} maxBarSize={80} fill="hsl(213,94%,56%)">
+                  <LabelList
+                    dataKey="rate"
+                    position="top"
+                    formatter={(v: number) => `${v}%`}
+                    style={{ fill: "hsl(0,0%,85%)", fontSize: 13, fontWeight: 600 }}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Day of Week Heatmap */}
+      <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 sm:p-4 shadow-lg">
+        <div className="flex items-center gap-2 mb-3">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <h3 className="text-sm font-semibold text-card-foreground">Fill Probability by Day of Week</h3>
+        </div>
+        <div className="grid grid-cols-5 gap-2">
+          {stats.byDayOfWeek.map((d) => (
+            <div
+              key={d.day}
+              className={`rounded-lg p-3 text-center ${heatColor(d.rate)}`}
+            >
+              <p className="text-xs font-semibold mb-1">{d.day}</p>
+              <p className="text-lg font-bold">{d.rate.toFixed(0)}%</p>
+              <p className="text-[10px] opacity-70">
+                {d.filled}/{d.total}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Recommendation */}
+      <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md px-3 sm:px-4 py-2.5 sm:py-3 shadow-lg">
+        <h3 className="text-xs sm:text-sm font-semibold text-card-foreground mb-1">
+          📋 Gap Fill Insights — {symbol}
+        </h3>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className={`flex-1 rounded-md border px-3 py-1.5 ${stats.gapUpFillRate >= 50 ? "bg-emerald-500/10 border-emerald-500/30" : "bg-red-500/10 border-red-500/30"}`}>
+            <span className={`text-[10px] font-bold uppercase ${stats.gapUpFillRate >= 50 ? "text-emerald-400" : "text-red-400"}`}>
+              Gap Up → {stats.gapUpFillRate >= 50 ? "Likely Fills" : "Often Holds"}
+            </span>
+            <p className="text-xs text-card-foreground mt-0.5">
+              {stats.gapUpFillRate.toFixed(1)}% of gap ups filled ({stats.filledGapUp}/{stats.totalGapUp} days). 
+              {stats.gapUpFillRate >= 60 ? " Fade gap-up openings." : " Trend may continue higher."}
             </p>
           </div>
-
-          <div className="px-5 py-4 space-y-3">
-            {/* Gap Up table */}
-            <div>
-              <div className="grid grid-cols-3 text-[10px] text-muted-foreground font-medium lowercase tracking-wider px-2 py-2 bg-muted/20 rounded-md">
-                <span>category</span>
-                <span className="text-center">frequency</span>
-                <span className="text-right">percentage</span>
-              </div>
-              <InsightRow label="gap up" freq={gapUpDays.length} pct={totalGaps > 0 ? (gapUpDays.length / totalGaps) * 100 : 0} bold />
-              <InsightRow label="gap up filled" freq={upFilled} pct={upFillPct} />
-              <InsightRow label="gap up not filled" freq={upNotFilled} pct={upNotPct} />
-            </div>
-
-            {/* Gap Down table */}
-            <div>
-              <div className="grid grid-cols-3 text-[10px] text-muted-foreground font-medium lowercase tracking-wider px-2 py-2 bg-muted/20 rounded-md">
-                <span>category</span>
-                <span className="text-center">frequency</span>
-                <span className="text-right">percentage</span>
-              </div>
-              <InsightRow label="gap down" freq={gapDownDays.length} pct={totalGaps > 0 ? (gapDownDays.length / totalGaps) * 100 : 0} bold />
-              <InsightRow label="gap down filled" freq={downFilled} pct={downFillPct} />
-              <InsightRow label="gap down not filled" freq={downNotFilled} pct={downNotPct} />
-            </div>
+          <div className={`flex-1 rounded-md border px-3 py-1.5 ${stats.gapDownFillRate >= 50 ? "bg-emerald-500/10 border-emerald-500/30" : "bg-red-500/10 border-red-500/30"}`}>
+            <span className={`text-[10px] font-bold uppercase ${stats.gapDownFillRate >= 50 ? "text-emerald-400" : "text-red-400"}`}>
+              Gap Down → {stats.gapDownFillRate >= 50 ? "Likely Fills" : "Often Holds"}
+            </span>
+            <p className="text-xs text-card-foreground mt-0.5">
+              {stats.gapDownFillRate.toFixed(1)}% of gap downs filled ({stats.filledGapDown}/{stats.totalGapDown} days).
+              {stats.gapDownFillRate >= 60 ? " Buy the dip on gap-down opens." : " Weakness may persist."}
+            </p>
           </div>
         </div>
       </div>
     </div>
   );
 };
-
-/* ── Table row ── */
-const InsightRow = ({ label, freq, pct, bold }: { label: string; freq: number; pct: number; bold?: boolean }) => (
-  <div className={`grid grid-cols-3 text-[12px] px-2 py-2.5 border-b border-border/20 ${bold ? "text-foreground font-semibold" : "text-muted-foreground"}`}>
-    <span className="lowercase">{label}</span>
-    <span className="text-center font-medium text-foreground">{freq}</span>
-    <span className="text-right font-semibold text-foreground">{pct.toFixed(0)}%</span>
-  </div>
-);
 
 export default GapFillDashboard;

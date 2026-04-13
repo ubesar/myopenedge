@@ -1,75 +1,83 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, BarChart, Bar, Cell, ReferenceLine } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, ResponsiveContainer, LabelList } from "recharts";
 
-/** equity curve */
-export const EquityCurveChart = ({ data }: { data: { trade: number; pnl: number }[] }) => {
-  if (data.length === 0) return null;
-  const min = Math.min(...data.map(d => d.pnl));
-  const max = Math.max(...data.map(d => d.pnl));
+interface MomentumChartProps {
+  title: string;
+  total: number;
+  bullish: number;
+  bearish: number;
+  choppy: number;
+}
+
+const MomentumChart = ({ title, total, bullish, bearish, choppy }: MomentumChartProps) => {
+  const bullPct = total > 0 ? bullish / total * 100 : 0;
+  const bearPct = total > 0 ? bearish / total * 100 : 0;
+  const choppyPct = total > 0 ? choppy / total * 100 : 0;
+
+  const data = [
+  { name: "Bullish", value: parseFloat(bullPct.toFixed(2)), type: "bullish" },
+  { name: "Bearish", value: parseFloat(bearPct.toFixed(2)), type: "bearish" },
+  { name: "Choppy", value: parseFloat(choppyPct.toFixed(2)), type: "choppy" }];
+
+
+  const colorMap: Record<string, string> = {
+    bullish: "hsl(142,71%,45%)",
+    bearish: "hsl(0,84%,60%)",
+    choppy: "hsl(45,100%,50%)"
+  };
+
   return (
-    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 shadow-lg">
-      <h3 className="text-xs font-semibold text-card-foreground mb-2">cumulative p&l (equity curve)</h3>
-      <div className="h-[200px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-            <XAxis dataKey="trade" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9 }} axisLine={false} tickLine={false} interval={Math.max(1, Math.floor(data.length / 10))} />
-            <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => v.toFixed(1)} domain={[min - 1, max + 1]} />
-            <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" strokeOpacity={0.5} />
-            <Tooltip
-              content={({ active, payload }) => {
-                if (!active || !payload?.length) return null;
-                const v = payload[0].value as number;
-                return (
-                  <div className="rounded-md border border-border bg-card px-3 py-1.5 text-xs shadow-lg">
-                    <span className="text-muted-foreground">trade #{payload[0].payload.trade}: </span>
-                    <span className={v >= 0 ? "text-emerald-400" : "text-red-400"}>{v >= 0 ? "+" : ""}{v.toFixed(2)} pts</span>
-                  </div>
-                );
-              }}
-            />
-            <Line type="monotone" dataKey="pnl" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
+    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-2 sm:p-3 min-w-0 shadow-lg flex flex-col h-full">
+      <div className="flex items-center gap-2 mb-0.5">
+        <h3 className="text-xs font-semibold text-card-foreground">{title}</h3>
       </div>
-    </div>
-  );
-};
-
-/** daily pnl bar chart */
-export const DailyPnlChart = ({ data }: { data: { date: string; pnl: number }[] }) => {
-  if (data.length === 0) return null;
-  return (
-    <div className="rounded-lg border border-border/30 bg-card/40 backdrop-blur-md p-3 shadow-lg">
-      <h3 className="text-xs font-semibold text-card-foreground mb-2">daily p&l</h3>
-      <div className="h-[180px]">
+      <p className="text-[10px] text-muted-foreground mb-1">{total} trading days</p>
+      <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-            <XAxis dataKey="date" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 8 }} axisLine={false} tickLine={false} interval={Math.max(1, Math.floor(data.length / 8))} />
-            <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => v.toFixed(1)} />
-            <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" strokeOpacity={0.5} />
-            <Tooltip
-              content={({ active, payload }) => {
-                if (!active || !payload?.length) return null;
-                const d = payload[0].payload;
-                return (
-                  <div className="rounded-md border border-border bg-card px-3 py-1.5 text-xs shadow-lg">
-                    <span className="text-muted-foreground">{d.date}: </span>
-                    <span className={d.pnl >= 0 ? "text-emerald-400" : "text-red-400"}>{d.pnl >= 0 ? "+" : ""}{d.pnl.toFixed(2)} pts</span>
-                  </div>
-                );
-              }}
-            />
-            <Bar dataKey="pnl" radius={[3, 3, 0, 0]} maxBarSize={12}>
-              {data.map((entry, i) => (
-                <Cell key={i} fill={entry.pnl >= 0 ? "hsl(142,71%,45%)" : "hsl(0,84%,60%)"} />
-              ))}
+          <BarChart data={data} barCategoryGap="20%">
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,20%)" vertical={false} />
+            <XAxis
+              dataKey="name"
+              tick={{ fill: "hsl(0,0%,55%)", fontSize: 11 }}
+              axisLine={{ stroke: "hsl(0,0%,20%)" }}
+              tickLine={false} />
+
+            <YAxis
+              domain={[0, 100]}
+              tick={{ fill: "hsl(0,0%,55%)", fontSize: 12 }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v) => `${v}%`} />
+
+            <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={120}>
+              {data.map((entry, i) =>
+              <Cell key={i} fill={colorMap[entry.type]} />
+              )}
+              <LabelList
+                dataKey="value"
+                position="top"
+                formatter={(v: number) => `${v}%`}
+                style={{ fill: "hsl(0,0%,85%)", fontSize: 14, fontWeight: 600 }} />
+
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </div>
-  );
+      <div className="flex gap-1.5 mt-1 shrink-0">
+        <div className="flex-1 rounded border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-1 text-center">
+          <div className="text-[9px] text-emerald-400 font-medium">Bullish</div>
+          <div className="text-sm font-bold text-emerald-400">{bullish}</div>
+        </div>
+        <div className="flex-1 rounded border border-red-500/30 bg-red-500/10 px-1.5 py-1 text-center">
+          <div className="text-[9px] text-red-400 font-medium">Bearish</div>
+          <div className="text-sm font-bold text-red-400">{bearish}</div>
+        </div>
+        <div className="flex-1 rounded border border-yellow-500/30 bg-yellow-500/10 px-1.5 py-1 text-center">
+          <div className="text-[9px] text-yellow-400 font-medium">Choppy</div>
+          <div className="text-sm font-bold text-yellow-400">{choppy}</div>
+        </div>
+      </div>
+    </div>);
+
 };
 
-export default EquityCurveChart;
+export default MomentumChart;

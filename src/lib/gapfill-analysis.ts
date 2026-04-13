@@ -10,43 +10,20 @@ interface BarData {
 }
 
 export type GapDirection = "up" | "down";
-
-/** Edgeful-style granular gap size buckets */
-export type GapSizeBucket =
-  | "0-0.19"
-  | "0.2-0.39"
-  | "0.4-0.69"
-  | "0.7-0.99"
-  | "1.0-1.49"
-  | ">=1.5";
-
-export const GAP_SIZE_BUCKETS: { key: GapSizeBucket; label: string; min: number; max: number }[] = [
-  { key: "0-0.19", label: "0 – 0.19%", min: 0, max: 0.19 },
-  { key: "0.2-0.39", label: "0.2 – 0.39%", min: 0.2, max: 0.39 },
-  { key: "0.4-0.69", label: "0.4 – 0.69%", min: 0.4, max: 0.69 },
-  { key: "0.7-0.99", label: "0.7 – 0.99%", min: 0.7, max: 0.99 },
-  { key: "1.0-1.49", label: "1.0 – 1.49%", min: 1.0, max: 1.49 },
-  { key: ">=1.5", label: "≥ 1.5%", min: 1.5, max: Infinity },
-];
+export type GapSize = "small" | "medium" | "large";
 
 export interface GapDayData {
   date: string;
-  dayOfWeek: number;
+  dayOfWeek: number; // 0=Sun..6=Sat
   direction: GapDirection;
   gapPercent: number;
-  sizeBucket: GapSizeBucket;
+  gapSize: GapSize;
   filled: boolean;
   todayOpen: number;
   prevClose: number;
   sessionHigh: number;
   sessionLow: number;
   bars: CandleBar[];
-}
-
-export interface GapBucketStats {
-  total: number;
-  filled: number;
-  rate: number;
 }
 
 export interface GapFillStats {
@@ -57,8 +34,16 @@ export interface GapFillStats {
   overallFillRate: number;
   gapUpFillRate: number;
   gapDownFillRate: number;
-  byBucket: Record<GapSizeBucket, GapBucketStats>;
+  bySize: Record<GapSize, { total: number; filled: number; rate: number }>;
   byDayOfWeek: { day: string; total: number; filled: number; rate: number }[];
+  currentSession: {
+    hasGap: boolean;
+    direction: GapDirection | null;
+    gapPercent: number;
+    gapSize: GapSize | null;
+    historicalFillRate: number;
+    filled: boolean;
+  } | null;
 }
 
 export interface GapFillResult {
@@ -76,19 +61,19 @@ function getTimeMinutes(dt: Date): number {
   return dt.getHours() * 60 + dt.getMinutes();
 }
 
-function classifyBucket(pct: number): GapSizeBucket {
+function classifyGapSize(pct: number): GapSize {
   const abs = Math.abs(pct);
-  for (const b of GAP_SIZE_BUCKETS) {
-    if (abs >= b.min && abs <= b.max) return b.key;
-  }
-  return ">=1.5";
+  if (abs <= 0.5) return "small";
+  if (abs <= 1.0) return "medium";
+  return "large";
 }
 
 const IB_START = 9 * 60 + 30;
 const MARKET_CLOSE = 16 * 60;
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export function analyzeGapFill(bars: BarData[], maxDays: number = 0, weekdays: number[] = [1,2,3,4,5]): GapFillResult {
+export function analyzeGapFill(bars: BarData[], maxDays: number = 0): GapFillResult {
+  // Group bars by date
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
     const date = bar.datetime.split(" ")[0];
@@ -97,12 +82,11 @@ export function analyzeGapFill(bars: BarData[], maxDays: number = 0, weekdays: n
   }
 
   let dates = Array.from(byDate.keys()).sort();
-  if (maxDays > 0) dates = dates.slice(-maxDays);
-  dates = dates.filter(d => {
-    const day = new Date(d + "T12:00:00").getDay();
-    return weekdays.includes(day);
-  });
+  if (maxDays > 0) {
+    dates = dates.slice(-maxDays);
+  }
 
+  // We need previous day's close, so start from index 1
   const allSortedDates = Array.from(byDate.keys()).sort();
   const allDays: GapDayData[] = [];
 
@@ -114,9 +98,11 @@ export function analyzeGapFill(bars: BarData[], maxDays: number = 0, weekdays: n
     const prevDayBars = byDate.get(prevDate)!;
     const todayBars = byDate.get(date)!;
 
+    // Sort bars by time
     prevDayBars.sort((a, b) => parseDateTime(a.datetime).getTime() - parseDateTime(b.datetime).getTime());
     todayBars.sort((a, b) => parseDateTime(a.datetime).getTime() - parseDateTime(b.datetime).getTime());
 
+    // Get previous day's last bar close (market hours)
     const prevMarketBars = prevDayBars.filter((b) => {
       const m = getTimeMinutes(parseDateTime(b.datetime));
       return m >= IB_START && m < MARKET_CLOSE;
@@ -124,6 +110,7 @@ export function analyzeGapFill(bars: BarData[], maxDays: number = 0, weekdays: n
     if (prevMarketBars.length === 0) continue;
     const prevClose = parseFloat(prevMarketBars[prevMarketBars.length - 1].close);
 
+    // Get today's market bars
     const todayMarketBars = todayBars.filter((b) => {
       const m = getTimeMinutes(parseDateTime(b.datetime));
       return m >= IB_START && m < MARKET_CLOSE;
@@ -133,11 +120,13 @@ export function analyzeGapFill(bars: BarData[], maxDays: number = 0, weekdays: n
     const todayOpen = parseFloat(todayMarketBars[0].open);
     const gapPercent = ((todayOpen - prevClose) / prevClose) * 100;
 
+    // Skip tiny gaps (< 0.01%)
     if (Math.abs(gapPercent) < 0.01) continue;
 
     const direction: GapDirection = gapPercent > 0 ? "up" : "down";
-    const sizeBucket = classifyBucket(gapPercent);
+    const gapSize = classifyGapSize(gapPercent);
 
+    // Check if gap filled during the session
     let sessionHigh = -Infinity;
     let sessionLow = Infinity;
     for (const bar of todayMarketBars) {
@@ -149,8 +138,10 @@ export function analyzeGapFill(bars: BarData[], maxDays: number = 0, weekdays: n
 
     let filled = false;
     if (direction === "up") {
+      // Gap Up fills if Low <= PrevClose
       filled = sessionLow <= prevClose;
     } else {
+      // Gap Down fills if High >= PrevClose
       filled = sessionHigh >= prevClose;
     }
 
@@ -161,7 +152,7 @@ export function analyzeGapFill(bars: BarData[], maxDays: number = 0, weekdays: n
       dayOfWeek: dt.getDay(),
       direction,
       gapPercent,
-      sizeBucket,
+      gapSize,
       filled,
       todayOpen,
       prevClose,
@@ -177,7 +168,7 @@ export function analyzeGapFill(bars: BarData[], maxDays: number = 0, weekdays: n
     });
   }
 
-  // Stats
+  // Calculate stats
   const gapUps = allDays.filter((d) => d.direction === "up");
   const gapDowns = allDays.filter((d) => d.direction === "down");
   const filledUp = gapUps.filter((d) => d.filled).length;
@@ -185,19 +176,20 @@ export function analyzeGapFill(bars: BarData[], maxDays: number = 0, weekdays: n
   const totalFilled = filledUp + filledDown;
   const totalGaps = allDays.length;
 
-  // By bucket
-  const byBucket = {} as GapFillStats["byBucket"];
-  for (const b of GAP_SIZE_BUCKETS) {
-    const subset = allDays.filter((d) => d.sizeBucket === b.key);
+  // By size
+  const sizes: GapSize[] = ["small", "medium", "large"];
+  const bySize = {} as GapFillStats["bySize"];
+  for (const s of sizes) {
+    const subset = allDays.filter((d) => d.gapSize === s);
     const filled = subset.filter((d) => d.filled).length;
-    byBucket[b.key] = {
+    bySize[s] = {
       total: subset.length,
       filled,
       rate: subset.length > 0 ? (filled / subset.length) * 100 : 0,
     };
   }
 
-  // By day of week
+  // By day of week (Mon-Fri only)
   const byDayOfWeek = [1, 2, 3, 4, 5].map((dow) => {
     const subset = allDays.filter((d) => d.dayOfWeek === dow);
     const filled = subset.filter((d) => d.filled).length;
@@ -209,6 +201,25 @@ export function analyzeGapFill(bars: BarData[], maxDays: number = 0, weekdays: n
     };
   });
 
+  // Current session (last day)
+  const lastDay = allDays.length > 0 ? allDays[allDays.length - 1] : null;
+  let currentSession: GapFillStats["currentSession"] = null;
+  if (lastDay) {
+    // Historical fill rate for similar gaps
+    const similar = allDays.filter(
+      (d) => d.direction === lastDay.direction && d.gapSize === lastDay.gapSize && d !== lastDay
+    );
+    const similarFilled = similar.filter((d) => d.filled).length;
+    currentSession = {
+      hasGap: true,
+      direction: lastDay.direction,
+      gapPercent: lastDay.gapPercent,
+      gapSize: lastDay.gapSize,
+      historicalFillRate: similar.length > 0 ? (similarFilled / similar.length) * 100 : 0,
+      filled: lastDay.filled,
+    };
+  }
+
   return {
     totalDays: allDays.length,
     stats: {
@@ -219,10 +230,11 @@ export function analyzeGapFill(bars: BarData[], maxDays: number = 0, weekdays: n
       overallFillRate: totalGaps > 0 ? (totalFilled / totalGaps) * 100 : 0,
       gapUpFillRate: gapUps.length > 0 ? (filledUp / gapUps.length) * 100 : 0,
       gapDownFillRate: gapDowns.length > 0 ? (filledDown / gapDowns.length) * 100 : 0,
-      byBucket,
+      bySize,
       byDayOfWeek,
+      currentSession,
     },
     allDays,
-    lastDay: allDays.length > 0 ? allDays[allDays.length - 1] : null,
+    lastDay,
   };
 }
