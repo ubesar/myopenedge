@@ -55,7 +55,7 @@ const Index = () => {
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
   const [occTf, setOccTf] = useState("M15");
-  const [momentumTf, setMomentumTf] = useState("M15");
+  const [momentumTf, setMomentumTf] = useState("M15"); // kept for backward compat, unused now
   const [selectedRunId, setSelectedRunId] = useState<string | undefined>();
   const { runs: historyRuns, addRun, deleteRun } = useAnalysisHistory();
 
