@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, Crown, FileText, Bot, Brain } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import logo from "@/assets/logo.png";
-import ControlPanel, { type AnalysisMode } from "@/components/ControlPanel";
+import ControlPanel, { type AnalysisMode, type MomentumParams } from "@/components/ControlPanel";
 import IBChart from "@/components/IBChart";
 import IBDayChart from "@/components/IBDayChart";
 import AnalysisHistory from "@/components/AnalysisHistory";
