@@ -78,12 +78,11 @@ const Index = () => {
       };
     }
     if (activeMode === "momentum" && momentumResult) {
-      const hf = momentumResult.highFirst;
-      const lf = momentumResult.lowFirst;
+      const cs = momentumResult.classStats;
       return {
         mode: "momentum",
         symbol,
-        summary: `Symbol: ${symbol}\nIBKR N-Candle Breakout (lookback=${momentumResult.lookback}, SL=$${momentumResult.stopLoss}, TP=$${momentumResult.takeProfit})\nTotal days: ${momentumResult.totalDays}, Total trades: ${momentumResult.totalTrades}\nWin Rate: ${momentumResult.winRate.toFixed(1)}%, Profit Factor: ${momentumResult.profitFactor.toFixed(2)}\nNet P&L: $${momentumResult.netPnl.toFixed(2)}, Expectancy: $${momentumResult.expectancy.toFixed(2)}\nMax Drawdown: $${momentumResult.maxDrawdown.toFixed(2)}\n\nIB High First (${hf.total} days): ${hf.trades} trades, ${hf.winRate.toFixed(1)}% WR\nIB Low First (${lf.total} days): ${lf.trades} trades, ${lf.winRate.toFixed(1)}% WR`
+        summary: `Symbol: ${symbol}\nMomentum Candle @ NY Open (09:30 ET, M15) — SMA${momentumResult.smaPeriod} body, super ≥ ${momentumResult.superMult}× avg.\nTotal days: ${momentumResult.totalDays}\nDirectional bias — Bull opens: ${momentumResult.bullishOpens}, Bear opens: ${momentumResult.bearishOpens}, Weak: ${momentumResult.weakOpens}\nSuper candle follow-through (to 12:00): ${momentumResult.superFollowRate.toFixed(1)}%\n\nDistribution:\n- Super Bull: ${cs.super_bull.count} (${cs.super_bull.pct.toFixed(1)}%) · follow ${cs.super_bull.followRate.toFixed(0)}%\n- Super Bear: ${cs.super_bear.count} (${cs.super_bear.pct.toFixed(1)}%) · follow ${cs.super_bear.followRate.toFixed(0)}%\n- Above Avg Bull: ${cs.above_bull.count} (${cs.above_bull.pct.toFixed(1)}%) · follow ${cs.above_bull.followRate.toFixed(0)}%\n- Above Avg Bear: ${cs.above_bear.count} (${cs.above_bear.pct.toFixed(1)}%) · follow ${cs.above_bear.followRate.toFixed(0)}%\n- Below Avg (Weak): ${cs.below.count} (${cs.below.pct.toFixed(1)}%)`
       };
     }
     if (activeMode === "occ" && occResult) {
@@ -171,10 +170,8 @@ const Index = () => {
           highFirst: analysis.highFirst, lowFirst: analysis.lowFirst,
         });
       } else if (mode === "momentum") {
-        const lk = momentumParams?.lookback || 3;
-        const sl = momentumParams?.stopLoss || 2;
-        const tp = momentumParams?.takeProfit || 5;
-        const analysis = analyzeMomentum(values as any, ibWindow, maxDays, lk, sl, tp);
+        const sm = momentumParams?.takeProfit || 1.5;
+        const analysis = analyzeMomentum(values as any, ibWindow, maxDays, 15, 0, sm);
         if (analysis.totalDays === 0) {
           toast.error("Not enough trading days in the data to analyze.");
           return;
@@ -183,9 +180,9 @@ const Index = () => {
         setSelectedDate(analysis.lastDay?.date || "");
         addRun(mode, ticker, {
           totalDays: analysis.totalDays,
-          totalTrades: analysis.totalTrades,
-          winRate: analysis.winRate,
-          netPnl: analysis.netPnl,
+          bullishOpens: analysis.bullishOpens,
+          bearishOpens: analysis.bearishOpens,
+          superFollowRate: analysis.superFollowRate,
         });
       } else if (mode === "occ") {
         const analysis = analyzeOCC(values as any, maxDays);
@@ -379,15 +376,16 @@ const Index = () => {
                         date={dayData.date}
                         bars={dayData.bars}
                         symbol={symbol}
-                        ibHigh={dayData.ibHigh}
-                        ibLow={dayData.ibLow}
-                        highFirstFormed={dayData.highFirstFormed}
-                        trades={dayData.trades}
-                        dayPnl={dayData.dayPnl}
+                        openCandle={dayData.openCandle}
+                        classification={dayData.classification}
+                        bodyRatio={dayData.bodyRatio}
+                        avgBody={dayData.avgBody}
+                        body={dayData.body}
+                        netMove={dayData.followThrough.netMove}
+                        confirmed={dayData.followThrough.confirmed}
                         availableDates={momentumResult.allDays.map((d) => d.date)}
                         selectedDate={selectedDate || dayData.date}
-                        onDateChange={setSelectedDate}
-                        ibWindowMinutes={momentumResult.ibWindowMinutes} />
+                        onDateChange={setSelectedDate} />
                     );
                   })()}
                 </div>
