@@ -8,8 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export type AnalysisMode = "ib" | "momentum" | "occ" | "gapfill" | "nygap";
 
 export interface MomentumParams {
+  /** legacy — unused */
   lookback: number;
+  /** legacy — unused */
   stopLoss: number;
+  /** Multiplier untuk Super Momentum (body > N × avgBody body SMA15) */
   takeProfit: number;
 }
 
