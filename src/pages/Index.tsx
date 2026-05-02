@@ -170,10 +170,8 @@ const Index = () => {
           highFirst: analysis.highFirst, lowFirst: analysis.lowFirst,
         });
       } else if (mode === "momentum") {
-        const lk = momentumParams?.lookback || 3;
-        const sl = momentumParams?.stopLoss || 2;
-        const tp = momentumParams?.takeProfit || 5;
-        const analysis = analyzeMomentum(values as any, ibWindow, maxDays, lk, sl, tp);
+        const sm = momentumParams?.takeProfit || 1.5;
+        const analysis = analyzeMomentum(values as any, ibWindow, maxDays, 15, 0, sm);
         if (analysis.totalDays === 0) {
           toast.error("Not enough trading days in the data to analyze.");
           return;
@@ -182,9 +180,9 @@ const Index = () => {
         setSelectedDate(analysis.lastDay?.date || "");
         addRun(mode, ticker, {
           totalDays: analysis.totalDays,
-          totalTrades: analysis.totalTrades,
-          winRate: analysis.winRate,
-          netPnl: analysis.netPnl,
+          bullishOpens: analysis.bullishOpens,
+          bearishOpens: analysis.bearishOpens,
+          superFollowRate: analysis.superFollowRate,
         });
       } else if (mode === "occ") {
         const analysis = analyzeOCC(values as any, maxDays);
