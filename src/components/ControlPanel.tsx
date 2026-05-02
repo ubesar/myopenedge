@@ -124,43 +124,25 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
         </div>
       )}
 
-      {/* Momentum N-Candle Breakout Parameters */}
+      {/* Momentum Candle @ NY Open Parameters */}
       {mode === "momentum" && !isFree && (
         <div className="space-y-2 border-t border-border/20 pt-2">
-          <div className="text-[10px] font-semibold text-primary uppercase tracking-wide">ibkr n-candle breakout params</div>
-          <div className="grid grid-cols-3 gap-1.5">
-            <div className="space-y-1">
-              <Label className="text-[10px] text-muted-foreground">lookback (n)</Label>
-              <Select value={lookback} onValueChange={setLookback}>
-                <SelectTrigger className="bg-muted border-border text-foreground h-7 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[2, 3, 4, 5, 6, 7].map((n) => (
-                    <SelectItem key={n} value={String(n)}>{n} candles</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-[10px] text-muted-foreground">stop loss ($)</Label>
-              <Input
-                type="number" step="0.5" min="0.5" max="20"
-                value={stopLoss} onChange={(e) => setStopLoss(e.target.value)}
-                className="bg-muted border-border text-foreground h-7 text-xs"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-[10px] text-muted-foreground">take profit ($)</Label>
-              <Input
-                type="number" step="0.5" min="1" max="50"
-                value={takeProfit} onChange={(e) => setTakeProfit(e.target.value)}
-                className="bg-muted border-border text-foreground h-7 text-xs"
-              />
-            </div>
+          <div className="text-[10px] font-semibold text-primary uppercase tracking-wide">momentum candle params</div>
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground">super momentum multiplier</Label>
+            <Select value={superMult} onValueChange={setSuperMult}>
+              <SelectTrigger className="bg-muted border-border text-foreground h-7 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {["1.2", "1.5", "1.75", "2.0", "2.5", "3.0"].map((v) => (
+                  <SelectItem key={v} value={v}>{v}× avg body</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <p className="text-[9px] text-muted-foreground">
-            buy signal: close &gt; n-candle high · sell signal: close &lt; n-candle low
+          <p className="text-[9px] text-muted-foreground leading-tight">
+            scan candle pembuka 09:30 ET (M15). body &gt; multiplier × SMA15 body = <span className="text-emerald-400">super bull</span> / <span className="text-fuchsia-400">super bear</span>.
           </p>
         </div>
       )}
