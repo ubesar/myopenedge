@@ -46,18 +46,16 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
   const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
   const [mode, setMode] = useState<AnalysisMode>("ib");
 
-  // Momentum params
-  const [lookback, setLookback] = useState("3");
-  const [stopLoss, setStopLoss] = useState("2");
-  const [takeProfit, setTakeProfit] = useState("5");
+  // Momentum Candle params
+  const [superMult, setSuperMult] = useState("1.5");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!symbol.trim()) return;
     const momentumParams: MomentumParams = {
-      lookback: parseInt(lookback),
-      stopLoss: parseFloat(stopLoss),
-      takeProfit: parseFloat(takeProfit),
+      lookback: 15,
+      stopLoss: 0,
+      takeProfit: parseFloat(superMult),
     };
     onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, momentumParams);
   };
