@@ -11,51 +11,40 @@ interface BarData {
   close: string;
 }
 
-export type OCCStatus = "bullish" | "bearish" | "failed";
+export type OCCCandleSize = "5m" | "15m" | "30m" | "1h";
 
-export interface OCCTimeframeResult {
-  tf: string;
-  tfMinutes: number;
-  candle1: CandleBar | null;
-  candle2: CandleBar | null;
-  status: OCCStatus;
-}
-
-export interface OCCDayData {
+export interface OCCDayResult {
   date: string;
-  bars: CandleBar[];
-  timeframes: OCCTimeframeResult[];
-  overallBias: OCCStatus; // majority across 4 TFs
+  openingCandleGreen: boolean; // true = green/bullish, false = red/bearish
+  dayEndGreen: boolean; // true = daily close > daily open (green day)
+  openingCandle: CandleBar;
+  dailyOpen: number;
+  dailyClose: number;
 }
 
-export interface OCCDirectionStats {
+export interface OCCDirectionResult {
   total: number;
-  valid: number;
-  invalid: number;
-}
-
-export interface OCCTFDirectionStats {
-  bullishFirst: OCCDirectionStats;
-  bearishFirst: OCCDirectionStats;
+  greenDayCount: number;
+  redDayCount: number;
+  greenDayPct: number;
+  redDayPct: number;
 }
 
 export interface OCCResult {
   totalDays: number;
-  bullishDays: number;
-  bearishDays: number;
-  failedDays: number;
-  tfStats: Record<string, { total: number; bullish: number; bearish: number; failed: number }>;
-  tfDirectionStats: Record<string, OCCTFDirectionStats>;
-  allDays: OCCDayData[];
-  lastDay: OCCDayData | null;
+  candleSize: OCCCandleSize;
+  candleSizeMinutes: number;
+  greenCandle: OCCDirectionResult; // when opening candle was green
+  redCandle: OCCDirectionResult;   // when opening candle was red
+  allDays: OCCDayResult[];
 }
 
-const TF_CONFIGS = [
-  { tf: "M5", minutes: 5 },
-  { tf: "M15", minutes: 15 },
-  { tf: "M30", minutes: 30 },
-  { tf: "H1", minutes: 60 },
-];
+const CANDLE_SIZE_MAP: Record<OCCCandleSize, number> = {
+  "5m": 5,
+  "15m": 15,
+  "30m": 30,
+  "1h": 60,
+};
 
 function parseDateTime(dt: string): Date {
   return parse(dt, "yyyy-MM-dd HH:mm:ss", new Date());
@@ -66,57 +55,17 @@ function getTimeMinutes(dt: Date): number {
 }
 
 const IB_START = 9 * 60 + 30; // 09:30
-const MARKET_CLOSE = 16 * 60;
+const MARKET_CLOSE = 16 * 60; // 16:00
 
-function evaluateOCC(bars5min: CandleBar[], tfMinutes: number): OCCTimeframeResult {
-  const tf = TF_CONFIGS.find((t) => t.minutes === tfMinutes)?.tf || `M${tfMinutes}`;
+export function analyzeOCC(
+  bars: BarData[],
+  maxDays: number = 0,
+  candleSize: OCCCandleSize = "30m",
+  weekdays: number[] = [1, 2, 3, 4, 5]
+): OCCResult {
+  const candleSizeMinutes = CANDLE_SIZE_MAP[candleSize];
 
-  // Aggregate 5-min bars to the target timeframe
-  const aggregated = aggregateBars(bars5min, tfMinutes);
-
-  // We need the first 2 candles starting at 09:30
-  // Filter bars that are within the OCC evaluation window
-  const endMinute = IB_START + tfMinutes * 2; // need 2 candles worth of data
-  const relevantBars = bars5min.filter((b) => {
-    const [h, m] = b.time.split(":").map(Number);
-    const totalMin = h * 60 + m;
-    return totalMin >= IB_START && totalMin < endMinute;
-  });
-
-  const candles = aggregateBars(relevantBars, tfMinutes);
-
-  if (candles.length < 2) {
-    return { tf, tfMinutes, candle1: null, candle2: null, status: "failed" };
-  }
-
-  const c1 = candles[0];
-  const c2 = candles[1];
-
-  const c1Bullish = c1.close > c1.open;
-  const c1Bearish = c1.close < c1.open;
-  const c2Bullish = c2.close > c2.open;
-  const c2Bearish = c2.close < c2.open;
-
-  let status: OCCStatus = "failed";
-  if (c1Bullish && c2Bullish) status = "bullish";
-  else if (c1Bearish && c2Bearish) status = "bearish";
-
-  return { tf, tfMinutes, candle1: c1, candle2: c2, status };
-}
-
-function getOverallBias(timeframes: OCCTimeframeResult[]): OCCStatus {
-  let bullish = 0;
-  let bearish = 0;
-  for (const tf of timeframes) {
-    if (tf.status === "bullish") bullish++;
-    else if (tf.status === "bearish") bearish++;
-  }
-  if (bullish > bearish) return "bullish";
-  if (bearish > bullish) return "bearish";
-  return "failed";
-}
-
-export function analyzeOCC(bars: BarData[], maxDays: number = 0): OCCResult {
+  // Group bars by date
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
     const date = bar.datetime.split(" ")[0];
@@ -125,25 +74,27 @@ export function analyzeOCC(bars: BarData[], maxDays: number = 0): OCCResult {
   }
 
   let dates = Array.from(byDate.keys()).sort();
-  if (maxDays > 0) {
-    dates = dates.slice(-maxDays);
-  }
+  if (maxDays > 0) dates = dates.slice(-maxDays);
+  dates = dates.filter((d) => {
+    const day = new Date(d + "T12:00:00").getDay();
+    return weekdays.includes(day);
+  });
 
-  const allDays: OCCDayData[] = [];
+  const allDays: OCCDayResult[] = [];
 
   for (const date of dates) {
     const dayBars = byDate.get(date)!;
     dayBars.sort((a, b) => parseDateTime(a.datetime).getTime() - parseDateTime(b.datetime).getTime());
 
-    // Full day bars for chart (09:30-16:00)
-    const fullDayBars = dayBars.filter((b) => {
+    // Filter RTH bars (09:30 - 16:00)
+    const rthBars = dayBars.filter((b) => {
       const m = getTimeMinutes(parseDateTime(b.datetime));
       return m >= IB_START && m < MARKET_CLOSE;
     });
 
-    if (fullDayBars.length < 6) continue; // need at least 30 min of data
+    if (rthBars.length < 6) continue; // need minimum data
 
-    const bars5min: CandleBar[] = fullDayBars.map((b) => ({
+    const bars5min: CandleBar[] = rthBars.map((b) => ({
       time: b.datetime.split(" ")[1].slice(0, 5),
       open: parseFloat(b.open),
       high: parseFloat(b.high),
@@ -151,55 +102,69 @@ export function analyzeOCC(bars: BarData[], maxDays: number = 0): OCCResult {
       close: parseFloat(b.close),
     }));
 
-    const timeframes = TF_CONFIGS.map((cfg) => evaluateOCC(bars5min, cfg.minutes));
-    const overallBias = getOverallBias(timeframes);
+    // Get opening candle: aggregate first N minutes from 09:30
+    const endMinute = IB_START + candleSizeMinutes;
+    const openingBars = bars5min.filter((b) => {
+      const [h, m] = b.time.split(":").map(Number);
+      const totalMin = h * 60 + m;
+      return totalMin >= IB_START && totalMin < endMinute;
+    });
 
-    allDays.push({ date, bars: bars5min, timeframes, overallBias });
+    const aggregated = aggregateBars(openingBars, candleSizeMinutes);
+    if (aggregated.length === 0) continue;
+
+    const openingCandle = aggregated[0];
+    const openingCandleGreen = openingCandle.close > openingCandle.open;
+
+    // Daily open = first bar open, daily close = last bar close
+    const dailyOpen = bars5min[0].open;
+    const dailyClose = bars5min[bars5min.length - 1].close;
+    const dayEndGreen = dailyClose > dailyOpen;
+
+    allDays.push({
+      date,
+      openingCandleGreen,
+      dayEndGreen,
+      openingCandle,
+      dailyOpen,
+      dailyClose,
+    });
   }
 
-  // TF-level stats
-  const tfStats: Record<string, { total: number; bullish: number; bearish: number; failed: number }> = {};
-  const tfDirectionStats: Record<string, OCCTFDirectionStats> = {};
-  for (const cfg of TF_CONFIGS) {
-    tfStats[cfg.tf] = { total: 0, bullish: 0, bearish: 0, failed: 0 };
-    tfDirectionStats[cfg.tf] = {
-      bullishFirst: { total: 0, valid: 0, invalid: 0 },
-      bearishFirst: { total: 0, valid: 0, invalid: 0 },
-    };
-  }
-  for (const day of allDays) {
-    for (const tf of day.timeframes) {
-      const s = tfStats[tf.tf];
-      if (s) {
-        s.total++;
-        s[tf.status]++;
-      }
-      // Direction stats: based on first candle color
-      const ds = tfDirectionStats[tf.tf];
-      if (ds && tf.candle1) {
-        const firstIsBullish = tf.candle1.close > tf.candle1.open;
-        const firstIsBearish = tf.candle1.close < tf.candle1.open;
-        if (firstIsBullish) {
-          ds.bullishFirst.total++;
-          if (tf.status === "bullish") ds.bullishFirst.valid++;
-          else ds.bullishFirst.invalid++;
-        } else if (firstIsBearish) {
-          ds.bearishFirst.total++;
-          if (tf.status === "bearish") ds.bearishFirst.valid++;
-          else ds.bearishFirst.invalid++;
-        }
-      }
-    }
-  }
+  // Calculate stats for green candle days vs red candle days
+  const greenCandleDays = allDays.filter((d) => d.openingCandleGreen);
+  const redCandleDays = allDays.filter((d) => !d.openingCandleGreen);
+
+  const greenCandle: OCCDirectionResult = {
+    total: greenCandleDays.length,
+    greenDayCount: greenCandleDays.filter((d) => d.dayEndGreen).length,
+    redDayCount: greenCandleDays.filter((d) => !d.dayEndGreen).length,
+    greenDayPct: greenCandleDays.length > 0
+      ? (greenCandleDays.filter((d) => d.dayEndGreen).length / greenCandleDays.length) * 100
+      : 0,
+    redDayPct: greenCandleDays.length > 0
+      ? (greenCandleDays.filter((d) => !d.dayEndGreen).length / greenCandleDays.length) * 100
+      : 0,
+  };
+
+  const redCandle: OCCDirectionResult = {
+    total: redCandleDays.length,
+    greenDayCount: redCandleDays.filter((d) => d.dayEndGreen).length,
+    redDayCount: redCandleDays.filter((d) => !d.dayEndGreen).length,
+    greenDayPct: redCandleDays.length > 0
+      ? (redCandleDays.filter((d) => d.dayEndGreen).length / redCandleDays.length) * 100
+      : 0,
+    redDayPct: redCandleDays.length > 0
+      ? (redCandleDays.filter((d) => !d.dayEndGreen).length / redCandleDays.length) * 100
+      : 0,
+  };
 
   return {
     totalDays: allDays.length,
-    bullishDays: allDays.filter((d) => d.overallBias === "bullish").length,
-    bearishDays: allDays.filter((d) => d.overallBias === "bearish").length,
-    failedDays: allDays.filter((d) => d.overallBias === "failed").length,
-    tfStats,
-    tfDirectionStats,
+    candleSize,
+    candleSizeMinutes,
+    greenCandle,
+    redCandle,
     allDays,
-    lastDay: allDays.length > 0 ? allDays[allDays.length - 1] : null,
   };
 }

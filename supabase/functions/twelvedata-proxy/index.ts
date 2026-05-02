@@ -1,72 +1,30 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = [
+  "https://myopenedge.xyz",
+  "https://www.myopenedge.xyz",
+  "https://myopenedge.lovable.app",
+  "https://id-preview--c6b96b0f-b08c-4fc5-9451-f9469e1fb477.lovable.app",
+  "https://c6b96b0f-b08c-4fc5-9451-f9469e1fb477.lovableproject.com",
+];
 
-// Fetch a single batch from TwelveData with key rotation
-async function fetchBatch(
-  symbol: string,
-  startDate: string,
-  endDate: string,
-  keys: string[]
-): Promise<any[]> {
-  for (const key of keys) {
-    try {
-      const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=5min&start_date=${startDate}&end_date=${endDate}&outputsize=5000&apikey=${encodeURIComponent(key)}&format=JSON&timezone=America/New_York`;
-      const res = await fetch(url);
-      const json = await res.json();
-
-      if (
-        json.status === "error" &&
-        (json.message?.includes("quota") ||
-          json.message?.includes("limit") ||
-          json.code === 429)
-      ) {
-        console.log(`API key exhausted for batch ${startDate}→${endDate}, trying next...`);
-        continue;
-      }
-
-      if (json.values && json.values.length > 0) {
-        return json.values;
-      }
-      return [];
-    } catch (err) {
-      console.log(`API key failed for batch ${startDate}→${endDate}: ${err}`);
-      continue;
-    }
-  }
-  return [];
+function getCorsHeaders(origin: string | null) {
+  const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  };
 }
 
-// Generate 6 date ranges of ~2 months each covering 12 months
-function generateDateRanges(): { start: string; end: string }[] {
-  const now = new Date();
-  const ranges: { start: string; end: string }[] = [];
-
-  for (let i = 0; i < 6; i++) {
-    const endDate = new Date(now);
-    endDate.setMonth(endDate.getMonth() - i * 2);
-
-    const startDate = new Date(now);
-    startDate.setMonth(startDate.getMonth() - (i + 1) * 2);
-    // Add 1 day to start to avoid overlap (except first batch)
-    if (i > 0) {
-      startDate.setDate(startDate.getDate() + 1);
-    }
-
-    ranges.push({
-      start: startDate.toISOString().split("T")[0],
-      end: endDate.toISOString().split("T")[0],
-    });
-  }
-
-  return ranges;
-}
+// Free-tier limits
+const FREE_OUTPUTSIZE = 1800; // ~20 trading days of 5min bars
+const FREE_MAX_INTERVAL = "5min";
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -86,16 +44,85 @@ Deno.serve(async (req) => {
     { global: { headers: { Authorization: authHeader } } }
   );
 
-  const { data } = await supabase.auth.getUser();
-  if (!data?.user) {
+  const token = authHeader.replace("Bearer ", "");
+  const { data: claimsData, error: claimsError } =
+    await supabase.auth.getClaims(token);
+  if (claimsError || !claimsData?.claims) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
-  // Parse request
-  const { symbol } = await req.json();
+  const userId = claimsData.claims.sub as string;
+
+  // Check subscription status
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("subscription_status")
+    .eq("user_id", userId)
+    .single();
+
+  if (profileError) {
+    console.error("Profile fetch error:", profileError);
+    return new Response(JSON.stringify({ error: "Failed to verify subscription" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const isPro = profile?.subscription_status === "active" || profile?.subscription_status === "pro";
+
+  // Rate limiting: use service role client to call security definer function
+  const serviceClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+  const maxRequests = isPro ? 100 : 20; // per hour
+  const { data: allowed, error: rlError } = await serviceClient.rpc("check_rate_limit", {
+    _user_id: userId,
+    _endpoint: "twelvedata-proxy",
+    _max_requests: maxRequests,
+  });
+
+  if (rlError || allowed === false) {
+    return new Response(
+      JSON.stringify({ error: "Rate limit exceeded. Please try again later.", retryAfterMinutes: 60 }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // Parse request - support both GET query params and POST JSON body
+  let symbol: string | null = null;
+  let interval = "5min";
+  let outputsize = "5000";
+  let endpoint = "time_series"; // default
+  let end_date: string | null = null;
+  let key_index: number | null = null; // round-robin key selection
+
+  if (req.method === "GET") {
+    const url = new URL(req.url);
+    symbol = url.searchParams.get("symbol");
+    interval = url.searchParams.get("interval") || "5min";
+    outputsize = url.searchParams.get("outputsize") || "5000";
+    endpoint = url.searchParams.get("endpoint") || "time_series";
+    end_date = url.searchParams.get("end_date");
+    const ki = url.searchParams.get("key_index");
+    if (ki !== null) key_index = parseInt(ki, 10);
+  } else {
+    try {
+      const body = await req.json();
+      symbol = body.symbol;
+      interval = body.interval || "5min";
+      outputsize = body.outputsize || "5000";
+      endpoint = body.endpoint || "time_series";
+      end_date = body.end_date || null;
+      if (body.key_index !== undefined && body.key_index !== null) key_index = Number(body.key_index);
+    } catch {
+      // Fall through to validation
+    }
+  }
+
   if (!symbol || typeof symbol !== "string") {
     return new Response(JSON.stringify({ error: "Symbol is required" }), {
       status: 400,
@@ -103,55 +130,70 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Load API keys
+  // Enforce free-tier limits (only for time_series)
+  if (!isPro && endpoint === "time_series") {
+    outputsize = String(FREE_OUTPUTSIZE);
+    interval = FREE_MAX_INTERVAL;
+  }
+
+  // Load API keys from secret (comma-separated)
   const keysRaw = Deno.env.get("TWELVEDATA_API_KEYS") || "";
   const keys = keysRaw.split(",").map((k) => k.trim()).filter(Boolean);
 
   if (keys.length === 0) {
     return new Response(
       JSON.stringify({ error: "No API keys configured" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   }
 
-  try {
-    // Fetch 6 batches of 2 months each
-    const ranges = generateDateRanges();
-    const allValues: any[] = [];
-    const seen = new Set<string>();
-
-    for (const range of ranges) {
-      const batch = await fetchBatch(symbol, range.start, range.end, keys);
-      for (const bar of batch) {
-        // Deduplicate by datetime
-        if (!seen.has(bar.datetime)) {
-          seen.add(bar.datetime);
-          allValues.push(bar);
+  // Try each key with auto-rotation, starting from key_index for round-robin distribution
+  const startIdx = (key_index !== null && key_index >= 0) ? (key_index % keys.length) : 0;
+  for (let attempt = 0; attempt < keys.length; attempt++) {
+    const i = (startIdx + attempt) % keys.length;
+    try {
+      let url: string;
+      if (endpoint === "quote") {
+        url = `https://api.twelvedata.com/quote?symbol=${encodeURIComponent(symbol)}&apikey=${encodeURIComponent(keys[i])}&format=JSON`;
+      } else {
+        url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&outputsize=${encodeURIComponent(outputsize)}&apikey=${encodeURIComponent(keys[i])}&format=JSON&timezone=America/New_York`;
+        if (end_date) {
+          url += `&end_date=${encodeURIComponent(end_date)}`;
         }
       }
+      const res = await fetch(url);
+      const json = await res.json();
+
+      // If quota exceeded, try next key
+      if (
+        json.status === "error" &&
+        (json.message?.includes("quota") ||
+          json.message?.includes("limit") ||
+          json.code === 429)
+      ) {
+        console.log(`API key ${i + 1} exhausted, trying next...`);
+        continue;
+      }
+
+      return new Response(JSON.stringify(json), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    } catch (err) {
+      console.log(`API key ${i + 1} failed: ${err}`);
+      continue;
     }
-
-    // Sort descending by datetime (newest first, matching TwelveData default)
-    allValues.sort((a, b) => b.datetime.localeCompare(a.datetime));
-
-    return new Response(
-      JSON.stringify({
-        meta: {
-          symbol: symbol.toUpperCase(),
-          interval: "5min",
-          currency: "USD",
-          exchange_timezone: "America/New_York",
-          type: "ETF",
-        },
-        values: allValues,
-        status: "ok",
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  } catch (err) {
-    return new Response(
-      JSON.stringify({ error: (err as Error).message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
   }
+
+  return new Response(
+    JSON.stringify({
+      status: "error",
+      message: "All API keys exhausted. Please try again later.",
+    }),
+    {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    }
+  );
 });

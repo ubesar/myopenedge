@@ -40,13 +40,13 @@ const IBChart = ({ title, total, breakHigh, breakLow, inside }: IBChartProps) =>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,20%)" vertical={false} />
             <XAxis
               dataKey="name"
-              tick={{ fill: "hsl(0,0%,55%)", fontSize: 11 }}
+              tick={{ fill: "hsl(0,0%,100%)", fontSize: 11 }}
               axisLine={{ stroke: "hsl(0,0%,20%)" }}
               tickLine={false}
             />
             <YAxis
               domain={[0, 100]}
-              tick={{ fill: "hsl(0,0%,55%)", fontSize: 12 }}
+              tick={{ fill: "hsl(0,0%,100%)", fontSize: 12 }}
               axisLine={false}
               tickLine={false}
               tickFormatter={(v) => `${v}%`}
@@ -59,7 +59,7 @@ const IBChart = ({ title, total, breakHigh, breakLow, inside }: IBChartProps) =>
                 dataKey="value"
                 position="top"
                 formatter={(v: number) => `${v}%`}
-                style={{ fill: "hsl(0,0%,85%)", fontSize: 13, fontWeight: 600 }}
+                style={{ fill: "hsl(0,0%,100%)", fontSize: 13, fontWeight: 600 }}
               />
             </Bar>
           </BarChart>

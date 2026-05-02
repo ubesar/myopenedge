@@ -17,7 +17,7 @@ export function useAnalysisHistory() {
 
   const fetchRuns = useCallback(async () => {
     if (!user) return;
-    const { data } = await (supabase as any)
+    const { data } = await supabase
       .from("analysis_runs")
       .select("*")
       .order("created_at", { ascending: false })
@@ -33,7 +33,7 @@ export function useAnalysisHistory() {
   const addRun = useCallback(
     async (analysis_type: string, symbol: string, summary: Record<string, any>) => {
       if (!user) return;
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("analysis_runs")
         .insert({ user_id: user.id, analysis_type, symbol, summary })
         .select()
@@ -45,7 +45,7 @@ export function useAnalysisHistory() {
 
   const deleteRun = useCallback(
     async (id: string) => {
-      await (supabase as any).from("analysis_runs").delete().eq("id", id);
+      await supabase.from("analysis_runs").delete().eq("id", id);
       setRuns((prev) => prev.filter((r) => r.id !== id));
     },
     []

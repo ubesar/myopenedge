@@ -52,6 +52,9 @@ const IBReportHistory = ({ allDays, selectedDate, onDateChange, symbol }: IBRepo
                 </div>
                 <div className="flex items-center justify-between mt-0.5 text-[10px] text-muted-foreground">
                   <span>{day.highFirstFormed ? "High First" : "Low First"}</span>
+                  <span className="font-medium">{day.breakType === "single" ? "Single" : day.breakType === "double" ? "Double" : "No Break"}</span>
+                </div>
+                <div className="flex items-center justify-between mt-0.5 text-[10px] text-muted-foreground">
                   <span>IB: {day.ibLow.toFixed(2)} – {day.ibHigh.toFixed(2)}</span>
                 </div>
               </button>

@@ -4,47 +4,55 @@
 
 @layer base {
   :root {
-    --background: 220 20% 5%;
-    --foreground: 210 20% 92%;
+    --background: 240 14% 4%;
+    --foreground: 240 5% 90%;
 
-    --card: 220 18% 9%;
-    --card-foreground: 210 20% 92%;
+    --card: 240 14% 6%;
+    --card-foreground: 240 5% 90%;
 
-    --popover: 220 18% 9%;
-    --popover-foreground: 210 20% 92%;
+    --popover: 240 14% 6%;
+    --popover-foreground: 240 5% 90%;
 
-    --primary: 216 100% 55%;
+    --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 16% 14%;
-    --secondary-foreground: 210 15% 80%;
+    --secondary: 240 10% 10%;
+    --secondary-foreground: 240 5% 70%;
 
-    --muted: 220 16% 12%;
-    --muted-foreground: 215 12% 50%;
+    --muted: 240 10% 10%;
+    --muted-foreground: 240 5% 40%;
 
-    --accent: 220 16% 14%;
-    --accent-foreground: 210 20% 92%;
+    --accent: 240 10% 10%;
+    --accent-foreground: 240 5% 90%;
 
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 14% 16%;
-    --input: 220 16% 14%;
-    --ring: 213 94% 56%;
+    --border: 240 10% 14%;
+    --input: 240 14% 8%;
+    --ring: 217 91% 60%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    --chart-blue: 213 94% 56%;
-    --chart-grey: 215 10% 35%;
+    --chart-blue: 217 91% 60%;
+    --chart-grey: 240 5% 30%;
 
-    --sidebar-background: 220 18% 7%;
-    --sidebar-foreground: 210 15% 80%;
-    --sidebar-primary: 213 94% 56%;
+    /* Light-mode chart overrides (same as dark by default) */
+    --chart-bar-a: 217 91% 60%;
+    --chart-bar-b: 240 5% 30%;
+    --chart-donut-a: 217 91% 60%;
+    --chart-donut-b: 240 5% 30%;
+
+    --surface: 240 14% 7%;
+
+    --sidebar-background: 240 14% 5%;
+    --sidebar-foreground: 240 5% 55%;
+    --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 16% 12%;
-    --sidebar-accent-foreground: 210 20% 92%;
-    --sidebar-border: 220 14% 14%;
-    --sidebar-ring: 213 94% 56%;
+    --sidebar-accent: 240 10% 10%;
+    --sidebar-accent-foreground: 240 5% 90%;
+    --sidebar-border: 240 10% 12%;
+    --sidebar-ring: 217 91% 60%;
 
     /* Trading tokens */
     --profit: 160 84% 39%;
@@ -52,11 +60,93 @@
     --loss: 0 84% 60%;
     --loss-foreground: 0 84% 95%;
 
-    --chart-1: 213 94% 56%;
+    --chart-1: 217 91% 60%;
     --chart-2: 160 84% 39%;
     --chart-3: 217 91% 60%;
     --chart-4: 280 65% 60%;
     --chart-5: 38 92% 50%;
+
+    /* Trading algo colors */
+    --buy: 152 69% 46%;
+    --buy-foreground: 0 0% 100%;
+    --buy-glow: 152 69% 46%;
+    --sell: 358 75% 55%;
+    --sell-foreground: 0 0% 100%;
+    --sell-glow: 358 75% 55%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 5%;
+    --warning-glow: 38 92% 55%;
+  }
+
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 10%;
+
+    --card: 0 0% 99%;
+    --card-foreground: 240 10% 10%;
+
+    --popover: 0 0% 99%;
+    --popover-foreground: 240 10% 10%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 5% 94%;
+    --secondary-foreground: 240 5% 40%;
+
+    --muted: 240 5% 94%;
+    --muted-foreground: 240 5% 40%;
+
+    --accent: 240 5% 94%;
+    --accent-foreground: 240 10% 10%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 6% 88%;
+    --input: 240 6% 92%;
+    --ring: 217 91% 60%;
+
+    --chart-blue: 217 91% 60%;
+    --chart-grey: 240 5% 80%;
+
+    /* Light-mode chart: pink + black per reference */
+    --chart-bar-a: 330 81% 60%;
+    --chart-bar-b: 0 0% 8%;
+    --chart-donut-a: 330 81% 60%;
+    --chart-donut-b: 0 0% 8%;
+
+    --surface: 0 0% 98%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5% 40%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 5% 94%;
+    --sidebar-accent-foreground: 240 10% 10%;
+    --sidebar-border: 240 6% 90%;
+    --sidebar-ring: 217 91% 60%;
+
+    --profit: 160 84% 35%;
+    --profit-foreground: 160 84% 10%;
+    --loss: 0 84% 55%;
+    --loss-foreground: 0 84% 10%;
+
+    --chart-1: 217 91% 60%;
+    --chart-2: 160 84% 35%;
+    --chart-3: 217 91% 60%;
+    --chart-4: 280 65% 55%;
+    --chart-5: 38 92% 45%;
+
+    --buy: 152 69% 40%;
+    --buy-foreground: 0 0% 100%;
+    --buy-glow: 152 69% 40%;
+    --sell: 358 75% 50%;
+    --sell-foreground: 0 0% 100%;
+    --sell-glow: 358 75% 50%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 5%;
+    --warning-glow: 38 92% 50%;
   }
 }
 
@@ -73,14 +163,83 @@
   .bg-loss {
     background-color: hsl(var(--loss));
   }
-  .gradient-profit {
-    background: linear-gradient(135deg, hsl(var(--profit) / 0.2), hsl(var(--profit) / 0.05));
-  }
-  .gradient-loss {
-    background: linear-gradient(135deg, hsl(var(--loss) / 0.2), hsl(var(--loss) / 0.05));
-  }
   .font-mono {
     font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  .section-label {
+    @apply text-[10px] uppercase tracking-wider text-muted-foreground font-medium;
+  }
+
+  /* Algo trading glow effects */
+  .glow-buy {
+    box-shadow: 0 0 30px hsl(var(--buy-glow) / 0.2), 0 0 60px hsl(var(--buy-glow) / 0.06);
+  }
+  .glow-sell {
+    box-shadow: 0 0 30px hsl(var(--sell-glow) / 0.2), 0 0 60px hsl(var(--sell-glow) / 0.06);
+  }
+  .glow-warning {
+    box-shadow: 0 0 30px hsl(var(--warning-glow) / 0.2), 0 0 60px hsl(var(--warning-glow) / 0.06);
+  }
+
+  /* Framer-style gradient mesh background */
+  .framer-gradient-bg {
+    background: 
+      radial-gradient(ellipse 60% 40% at 50% 0%, hsl(var(--primary) / 0.08), transparent),
+      radial-gradient(ellipse 40% 30% at 80% 20%, hsl(280 60% 50% / 0.04), transparent),
+      radial-gradient(ellipse 50% 50% at 20% 80%, hsl(200 60% 50% / 0.03), transparent),
+      hsl(var(--background));
+  }
+
+  /* Framer-style glass card */
+  .framer-card {
+    background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--background)) 100%);
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    position: relative;
+    overflow: hidden;
+  }
+  .framer-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(180deg, hsl(0 0% 100% / 0.06) 0%, transparent 50%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .framer-card-inner {
+    background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--background)) 100%);
+    border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) - 4px);
+  }
+
+  .framer-input {
+    background: hsl(240 14% 5%);
+    border: 1px solid hsl(240 10% 14%);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .framer-input:focus {
+    border-color: hsl(var(--primary) / 0.5);
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.08), 0 0 20px hsl(var(--primary) / 0.06);
+  }
+
+  .framer-shimmer {
+    position: relative;
+  }
+  .framer-shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.12), transparent);
+    pointer-events: none;
   }
 }
 

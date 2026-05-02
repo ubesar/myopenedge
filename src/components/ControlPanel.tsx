@@ -5,19 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export type AnalysisMode = "ib" | "momentum" | "occ" | "gapfill" | "nygap";
-
-export interface MomentumParams {
-  /** legacy — unused */
-  lookback: number;
-  /** legacy — unused */
-  stopLoss: number;
-  /** Multiplier untuk Super Momentum (body > N × avgBody body SMA15) */
-  takeProfit: number;
-}
+export type AnalysisMode = "ib" | "momentum" | "occ" | "gapfill" | "insidebar" | "outsideday" | "globex-ib" | "london-ib";
 
 interface ControlPanelProps {
-  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, momentumParams?: MomentumParams) => void;
+  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => void;
   loading: boolean;
   isFree?: boolean;
 }
@@ -30,34 +21,27 @@ const IB_WINDOWS = [
 ];
 
 const DAY_OPTIONS = [
-  { value: "0", label: "All Days" },
-  { value: "7", label: "Last 7 Days" },
-  { value: "15", label: "Last 15 Days" },
-  { value: "30", label: "Last 30 Days" },
-  { value: "60", label: "Last 60 Days" },
-  { value: "90", label: "Last 90 Days" },
-  { value: "120", label: "Last 120 Days" },
-  { value: "365", label: "Last 12 Months" },
+  { value: "20", label: "1 Month" },
+  { value: "40", label: "2 Months" },
+  { value: "60", label: "3 Months" },
+  { value: "120", label: "6 Months" },
+  { value: "240", label: "12 Months" },
+  { value: "480", label: "24 Months" },
+  { value: "720", label: "36 Months" },
 ];
 
 const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => {
   const [symbol, setSymbol] = useState("QQQ");
   const [ibWindow, setIbWindow] = useState(isFree ? "60" : "30");
-  const [maxDays, setMaxDays] = useState(isFree ? "7" : "15");
+  const [maxDays, setMaxDays] = useState("20");
   const [mode, setMode] = useState<AnalysisMode>("ib");
 
-  // Momentum Candle params
-  const [superMult, setSuperMult] = useState("1.5");
+  const isFreeMode = isFree && mode !== "ib" && mode !== "occ";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!symbol.trim()) return;
-    const momentumParams: MomentumParams = {
-      lookback: 15,
-      stopLoss: 0,
-      takeProfit: parseFloat(superMult),
-    };
-    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, momentumParams);
+    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode);
   };
 
   return (
@@ -69,44 +53,53 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
 
       <div className="space-y-2">
         <Label className="text-sm text-muted-foreground">Analysis Type</Label>
-        <Select value={isFree ? "ib" : mode} onValueChange={(v) => !isFree && setMode(v as AnalysisMode)} disabled={isFree}>
+        <Select value={mode} onValueChange={(v) => setMode(v as AnalysisMode)}>
           <SelectTrigger className="bg-muted border-border text-foreground">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ib">Initial Balance (IB)</SelectItem>
-            {!isFree && <SelectItem value="momentum">Momentum Candle @ NY Open</SelectItem>}
-            {!isFree && <SelectItem value="occ">Opening Candle Continuation</SelectItem>}
+            <SelectItem value="occ">Opening Candle Continuation</SelectItem>
+            {!isFree && <SelectItem value="globex-ib">Globex IB (Overnight)</SelectItem>}
+            {!isFree && <SelectItem value="momentum">Momentum Candle</SelectItem>}
             {!isFree && <SelectItem value="gapfill">Gap Fill Statistics</SelectItem>}
-            {!isFree && <SelectItem value="nygap">NY Gap M15 Probability</SelectItem>}
+            {!isFree && <SelectItem value="insidebar">Inside Bar</SelectItem>}
+            {!isFree && <SelectItem value="outsideday">Outside Day</SelectItem>}
           </SelectContent>
         </Select>
-        {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for more modes</p>}
+        {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for more analysis types</p>}
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="symbol" className="text-sm text-muted-foreground">Ticker Symbol</Label>
-        <Input id="symbol" placeholder="QQQ" value={symbol} onChange={(e) => setSymbol(e.target.value)}
-          className="bg-muted border-border text-foreground placeholder:text-muted-foreground uppercase" />
+        <Input
+          id="symbol"
+          placeholder="QQQ"
+          value={symbol}
+          onChange={(e) => setSymbol(e.target.value)}
+          className="bg-muted border-border text-foreground placeholder:text-muted-foreground uppercase"
+        />
       </div>
 
       <div className="space-y-2">
         <Label className="text-sm text-muted-foreground">Trading Days</Label>
-        <Select value={isFree ? "7" : maxDays} onValueChange={(v) => !isFree && setMaxDays(v)} disabled={isFree}>
+        <Select value={isFree ? "20" : maxDays} onValueChange={(v) => !isFree && setMaxDays(v)} disabled={isFree}>
           <SelectTrigger className="bg-muted border-border text-foreground">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {isFree
-              ? <SelectItem value="7">Last 7 Days</SelectItem>
-              : DAY_OPTIONS.map((d) => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)
+              ? <SelectItem value="20">1 Month</SelectItem>
+              : DAY_OPTIONS.map((d) =>
+                  <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                )
             }
           </SelectContent>
         </Select>
         {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for more days</p>}
       </div>
 
-      {mode !== "occ" && mode !== "gapfill" && mode !== "nygap" && (
+      {(mode === "ib" || mode === "momentum" || mode === "globex-ib") && (
         <div className="space-y-2">
           <Label className="text-sm text-muted-foreground">IB Window</Label>
           <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => !isFree && setIbWindow(v)} disabled={isFree}>
@@ -116,34 +109,13 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
             <SelectContent>
               {isFree
                 ? <SelectItem value="60">First 60 min (09:30–10:30)</SelectItem>
-                : IB_WINDOWS.map((w) => <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>)
+                : IB_WINDOWS.map((w) =>
+                    <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>
+                  )
               }
             </SelectContent>
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for more windows</p>}
-        </div>
-      )}
-
-      {/* Momentum Candle @ NY Open Parameters */}
-      {mode === "momentum" && !isFree && (
-        <div className="space-y-2 border-t border-border/20 pt-2">
-          <div className="text-[10px] font-semibold text-primary uppercase tracking-wide">momentum candle params</div>
-          <div className="space-y-1">
-            <Label className="text-[10px] text-muted-foreground">super momentum multiplier</Label>
-            <Select value={superMult} onValueChange={setSuperMult}>
-              <SelectTrigger className="bg-muted border-border text-foreground h-7 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {["1.2", "1.5", "1.75", "2.0", "2.5", "3.0"].map((v) => (
-                  <SelectItem key={v} value={v}>{v}× avg body</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <p className="text-[9px] text-muted-foreground leading-tight">
-            scan candle pembuka 09:30 ET (M15). body &gt; multiplier × SMA15 body = <span className="text-emerald-400">super bull</span> / <span className="text-fuchsia-400">super bear</span>.
-          </p>
         </div>
       )}
 

@@ -18,14 +18,33 @@ export interface LastDayData {
   ibLow: number;
   highFirstFormed: boolean;
   breakout: "high" | "low" | "inside";
+  breakType: "single" | "double" | "none";
+}
+
+interface DirectionStats {
+  total: number;
+  breakHigh: number;
+  breakLow: number;
+  inside: number;
+}
+
+export interface BreakTypeStats {
+  singleBreak: number;
+  doubleBreak: number;
+  noBreak: number;
+  singleBreakPct: number;
+  doubleBreakPct: number;
+  noBreakPct: number;
 }
 
 export interface AnalysisResult {
   totalDays: number;
   insideDays: number;
   ibWindowMinutes: number;
-  highFirst: { total: number; breakHigh: number; breakLow: number; inside: number };
-  lowFirst: { total: number; breakHigh: number; breakLow: number; inside: number };
+  
+  highFirst: DirectionStats;
+  lowFirst: DirectionStats;
+  breakTypeStats: BreakTypeStats;
   lastDay: LastDayData | null;
   allDays: LastDayData[];
 }
@@ -42,7 +61,7 @@ const IB_START = 9 * 60 + 30;
 const NOON = 12 * 60;
 const MARKET_CLOSE = 16 * 60;
 
-export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0): AnalysisResult {
+export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0, weekdays: number[] = [1,2,3,4,5]): AnalysisResult {
   const ibEnd = IB_START + ibWindowMinutes;
 
   const byDate = new Map<string, BarData[]>();
@@ -56,6 +75,10 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
   if (maxDays > 0) {
     dates = dates.slice(-maxDays);
   }
+  dates = dates.filter(d => {
+    const day = new Date(d + "T12:00:00").getDay();
+    return weekdays.includes(day);
+  });
 
   interface DayResult {
     date: string;
@@ -63,6 +86,7 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
     ibLow: number;
     highFirstFormed: boolean;
     breakout: "high" | "low" | "inside";
+    breakType: "single" | "double" | "none";
   }
 
   const allDayResults: DayResult[] = [];
@@ -97,35 +121,60 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
 
     const highFirstFormed = parseDateTime(firstHighTouch).getTime() < parseDateTime(firstLowTouch).getTime();
 
-    // Post-IB breakout: IB end to 12:00, using M15 CLOSE
+    // Post-IB bars: IB end to session close (16:00)
     const postIBBars = dayBars.filter((b) => {
       const m = getTimeMinutes(parseDateTime(b.datetime));
-      return m >= ibEnd && m < NOON;
+      return m >= ibEnd && m < MARKET_CLOSE;
     });
 
-    const postIBCandles: CandleBar[] = postIBBars.map(b => ({
-      time: b.datetime.split(" ")[1].slice(0, 5),
-      open: parseFloat(b.open),
-      high: parseFloat(b.high),
-      low: parseFloat(b.low),
-      close: parseFloat(b.close),
-    }));
+    // Track ALL breaks throughout the session (Edgeful model)
+    let brokeHigh = false;
+    let brokeLow = false;
+    let firstBreakout: "high" | "low" | "inside" = "inside";
 
-    const m15Candles = aggregateToM15(postIBCandles);
-
-    let breakout: "high" | "low" | "inside" = "inside";
-    for (const candle of m15Candles) {
-      if (candle.close > ibHigh) { breakout = "high"; break; }
-      if (candle.close < ibLow) { breakout = "low"; break; }
+    for (const bar of postIBBars) {
+      const c = parseFloat(bar.close);
+      if (c > ibHigh && !brokeHigh) {
+        brokeHigh = true;
+        if (firstBreakout === "inside") firstBreakout = "high";
+      }
+      if (c < ibLow && !brokeLow) {
+        brokeLow = true;
+        if (firstBreakout === "inside") firstBreakout = "low";
+      }
     }
 
-    allDayResults.push({ date, ibHigh, ibLow, highFirstFormed, breakout });
+    // Classify break type
+    let breakType: "single" | "double" | "none";
+    if (brokeHigh && brokeLow) {
+      breakType = "double";
+    } else if (brokeHigh || brokeLow) {
+      breakType = "single";
+    } else {
+      breakType = "none";
+    }
+
+    allDayResults.push({ date, ibHigh, ibLow, highFirstFormed, breakout: firstBreakout, breakType });
   }
 
   const highFirstDays = allDayResults.filter((r) => r.highFirstFormed);
   const lowFirstDays = allDayResults.filter((r) => !r.highFirstFormed);
   const insideDays = allDayResults.filter((r) => r.breakout === "inside").length;
-  const totalDays = allDayResults.filter((r) => r.breakout !== "inside").length;
+  const totalDays = allDayResults.length;
+
+  // Break type stats
+  const singleBreak = allDayResults.filter(r => r.breakType === "single").length;
+  const doubleBreak = allDayResults.filter(r => r.breakType === "double").length;
+  const noBreak = allDayResults.filter(r => r.breakType === "none").length;
+
+  const breakTypeStats: BreakTypeStats = {
+    singleBreak,
+    doubleBreak,
+    noBreak,
+    singleBreakPct: totalDays > 0 ? (singleBreak / totalDays) * 100 : 0,
+    doubleBreakPct: totalDays > 0 ? (doubleBreak / totalDays) * 100 : 0,
+    noBreakPct: totalDays > 0 ? (noBreak / totalDays) * 100 : 0,
+  };
 
   // Build all days' chart data
   const allDays: LastDayData[] = [];
@@ -150,6 +199,7 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
       ibLow: dayResult.ibLow,
       highFirstFormed: dayResult.highFirstFormed,
       breakout: dayResult.breakout,
+      breakType: dayResult.breakType,
     });
   }
 
@@ -159,6 +209,7 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
     totalDays,
     insideDays,
     ibWindowMinutes,
+    
     highFirst: {
       total: highFirstDays.length,
       breakHigh: highFirstDays.filter((r) => r.breakout === "high").length,
@@ -171,6 +222,7 @@ export function analyzeIB(bars: BarData[], ibWindowMinutes: number = 60, maxDays
       breakLow: lowFirstDays.filter((r) => r.breakout === "low").length,
       inside: lowFirstDays.filter((r) => r.breakout === "inside").length,
     },
+    breakTypeStats,
     lastDay,
     allDays,
   };
