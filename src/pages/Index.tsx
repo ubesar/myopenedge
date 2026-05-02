@@ -376,15 +376,16 @@ const Index = () => {
                         date={dayData.date}
                         bars={dayData.bars}
                         symbol={symbol}
-                        ibHigh={dayData.ibHigh}
-                        ibLow={dayData.ibLow}
-                        highFirstFormed={dayData.highFirstFormed}
-                        trades={dayData.trades}
-                        dayPnl={dayData.dayPnl}
+                        openCandle={dayData.openCandle}
+                        classification={dayData.classification}
+                        bodyRatio={dayData.bodyRatio}
+                        avgBody={dayData.avgBody}
+                        body={dayData.body}
+                        netMove={dayData.followThrough.netMove}
+                        confirmed={dayData.followThrough.confirmed}
                         availableDates={momentumResult.allDays.map((d) => d.date)}
                         selectedDate={selectedDate || dayData.date}
-                        onDateChange={setSelectedDate}
-                        ibWindowMinutes={momentumResult.ibWindowMinutes} />
+                        onDateChange={setSelectedDate} />
                     );
                   })()}
                 </div>
