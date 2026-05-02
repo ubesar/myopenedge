@@ -259,13 +259,11 @@ export function analyzeMomentum(
     else if (cls === "super_bear" || cls === "above_bear") confirmed = netMove < 0;
 
     // Stats accumulation
-    if (cls !== "none") {
-      classStats[cls].count++;
-      bodyRatioSum[cls] += bodyRatio;
-      followMoveSum[cls] += Math.abs(netMove);
-      if (confirmed === true) classStats[cls].followConfirmed++;
-      else if (confirmed === false) classStats[cls].followFailed++;
-    }
+    classStats[cls].count++;
+    bodyRatioSum[cls] += bodyRatio;
+    followMoveSum[cls] += Math.abs(netMove);
+    if (confirmed === true) classStats[cls].followConfirmed++;
+    else if (confirmed === false) classStats[cls].followFailed++;
 
     if (cls === "super_bull" || cls === "above_bull") bullishOpens++;
     else if (cls === "super_bear" || cls === "above_bear") bearishOpens++;
