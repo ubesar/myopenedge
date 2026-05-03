@@ -394,12 +394,20 @@ const Index = () => {
       const tf = momentumTimeframe;
       const stats = momentumResult.tfStats[tf];
       if (!stats) return null;
-      const hf = stats.highFirst;
-      const lf = stats.lowFirst;
+      const bullTotal = stats.bullishSignals;
+      const bearTotal = stats.bearishSignals;
+      const bullContPct = bullTotal > 0 ? (stats.bullishContinued / bullTotal) * 100 : 0;
+      const bullRevPct = bullTotal > 0 ? (stats.bullishReversed / bullTotal) * 100 : 0;
+      const bearContPct = bearTotal > 0 ? (stats.bearishContinued / bearTotal) * 100 : 0;
+      const bearRevPct = bearTotal > 0 ? (stats.bearishReversed / bearTotal) * 100 : 0;
+      const bodyPct = `${Math.round(momentumResult.bodyRatioThreshold * 100)}%`;
       return (
         <div className="space-y-4">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
+            <strong className="text-foreground">momentum candle continuation (mcc)</strong> — measures the probability that the session closes in the same direction as the ny opening candle, only when that candle shows valid momentum (body ≥ {bodyPct} of total range). days without momentum on the opening candle are treated as neutral / no-signal.
+          </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-muted-foreground font-medium mr-1">TF:</span>
+            <span className="text-[11px] text-muted-foreground font-medium mr-1">opening candle tf:</span>
             {(["M5", "M15", "M30", "H1"] as OCCTimeframe[]).map((t) => (
               <button
                 key={t}
@@ -416,41 +424,45 @@ const Index = () => {
           </div>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
             <ChartCard
-              title="high formed first"
-              subtitle={`${symbol} · momentum · ${tf}`}
-              totalDays={hf.total}
+              title="bullish opening — session continuation"
+              subtitle={`${symbol} · mcc · ${tf} · body ≥ ${bodyPct}`}
+              totalDays={bullTotal}
               bars={[
-                { name: "bullish", value: hf.total > 0 ? (hf.bullish / hf.total * 100) : 0, color: "primary" },
-                { name: "bearish", value: hf.total > 0 ? (hf.bearish / hf.total * 100) : 0, color: "muted" },
+                { name: "continued", value: bullContPct, color: "primary" },
+                { name: "reversed", value: bullRevPct, color: "muted" },
               ]}
               legendItems={[
-                { label: "bullish", color: "hsl(217,91%,60%)" },
-                { label: "bearish", color: "hsl(240,5%,30%)" },
+                { label: "closed bullish", color: "hsl(217,91%,60%)" },
+                { label: "closed bearish", color: "hsl(240,5%,30%)" },
               ]}
               settingsGrid={[
-                { label: "candle timeframe", value: tf },
-                { label: "session", value: "NY open" },
+                { label: "opening tf", value: tf },
+                { label: "body threshold", value: `≥ ${bodyPct}` },
+                { label: "session", value: "ny open → close" },
                 { label: "date range", value: formatDateRange(analysisMaxDays) },
-                { label: "weekdays to use", value: formatWeekdays(analysisWeekdays) },
+                { label: "weekdays", value: formatWeekdays(analysisWeekdays) },
+                { label: "neutral days", value: String(stats.neutralDays) },
               ]}
             />
             <ChartCard
-              title="low formed first"
-              subtitle={`${symbol} · momentum · ${tf}`}
-              totalDays={lf.total}
+              title="bearish opening — session continuation"
+              subtitle={`${symbol} · mcc · ${tf} · body ≥ ${bodyPct}`}
+              totalDays={bearTotal}
               bars={[
-                { name: "bullish", value: lf.total > 0 ? (lf.bullish / lf.total * 100) : 0, color: "primary" },
-                { name: "bearish", value: lf.total > 0 ? (lf.bearish / lf.total * 100) : 0, color: "muted" },
+                { name: "continued", value: bearContPct, color: "primary" },
+                { name: "reversed", value: bearRevPct, color: "muted" },
               ]}
               legendItems={[
-                { label: "bullish", color: "hsl(217,91%,60%)" },
-                { label: "bearish", color: "hsl(240,5%,30%)" },
+                { label: "closed bearish", color: "hsl(217,91%,60%)" },
+                { label: "closed bullish", color: "hsl(240,5%,30%)" },
               ]}
               settingsGrid={[
-                { label: "candle timeframe", value: tf },
-                { label: "session", value: "NY open" },
+                { label: "opening tf", value: tf },
+                { label: "body threshold", value: `≥ ${bodyPct}` },
+                { label: "session", value: "ny open → close" },
                 { label: "date range", value: formatDateRange(analysisMaxDays) },
-                { label: "weekdays to use", value: formatWeekdays(analysisWeekdays) },
+                { label: "weekdays", value: formatWeekdays(analysisWeekdays) },
+                { label: "neutral days", value: String(stats.neutralDays) },
               ]}
             />
           </div>
@@ -458,11 +470,29 @@ const Index = () => {
             mode="momentum"
             symbol={symbol}
             analysisData={{
+              method: "Momentum Candle Continuation (MCC)",
               totalDays: momentumResult.totalDays,
+              bodyRatioThreshold: momentumResult.bodyRatioThreshold,
               currentTimeframe: tf,
-              highFirst: { total: hf.total, bullish: hf.bullish, bearish: hf.bearish, choppy: hf.choppy },
-              lowFirst: { total: lf.total, bullish: lf.bullish, bearish: lf.bearish, choppy: lf.choppy },
-              lastDay: momentumResult.lastDay ? { date: momentumResult.lastDay.date, momentum: momentumResult.lastDay.momentum } : null,
+              bullishOpening: {
+                signals: stats.bullishSignals,
+                continued: stats.bullishContinued,
+                reversed: stats.bullishReversed,
+                continuationRate: Number(bullContPct.toFixed(1)),
+              },
+              bearishOpening: {
+                signals: stats.bearishSignals,
+                continued: stats.bearishContinued,
+                reversed: stats.bearishReversed,
+                continuationRate: Number(bearContPct.toFixed(1)),
+              },
+              neutralDays: stats.neutralDays,
+              lastDay: momentumResult.lastDay ? {
+                date: momentumResult.lastDay.date,
+                openingDirection: momentumResult.lastDay.timeframes.find(t => t.tf === tf)?.direction,
+                hasMomentum: momentumResult.lastDay.timeframes.find(t => t.tf === tf)?.hasMomentum,
+                continued: momentumResult.lastDay.timeframes.find(t => t.tf === tf)?.continued,
+              } : null,
             }}
           />
         </div>
