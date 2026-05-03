@@ -9,7 +9,7 @@ import type { AnalysisMode } from "@/components/ControlPanel";
 import type { AnalysisTemplate, TemplateParams } from "@/hooks/useTemplates";
 
 export type OCCTimeframe = "M5" | "M15" | "M30" | "H1";
-export type MomentumBodyRatio = "0.40" | "0.50" | "0.60";
+export type MomentumBodyRatio = "0.50" | "0.60" | "0.70" | "0.80";
 export type OCCBodyRatio = "0.40" | "0.50" | "0.60";
 
 interface ParameterPanelProps {
@@ -58,7 +58,7 @@ const ParameterPanel = ({
   const [ibWindow, setIbWindow] = useState(isFree ? "60" : "30");
   const [maxDays, setMaxDays] = useState(isFree ? "20" : "20");
   const [mode, setMode] = useState<AnalysisMode>("ib");
-  const [bodyRatio, setBodyRatio] = useState<MomentumBodyRatio>("0.50");
+  const [bodyRatio, setBodyRatio] = useState<MomentumBodyRatio>("0.70");
   const [occBodyRatio, setOccBodyRatio] = useState<OCCBodyRatio>("0.50");
   const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
 
@@ -82,7 +82,7 @@ const ParameterPanel = ({
     setSymbol(tpl.symbol);
     setIbWindow(String(tpl.ib_window));
     setMaxDays(String(tpl.max_days));
-    setBodyRatio((tpl.body_ratio || "0.50") as MomentumBodyRatio);
+    setBodyRatio((tpl.body_ratio || "0.70") as MomentumBodyRatio);
     setOccBodyRatio((tpl.occ_body_ratio || "0.50") as OCCBodyRatio);
     setWeekdays(tpl.weekdays || [1, 2, 3, 4, 5]);
     onLoadTemplate?.({
@@ -90,7 +90,7 @@ const ParameterPanel = ({
       symbol: tpl.symbol,
       ibWindow: tpl.ib_window,
       maxDays: tpl.max_days,
-      bodyRatio: (tpl.body_ratio || "0.50") as MomentumBodyRatio,
+      bodyRatio: (tpl.body_ratio || "0.70") as MomentumBodyRatio,
       occBodyRatio: (tpl.occ_body_ratio || "0.50") as OCCBodyRatio,
       occTimeframe: (tpl.occ_timeframe || "M15") as OCCTimeframe,
       weekdays: tpl.weekdays || [1, 2, 3, 4, 5],
@@ -168,7 +168,7 @@ const ParameterPanel = ({
               <SelectItem value="ib">IB: initial balance breakout</SelectItem>
               {!isFree && <SelectItem value="globex-ib">IB: globex overnight</SelectItem>}
               {!isFree && <SelectItem value="london-ib">IB: london session</SelectItem>}
-              {!isFree && <SelectItem value="momentum">momentum candle</SelectItem>}
+              {!isFree && <SelectItem value="momentum">momentum candle continuation (mcc)</SelectItem>}
               <SelectItem value="occ">opening candle continuation</SelectItem>
               {!isFree && <SelectItem value="gapfill">gap fill statistics</SelectItem>}
               {!isFree && <SelectItem value="insidebar">inside bar</SelectItem>}
@@ -179,17 +179,19 @@ const ParameterPanel = ({
 
           {mode === "momentum" && (
             <>
-              <p className="text-[11px] text-muted-foreground">subreport (candle 1 body)</p>
+              <p className="text-[11px] text-muted-foreground">opening candle body threshold</p>
               <Select value={bodyRatio} onValueChange={(v) => { setBodyRatio(v as MomentumBodyRatio); setSelectedTemplateId("custom"); }}>
                 <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="0.40">body ≥ 40%</SelectItem>
-                  <SelectItem value="0.50">body ≥ 50%</SelectItem>
+                  <SelectItem value="0.50">body ≥ 50% (loose)</SelectItem>
                   <SelectItem value="0.60">body ≥ 60%</SelectItem>
+                  <SelectItem value="0.70">body ≥ 70% (recommended)</SelectItem>
+                  <SelectItem value="0.80">body ≥ 80% (strict)</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-[10px] text-muted-foreground">strong momentum = large body, small wicks. days with weak opening candles are skipped.</p>
             </>
           )}
 

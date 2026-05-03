@@ -23,7 +23,7 @@ const ANALYSIS_TOOLS = [
     type: "function",
     function: {
       name: "run_analysis",
-      description: "Run a market analysis for a given ticker symbol. Can be called multiple times for confluence/combination analysis. Available modes: ib (Initial Balance breakout), momentum (Momentum Candle continuation), occ (Opening Candle Continuation), gapfill (Gap Fill statistics), insidebar (Inside Bar probability), outsideday (Outside Day volatility expansion).",
+      description: "Run a market analysis for a given ticker symbol. Can be called multiple times for confluence/combination analysis. Available modes: ib (Initial Balance breakout), momentum (Momentum Candle Continuation - MCC: probability that session closes same direction as the NY opening candle when that candle has valid momentum body ratio), occ (Opening Candle Continuation), gapfill (Gap Fill statistics), insidebar (Inside Bar probability), outsideday (Outside Day volatility expansion).",
       parameters: {
         type: "object",
         properties: {
@@ -187,11 +187,12 @@ CORE KNOWLEDGE BASE (Edgeful Model):
    - Gap size matters: Small gaps (0.1-0.19%) fill 83-93% of the time. Large gaps (0.6%+) rarely fill.
    - Trading plan: Use prior day's high/low as profit targets for gap fill trades.
 
-6. Momentum Candle Analysis:
-   - Scans for 2 consecutive same-color candles during 09:30-12:00.
-   - First candle body must be >= threshold of its range, second candle body >= 30%.
-   - Tracks "The Tell" (high or low formed first) to predict direction.
-   - Available timeframes: M5, M15, M30, H1.
+6. Momentum Candle Continuation (MCC):
+   - Measures the probability that a session CLOSES in the same direction as the NY opening candle, ONLY when the opening candle has valid momentum.
+   - Validation: (1) Direction = green/red close vs open, (2) Momentum filter = body ≥ threshold (default 70%) of total candle range (high-low), (3) Continuation = session close (16:00 ET) on the same side as the opening direction.
+   - Days where the opening candle fails the body-ratio filter are treated as NEUTRAL / no signal and excluded from continuation rates.
+   - Available opening-candle timeframes: M5, M15, M30, H1 (default M30 = 09:30–10:00 ET).
+   - Use the bullish/bearish continuation rates as a directional bias only after the opening candle confirms momentum.
 
 7. Market Session Breakout (Confluence Strategy):
    - Combines OCC + IB + Market Session data for high-confidence trades.
