@@ -11,16 +11,25 @@ interface BarData {
   close: string;
 }
 
+// Opening candle highlight (kept for chart compat)
 export interface MomentumSignal {
   type: "bullish" | "bearish";
   times: [string, string];
 }
 
+export type MomentumLabel = "bullish" | "bearish" | "neutral";
+
 export interface MomentumTFResult {
   tf: string;
   tfMinutes: number;
-  momentum: "bullish" | "bearish" | "choppy";
-  signals: MomentumSignal[];
+  // Result from MCC logic for this TF
+  momentum: MomentumLabel; // bullish/bearish if opening had momentum; neutral otherwise
+  direction: "bullish" | "bearish" | "none";
+  hasMomentum: boolean;
+  bodyRatio: number;
+  continued: boolean; // session closed same direction as opening
+  openingCandle?: CandleBar;
+  signals: MomentumSignal[]; // single-element if momentum present (opening candle highlight)
 }
 
 export interface MomentumDayData {
@@ -29,24 +38,37 @@ export interface MomentumDayData {
   ibHigh: number;
   ibLow: number;
   highFirstFormed: boolean;
-  momentum: "bullish" | "bearish" | "choppy";
+  // Default TF (M30) results, surfaced for the day chart
+  momentum: MomentumLabel;
   signals: MomentumSignal[];
+  continued: boolean;
+  sessionOpen: number;
+  sessionClose: number;
   timeframes: MomentumTFResult[];
 }
 
+// New MCC stats shape (per TF)
 export interface MomentumTFStats {
-  highFirst: { total: number; bullish: number; bearish: number; choppy: number };
-  lowFirst: { total: number; bullish: number; bearish: number; choppy: number };
+  totalDays: number;
+  // Bullish opening with valid momentum
+  bullishSignals: number;
+  bullishContinued: number;
+  bullishReversed: number;
+  // Bearish opening with valid momentum
+  bearishSignals: number;
+  bearishContinued: number;
+  bearishReversed: number;
+  // Days where opening had no momentum (filtered out)
+  neutralDays: number;
 }
 
 export interface MomentumResult {
   totalDays: number;
   bullishDays: number;
   bearishDays: number;
-  choppyDays: number;
+  neutralDays: number;
   ibWindowMinutes: number;
-  highFirst: { total: number; bullish: number; bearish: number; choppy: number };
-  lowFirst: { total: number; bullish: number; bearish: number; choppy: number };
+  bodyRatioThreshold: number;
   tfStats: Record<string, MomentumTFStats>;
   allDays: MomentumDayData[];
   lastDay: MomentumDayData | null;
@@ -59,6 +81,8 @@ const TF_CONFIGS = [
   { tf: "H1", minutes: 60 },
 ];
 
+const DEFAULT_TF = "M30";
+
 function parseDateTime(dt: string): Date {
   return parse(dt, "yyyy-MM-dd HH:mm:ss", new Date());
 }
@@ -68,65 +92,68 @@ function getTimeMinutes(dt: Date): number {
 }
 
 const IB_START = 9 * 60 + 30;
-const NOON = 12 * 60;
 const MARKET_CLOSE = 16 * 60;
 
-function detectSignals(candles: CandleBar[], bodyRatio: number = 0.50): MomentumSignal[] {
-  const signals: MomentumSignal[] = [];
-  let i = 0;
-  while (i < candles.length - 1) {
-    const prev = candles[i];
-    const curr = candles[i + 1];
-
-    const prevBody = Math.abs(prev.close - prev.open);
-    const prevRange = prev.high - prev.low;
-    const currBody = Math.abs(curr.close - curr.open);
-    const currRange = curr.high - curr.low;
-
-    const prevBullish = prev.close >= prev.open;
-    const currBullish = curr.close >= curr.open;
-    const sameColor = prevBullish === currBullish;
-
-    if (
-      prevRange > 0 && currRange > 0 &&
-      prevBody / prevRange >= bodyRatio &&
-      currBody / currRange >= 0.30 &&
-      sameColor
-    ) {
-      signals.push({
-        type: prevBullish ? "bullish" : "bearish",
-        times: [prev.time, curr.time],
-      });
-      i += 2;
-    } else {
-      i++;
-    }
-  }
-  return signals;
-}
-
-function evaluateMomentumTF(momentumBars5min: CandleBar[], tfMinutes: number, bodyRatio: number): MomentumTFResult {
+/**
+ * MCC opening candle evaluation for a given timeframe.
+ * - Opening candle = the single aggregated candle starting at 09:30 ET
+ * - Direction = green (close>open) or red (close<open)
+ * - Momentum valid if |body| / range >= bodyRatio threshold
+ * - Continuation = session close (16:00 ET) on the same side as opening close vs open
+ */
+function evaluateMCC(
+  sessionBars5min: CandleBar[],
+  tfMinutes: number,
+  bodyRatio: number,
+  sessionOpen: number,
+  sessionClose: number
+): MomentumTFResult {
   const tf = TF_CONFIGS.find(t => t.minutes === tfMinutes)?.tf || `M${tfMinutes}`;
-  const candles = aggregateBars(momentumBars5min, tfMinutes);
-  const signals = detectSignals(candles, bodyRatio);
-  const momentum = signals.length > 0 ? signals[0].type : "choppy";
-  return { tf, tfMinutes, momentum, signals };
-}
+  const candles = aggregateBars(sessionBars5min, tfMinutes);
+  const opening = candles[0];
 
-function getOverallMomentum(timeframes: MomentumTFResult[]): "bullish" | "bearish" | "choppy" {
-  let bullish = 0, bearish = 0;
-  for (const tf of timeframes) {
-    if (tf.momentum === "bullish") bullish++;
-    else if (tf.momentum === "bearish") bearish++;
+  if (!opening) {
+    return {
+      tf, tfMinutes, momentum: "neutral", direction: "none",
+      hasMomentum: false, bodyRatio: 0, continued: false, signals: [],
+    };
   }
-  if (bullish > bearish) return "bullish";
-  if (bearish > bullish) return "bearish";
-  return "choppy";
+
+  const body = Math.abs(opening.close - opening.open);
+  const range = opening.high - opening.low;
+  const ratio = range > 0 ? body / range : 0;
+  const direction: "bullish" | "bearish" | "none" =
+    opening.close > opening.open ? "bullish" :
+    opening.close < opening.open ? "bearish" : "none";
+
+  const hasMomentum = direction !== "none" && ratio >= bodyRatio;
+
+  // Continuation: session close direction matches opening direction
+  const sessionBullish = sessionClose > sessionOpen;
+  const continued = hasMomentum && (
+    (direction === "bullish" && sessionBullish) ||
+    (direction === "bearish" && !sessionBullish)
+  );
+
+  const momentum: MomentumLabel = hasMomentum ? direction as "bullish" | "bearish" : "neutral";
+
+  const signals: MomentumSignal[] = hasMomentum
+    ? [{ type: direction as "bullish" | "bearish", times: [opening.time, opening.time] }]
+    : [];
+
+  return {
+    tf, tfMinutes, momentum, direction, hasMomentum,
+    bodyRatio: ratio, continued, openingCandle: opening, signals,
+  };
 }
 
-export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, maxDays: number = 0, bodyRatio: number = 0.50, weekdays: number[] = [1,2,3,4,5]): MomentumResult {
-  const ibEnd = IB_START + ibWindowMinutes;
-
+export function analyzeMomentum(
+  bars: BarData[],
+  ibWindowMinutes: number = 30,
+  maxDays: number = 0,
+  bodyRatio: number = 0.70,
+  weekdays: number[] = [1, 2, 3, 4, 5]
+): MomentumResult {
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
     const date = bar.datetime.split(" ")[0];
@@ -135,9 +162,7 @@ export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, m
   }
 
   let dates = Array.from(byDate.keys()).sort();
-  if (maxDays > 0) {
-    dates = dates.slice(-maxDays);
-  }
+  if (maxDays > 0) dates = dates.slice(-maxDays);
   dates = dates.filter(d => {
     const day = new Date(d + "T12:00:00").getDay();
     return weekdays.includes(day);
@@ -149,13 +174,12 @@ export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, m
     const dayBars = byDate.get(date)!;
     dayBars.sort((a, b) => parseDateTime(a.datetime).getTime() - parseDateTime(b.datetime).getTime());
 
-    // IB calculation
+    // IB calculation (for The Tell tracking, kept for chart compat)
     const ibBars = dayBars.filter((b) => {
       const m = getTimeMinutes(parseDateTime(b.datetime));
-      return m >= IB_START && m < ibEnd;
+      return m >= IB_START && m < IB_START + ibWindowMinutes;
     });
-
-    if (ibBars.length < 2) continue;
+    if (ibBars.length < 1) continue;
 
     let ibHigh = -Infinity;
     let ibLow = Infinity;
@@ -165,7 +189,6 @@ export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, m
       if (h > ibHigh) ibHigh = h;
       if (l < ibLow) ibLow = l;
     }
-
     let firstHighTouch = "";
     let firstLowTouch = "";
     for (const bar of ibBars) {
@@ -174,13 +197,14 @@ export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, m
     }
     const highFirstFormed = parseDateTime(firstHighTouch).getTime() < parseDateTime(firstLowTouch).getTime();
 
-    // Momentum detection: 09:30-12:00 window, multi-TF
-    const momentumBars = dayBars.filter((b) => {
+    // Full session 09:30 - 16:00
+    const sessionRawBars = dayBars.filter((b) => {
       const m = getTimeMinutes(parseDateTime(b.datetime));
-      return m >= IB_START && m < NOON;
+      return m >= IB_START && m < MARKET_CLOSE;
     });
+    if (sessionRawBars.length === 0) continue;
 
-    const momentumBars5min: CandleBar[] = momentumBars.map(b => ({
+    const sessionBars5min: CandleBar[] = sessionRawBars.map(b => ({
       time: b.datetime.split(" ")[1].slice(0, 5),
       open: parseFloat(b.open),
       high: parseFloat(b.high),
@@ -188,81 +212,66 @@ export function analyzeMomentum(bars: BarData[], ibWindowMinutes: number = 60, m
       close: parseFloat(b.close),
     }));
 
-    // Evaluate all 4 timeframes
-    const timeframes = TF_CONFIGS.map(cfg => evaluateMomentumTF(momentumBars5min, cfg.minutes, bodyRatio));
-    const momentum = getOverallMomentum(timeframes);
+    const sessionOpen = sessionBars5min[0].open;
+    const sessionClose = sessionBars5min[sessionBars5min.length - 1].close;
 
-    // Keep first signal set for backward compat
-    const firstTfWithSignal = timeframes.find(tf => tf.signals.length > 0);
-    const signals = firstTfWithSignal?.signals || [];
+    const timeframes = TF_CONFIGS.map(cfg =>
+      evaluateMCC(sessionBars5min, cfg.minutes, bodyRatio, sessionOpen, sessionClose)
+    );
 
-    // Full day bars for chart
-    const fullDayBars = dayBars.filter((b) => {
-      const m = getTimeMinutes(parseDateTime(b.datetime));
-      return m >= IB_START && m < MARKET_CLOSE;
-    });
-
-    if (fullDayBars.length === 0) continue;
+    const defaultTf = timeframes.find(t => t.tf === DEFAULT_TF) || timeframes[0];
 
     allDays.push({
       date,
-      bars: fullDayBars.map(b => ({
-        time: b.datetime.split(" ")[1].slice(0, 5),
-        open: parseFloat(b.open),
-        high: parseFloat(b.high),
-        low: parseFloat(b.low),
-        close: parseFloat(b.close),
-      })),
+      bars: sessionBars5min,
       ibHigh,
       ibLow,
       highFirstFormed,
-      momentum,
-      signals,
+      momentum: defaultTf.momentum,
+      signals: defaultTf.signals,
+      continued: defaultTf.continued,
+      sessionOpen,
+      sessionClose,
       timeframes,
     });
   }
 
-  // Overall highFirst/lowFirst stats (based on overall momentum)
-  const highFirstDays = allDays.filter((d) => d.highFirstFormed);
-  const lowFirstDays = allDays.filter((d) => !d.highFirstFormed);
-
   // Per-TF stats
   const tfStats: Record<string, MomentumTFStats> = {};
   for (const cfg of TF_CONFIGS) {
-    const hf = { total: 0, bullish: 0, bearish: 0, choppy: 0 };
-    const lf = { total: 0, bullish: 0, bearish: 0, choppy: 0 };
+    const s: MomentumTFStats = {
+      totalDays: allDays.length,
+      bullishSignals: 0, bullishContinued: 0, bullishReversed: 0,
+      bearishSignals: 0, bearishContinued: 0, bearishReversed: 0,
+      neutralDays: 0,
+    };
     for (const day of allDays) {
-      const tfResult = day.timeframes.find(t => t.tf === cfg.tf);
-      if (!tfResult) continue;
-      if (day.highFirstFormed) {
-        hf.total++;
-        hf[tfResult.momentum]++;
-      } else {
-        lf.total++;
-        lf[tfResult.momentum]++;
+      const tfRes = day.timeframes.find(t => t.tf === cfg.tf);
+      if (!tfRes) continue;
+      if (!tfRes.hasMomentum) {
+        s.neutralDays++;
+        continue;
+      }
+      if (tfRes.direction === "bullish") {
+        s.bullishSignals++;
+        if (tfRes.continued) s.bullishContinued++;
+        else s.bullishReversed++;
+      } else if (tfRes.direction === "bearish") {
+        s.bearishSignals++;
+        if (tfRes.continued) s.bearishContinued++;
+        else s.bearishReversed++;
       }
     }
-    tfStats[cfg.tf] = { highFirst: hf, lowFirst: lf };
+    tfStats[cfg.tf] = s;
   }
 
   return {
     totalDays: allDays.length,
     bullishDays: allDays.filter((d) => d.momentum === "bullish").length,
     bearishDays: allDays.filter((d) => d.momentum === "bearish").length,
-    choppyDays: allDays.filter((d) => d.momentum === "choppy").length,
+    neutralDays: allDays.filter((d) => d.momentum === "neutral").length,
     ibWindowMinutes,
-    highFirst: {
-      total: highFirstDays.length,
-      bullish: highFirstDays.filter((d) => d.momentum === "bullish").length,
-      bearish: highFirstDays.filter((d) => d.momentum === "bearish").length,
-      choppy: highFirstDays.filter((d) => d.momentum === "choppy").length,
-    },
-    lowFirst: {
-      total: lowFirstDays.length,
-      bullish: lowFirstDays.filter((d) => d.momentum === "bullish").length,
-      bearish: lowFirstDays.filter((d) => d.momentum === "bearish").length,
-      choppy: lowFirstDays.filter((d) => d.momentum === "choppy").length,
-    },
+    bodyRatioThreshold: bodyRatio,
     tfStats,
     allDays,
     lastDay: allDays.length > 0 ? allDays[allDays.length - 1] : null,
