@@ -13,7 +13,7 @@ interface AITradingInsightProps {
 
 const MODE_LABELS: Record<string, string> = {
   ib: "IB Breakout",
-  momentum: "Momentum Candle",
+  momentum: "Momentum Candle Continuation (MCC)",
   occ: "OCC",
   insidebar: "Inside Bar",
   outsideday: "Outside Day",

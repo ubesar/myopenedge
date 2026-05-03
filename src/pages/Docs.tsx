@@ -315,27 +315,36 @@ export default function Docs() {
           </Card>
         </section>
 
-        {/* ─── 7. Momentum Candle ─── */}
+        {/* ─── 7. Momentum Candle Continuation (MCC) ─── */}
         <section className="space-y-4">
           <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Activity className="h-6 w-6 text-primary" />
-            7. Momentum Candle
+            7. Momentum Candle Continuation (MCC)
           </h2>
           <Card>
             <CardContent className="pt-6 text-sm text-muted-foreground leading-relaxed space-y-4">
               <p>
-                The momentum candle report scans for <strong className="text-foreground">2 consecutive same-color candles</strong> during the first half of the session (09:30–12:00 ET).
-                The first candle's body must be ≥ the configured threshold of its total range, and the second candle's body must be ≥ 30%.
+                MCC measures the probability that the trading session <strong className="text-foreground">closes in the same direction as the NY opening candle</strong>,
+                but only when that opening candle shows valid momentum. Days where the opening candle is weak (long wicks, small body) are treated as
+                <strong className="text-foreground"> neutral / no signal</strong> and excluded from the continuation rate.
               </p>
+              <InfoBox title="3-Step Validation Logic">
+                <ol className="list-decimal pl-4 space-y-1">
+                  <li><strong>Direction</strong> — opening candle closes green (close &gt; open) or red (close &lt; open).</li>
+                  <li><strong>Momentum filter</strong> — body size <code>|close − open|</code> must be ≥ threshold of the total range <code>high − low</code> (default 70%).</li>
+                  <li><strong>Session tracking</strong> — if both pass, check whether the full session close (16:00 ET) lands on the same side as the opening direction.</li>
+                </ol>
+              </InfoBox>
               <InfoBox title="Configuration">
                 <ul className="list-disc pl-4 space-y-1">
-                  <li><strong>Timeframes:</strong> M5, M15, M30, H1</li>
-                  <li><strong>Body Ratio:</strong> Configurable threshold (default 50%)</li>
-                  <li><strong>"The Tell":</strong> Same as IB — tracks whether high or low formed first</li>
+                  <li><strong>Opening candle timeframe:</strong> M5, M15, M30 (default), H1</li>
+                  <li><strong>Body threshold:</strong> 50% / 60% / 70% (recommended) / 80% (strict)</li>
+                  <li><strong>Output:</strong> separate continuation rate for bullish openings vs bearish openings, plus a neutral-day count.</li>
                 </ul>
               </InfoBox>
               <p>
-                This report helps identify early momentum that often persists through the session, giving you confirmation to hold positions.
+                Use MCC as a directional bias filter — only take continuation trades on days where the opening candle confirms strong momentum;
+                skip neutral days entirely.
               </p>
             </CardContent>
           </Card>
