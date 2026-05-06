@@ -63,7 +63,7 @@ serve(async (req) => {
   }
 
   try {
-    const { symbol, ibData, occData } = await req.json();
+    const { symbol, ibData, occData, mccData } = await req.json();
 
     if (!symbol) {
       return new Response(JSON.stringify({ error: "symbol is required" }), {
@@ -72,35 +72,48 @@ serve(async (req) => {
       });
     }
 
+    const ALLOWED = ["QQQ", "GLD"];
+    if (!ALLOWED.includes(String(symbol).toUpperCase())) {
+      return new Response(JSON.stringify({ error: "AI Forecast hanya tersedia untuk QQQ dan GLD." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const systemPrompt = `You are an elite quantitative forecasting AI for MyOpenEdge. You analyze IB (Initial Balance) and OCC (Opening Candle Continuation) historical data to produce a directional forecast.
+    const systemPrompt = `You are an elite quantitative forecasting AI for MyOpenEdge. You synthesize three statistical edges to produce a directional forecast for the next US RTH session:
+1. IB (Initial Balance) — high-first vs low-first breakout probabilities.
+2. OCC (Opening Candle Continuation) — does the first candle's direction predict the daily close?
+3. MCC (Momentum Candle Continuation) — does the NY opening candle WITH valid momentum (body ≥70% of range) close in the same direction at 16:00 ET?
+
+CONFLUENCE LOGIC:
+- If IB high-first breakHigh%, OCC bullish continuation%, and MCC bullish continuation% all align → strong bullish, higher confidence.
+- If they conflict → neutral or low confidence.
+- MCC neutral days (no valid momentum) reduce conviction.
 
 RULES:
 - You MUST return a JSON object using the provided tool. No free text.
-- Base your analysis purely on the statistical data provided.
+- Base analysis purely on the statistical data provided.
 - confidence ranges from 0 to 100.
 - direction is "bullish", "bearish", or "neutral".
-- Provide 3-5 concise reasoning points.
-- Include 2-3 key levels or targets if data supports them.
-- Always add a risk warning.
-- Never guarantee outcomes. Use probabilistic language.`;
+- Provide 3-5 concise reasoning points referencing IB, OCC, and MCC numbers.
+- Include 2-3 key levels (e.g., IB high/low) if data supports them.
+- Always add a risk warning. Never guarantee outcomes.
+- Respond in Bahasa Indonesia.`;
 
-    let userPrompt = `Analyze ${symbol} and provide a directional forecast based on the following historical pattern data:\n\n`;
+    let userPrompt = `Analyze ${symbol} and produce a directional forecast based on the following confluence data:\n\n`;
 
-    if (ibData) {
-      userPrompt += `## IB (Initial Balance) Analysis:\n${JSON.stringify(ibData, null, 2)}\n\n`;
-    }
-    if (occData) {
-      userPrompt += `## OCC (Opening Candle Continuation) Analysis:\n${JSON.stringify(occData, null, 2)}\n\n`;
-    }
+    if (ibData) userPrompt += `## IB (Initial Balance):\n${JSON.stringify(ibData, null, 2)}\n\n`;
+    if (occData) userPrompt += `## OCC (Opening Candle Continuation):\n${JSON.stringify(occData, null, 2)}\n\n`;
+    if (mccData) userPrompt += `## MCC (Momentum Candle Continuation):\n${JSON.stringify(mccData, null, 2)}\n\n`;
 
-    if (!ibData && !occData) {
-      userPrompt += `No analysis data provided. Give a general note that the user should run IB and/or OCC analysis first.`;
+    if (!ibData && !occData && !mccData) {
+      userPrompt += `No analysis data provided.`;
     }
 
-    userPrompt += `\nBased on this data, what is your directional forecast for the next session?`;
+    userPrompt += `\nWhat is the confluence-based directional forecast for the next session?`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
