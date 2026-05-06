@@ -6,7 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAIAnalysis, ToolCallArgs } from "@/hooks/useAIAnalysis";
 import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   Brain, TrendingUp, TrendingDown, Minus, Loader2, AlertTriangle,
-  Target, Shield, Zap, ChevronRight, BarChart3
+  Target, Zap, ChevronRight, BarChart3
 } from "lucide-react";
 
 interface Forecast {
@@ -32,6 +31,8 @@ const directionConfig = {
   neutral: { icon: Minus, color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/30", badge: "bg-yellow-500/20 text-yellow-400" },
 };
 
+const SUPPORTED_SYMBOLS = ["QQQ", "GLD"] as const;
+
 export default function Forecast() {
   const { user, loading: authLoading } = useAuth();
   const { isActive } = useSubscription();
@@ -40,7 +41,7 @@ export default function Forecast() {
 
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [symbol, setSymbol] = useState("NQ");
+  const [symbol, setSymbol] = useState<string>("QQQ");
   const [ibWindow, setIbWindow] = useState("60");
   const [maxDays, setMaxDays] = useState("60");
   const [loading, setLoading] = useState(false);
@@ -48,6 +49,10 @@ export default function Forecast() {
   const [forecast, setForecast] = useState<Forecast | null>(null);
 
   if (!authLoading && !user) return <Navigate to="/auth" replace />;
+
+  const safeParse = (raw: string) => {
+    try { return JSON.parse(raw); } catch { return { error: "Invalid analysis output" }; }
+  };
 
   const handleForecast = async () => {
     if (!user || !isActive) {
@@ -59,43 +64,29 @@ export default function Forecast() {
     setForecast(null);
 
     try {
-      // Step 1: Run IB analysis
+      const sym = symbol.toUpperCase();
+      const days = Number(maxDays);
+      const ibw = Number(ibWindow);
+
+      // Step 1: IB
       setStep("Running IB analysis...");
-      const ibArgs: ToolCallArgs = {
-        symbol: symbol.toUpperCase(),
-        mode: "ib",
-        max_days: Number(maxDays),
-        ib_window: Number(ibWindow),
-      };
-      const ibRaw = await executeAnalysis(ibArgs);
-      const ibData = JSON.parse(ibRaw);
+      const ibData = safeParse(await executeAnalysis({ symbol: sym, mode: "ib", max_days: days, ib_window: ibw }));
+      if (ibData.error) throw new Error("IB analysis: " + ibData.error);
 
-      if (ibData.error) {
-        toast.error("IB analysis failed: " + ibData.error);
-        setLoading(false);
-        return;
-      }
-
-      // Step 2: Run OCC analysis
+      // Step 2: OCC
       setStep("Running OCC analysis...");
-      const occArgs: ToolCallArgs = {
-        symbol: symbol.toUpperCase(),
-        mode: "occ",
-        max_days: Number(maxDays),
-      };
-      const occRaw = await executeAnalysis(occArgs);
-      const occData = JSON.parse(occRaw);
+      const occData = safeParse(await executeAnalysis({ symbol: sym, mode: "occ", max_days: days }));
+      if (occData.error) throw new Error("OCC analysis: " + occData.error);
 
-      if (occData.error) {
-        toast.error("OCC analysis failed: " + occData.error);
-        setLoading(false);
-        return;
-      }
+      // Step 3: MCC (momentum)
+      setStep("Running MCC analysis...");
+      const mccData = safeParse(await executeAnalysis({ symbol: sym, mode: "momentum", max_days: days, ib_window: ibw }));
+      if (mccData.error) throw new Error("MCC analysis: " + mccData.error);
 
-      // Step 3: Send to AI forecasting
+      // Step 4: AI Forecast
       setStep("AI generating forecast...");
       const { data, error } = await supabase.functions.invoke("ai-forecast", {
-        body: { symbol: symbol.toUpperCase(), ibData, occData },
+        body: { symbol: sym, ibData, occData, mccData },
       });
 
       if (error) throw error;
@@ -114,6 +105,8 @@ export default function Forecast() {
   const config = forecast ? directionConfig[forecast.direction] : null;
   const DirIcon = config?.icon || Minus;
 
+  const stepIndex = step.includes("IB") ? 0 : step.includes("OCC") ? 1 : step.includes("MCC") ? 2 : step.includes("AI") ? 3 : -1;
+
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
       <AppNavSidebar collapsed={collapsed} onToggle={() => isMobile ? setMobileOpen(!mobileOpen) : setCollapsed(!collapsed)} />
@@ -127,29 +120,29 @@ export default function Forecast() {
         )}
 
         <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-          {/* Header */}
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10">
               <Brain className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">AI Forecast</h1>
-              <p className="text-xs text-muted-foreground">Prediksi arah harga berdasarkan pola IB & OCC historis</p>
+              <h1 className="text-xl font-bold">ai forecast</h1>
+              <p className="text-xs text-muted-foreground">prediksi arah harga qqq & gld berdasarkan ib + occ + mcc historis (data: twelvedata)</p>
             </div>
           </div>
 
-          {/* Input */}
           <Card className="border-border">
             <CardContent className="pt-4 space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Symbol</label>
-                  <Input
-                    value={symbol}
-                    onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                    placeholder="NQ"
-                    className="h-9 text-sm"
-                  />
+                  <Select value={symbol} onValueChange={setSymbol}>
+                    <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {SUPPORTED_SYMBOLS.map((s) => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">IB Window</label>
@@ -190,21 +183,16 @@ export default function Forecast() {
             </CardContent>
           </Card>
 
-          {/* Loading state */}
           {loading && (
             <Card className="border-primary/30 bg-primary/5">
               <CardContent className="py-8 text-center space-y-3">
                 <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
                 <p className="text-sm text-muted-foreground">{step}</p>
                 <div className="flex justify-center gap-1">
-                  {["IB Analysis", "OCC Analysis", "AI Forecast"].map((s, i) => (
-                    <div key={s} className={`h-1.5 w-16 rounded-full ${
-                      step.includes("IB") && i === 0 ? "bg-primary animate-pulse" :
-                      step.includes("OCC") && i === 1 ? "bg-primary animate-pulse" :
-                      step.includes("AI") && i === 2 ? "bg-primary animate-pulse" :
-                      step.includes("OCC") && i === 0 ? "bg-primary" :
-                      step.includes("AI") && i <= 1 ? "bg-primary" :
-                      "bg-muted"
+                  {["IB", "OCC", "MCC", "AI"].map((s, i) => (
+                    <div key={s} className={`h-1.5 w-14 rounded-full ${
+                      stepIndex === i ? "bg-primary animate-pulse" :
+                      stepIndex > i ? "bg-primary" : "bg-muted"
                     }`} />
                   ))}
                 </div>
@@ -212,10 +200,8 @@ export default function Forecast() {
             </Card>
           )}
 
-          {/* Forecast Result */}
           {forecast && config && (
             <div className="space-y-4">
-              {/* Direction Card */}
               <Card className={`border ${config.bg}`}>
                 <CardContent className="py-6">
                   <div className="flex items-center gap-4">
@@ -237,7 +223,6 @@ export default function Forecast() {
                     </div>
                   </div>
 
-                  {/* Confidence bar */}
                   <div className="mt-4 h-2 bg-muted rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-1000 ${
@@ -250,7 +235,6 @@ export default function Forecast() {
                 </CardContent>
               </Card>
 
-              {/* Reasoning */}
               <Card className="border-border">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
@@ -268,7 +252,6 @@ export default function Forecast() {
                 </CardContent>
               </Card>
 
-              {/* Key Levels */}
               {forecast.key_levels && forecast.key_levels.length > 0 && (
                 <Card className="border-border">
                   <CardHeader className="pb-3">
@@ -288,7 +271,6 @@ export default function Forecast() {
                 </Card>
               )}
 
-              {/* Risk Warning */}
               <Card className="border-yellow-500/30 bg-yellow-500/5">
                 <CardContent className="py-3 flex items-start gap-2">
                   <AlertTriangle className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
