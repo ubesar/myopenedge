@@ -296,6 +296,12 @@ const AIAssistant = () => {
       prompt: "Jalankan analisis OCC, IB, dan Gap Fill untuk NQ menggunakan 60 hari trading. Terapkan strategi '3 Powerful Reports' dari Edgeful: 1) Cek OCC untuk directional bias, 2) Cek IB single break direction, 3) Cek gap fill probability. Jika ketiga sinyal ALIGN, state 'HIGH PROBABILITY SETUP'. Jika conflict, state 'PROTECT CAPITAL'.",
     },
     {
+      label: "MCC Directional Bias",
+      icon: Activity,
+      description: "NY opening candle dengan body ≥70% → continuation probability ke session close",
+      prompt: "Jalankan analisis Momentum Candle Continuation (MCC) untuk NQ menggunakan 60 hari trading dengan opening candle 30m dan body ratio threshold 70%. Hitung: (1) berapa persen bullish opening candle (body ≥70% range) yang ditutup green di 16:00 ET (bullish continuation rate), (2) berapa persen bearish opening dengan momentum valid yang ditutup red (bearish continuation rate), (3) berapa hari masuk kategori 'neutral' (tidak lolos filter momentum). Berikan directional bias hari ini dan rekomendasi: trade continuation hanya jika opening candle confirm momentum, sit on hands jika neutral.",
+    },
+    {
       label: "Inside Bar Breakout",
       icon: Target,
       description: "Rare pattern (~22%) tapi 78% break previous range",
