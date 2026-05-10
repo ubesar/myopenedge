@@ -90,7 +90,7 @@ describe("analyzeOCC", () => {
 
   it("does not expose legacy fields (tfStats / bullishDays)", () => {
     const bars = buildDay("2025-01-06", true, true);
-    const result = analyzeOCC(bars, 0, "30m") as Record<string, unknown>;
+    const result = analyzeOCC(bars, 0, "30m") as unknown as Record<string, unknown>;
     expect(result.tfStats).toBeUndefined();
     expect(result.tfDirectionStats).toBeUndefined();
     expect(result.bullishDays).toBeUndefined();
