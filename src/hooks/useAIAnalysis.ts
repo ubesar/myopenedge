@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { analyzeIB } from "@/lib/ib-analysis";
 import { analyzeMomentum } from "@/lib/momentum-analysis";
 import { analyzeOCC } from "@/lib/occ-analysis";
+import { formatOCCResult } from "@/lib/occ-formatter";
 import { analyzeGapFill } from "@/lib/gapfill-analysis";
 import { analyzeInsideBar } from "@/lib/insidebar-analysis";
 import { analyzeOutsideDay } from "@/lib/outsideday-analysis";
