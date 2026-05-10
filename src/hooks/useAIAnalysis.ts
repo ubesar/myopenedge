@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { analyzeIB } from "@/lib/ib-analysis";
 import { analyzeMomentum } from "@/lib/momentum-analysis";
 import { analyzeOCC } from "@/lib/occ-analysis";
+import { formatOCCResult } from "@/lib/occ-formatter";
 import { analyzeGapFill } from "@/lib/gapfill-analysis";
 import { analyzeInsideBar } from "@/lib/insidebar-analysis";
 import { analyzeOutsideDay } from "@/lib/outsideday-analysis";
@@ -138,27 +139,7 @@ function formatAnalysisResult(mode: string, result: any): string {
       });
     }
     case "occ": {
-      const r = result;
-      return JSON.stringify({
-        mode: "occ",
-        totalDays: r.totalDays,
-        candleSize: r.candleSize,
-        greenOpeningCandle: {
-          total: r.greenCandle.total,
-          continuesGreenPct: Math.round(r.greenCandle.greenDayPct),
-          reversesRedPct: Math.round(r.greenCandle.redDayPct),
-        },
-        redOpeningCandle: {
-          total: r.redCandle.total,
-          continuesRedPct: Math.round(r.redCandle.redDayPct),
-          reversesGreenPct: Math.round(r.redCandle.greenDayPct),
-        },
-        lastDay: r.allDays.length > 0 ? {
-          date: r.allDays[r.allDays.length - 1].date,
-          openingCandleGreen: r.allDays[r.allDays.length - 1].openingCandleGreen,
-          dayEndGreen: r.allDays[r.allDays.length - 1].dayEndGreen,
-        } : null,
-      });
+      return formatOCCResult(result);
     }
     case "gapfill": {
       const r = result;
