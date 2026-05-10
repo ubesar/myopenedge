@@ -139,27 +139,7 @@ function formatAnalysisResult(mode: string, result: any): string {
       });
     }
     case "occ": {
-      const r = result;
-      return JSON.stringify({
-        mode: "occ",
-        totalDays: r.totalDays,
-        candleSize: r.candleSize,
-        greenOpeningCandle: {
-          total: r.greenCandle.total,
-          continuesGreenPct: Math.round(r.greenCandle.greenDayPct),
-          reversesRedPct: Math.round(r.greenCandle.redDayPct),
-        },
-        redOpeningCandle: {
-          total: r.redCandle.total,
-          continuesRedPct: Math.round(r.redCandle.redDayPct),
-          reversesGreenPct: Math.round(r.redCandle.greenDayPct),
-        },
-        lastDay: r.allDays.length > 0 ? {
-          date: r.allDays[r.allDays.length - 1].date,
-          openingCandleGreen: r.allDays[r.allDays.length - 1].openingCandleGreen,
-          dayEndGreen: r.allDays[r.allDays.length - 1].dayEndGreen,
-        } : null,
-      });
+      return formatOCCResult(result);
     }
     case "gapfill": {
       const r = result;
