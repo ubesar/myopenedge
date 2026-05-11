@@ -111,7 +111,7 @@ const Chart = () => {
             }`}
             style={showMC ? { background: "#2962FF" } : {}}
           >
-            MC
+            MCC
           </button>
 
         </div>

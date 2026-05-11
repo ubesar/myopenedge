@@ -20,7 +20,8 @@ interface TradingViewChartProps {
   showMC?: boolean;
 }
 
-const BODY_RATIO = 0.50;
+// MCC (Momentum Candle Continuation): opening candle dengan body >= 70% range
+const MCC_BODY_RATIO = 0.70;
 
 const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: TradingViewChartProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -299,7 +300,8 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
           }
         }
 
-        // Momentum Candle: highlight candles only
+        // MCC (Momentum Candle Continuation): highlight ONLY the NY Open candle (09:30)
+        // jika body >= 70% dari total range candle.
         if (showMC && interval !== "1day" && sorted.length > 0) {
           const dayBarsMap: Record<string, typeof sorted> = {};
           for (const bar of sorted) {
@@ -308,53 +310,36 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: 
             dayBarsMap[date].push(bar);
           }
 
-          const mcTimestamps = new Map<number, boolean>();
-
+          const mccTimestamps = new Map<number, boolean>();
           const toTs = (dt: string) =>
             Math.floor(new Date(dt.replace(" ", "T") + "Z").getTime() / 1000);
 
           for (const date of Object.keys(dayBarsMap).sort()) {
             const bars = dayBarsMap[date];
-            const sessionBars = bars.filter(b => {
-              const t = b.datetime.split(" ")[1];
-              return t >= "09:30:00" && t < "16:00:00";
-            });
+            // Cari candle pembukaan NY (09:30 ET)
+            const opening = bars.find(b => b.datetime.split(" ")[1] === "09:30:00");
+            if (!opening) continue;
 
-            let i = 0;
-            while (i < sessionBars.length - 1) {
-              const prev = sessionBars[i];
-              const curr = sessionBars[i + 1];
+            const o = parseFloat(opening.open);
+            const h = parseFloat(opening.high);
+            const l = parseFloat(opening.low);
+            const c = parseFloat(opening.close);
 
-              const pO = parseFloat(prev.open), pH = parseFloat(prev.high), pL = parseFloat(prev.low), pC = parseFloat(prev.close);
-              const cO = parseFloat(curr.open), cH = parseFloat(curr.high), cL = parseFloat(curr.low), cC = parseFloat(curr.close);
+            const body = Math.abs(c - o);
+            const range = h - l;
+            if (range <= 0) continue;
 
-              const pBody = Math.abs(pC - pO);
-              const pRange = pH - pL;
-              const cBody = Math.abs(cC - cO);
-              const cRange = cH - cL;
-
-              const pBull = pC >= pO;
-              const cBull = cC >= cO;
-
-              if (
-                pRange > 0 && cRange > 0 &&
-                pBody / pRange >= BODY_RATIO &&
-                cBody / cRange >= 0.30 &&
-                pBull === cBull
-              ) {
-                mcTimestamps.set(toTs(prev.datetime), pBull);
-                mcTimestamps.set(toTs(curr.datetime), pBull);
-                i += 2;
-              } else {
-                i++;
-              }
+            // Hanya valid jika body >= 70% dari range candle pembukaan
+            if (body / range >= MCC_BODY_RATIO) {
+              const isBull = c >= o;
+              mccTimestamps.set(toTs(opening.datetime), isBull);
             }
           }
 
           const recolored = candles.map((c) => {
             const ts = c.time as number;
-            if (mcTimestamps.has(ts)) {
-              const isBull = mcTimestamps.get(ts)!;
+            if (mccTimestamps.has(ts)) {
+              const isBull = mccTimestamps.get(ts)!;
               const color = isBull ? "#00FF66" : "#FF00FF";
               return { ...c, color, borderColor: color, wickColor: color };
             }
