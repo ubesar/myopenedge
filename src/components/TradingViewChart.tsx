@@ -173,13 +173,11 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, mc
         let fromDate: Date;
         if (interval === "1day") {
           fromDate = new Date(now);
-          fromDate.setDate(fromDate.getDate() - 180);
-        } else if (interval === "1h") {
-          fromDate = new Date(now);
-          fromDate.setDate(fromDate.getDate() - 15);
+          fromDate.setDate(fromDate.getDate() - 365);
         } else {
+          // Intraday (5m/15m/30m/1h): tampilkan ~1 bulan terakhir
           fromDate = new Date(now);
-          fromDate.setDate(fromDate.getDate() - 5);
+          fromDate.setDate(fromDate.getDate() - 30);
         }
         const from = fromDate.toISOString().split("T")[0];
 
