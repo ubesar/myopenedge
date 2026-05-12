@@ -366,7 +366,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, mc
     };
 
     fetchData();
-  }, [symbol, interval, chartReady, showIB, showMC]);
+  }, [symbol, interval, chartReady, showIB, showMC, mccBodyRatio]);
 
   const isPositive = ohlc ? ohlc.change >= 0 : true;
 
