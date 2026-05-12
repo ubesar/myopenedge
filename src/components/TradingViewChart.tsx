@@ -18,10 +18,8 @@ interface TradingViewChartProps {
   interval: string;
   showIB?: boolean;
   showMC?: boolean;
+  mccBodyRatio?: number;
 }
-
-// MCC (Momentum Candle Continuation): opening candle dengan body >= 70% range
-const MCC_BODY_RATIO = 0.70;
 
 const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: TradingViewChartProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
