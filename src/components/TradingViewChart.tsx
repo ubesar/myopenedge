@@ -21,7 +21,8 @@ interface TradingViewChartProps {
   mccBodyRatio?: number;
 }
 
-const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false }: TradingViewChartProps) => {
+const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, mccBodyRatio = 0.70 }: TradingViewChartProps) => {
+  const MCC_BODY_RATIO = mccBodyRatio;
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
