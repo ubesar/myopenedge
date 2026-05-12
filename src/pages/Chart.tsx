@@ -115,10 +115,26 @@ const Chart = () => {
             MCC
           </button>
 
+          {showMC && (
+            <div className="flex items-center gap-1 shrink-0">
+              <span className="text-[10px] text-gray-500">body</span>
+              <select
+                value={mccBodyRatio}
+                onChange={(e) => setMccBodyRatio(parseFloat(e.target.value))}
+                className="px-1.5 py-1 rounded text-[11px] font-medium text-white border-none outline-none cursor-pointer"
+                style={{ background: "#2A2E39" }}
+              >
+                {[0.50, 0.55, 0.60, 0.65, 0.70].map((r) => (
+                  <option key={r} value={r}>≥ {Math.round(r * 100)}%</option>
+                ))}
+              </select>
+            </div>
+          )}
+
         </div>
 
         <div className="flex-1 min-h-0">
-          <TradingViewChart symbol={symbol} interval={interval} showIB={showIB} showMC={showMC} />
+          <TradingViewChart symbol={symbol} interval={interval} showIB={showIB} showMC={showMC} mccBodyRatio={mccBodyRatio} />
         </div>
       </div>
     </div>
