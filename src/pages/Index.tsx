@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import AITradingInsight from "@/components/AITradingInsight";
-import OCCDashboard from "@/components/OCCDashboard";
+import ContinuationStackCard from "@/components/ContinuationStackCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Navigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -391,80 +391,58 @@ const Index = () => {
     }
 
     if (activeMode === "momentum" && momentumResult) {
-      const tf = momentumTimeframe;
-      const stats = momentumResult.tfStats[tf];
-      if (!stats) return null;
-      const bullTotal = stats.bullishSignals;
-      const bearTotal = stats.bearishSignals;
-      const bullContPct = bullTotal > 0 ? (stats.bullishContinued / bullTotal) * 100 : 0;
-      const bullRevPct = bullTotal > 0 ? (stats.bullishReversed / bullTotal) * 100 : 0;
-      const bearContPct = bearTotal > 0 ? (stats.bearishContinued / bearTotal) * 100 : 0;
-      const bearRevPct = bearTotal > 0 ? (stats.bearishReversed / bearTotal) * 100 : 0;
       const bodyPct = `${Math.round(momentumResult.bodyRatioThreshold * 100)}%`;
+      const TFS: { tf: import("@/components/ParameterPanel").OCCTimeframe; label: string }[] = [
+        { tf: "M5", label: "5min opening candle" },
+        { tf: "M15", label: "15min opening candle" },
+        { tf: "M30", label: "30min opening candle" },
+        { tf: "H1", label: "60min opening candle" },
+      ];
       return (
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
             <strong className="text-foreground">momentum candle continuation (mcc)</strong> — measures the probability that the session closes in the same direction as the ny opening candle, only when that candle shows valid momentum (body ≥ {bodyPct} of total range). days without momentum on the opening candle are treated as neutral / no-signal.
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-muted-foreground font-medium mr-1">opening candle tf:</span>
-            {(["M5", "M15", "M30", "H1"] as OCCTimeframe[]).map((t) => (
-              <button
-                key={t}
-                onClick={() => setMomentumTimeframe(t)}
-                className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
-                  momentumTimeframe === t
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <ChartCard
-              title="bullish opening — session continuation"
-              subtitle={`${symbol} · mcc · ${tf} · body ≥ ${bodyPct}`}
-              totalDays={bullTotal}
-              bars={[
-                { name: "continued", value: bullContPct, color: "primary" },
-                { name: "reversed", value: bullRevPct, color: "muted" },
-              ]}
-              legendItems={[
-                { label: "closed bullish", color: "hsl(217,91%,60%)" },
-                { label: "closed bearish", color: "hsl(240,5%,30%)" },
-              ]}
-              settingsGrid={[
-                { label: "opening tf", value: tf },
-                { label: "body threshold", value: `≥ ${bodyPct}` },
-                { label: "session", value: "ny open → close" },
-                { label: "date range", value: formatDateRange(analysisMaxDays) },
-                { label: "weekdays", value: formatWeekdays(analysisWeekdays) },
-                { label: "neutral days", value: String(stats.neutralDays) },
-              ]}
-            />
-            <ChartCard
-              title="bearish opening — session continuation"
-              subtitle={`${symbol} · mcc · ${tf} · body ≥ ${bodyPct}`}
-              totalDays={bearTotal}
-              bars={[
-                { name: "continued", value: bearContPct, color: "primary" },
-                { name: "reversed", value: bearRevPct, color: "muted" },
-              ]}
-              legendItems={[
-                { label: "closed bearish", color: "hsl(217,91%,60%)" },
-                { label: "closed bullish", color: "hsl(240,5%,30%)" },
-              ]}
-              settingsGrid={[
-                { label: "opening tf", value: tf },
-                { label: "body threshold", value: `≥ ${bodyPct}` },
-                { label: "session", value: "ny open → close" },
-                { label: "date range", value: formatDateRange(analysisMaxDays) },
-                { label: "weekdays", value: formatWeekdays(analysisWeekdays) },
-                { label: "neutral days", value: String(stats.neutralDays) },
-              ]}
-            />
+            {TFS.map(({ tf, label }) => {
+              const stats = momentumResult.tfStats[tf];
+              if (!stats) return null;
+              const bullTotal = stats.bullishSignals;
+              const bearTotal = stats.bearishSignals;
+              const bullContPct = bullTotal > 0 ? (stats.bullishContinued / bullTotal) * 100 : 0;
+              const bullRevPct = bullTotal > 0 ? (stats.bullishReversed / bullTotal) * 100 : 0;
+              const bearContPct = bearTotal > 0 ? (stats.bearishContinued / bearTotal) * 100 : 0;
+              const bearRevPct = bearTotal > 0 ? (stats.bearishReversed / bearTotal) * 100 : 0;
+              return (
+                <ContinuationStackCard
+                  key={tf}
+                  title={label}
+                  subtitle={`${symbol} · mcc · body ≥ ${bodyPct} · ${formatDateRange(analysisMaxDays)}`}
+                  columns={[
+                    {
+                      label: "bullish opening",
+                      bottomPct: bullContPct,
+                      topPct: bullRevPct,
+                      bottomLabel: "continued",
+                      topLabel: "reversed",
+                      total: bullTotal,
+                    },
+                    {
+                      label: "bearish opening",
+                      bottomPct: bearContPct,
+                      topPct: bearRevPct,
+                      bottomLabel: "continued",
+                      topLabel: "reversed",
+                      total: bearTotal,
+                    },
+                  ]}
+                  legend={[
+                    { label: "% continued", colorClass: "bg-chart-bar-a" },
+                    { label: "% reversed", colorClass: "bg-chart-bar-b" },
+                  ]}
+                />
+              );
+            })}
           </div>
           <AITradingInsight
             mode="momentum"
@@ -473,25 +451,12 @@ const Index = () => {
               method: "Momentum Candle Continuation (MCC)",
               totalDays: momentumResult.totalDays,
               bodyRatioThreshold: momentumResult.bodyRatioThreshold,
-              currentTimeframe: tf,
-              bullishOpening: {
-                signals: stats.bullishSignals,
-                continued: stats.bullishContinued,
-                reversed: stats.bullishReversed,
-                continuationRate: Number(bullContPct.toFixed(1)),
-              },
-              bearishOpening: {
-                signals: stats.bearishSignals,
-                continued: stats.bearishContinued,
-                reversed: stats.bearishReversed,
-                continuationRate: Number(bearContPct.toFixed(1)),
-              },
-              neutralDays: stats.neutralDays,
+              tfStats: momentumResult.tfStats,
               lastDay: momentumResult.lastDay ? {
                 date: momentumResult.lastDay.date,
-                openingDirection: momentumResult.lastDay.timeframes.find(t => t.tf === tf)?.direction,
-                hasMomentum: momentumResult.lastDay.timeframes.find(t => t.tf === tf)?.hasMomentum,
-                continued: momentumResult.lastDay.timeframes.find(t => t.tf === tf)?.continued,
+                timeframes: momentumResult.lastDay.timeframes.map(t => ({
+                  tf: t.tf, direction: t.direction, hasMomentum: t.hasMomentum, continued: t.continued,
+                })),
               } : null,
             }}
           />
@@ -499,33 +464,63 @@ const Index = () => {
       );
     }
 
-    if (activeMode === "occ" && occResult) {
+    if (activeMode === "occ" && occRawBars) {
+      const SIZES: { size: import("@/lib/occ-analysis").OCCCandleSize; label: string }[] = [
+        { size: "5m", label: "5min opening candle" },
+        { size: "15m", label: "15min opening candle" },
+        { size: "30m", label: "30min opening candle" },
+        { size: "1h", label: "60min opening candle" },
+      ];
+      const results = SIZES.map(({ size, label }) => ({
+        size, label, res: analyzeOCC(occRawBars, occMaxDays, size, occWeekdays),
+      }));
       return (
         <div className="space-y-4">
-          <OCCDashboard
-            result={occResult}
-            symbol={symbol}
-            dateRange={formatDateRange(analysisMaxDays)}
-            weekdays={formatWeekdays(analysisWeekdays)}
-            candleSize={occCandleSize}
-            onCandleSizeChange={(size) => {
-              setOccCandleSize(size);
-              if (occRawBars) {
-                const a = analyzeOCC(occRawBars, occMaxDays, size, occWeekdays);
-                setOccResult(a);
-              }
-            }}
-          />
-          <AITradingInsight
-            mode="occ"
-            symbol={symbol}
-            analysisData={{
-              totalDays: occResult.totalDays,
-              candleSize: occResult.candleSize,
-              greenCandle: occResult.greenCandle,
-              redCandle: occResult.redCandle,
-            }}
-          />
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            {results.map(({ size, label, res }) => (
+              <ContinuationStackCard
+                key={size}
+                title={label}
+                subtitle={`${symbol} · 9:30am – 4:00pm · ${formatDateRange(analysisMaxDays)}`}
+                columns={[
+                  {
+                    label: "green candle",
+                    bottomPct: res.greenCandle.greenDayPct,
+                    topPct: res.greenCandle.redDayPct,
+                    bottomLabel: "green day",
+                    topLabel: "red day",
+                    total: res.greenCandle.total,
+                  },
+                  {
+                    label: "red candle",
+                    bottomPct: res.redCandle.greenDayPct,
+                    topPct: res.redCandle.redDayPct,
+                    bottomLabel: "green day",
+                    topLabel: "red day",
+                    total: res.redCandle.total,
+                  },
+                ]}
+                legend={[
+                  { label: "% green day", colorClass: "bg-chart-bar-a" },
+                  { label: "% red day", colorClass: "bg-chart-bar-b" },
+                ]}
+              />
+            ))}
+          </div>
+          {occResult && (
+            <AITradingInsight
+              mode="occ"
+              symbol={symbol}
+              analysisData={{
+                totalDays: occResult.totalDays,
+                allTimeframes: results.map(r => ({
+                  candleSize: r.size,
+                  greenCandle: r.res.greenCandle,
+                  redCandle: r.res.redCandle,
+                })),
+              }}
+            />
+          )}
         </div>
       );
     }
