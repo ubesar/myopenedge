@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import AITradingInsight from "@/components/AITradingInsight";
-import OCCDashboard from "@/components/OCCDashboard";
+import ContinuationStackCard from "@/components/ContinuationStackCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Navigate } from "react-router-dom";
 import { toast } from "sonner";
