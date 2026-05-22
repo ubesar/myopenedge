@@ -169,6 +169,7 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="globex-ib">IB: globex overnight</SelectItem>}
               {!isFree && <SelectItem value="london-ib">IB: london session</SelectItem>}
               {!isFree && <SelectItem value="momentum">momentum candle continuation (mcc)</SelectItem>}
+              {!isFree && <SelectItem value="mcc-window">mcc window (m15 · 9:30–10:30)</SelectItem>}
               <SelectItem value="occ">opening candle continuation</SelectItem>
               {!isFree && <SelectItem value="gapfill">gap fill statistics</SelectItem>}
               {!isFree && <SelectItem value="insidebar">inside bar</SelectItem>}
