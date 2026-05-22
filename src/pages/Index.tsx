@@ -257,6 +257,17 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setMomentumResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });
+        } else if (effectiveMode === "mcc-window") {
+          const a = analyzeMCCWindow(values as any, 60, effectiveMaxDays, parseFloat(bodyRatio), weekdays);
+          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setMccWindowResult(a);
+          addRun(effectiveMode, ticker, {
+            totalDays: a.totalDays,
+            bullishSignals: a.bullishSignals,
+            bullishContinued: a.bullishContinued,
+            bearishSignals: a.bearishSignals,
+            bearishContinued: a.bearishContinued,
+          });
         } else if (effectiveMode === "occ") {
           setOccRawBars(values as any);
           setOccMaxDays(effectiveMaxDays);
