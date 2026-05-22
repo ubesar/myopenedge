@@ -178,7 +178,7 @@ const ParameterPanel = ({
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}
 
-          {mode === "momentum" && (
+          {(mode === "momentum" || mode === "mcc-window") && (
             <>
               <p className="text-[11px] text-muted-foreground">opening candle body threshold</p>
               <Select value={bodyRatio} onValueChange={(v) => { setBodyRatio(v as MomentumBodyRatio); setSelectedTemplateId("custom"); }}>
