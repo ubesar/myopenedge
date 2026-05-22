@@ -18,6 +18,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
+import { analyzeMCCWindow, type MCCWindowResult } from "@/lib/mcc-window-analysis";
 import { analyzeOCC, type OCCResult } from "@/lib/occ-analysis";
 import { analyzeGapFill, type GapFillResult } from "@/lib/gapfill-analysis";
 import GapFillDashboard from "@/components/GapFillDashboard";
