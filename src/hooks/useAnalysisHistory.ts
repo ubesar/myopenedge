@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+
+// @ts-ignore - some tables not in generated types
+const sb: any = supabase as any;
 import { useAuth } from "@/contexts/AuthContext";
 
 export interface AnalysisRun {
@@ -45,7 +48,7 @@ export function useAnalysisHistory() {
 
   const deleteRun = useCallback(
     async (id: string) => {
-      await supabase.from("analysis_runs").delete().eq("id", id);
+      await sb.from("analysis_runs").delete().eq("id", id);
       setRuns((prev) => prev.filter((r) => r.id !== id));
     },
     []

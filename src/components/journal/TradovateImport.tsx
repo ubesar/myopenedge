@@ -3,6 +3,9 @@ import { Upload, FileText, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { parseTradovateCSV, type ParsedTrade } from "@/lib/tradovate-parser";
 import { supabase } from "@/integrations/supabase/client";
+
+// @ts-ignore - some tables not in generated types
+const sb: any = supabase as any;
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -112,7 +115,7 @@ const TradovateImport = ({ onImportComplete }: TradovateImportProps) => {
 
       if (newTrades.length === 0) {
         toast.info("Semua order sudah pernah di-import (orderId match). Tidak ada data baru.");
-        await supabase.from("import_batches").update({ status: "skipped", completed_at: new Date().toISOString() }).eq("id", batch.id);
+        await sb.from("import_batches").update({ status: "skipped", completed_at: new Date().toISOString() }).eq("id", batch.id);
         setParsed(null);
         setFileName("");
         setImporting(false);
@@ -142,7 +145,7 @@ const TradovateImport = ({ onImportComplete }: TradovateImportProps) => {
         order_ids: t.order_ids,
       }));
 
-      const { error: insertErr } = await supabase.from("trades").insert(rows);
+      const { error: insertErr } = await sb.from("trades").insert(rows);
       if (insertErr) throw insertErr;
 
       // 4. Update batch status
