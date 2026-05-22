@@ -53,6 +53,7 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [momentumResult, setMomentumResult] = useState<MomentumResult | null>(null);
+  const [mccWindowResult, setMccWindowResult] = useState<MCCWindowResult | null>(null);
   const [occResult, setOccResult] = useState<OCCResult | null>(null);
   const [gapFillResult, setGapFillResult] = useState<GapFillResult | null>(null);
   const [insideBarResult, setInsideBarResult] = useState<InsideBarResult | null>(null);
