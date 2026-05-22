@@ -477,6 +477,50 @@ const Index = () => {
       );
     }
 
+    if (activeMode === "mcc-window" && mccWindowResult) {
+      const r = mccWindowResult;
+      const bodyPct = `${Math.round(r.bodyRatioThreshold * 100)}%`;
+      const bullContPct = r.bullishSignals > 0 ? (r.bullishContinued / r.bullishSignals) * 100 : 0;
+      const bullRevPct = r.bullishSignals > 0 ? (r.bullishReversed / r.bullishSignals) * 100 : 0;
+      const bearContPct = r.bearishSignals > 0 ? (r.bearishContinued / r.bearishSignals) * 100 : 0;
+      const bearRevPct = r.bearishSignals > 0 ? (r.bearishReversed / r.bearishSignals) * 100 : 0;
+      return (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
+            <strong className="text-foreground">mcc window (m15 · 9:30–10:30)</strong> — memindai setiap candle m15 di dalam jendela ny open (9:30–10:30). jika sebuah candle memenuhi syarat momentum (body ≥ {bodyPct} dari range), kami catat sinyal dan periksa apakah sesi rth (16:00) menutup searah dengan candle tersebut.
+          </div>
+          <ContinuationStackCard
+            title="m15 momentum candle in 9:30 – 10:30 window"
+            subtitle={`${symbol} · body ≥ ${bodyPct} · ${formatDateRange(analysisMaxDays)} · ${r.totalDays} days scanned`}
+            columns={[
+              {
+                label: "bullish momentum",
+                bottomPct: bullContPct,
+                topPct: bullRevPct,
+                bottomLabel: "continued",
+                topLabel: "reversed",
+                total: r.bullishSignals,
+              },
+              {
+                label: "bearish momentum",
+                bottomPct: bearContPct,
+                topPct: bearRevPct,
+                bottomLabel: "continued",
+                topLabel: "reversed",
+                total: r.bearishSignals,
+              },
+            ]}
+            legend={[
+              { label: "% continued", colorClass: "bg-chart-bar-a" },
+              { label: "% reversed", colorClass: "bg-chart-bar-b" },
+            ]}
+          />
+        </div>
+      );
+    }
+
+
+
     if (activeMode === "occ" && occRawBars) {
       const SIZES: { size: import("@/lib/occ-analysis").OCCCandleSize; label: string }[] = [
         { size: "5m", label: "5min opening candle" },
