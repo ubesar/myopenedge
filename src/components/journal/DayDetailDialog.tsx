@@ -2,9 +2,6 @@ import { useMemo, useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Eye, Pencil, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-
-// @ts-ignore - some tables not in generated types
-const sb: any = supabase as any;
 import TradeDetailDialog from "./TradeDetailDialog";
 import { resolveTradeScreenshotUrl } from "@/lib/trade-screenshot-url";
 

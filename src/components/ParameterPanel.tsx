@@ -169,7 +169,6 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="globex-ib">IB: globex overnight</SelectItem>}
               {!isFree && <SelectItem value="london-ib">IB: london session</SelectItem>}
               {!isFree && <SelectItem value="momentum">momentum candle continuation (mcc)</SelectItem>}
-              {!isFree && <SelectItem value="mcc-window">mcc window (m15 · 9:30–10:30)</SelectItem>}
               <SelectItem value="occ">opening candle continuation</SelectItem>
               {!isFree && <SelectItem value="gapfill">gap fill statistics</SelectItem>}
               {!isFree && <SelectItem value="insidebar">inside bar</SelectItem>}
@@ -178,7 +177,7 @@ const ParameterPanel = ({
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}
 
-          {(mode === "momentum" || mode === "mcc-window") && (
+          {mode === "momentum" && (
             <>
               <p className="text-[11px] text-muted-foreground">opening candle body threshold</p>
               <Select value={bodyRatio} onValueChange={(v) => { setBodyRatio(v as MomentumBodyRatio); setSelectedTemplateId("custom"); }}>

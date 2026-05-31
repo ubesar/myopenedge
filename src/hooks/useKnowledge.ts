@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-
-// @ts-ignore - some tables not in generated types
-const sb: any = supabase as any;
 import { useAuth } from "@/contexts/AuthContext";
 
 export function useKnowledge() {

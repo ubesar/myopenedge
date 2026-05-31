@@ -18,7 +18,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 import { analyzeIB, type AnalysisResult } from "@/lib/ib-analysis";
 import { analyzeMomentum, type MomentumResult } from "@/lib/momentum-analysis";
-import { analyzeMCCWindow, type MCCWindowResult } from "@/lib/mcc-window-analysis";
 import { analyzeOCC, type OCCResult } from "@/lib/occ-analysis";
 import { analyzeGapFill, type GapFillResult } from "@/lib/gapfill-analysis";
 import GapFillDashboard from "@/components/GapFillDashboard";
@@ -53,7 +52,6 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [momentumResult, setMomentumResult] = useState<MomentumResult | null>(null);
-  const [mccWindowResult, setMccWindowResult] = useState<MCCWindowResult | null>(null);
   const [occResult, setOccResult] = useState<OCCResult | null>(null);
   const [gapFillResult, setGapFillResult] = useState<GapFillResult | null>(null);
   const [insideBarResult, setInsideBarResult] = useState<InsideBarResult | null>(null);
@@ -170,7 +168,7 @@ const Index = () => {
     }
 
     setLoading(true);
-    setResult(null); setMomentumResult(null); setMccWindowResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null);
+    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null);
     setSymbol(ticker); setActiveMode(effectiveMode); setAnalysisMaxDays(effectiveMaxDays); setAnalysisWeekdays(weekdays);
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
@@ -257,17 +255,6 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setMomentumResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });
-        } else if (effectiveMode === "mcc-window") {
-          const a = analyzeMCCWindow(values as any, 60, effectiveMaxDays, parseFloat(bodyRatio), weekdays);
-          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
-          setMccWindowResult(a);
-          addRun(effectiveMode, ticker, {
-            totalDays: a.totalDays,
-            bullishSignals: a.bullishSignals,
-            bullishContinued: a.bullishContinued,
-            bearishSignals: a.bearishSignals,
-            bearishContinued: a.bearishContinued,
-          });
         } else if (effectiveMode === "occ") {
           setOccRawBars(values as any);
           setOccMaxDays(effectiveMaxDays);
@@ -301,10 +288,10 @@ const Index = () => {
     }
   };
 
-  const hasResults = result || momentumResult || mccWindowResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult;
+  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult;
 
   const reportTitle = hasResults
-    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "mcc-window" ? "mcc window (m15 · 9:30–10:30) report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
+    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
     : "";
 
   const renderCharts = () => {
@@ -476,50 +463,6 @@ const Index = () => {
         </div>
       );
     }
-
-    if (activeMode === "mcc-window" && mccWindowResult) {
-      const r = mccWindowResult;
-      const bodyPct = `${Math.round(r.bodyRatioThreshold * 100)}%`;
-      const bullContPct = r.bullishSignals > 0 ? (r.bullishContinued / r.bullishSignals) * 100 : 0;
-      const bullRevPct = r.bullishSignals > 0 ? (r.bullishReversed / r.bullishSignals) * 100 : 0;
-      const bearContPct = r.bearishSignals > 0 ? (r.bearishContinued / r.bearishSignals) * 100 : 0;
-      const bearRevPct = r.bearishSignals > 0 ? (r.bearishReversed / r.bearishSignals) * 100 : 0;
-      return (
-        <div className="space-y-4">
-          <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
-            <strong className="text-foreground">mcc window (m15 · 9:30–10:30)</strong> — memindai setiap candle m15 di dalam jendela ny open (9:30–10:30). jika sebuah candle memenuhi syarat momentum (body ≥ {bodyPct} dari range), kami catat sinyal dan periksa apakah sesi rth (16:00) menutup searah dengan candle tersebut.
-          </div>
-          <ContinuationStackCard
-            title="m15 momentum candle in 9:30 – 10:30 window"
-            subtitle={`${symbol} · body ≥ ${bodyPct} · ${formatDateRange(analysisMaxDays)} · ${r.totalDays} days scanned`}
-            columns={[
-              {
-                label: "bullish momentum",
-                bottomPct: bullContPct,
-                topPct: bullRevPct,
-                bottomLabel: "continued",
-                topLabel: "reversed",
-                total: r.bullishSignals,
-              },
-              {
-                label: "bearish momentum",
-                bottomPct: bearContPct,
-                topPct: bearRevPct,
-                bottomLabel: "continued",
-                topLabel: "reversed",
-                total: r.bearishSignals,
-              },
-            ]}
-            legend={[
-              { label: "% continued", colorClass: "bg-chart-bar-a" },
-              { label: "% reversed", colorClass: "bg-chart-bar-b" },
-            ]}
-          />
-        </div>
-      );
-    }
-
-
 
     if (activeMode === "occ" && occRawBars) {
       const SIZES: { size: import("@/lib/occ-analysis").OCCCandleSize; label: string }[] = [

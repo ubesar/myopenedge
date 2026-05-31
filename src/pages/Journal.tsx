@@ -2,9 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-
-// @ts-ignore - some tables not in generated types
-const sb: any = supabase as any;
 import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import JournalStatsCards from "@/components/journal/JournalStatsCards";

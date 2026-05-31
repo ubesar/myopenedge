@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-
-// @ts-ignore - some tables not in generated types
-const sb: any = supabase as any;
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -93,7 +90,7 @@ const TradingDashboard = ({ user, onLock }: {user: User;onLock?: () => void;}) =
       toast.error("Asset name is required");
       return;
     }
-    const { error } = await sb.from("ea_control").insert({
+    const { error } = await supabase.from("ea_control").insert({
       user_id: user.id,
       magic_number: magic,
       asset_name: newAsset.trim().toUpperCase(),
@@ -112,7 +109,7 @@ const TradingDashboard = ({ user, onLock }: {user: User;onLock?: () => void;}) =
   };
 
   const deleteMagicNumber = async (magic: number) => {
-    await sb.from("ea_control").delete().eq("user_id", user.id).eq("magic_number", magic);
+    await supabase.from("ea_control").delete().eq("user_id", user.id).eq("magic_number", magic);
     fetchControls();
     toast.success("Instrument removed");
   };
@@ -121,14 +118,14 @@ const TradingDashboard = ({ user, onLock }: {user: User;onLock?: () => void;}) =
     if (isActive) {
       const otherIds = eaControls.filter((c) => c.id !== id && c.is_active).map((c) => c.id);
       if (otherIds.length > 0) {
-        await sb.from("ea_control").update({ is_active: false }).in("id", otherIds);
+        await supabase.from("ea_control").update({ is_active: false }).in("id", otherIds);
       }
-      await sb.from("ea_control").update({ is_active: true }).eq("id", id);
+      await supabase.from("ea_control").update({ is_active: true }).eq("id", id);
       setEaControls((prev) =>
       prev.map((c) => c.id === id ? { ...c, is_active: true } : { ...c, is_active: false })
       );
     } else {
-      await sb.from("ea_control").update({ is_active: false }).eq("id", id);
+      await supabase.from("ea_control").update({ is_active: false }).eq("id", id);
       setEaControls((prev) =>
       prev.map((c) => c.id === id ? { ...c, is_active: false } : c)
       );

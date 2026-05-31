@@ -1,8 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-
-// @ts-ignore - some tables not in generated types
-const sb: any = supabase as any;
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, KeyRound, Trash2 } from "lucide-react";
 import { toast } from "sonner";
