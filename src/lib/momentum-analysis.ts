@@ -11,6 +11,12 @@ interface BarData {
   close: string;
 }
 
+// Legacy type kept for backwards compat with old chart components
+export interface MomentumSignal {
+  type: "bullish" | "bearish";
+  times: [string, string];
+}
+
 export type TradeDirection = "bullish" | "bearish";
 export type TradeOutcome = "win" | "loss" | "open";
 
