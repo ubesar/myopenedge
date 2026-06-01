@@ -13,7 +13,7 @@ export type MomentumBodyRatio = "0.50" | "0.60" | "0.70" | "0.80";
 export type OCCBodyRatio = "0.40" | "0.50" | "0.60";
 
 interface ParameterPanelProps {
-  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio, weekdays: number[]) => void;
+  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio, weekdays: number[], momentumSessionEnd: number) => void;
   loading: boolean;
   isFree?: boolean;
   occTimeframe?: OCCTimeframe;
