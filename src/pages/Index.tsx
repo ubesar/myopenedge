@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import AITradingInsight from "@/components/AITradingInsight";
 import ContinuationStackCard from "@/components/ContinuationStackCard";
+import MomentumResultCard from "@/components/MomentumResultCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Navigate } from "react-router-dom";
 import { toast } from "sonner";
