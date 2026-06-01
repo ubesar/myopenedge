@@ -61,6 +61,7 @@ const ParameterPanel = ({
   const [bodyRatio, setBodyRatio] = useState<MomentumBodyRatio>("0.70");
   const [occBodyRatio, setOccBodyRatio] = useState<OCCBodyRatio>("0.50");
   const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
+  const [momentumSessionEnd, setMomentumSessionEnd] = useState<string>("780"); // 13:00
 
   const [selectedTemplateId, setSelectedTemplateId] = useState("custom");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
