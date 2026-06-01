@@ -252,10 +252,10 @@ const Index = () => {
           setResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
         } else if (effectiveMode === "momentum") {
-          const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, parseFloat(bodyRatio), weekdays);
+          const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, parseFloat(bodyRatio), weekdays, momentumSessionEnd);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setMomentumResult(a);
-          addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });
+          addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, sessionEndMinutes: a.sessionEndMinutes, fullSlWinRate: a.fullSl.tp50.winRate, halfSlWinRate: a.halfSl.tp50.winRate });
         } else if (effectiveMode === "occ") {
           setOccRawBars(values as any);
           setOccMaxDays(effectiveMaxDays);
