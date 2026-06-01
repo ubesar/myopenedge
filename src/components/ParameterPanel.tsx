@@ -180,19 +180,21 @@ const ParameterPanel = ({
 
           {mode === "momentum" && (
             <>
-              <p className="text-[11px] text-muted-foreground">opening candle body threshold</p>
-              <Select value={bodyRatio} onValueChange={(v) => { setBodyRatio(v as MomentumBodyRatio); setSelectedTemplateId("custom"); }}>
+              <p className="text-[11px] text-muted-foreground">scan session end (ny)</p>
+              <Select value={momentumSessionEnd} onValueChange={(v) => { setMomentumSessionEnd(v); setSelectedTemplateId("custom"); }}>
                 <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="0.50">body ≥ 50% (loose)</SelectItem>
-                  <SelectItem value="0.60">body ≥ 60%</SelectItem>
-                  <SelectItem value="0.70">body ≥ 70% (recommended)</SelectItem>
-                  <SelectItem value="0.80">body ≥ 80% (strict)</SelectItem>
+                  <SelectItem value="660">11:00</SelectItem>
+                  <SelectItem value="690">11:30</SelectItem>
+                  <SelectItem value="720">12:00</SelectItem>
+                  <SelectItem value="750">12:30</SelectItem>
+                  <SelectItem value="780">13:00 (default)</SelectItem>
+                  <SelectItem value="840">14:00</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-[10px] text-muted-foreground">strong momentum = large body, small wicks. days with weak opening candles are skipped.</p>
+              <p className="text-[10px] text-muted-foreground">m15 momentum candles scanned from 09:30 ny up to this time. body threshold fixed at 70% (prd v3). walk-forward to 16:00 close.</p>
             </>
           )}
 
