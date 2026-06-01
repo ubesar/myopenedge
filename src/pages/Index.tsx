@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import AITradingInsight from "@/components/AITradingInsight";
 import ContinuationStackCard from "@/components/ContinuationStackCard";
+import MomentumResultCard from "@/components/MomentumResultCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Navigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -153,7 +154,7 @@ const Index = () => {
     return { values: deduped };
   };
 
-  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50", weekdays: number[] = [1,2,3,4,5]) => {
+  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50", weekdays: number[] = [1,2,3,4,5], momentumSessionEnd: number = 13 * 60) => {
     let effectiveIbWindow = ibWindow;
     let effectiveMaxDays = maxDays;
     let effectiveMode = mode;
@@ -251,10 +252,10 @@ const Index = () => {
           setResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
         } else if (effectiveMode === "momentum") {
-          const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, parseFloat(bodyRatio), weekdays);
+          const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, parseFloat(bodyRatio), weekdays, momentumSessionEnd);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setMomentumResult(a);
-          addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });
+          addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, sessionEndMinutes: a.sessionEndMinutes, fullSlWinRate: a.fullSl.tp50.winRate, halfSlWinRate: a.halfSl.tp50.winRate });
         } else if (effectiveMode === "occ") {
           setOccRawBars(values as any);
           setOccMaxDays(effectiveMaxDays);
@@ -391,73 +392,64 @@ const Index = () => {
     }
 
     if (activeMode === "momentum" && momentumResult) {
-      const bodyPct = `${Math.round(momentumResult.bodyRatioThreshold * 100)}%`;
-      const TFS: { tf: import("@/components/ParameterPanel").OCCTimeframe; label: string }[] = [
-        { tf: "M5", label: "5min opening candle" },
-        { tf: "M15", label: "15min opening candle" },
-        { tf: "M30", label: "30min opening candle" },
-        { tf: "H1", label: "60min opening candle" },
-      ];
+      const sessionEndH = Math.floor(momentumResult.sessionEndMinutes / 60);
+      const sessionEndM = momentumResult.sessionEndMinutes % 60;
+      const sessionEndLabel = `${String(sessionEndH).padStart(2, "0")}:${String(sessionEndM).padStart(2, "0")}`;
+      const bodyPct = `${Math.round(momentumResult.bodyThreshold * 100)}%`;
+      const subtitle = `${symbol} · m15 · body ≥ ${bodyPct} · 09:30 – ${sessionEndLabel} ny · ${formatDateRange(analysisMaxDays)}`;
+      const full = momentumResult.fullSl.tp50;
+      const half = momentumResult.halfSl.tp50;
+      const signalPct = momentumResult.totalDays > 0 ? (momentumResult.daysWithSignal / momentumResult.totalDays) * 100 : 0;
       return (
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
-            <strong className="text-foreground">momentum candle continuation (mcc)</strong> — measures the probability that the session closes in the same direction as the ny opening candle, only when that candle shows valid momentum (body ≥ {bodyPct} of total range). days without momentum on the opening candle are treated as neutral / no-signal.
+            <strong className="text-foreground">momentum candle analysis</strong> — scans m15 candles (09:30 – {sessionEndLabel} ny) with body ≥ {bodyPct} of range, then walks forward to market close to measure tp 50% hit rate against two stop variants. anti-overlap: next trade only after prior gate (sl full + tp 100%) resolves.
           </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">total trades</p>
+              <p className="text-[18px] font-semibold text-foreground">{momentumResult.totalTrades}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">days w/ signal</p>
+              <p className="text-[18px] font-semibold text-foreground">{momentumResult.daysWithSignal}/{momentumResult.totalDays} <span className="text-[11px] text-muted-foreground">({signalPct.toFixed(0)}%)</span></p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate · sl full</p>
+              <p className="text-[18px] font-semibold text-foreground">{full.winRate.toFixed(1)}%</p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate · sl half</p>
+              <p className="text-[18px] font-semibold text-foreground">{half.winRate.toFixed(1)}%</p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            {TFS.map(({ tf, label }) => {
-              const stats = momentumResult.tfStats[tf];
-              if (!stats) return null;
-              const bullTotal = stats.bullishSignals;
-              const bearTotal = stats.bearishSignals;
-              const bullContPct = bullTotal > 0 ? (stats.bullishContinued / bullTotal) * 100 : 0;
-              const bullRevPct = bullTotal > 0 ? (stats.bullishReversed / bullTotal) * 100 : 0;
-              const bearContPct = bearTotal > 0 ? (stats.bearishContinued / bearTotal) * 100 : 0;
-              const bearRevPct = bearTotal > 0 ? (stats.bearishReversed / bearTotal) * 100 : 0;
-              return (
-                <ContinuationStackCard
-                  key={tf}
-                  title={label}
-                  subtitle={`${symbol} · mcc · body ≥ ${bodyPct} · ${formatDateRange(analysisMaxDays)}`}
-                  columns={[
-                    {
-                      label: "bullish opening",
-                      bottomPct: bullContPct,
-                      topPct: bullRevPct,
-                      bottomLabel: "continued",
-                      topLabel: "reversed",
-                      total: bullTotal,
-                    },
-                    {
-                      label: "bearish opening",
-                      bottomPct: bearContPct,
-                      topPct: bearRevPct,
-                      bottomLabel: "continued",
-                      topLabel: "reversed",
-                      total: bearTotal,
-                    },
-                  ]}
-                  legend={[
-                    { label: "% continued", colorClass: "bg-chart-bar-a" },
-                    { label: "% reversed", colorClass: "bg-chart-bar-b" },
-                  ]}
-                />
-              );
-            })}
+            <MomentumResultCard
+              title="sl full (ujung candle) · tp 50%"
+              subtitle={subtitle}
+              stats={full}
+            />
+            <MomentumResultCard
+              title="sl half (50% candle) · tp 50%"
+              subtitle={subtitle}
+              stats={half}
+            />
           </div>
+
           <AITradingInsight
             mode="momentum"
             symbol={symbol}
             analysisData={{
-              method: "Momentum Candle Continuation (MCC)",
+              method: "Momentum Candle Analysis (PRD v3)",
               totalDays: momentumResult.totalDays,
-              bodyRatioThreshold: momentumResult.bodyRatioThreshold,
-              tfStats: momentumResult.tfStats,
-              lastDay: momentumResult.lastDay ? {
-                date: momentumResult.lastDay.date,
-                timeframes: momentumResult.lastDay.timeframes.map(t => ({
-                  tf: t.tf, direction: t.direction, hasMomentum: t.hasMomentum, continued: t.continued,
-                })),
-              } : null,
+              daysWithSignal: momentumResult.daysWithSignal,
+              sessionEndMinutes: momentumResult.sessionEndMinutes,
+              bodyThreshold: momentumResult.bodyThreshold,
+              totalTrades: momentumResult.totalTrades,
+              fullSl: momentumResult.fullSl,
+              halfSl: momentumResult.halfSl,
             }}
           />
         </div>
