@@ -125,6 +125,43 @@ function resolveOutcome(
   return { outcome: "open", resolvedIdx: bars.length - 1 };
 }
 
+/**
+ * Stop-entry variant: trade only activates when price trades through `entry`.
+ * Once triggered, evaluate SL/TP on the same and subsequent bars.
+ * If never triggered before session end, outcome = "open".
+ */
+function resolveStopEntry(
+  bars: CandleBar[],
+  startIdx: number,
+  direction: TradeDirection,
+  entry: number,
+  stop: number,
+  target: number,
+): { outcome: TradeOutcome; resolvedIdx: number } {
+  let triggered = false;
+  for (let i = startIdx + 1; i < bars.length; i++) {
+    const b = bars[i];
+    if (!triggered) {
+      const trig = direction === "bullish" ? b.high >= entry : b.low <= entry;
+      if (!trig) continue;
+      triggered = true;
+    }
+    let hitStop: boolean;
+    let hitTarget: boolean;
+    if (direction === "bullish") {
+      hitStop = b.low <= stop;
+      hitTarget = b.high >= target;
+    } else {
+      hitStop = b.high >= stop;
+      hitTarget = b.low <= target;
+    }
+    if (hitStop && hitTarget) return { outcome: "loss", resolvedIdx: i };
+    if (hitTarget) return { outcome: "win", resolvedIdx: i };
+    if (hitStop) return { outcome: "loss", resolvedIdx: i };
+  }
+  return { outcome: "open", resolvedIdx: bars.length - 1 };
+}
+
 export function analyzeMomentum(
   bars: BarData[],
   _ibWindowMinutes: number = 30,
@@ -190,32 +227,38 @@ export function analyzeMomentum(
       if (body / range < BODY_THRESHOLD) continue;
 
       const direction: TradeDirection = c.close > c.open ? "bullish" : "bearish";
-      const entry = c.close;
+
+      // Variant 1 — SL Full: immediate entry at close, SL beyond candle, TP = 50% of range
+      const entryFull = c.close;
       const slFull = direction === "bullish" ? c.low : c.high;
-      const slHalf = direction === "bullish" ? entry - range * 0.5 : entry + range * 0.5;
-      const tp50 = direction === "bullish" ? entry + range * 0.5 : entry - range * 0.5;
-      const tp100Gate = direction === "bullish" ? entry + range : entry - range;
+      const tpFull = direction === "bullish" ? entryFull + range * 0.5 : entryFull - range * 0.5;
 
-      const full50 = resolveOutcome(m15, i, direction, slFull, tp50);
-      const half50 = resolveOutcome(m15, i, direction, slHalf, tp50);
-      const gate = resolveOutcome(m15, i, direction, slFull, tp100Gate);
+      // Variant 2 — SL Half: pending stop entry beyond candle, SL at candle midpoint, TP = 50% of range from entry
+      const entryHalf = direction === "bullish" ? c.high : c.low;
+      const midpoint = (c.high + c.low) / 2;
+      const slHalf = midpoint;
+      const tpHalf = direction === "bullish" ? entryHalf + range * 0.5 : entryHalf - range * 0.5;
 
+      const full = resolveOutcome(m15, i, direction, slFull, tpFull);
+      const half = resolveStopEntry(m15, i, direction, entryHalf, slHalf, tpHalf);
+
+      // Gate next signal until variant 1 (always-active) resolves (TP or SL hit)
       trades.push({
         date,
         entryTime: c.time,
         direction,
-        entry,
+        entry: entryFull,
         range,
         slFull,
         slHalf,
-        tp50,
-        fullSl_tp50: full50.outcome,
-        halfSl_tp50: half50.outcome,
-        resolvedAt: gate.resolvedIdx,
+        tp50: tpFull,
+        fullSl_tp50: full.outcome,
+        halfSl_tp50: half.outcome,
+        resolvedAt: full.resolvedIdx,
       });
 
       signalsToday++;
-      gateUntil = gate.resolvedIdx;
+      gateUntil = full.resolvedIdx;
     }
 
     if (signalsToday > 0) daysWithSignal++;
