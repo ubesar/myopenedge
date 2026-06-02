@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import AITradingInsight from "@/components/AITradingInsight";
 import ContinuationStackCard from "@/components/ContinuationStackCard";
-import MomentumCandleChart from "@/components/MomentumCandleChart";
 import MomentumResultCard from "@/components/MomentumResultCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Navigate } from "react-router-dom";
@@ -63,7 +62,6 @@ const Index = () => {
   const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
   const [occMaxDays, setOccMaxDays] = useState<number>(0);
   const [occWeekdays, setOccWeekdays] = useState<number[]>([1,2,3,4,5]);
-  const [momentumRawBars, setMomentumRawBars] = useState<any[] | null>(null);
   const [symbol, setSymbol] = useState("");
   const [activeMode, setActiveMode] = useState<AnalysisMode>("ib");
   const [selectedRunId, setSelectedRunId] = useState<string | undefined>();
@@ -257,7 +255,6 @@ const Index = () => {
           const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, parseFloat(bodyRatio), weekdays, momentumSessionEnd);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setMomentumResult(a);
-          setMomentumRawBars(values as any);
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, sessionEndMinutes: a.sessionEndMinutes, fullSlWinRate: a.fullSl.tp50.winRate, halfSlWinRate: a.halfSl.tp50.winRate });
         } else if (effectiveMode === "occ") {
           setOccRawBars(values as any);
@@ -455,14 +452,6 @@ const Index = () => {
               halfSl: momentumResult.halfSl,
             }}
           />
-
-          {momentumRawBars && (
-            <MomentumCandleChart
-              bars={momentumRawBars}
-              trades={momentumResult.trades}
-              symbol={symbol}
-            />
-          )}
         </div>
       );
     }
