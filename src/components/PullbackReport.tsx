@@ -153,8 +153,8 @@ const PullbackReport = ({ result, symbol, dateRange, bodyThresholdPct }: Props) 
   const meta = `m15 · body ≥ ${bodyPct}% · 09:30 – ${endH}:${endM} ny · ${dateRange}`;
 
   // expectancy (using overall side)
-  const exp1 = expectancy(result.overall, 1); // RR 1:1
-  const exp2 = expectancy(result.overall, result.params.tp2Ratio / result.params.tp1Ratio);
+  const exp1 = expectancy(result.overall.tp1, 1); // RR 1:1
+  const exp2 = expectancy(result.overall.tp2, result.params.tp2Ratio / result.params.tp1Ratio);
 
   const daysWithSignal = new Set(result.trades.map(t => t.date)).size;
   const dayPct = result.totalDays > 0 ? (daysWithSignal / result.totalDays) * 100 : 0;
