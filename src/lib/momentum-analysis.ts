@@ -28,11 +28,13 @@ export interface MomentumTrade {
   range: number;
   slFull: number;
   slHalf: number;
+  pullbackEntry: number;
   tp50: number;
-  // Outcomes per SL variant against TP 50%
+  // Outcomes per variant (same TP price level as variant 1)
   fullSl_tp50: TradeOutcome;
   halfSl_tp50: TradeOutcome;
-  resolvedAt: number; // index of bar that resolved gating (SL full + TP100)
+  pullback_tp50: TradeOutcome;
+  resolvedAt: number;
 }
 
 export interface DirStats {
