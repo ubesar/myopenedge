@@ -65,6 +65,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
             {!isFree && <SelectItem value="gapfill">Gap Fill Statistics</SelectItem>}
             {!isFree && <SelectItem value="insidebar">Inside Bar</SelectItem>}
             {!isFree && <SelectItem value="outsideday">Outside Day</SelectItem>}
+            {!isFree && <SelectItem value="pullback">Pullback 50%</SelectItem>}
           </SelectContent>
         </Select>
         {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for more analysis types</p>}
