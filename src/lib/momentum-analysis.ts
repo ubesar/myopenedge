@@ -126,23 +126,23 @@ function resolveOutcome(
 }
 
 /**
- * Stop-entry variant: trade only activates when price trades through `entry`.
+ * Limit-entry variant: trade activates only when price pulls back through `entry`.
+ * Bullish: trigger when bar.low <= entry. Bearish: trigger when bar.high >= entry.
  * Once triggered, evaluate SL/TP on the same and subsequent bars.
- * If never triggered before session end, outcome = "open".
  */
-function resolveStopEntry(
+function resolveLimitEntry(
   bars: CandleBar[],
   startIdx: number,
   direction: TradeDirection,
   entry: number,
   stop: number,
   target: number,
-): { outcome: TradeOutcome; resolvedIdx: number } {
+): { outcome: TradeOutcome; resolvedIdx: number; triggered: boolean } {
   let triggered = false;
   for (let i = startIdx + 1; i < bars.length; i++) {
     const b = bars[i];
     if (!triggered) {
-      const trig = direction === "bullish" ? b.high >= entry : b.low <= entry;
+      const trig = direction === "bullish" ? b.low <= entry : b.high >= entry;
       if (!trig) continue;
       triggered = true;
     }
@@ -155,11 +155,11 @@ function resolveStopEntry(
       hitStop = b.high >= stop;
       hitTarget = b.low <= target;
     }
-    if (hitStop && hitTarget) return { outcome: "loss", resolvedIdx: i };
-    if (hitTarget) return { outcome: "win", resolvedIdx: i };
-    if (hitStop) return { outcome: "loss", resolvedIdx: i };
+    if (hitStop && hitTarget) return { outcome: "loss", resolvedIdx: i, triggered };
+    if (hitTarget) return { outcome: "win", resolvedIdx: i, triggered };
+    if (hitStop) return { outcome: "loss", resolvedIdx: i, triggered };
   }
-  return { outcome: "open", resolvedIdx: bars.length - 1 };
+  return { outcome: "open", resolvedIdx: bars.length - 1, triggered };
 }
 
 export function analyzeMomentum(
