@@ -2,7 +2,10 @@ import { useState, useRef } from "react";
 import { Upload, FileText, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { parseTradovateCSV, type ParsedTrade } from "@/lib/tradovate-parser";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase as _supaClient } from "@/integrations/supabase/client";
+// @ts-ignore - some tables not in generated types
+const supabase: any = _supaClient as any;
+
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 

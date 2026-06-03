@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import AITradingInsight from "@/components/AITradingInsight";
 import ContinuationStackCard from "@/components/ContinuationStackCard";
-import MomentumResultCard from "@/components/MomentumResultCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Navigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -26,6 +25,7 @@ import { analyzeInsideBar, type InsideBarResult } from "@/lib/insidebar-analysis
 import { analyzeOutsideDay, type OutsideDayResult } from "@/lib/outsideday-analysis";
 import { analyzeGlobexIB, type GlobexIBResult } from "@/lib/globex-ib-analysis";
 import { analyzeLondonIB, type LondonIBResult } from "@/lib/london-ib-analysis";
+import { analyzePullback, type PullbackResult } from "@/lib/pullback-analysis";
 import InsideBarReport from "@/components/InsideBarReport";
 import OutsideDayReport from "@/components/OutsideDayReport";
 import GlobexIBDashboard from "@/components/GlobexIBDashboard";
@@ -59,6 +59,7 @@ const Index = () => {
   const [outsideDayResult, setOutsideDayResult] = useState<OutsideDayResult | null>(null);
   const [globexIBResult, setGlobexIBResult] = useState<GlobexIBResult | null>(null);
   const [londonIBResult, setLondonIBResult] = useState<LondonIBResult | null>(null);
+  const [pullbackResult, setPullbackResult] = useState<PullbackResult | null>(null);
   const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
   const [occMaxDays, setOccMaxDays] = useState<number>(0);
   const [occWeekdays, setOccWeekdays] = useState<number[]>([1,2,3,4,5]);
@@ -154,7 +155,7 @@ const Index = () => {
     return { values: deduped };
   };
 
-  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50", weekdays: number[] = [1,2,3,4,5], momentumSessionEnd: number = 13 * 60) => {
+  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50", weekdays: number[] = [1,2,3,4,5]) => {
     let effectiveIbWindow = ibWindow;
     let effectiveMaxDays = maxDays;
     let effectiveMode = mode;
@@ -169,7 +170,7 @@ const Index = () => {
     }
 
     setLoading(true);
-    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null);
+    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null); setPullbackResult(null);
     setSymbol(ticker); setActiveMode(effectiveMode); setAnalysisMaxDays(effectiveMaxDays); setAnalysisWeekdays(weekdays);
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
@@ -252,10 +253,10 @@ const Index = () => {
           setResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
         } else if (effectiveMode === "momentum") {
-          const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, parseFloat(bodyRatio), weekdays, momentumSessionEnd);
+          const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, parseFloat(bodyRatio), weekdays);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setMomentumResult(a);
-          addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, sessionEndMinutes: a.sessionEndMinutes, fullSlWinRate: a.fullSl.tp50.winRate, halfSlWinRate: a.halfSl.tp50.winRate });
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });
         } else if (effectiveMode === "occ") {
           setOccRawBars(values as any);
           setOccMaxDays(effectiveMaxDays);
@@ -279,6 +280,11 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setOutsideDayResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, outsidePct: a.outsidePct, bullishFilledPct: a.bullish.filledGapPct, bearishFilledPct: a.bearish.filledGapPct });
+        } else if (effectiveMode === "pullback") {
+          const a = analyzePullback(values as any, { maxDays: effectiveMaxDays, weekdays });
+          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setPullbackResult(a);
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, totalTrades: a.totalTrades, overall: a.overall });
         }
       }
 
@@ -289,10 +295,10 @@ const Index = () => {
     }
   };
 
-  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult;
+  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullbackResult;
 
   const reportTitle = hasResults
-    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
+    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : activeMode === "pullback" ? "pullback 50% strategy report" : "gap fill statistics report"}`
     : "";
 
   const renderCharts = () => {
@@ -392,75 +398,73 @@ const Index = () => {
     }
 
     if (activeMode === "momentum" && momentumResult) {
-      const sessionEndH = Math.floor(momentumResult.sessionEndMinutes / 60);
-      const sessionEndM = momentumResult.sessionEndMinutes % 60;
-      const sessionEndLabel = `${String(sessionEndH).padStart(2, "0")}:${String(sessionEndM).padStart(2, "0")}`;
-      const bodyPct = `${Math.round(momentumResult.bodyThreshold * 100)}%`;
-      const subtitle = `${symbol} · m15 · body ≥ ${bodyPct} · 09:30 – ${sessionEndLabel} ny · ${formatDateRange(analysisMaxDays)}`;
-      const full = momentumResult.fullSl.tp50;
-      const half = momentumResult.halfSl.tp50;
-      const pullback = momentumResult.pullback.tp50;
-      const signalPct = momentumResult.totalDays > 0 ? (momentumResult.daysWithSignal / momentumResult.totalDays) * 100 : 0;
+      const bodyPct = `${Math.round(momentumResult.bodyRatioThreshold * 100)}%`;
+      const TFS: { tf: import("@/components/ParameterPanel").OCCTimeframe; label: string }[] = [
+        { tf: "M5", label: "5min opening candle" },
+        { tf: "M15", label: "15min opening candle" },
+        { tf: "M30", label: "30min opening candle" },
+        { tf: "H1", label: "60min opening candle" },
+      ];
       return (
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
-            <strong className="text-foreground">momentum candle analysis</strong> — scans m15 candles (09:30 – {sessionEndLabel} ny) with body ≥ {bodyPct} of range, then walks forward to market close to measure tp 50% hit rate against three entry variants (sl full, sl half, pullback 50%). anti-overlap: next setup only after all variants resolve.
+            <strong className="text-foreground">momentum candle continuation (mcc)</strong> — measures the probability that the session closes in the same direction as the ny opening candle, only when that candle shows valid momentum (body ≥ {bodyPct} of total range). days without momentum on the opening candle are treated as neutral / no-signal.
           </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">total trades</p>
-              <p className="text-[18px] font-semibold text-foreground">{momentumResult.totalTrades}</p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">days w/ signal</p>
-              <p className="text-[18px] font-semibold text-foreground">{momentumResult.daysWithSignal}/{momentumResult.totalDays} <span className="text-[11px] text-muted-foreground">({signalPct.toFixed(0)}%)</span></p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate · sl full</p>
-              <p className="text-[18px] font-semibold text-foreground">{full.winRate.toFixed(1)}%</p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate · sl half</p>
-              <p className="text-[18px] font-semibold text-foreground">{half.winRate.toFixed(1)}%</p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate · pullback</p>
-              <p className="text-[18px] font-semibold text-foreground">{pullback.winRate.toFixed(1)}%</p>
-            </div>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            {TFS.map(({ tf, label }) => {
+              const stats = momentumResult.tfStats[tf];
+              if (!stats) return null;
+              const bullTotal = stats.bullishSignals;
+              const bearTotal = stats.bearishSignals;
+              const bullContPct = bullTotal > 0 ? (stats.bullishContinued / bullTotal) * 100 : 0;
+              const bullRevPct = bullTotal > 0 ? (stats.bullishReversed / bullTotal) * 100 : 0;
+              const bearContPct = bearTotal > 0 ? (stats.bearishContinued / bearTotal) * 100 : 0;
+              const bearRevPct = bearTotal > 0 ? (stats.bearishReversed / bearTotal) * 100 : 0;
+              return (
+                <ContinuationStackCard
+                  key={tf}
+                  title={label}
+                  subtitle={`${symbol} · mcc · body ≥ ${bodyPct} · ${formatDateRange(analysisMaxDays)}`}
+                  columns={[
+                    {
+                      label: "bullish opening",
+                      bottomPct: bullContPct,
+                      topPct: bullRevPct,
+                      bottomLabel: "continued",
+                      topLabel: "reversed",
+                      total: bullTotal,
+                    },
+                    {
+                      label: "bearish opening",
+                      bottomPct: bearContPct,
+                      topPct: bearRevPct,
+                      bottomLabel: "continued",
+                      topLabel: "reversed",
+                      total: bearTotal,
+                    },
+                  ]}
+                  legend={[
+                    { label: "% continued", colorClass: "bg-chart-bar-a" },
+                    { label: "% reversed", colorClass: "bg-chart-bar-b" },
+                  ]}
+                />
+              );
+            })}
           </div>
-
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-            <MomentumResultCard
-              title="sl full (ujung candle) · tp 50%"
-              subtitle={subtitle}
-              stats={full}
-            />
-            <MomentumResultCard
-              title="sl half (50% candle) · tp 50%"
-              subtitle={subtitle}
-              stats={half}
-            />
-            <MomentumResultCard
-              title="pullback 50% · sl full · rr 1:2"
-              subtitle={subtitle}
-              stats={pullback}
-            />
-          </div>
-
           <AITradingInsight
             mode="momentum"
             symbol={symbol}
             analysisData={{
-              method: "Momentum Candle Analysis (PRD v3)",
+              method: "Momentum Candle Continuation (MCC)",
               totalDays: momentumResult.totalDays,
-              daysWithSignal: momentumResult.daysWithSignal,
-              sessionEndMinutes: momentumResult.sessionEndMinutes,
-              bodyThreshold: momentumResult.bodyThreshold,
-              totalTrades: momentumResult.totalTrades,
-              fullSl: momentumResult.fullSl,
-              halfSl: momentumResult.halfSl,
-              pullback: momentumResult.pullback,
+              bodyRatioThreshold: momentumResult.bodyRatioThreshold,
+              tfStats: momentumResult.tfStats,
+              lastDay: momentumResult.lastDay ? {
+                date: momentumResult.lastDay.date,
+                timeframes: momentumResult.lastDay.timeframes.map(t => ({
+                  tf: t.tf, direction: t.direction, hasMomentum: t.hasMomentum, continued: t.continued,
+                })),
+              } : null,
             }}
           />
         </div>
@@ -624,6 +628,86 @@ const Index = () => {
           dateRange={formatDateRange(analysisMaxDays)}
           weekdays={formatWeekdays(analysisWeekdays)}
         />
+      );
+    }
+
+    if (activeMode === "pullback" && pullbackResult) {
+      const renderSide = (label: string, side: { tp1: any; tp2: any }) => (
+        <div className="rounded-lg border border-border bg-card p-4 space-y-2">
+          <p className="text-[12px] uppercase tracking-wide text-muted-foreground">{label}</p>
+          {(["tp1", "tp2"] as const).map((k) => {
+            const s = side[k];
+            return (
+              <div key={k} className="flex items-center justify-between text-[13px]">
+                <span className="text-muted-foreground">{k === "tp1" ? "TP1 (RR 1:1)" : "TP2 (RR 1:2)"}</span>
+                <span className="text-foreground tabular-nums">
+                  {s.wins}W · {s.losses}L · {s.open}O · <span className="text-primary font-medium">{s.winRate.toFixed(1)}%</span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      );
+      return (
+        <div className="space-y-4">
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <p className="text-[13px] text-foreground font-medium lowercase">pullback 50% strategy</p>
+                <p className="text-[11px] text-muted-foreground lowercase">
+                  body ≥ {(pullbackResult.params.bodyThreshold * 100).toFixed(0)}% · pullback {(pullbackResult.params.pullbackLevel * 100).toFixed(0)}% · session end {Math.floor(pullbackResult.params.sessionEndMinutes / 60)}:{String(pullbackResult.params.sessionEndMinutes % 60).padStart(2, "0")}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[13px] text-foreground tabular-nums">{pullbackResult.totalTrades} trades · {pullbackResult.totalDays} days</p>
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {renderSide("overall", pullbackResult.overall)}
+            {renderSide("bullish", pullbackResult.bullish)}
+            {renderSide("bearish", pullbackResult.bearish)}
+          </div>
+          {pullbackResult.trades.length > 0 && (
+            <div className="rounded-lg border border-border bg-card overflow-hidden">
+              <div className="px-4 py-2 border-b border-border">
+                <p className="text-[12px] uppercase tracking-wide text-muted-foreground">recent trades</p>
+              </div>
+              <div className="max-h-80 overflow-y-auto">
+                <table className="w-full text-[12px]">
+                  <thead className="bg-muted/40 text-muted-foreground">
+                    <tr>
+                      <th className="text-left px-3 py-2">date</th>
+                      <th className="text-left px-3 py-2">time</th>
+                      <th className="text-left px-3 py-2">dir</th>
+                      <th className="text-right px-3 py-2">entry</th>
+                      <th className="text-right px-3 py-2">stop</th>
+                      <th className="text-right px-3 py-2">tp1</th>
+                      <th className="text-right px-3 py-2">tp2</th>
+                      <th className="text-center px-3 py-2">tp1</th>
+                      <th className="text-center px-3 py-2">tp2</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pullbackResult.trades.slice(-50).reverse().map((t, idx) => (
+                      <tr key={idx} className="border-t border-border/60">
+                        <td className="px-3 py-1.5 text-foreground">{t.date}</td>
+                        <td className="px-3 py-1.5 text-foreground">{t.triggerTime}</td>
+                        <td className={`px-3 py-1.5 ${t.direction === "bullish" ? "text-green-500" : "text-red-500"}`}>{t.direction}</td>
+                        <td className="px-3 py-1.5 text-right tabular-nums text-foreground">{t.entry.toFixed(2)}</td>
+                        <td className="px-3 py-1.5 text-right tabular-nums text-foreground">{t.stop.toFixed(2)}</td>
+                        <td className="px-3 py-1.5 text-right tabular-nums text-foreground">{t.target1.toFixed(2)}</td>
+                        <td className="px-3 py-1.5 text-right tabular-nums text-foreground">{t.target2.toFixed(2)}</td>
+                        <td className={`px-3 py-1.5 text-center ${t.tp1Outcome === "win" ? "text-green-500" : t.tp1Outcome === "loss" ? "text-red-500" : "text-muted-foreground"}`}>{t.tp1Outcome}</td>
+                        <td className={`px-3 py-1.5 text-center ${t.tp2Outcome === "win" ? "text-green-500" : t.tp2Outcome === "loss" ? "text-red-500" : "text-muted-foreground"}`}>{t.tp2Outcome}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
       );
     }
 

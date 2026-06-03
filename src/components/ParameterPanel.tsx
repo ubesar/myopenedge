@@ -13,7 +13,7 @@ export type MomentumBodyRatio = "0.50" | "0.60" | "0.70" | "0.80";
 export type OCCBodyRatio = "0.40" | "0.50" | "0.60";
 
 interface ParameterPanelProps {
-  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio, weekdays: number[], momentumSessionEnd: number) => void;
+  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio, weekdays: number[]) => void;
   loading: boolean;
   isFree?: boolean;
   occTimeframe?: OCCTimeframe;
@@ -61,7 +61,6 @@ const ParameterPanel = ({
   const [bodyRatio, setBodyRatio] = useState<MomentumBodyRatio>("0.70");
   const [occBodyRatio, setOccBodyRatio] = useState<OCCBodyRatio>("0.50");
   const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
-  const [momentumSessionEnd, setMomentumSessionEnd] = useState<string>("780"); // 13:00
 
   const [selectedTemplateId, setSelectedTemplateId] = useState("custom");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -71,7 +70,7 @@ const ParameterPanel = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!symbol.trim()) return;
-    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio, weekdays, parseInt(momentumSessionEnd));
+    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio, weekdays);
   };
 
   const handleTemplateSelect = (id: string) => {
@@ -174,27 +173,26 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="gapfill">gap fill statistics</SelectItem>}
               {!isFree && <SelectItem value="insidebar">inside bar</SelectItem>}
               {!isFree && <SelectItem value="outsideday">outside day</SelectItem>}
+              {!isFree && <SelectItem value="pullback">pullback 50% (m15)</SelectItem>}
             </SelectContent>
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}
 
           {mode === "momentum" && (
             <>
-              <p className="text-[11px] text-muted-foreground">scan session end (ny)</p>
-              <Select value={momentumSessionEnd} onValueChange={(v) => { setMomentumSessionEnd(v); setSelectedTemplateId("custom"); }}>
+              <p className="text-[11px] text-muted-foreground">opening candle body threshold</p>
+              <Select value={bodyRatio} onValueChange={(v) => { setBodyRatio(v as MomentumBodyRatio); setSelectedTemplateId("custom"); }}>
                 <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="660">11:00</SelectItem>
-                  <SelectItem value="690">11:30</SelectItem>
-                  <SelectItem value="720">12:00</SelectItem>
-                  <SelectItem value="750">12:30</SelectItem>
-                  <SelectItem value="780">13:00 (default)</SelectItem>
-                  <SelectItem value="840">14:00</SelectItem>
+                  <SelectItem value="0.50">body ≥ 50% (loose)</SelectItem>
+                  <SelectItem value="0.60">body ≥ 60%</SelectItem>
+                  <SelectItem value="0.70">body ≥ 70% (recommended)</SelectItem>
+                  <SelectItem value="0.80">body ≥ 80% (strict)</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-[10px] text-muted-foreground">m15 momentum candles scanned from 09:30 ny up to this time. body threshold fixed at 70% (prd v3). walk-forward to 16:00 close.</p>
+              <p className="text-[10px] text-muted-foreground">strong momentum = large body, small wicks. days with weak opening candles are skipped.</p>
             </>
           )}
 
@@ -236,7 +234,7 @@ const ParameterPanel = ({
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for more days</p>}
 
-          {(mode === "ib" || mode === "globex-ib" || mode === "london-ib") && (
+          {(mode === "ib" || mode === "momentum" || mode === "globex-ib" || mode === "london-ib") && (
             <>
               <p className="text-[11px] text-muted-foreground">IB window</p>
               <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => { if (!isFree) { setIbWindow(v); setSelectedTemplateId("custom"); } }} disabled={isFree}>
