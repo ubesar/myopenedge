@@ -165,6 +165,42 @@ function resolveStopEntry(
   return { outcome: "open", resolvedIdx: bars.length - 1 };
 }
 
+/**
+ * Limit-entry variant: trade only activates when price pulls back through `entry`.
+ * Bullish limit triggers when bar.low <= entry; bearish when bar.high >= entry.
+ */
+function resolveLimitEntry(
+  bars: CandleBar[],
+  startIdx: number,
+  direction: TradeDirection,
+  entry: number,
+  stop: number,
+  target: number,
+): { outcome: TradeOutcome; resolvedIdx: number } {
+  let triggered = false;
+  for (let i = startIdx + 1; i < bars.length; i++) {
+    const b = bars[i];
+    if (!triggered) {
+      const trig = direction === "bullish" ? b.low <= entry : b.high >= entry;
+      if (!trig) continue;
+      triggered = true;
+    }
+    let hitStop: boolean;
+    let hitTarget: boolean;
+    if (direction === "bullish") {
+      hitStop = b.low <= stop;
+      hitTarget = b.high >= target;
+    } else {
+      hitStop = b.high >= stop;
+      hitTarget = b.low <= target;
+    }
+    if (hitStop && hitTarget) return { outcome: "loss", resolvedIdx: i };
+    if (hitTarget) return { outcome: "win", resolvedIdx: i };
+    if (hitStop) return { outcome: "loss", resolvedIdx: i };
+  }
+  return { outcome: "open", resolvedIdx: bars.length - 1 };
+}
+
 export function analyzeMomentum(
   bars: BarData[],
   _ibWindowMinutes: number = 30,
