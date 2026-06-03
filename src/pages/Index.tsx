@@ -280,6 +280,11 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setOutsideDayResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, outsidePct: a.outsidePct, bullishFilledPct: a.bullish.filledGapPct, bearishFilledPct: a.bearish.filledGapPct });
+        } else if (effectiveMode === "pullback") {
+          const a = analyzePullback(values as any, { maxDays: effectiveMaxDays, weekdays });
+          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setPullbackResult(a);
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, totalTrades: a.totalTrades, overall: a.overall });
         }
       }
 
