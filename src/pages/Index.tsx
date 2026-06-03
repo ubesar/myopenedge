@@ -59,6 +59,7 @@ const Index = () => {
   const [outsideDayResult, setOutsideDayResult] = useState<OutsideDayResult | null>(null);
   const [globexIBResult, setGlobexIBResult] = useState<GlobexIBResult | null>(null);
   const [londonIBResult, setLondonIBResult] = useState<LondonIBResult | null>(null);
+  const [pullbackResult, setPullbackResult] = useState<PullbackResult | null>(null);
   const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
   const [occMaxDays, setOccMaxDays] = useState<number>(0);
   const [occWeekdays, setOccWeekdays] = useState<number[]>([1,2,3,4,5]);
