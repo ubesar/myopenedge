@@ -28,11 +28,13 @@ export interface MomentumTrade {
   range: number;
   slFull: number;
   slHalf: number;
+  pullbackEntry: number;
   tp50: number;
-  // Outcomes per SL variant against TP 50%
+  // Outcomes per variant (same TP price level as variant 1)
   fullSl_tp50: TradeOutcome;
   halfSl_tp50: TradeOutcome;
-  resolvedAt: number; // index of bar that resolved gating (SL full + TP100)
+  pullback_tp50: TradeOutcome;
+  resolvedAt: number;
 }
 
 export interface DirStats {
@@ -60,6 +62,7 @@ export interface MomentumResult {
   totalTrades: number;
   fullSl: { tp50: TpStats };
   halfSl: { tp50: TpStats };
+  pullback: { tp50: TpStats };
   trades: MomentumTrade[];
   // legacy compat (unused by new UI)
   bodyRatioThreshold: number;
@@ -162,6 +165,42 @@ function resolveStopEntry(
   return { outcome: "open", resolvedIdx: bars.length - 1 };
 }
 
+/**
+ * Limit-entry variant: trade only activates when price pulls back through `entry`.
+ * Bullish limit triggers when bar.low <= entry; bearish when bar.high >= entry.
+ */
+function resolveLimitEntry(
+  bars: CandleBar[],
+  startIdx: number,
+  direction: TradeDirection,
+  entry: number,
+  stop: number,
+  target: number,
+): { outcome: TradeOutcome; resolvedIdx: number } {
+  let triggered = false;
+  for (let i = startIdx + 1; i < bars.length; i++) {
+    const b = bars[i];
+    if (!triggered) {
+      const trig = direction === "bullish" ? b.low <= entry : b.high >= entry;
+      if (!trig) continue;
+      triggered = true;
+    }
+    let hitStop: boolean;
+    let hitTarget: boolean;
+    if (direction === "bullish") {
+      hitStop = b.low <= stop;
+      hitTarget = b.high >= target;
+    } else {
+      hitStop = b.high >= stop;
+      hitTarget = b.low <= target;
+    }
+    if (hitStop && hitTarget) return { outcome: "loss", resolvedIdx: i };
+    if (hitTarget) return { outcome: "win", resolvedIdx: i };
+    if (hitStop) return { outcome: "loss", resolvedIdx: i };
+  }
+  return { outcome: "open", resolvedIdx: bars.length - 1 };
+}
+
 export function analyzeMomentum(
   bars: BarData[],
   _ibWindowMinutes: number = 30,
@@ -242,7 +281,15 @@ export function analyzeMomentum(
       const full = resolveOutcome(m15, i, direction, slFull, tpFull);
       const half = resolveStopEntry(m15, i, direction, entryHalf, slHalf, tpHalf);
 
-      // Gate next signal until variant 1 (always-active) resolves (TP or SL hit)
+      // Variant 3 — Pullback 50%: limit entry at candle midpoint, SL at candle ujung, TP same price level as variant 1 (RR ~1:2)
+      const entryPullback = midpoint;
+      const slPullback = slFull;
+      const tpPullback = tpFull;
+      const pullback = resolveLimitEntry(m15, i, direction, entryPullback, slPullback, tpPullback);
+
+      // Gate: wait until the latest of all variants resolves before scanning next setup
+      const gateIdx = Math.max(full.resolvedIdx, half.resolvedIdx, pullback.resolvedIdx);
+
       trades.push({
         date,
         entryTime: c.time,
@@ -251,14 +298,16 @@ export function analyzeMomentum(
         range,
         slFull,
         slHalf,
+        pullbackEntry: entryPullback,
         tp50: tpFull,
         fullSl_tp50: full.outcome,
         halfSl_tp50: half.outcome,
-        resolvedAt: full.resolvedIdx,
+        pullback_tp50: pullback.outcome,
+        resolvedAt: gateIdx,
       });
 
       signalsToday++;
-      gateUntil = full.resolvedIdx;
+      gateUntil = gateIdx;
     }
 
     if (signalsToday > 0) daysWithSignal++;
@@ -266,6 +315,7 @@ export function analyzeMomentum(
 
   const fullTp50 = emptyTp();
   const halfTp50 = emptyTp();
+  const pullbackTp50 = emptyTp();
 
   const tally = (tp: TpStats, dir: TradeDirection, outcome: TradeOutcome) => {
     tp.total++;
@@ -279,9 +329,11 @@ export function analyzeMomentum(
   for (const t of trades) {
     tally(fullTp50, t.direction, t.fullSl_tp50);
     tally(halfTp50, t.direction, t.halfSl_tp50);
+    tally(pullbackTp50, t.direction, t.pullback_tp50);
   }
   finalizeTp(fullTp50);
   finalizeTp(halfTp50);
+  finalizeTp(pullbackTp50);
 
   return {
     totalDays,
@@ -291,6 +343,7 @@ export function analyzeMomentum(
     totalTrades: trades.length,
     fullSl: { tp50: fullTp50 },
     halfSl: { tp50: halfTp50 },
+    pullback: { tp50: pullbackTp50 },
     trades,
     bodyRatioThreshold: BODY_THRESHOLD,
     tfStats: {},

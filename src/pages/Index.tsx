@@ -399,14 +399,15 @@ const Index = () => {
       const subtitle = `${symbol} · m15 · body ≥ ${bodyPct} · 09:30 – ${sessionEndLabel} ny · ${formatDateRange(analysisMaxDays)}`;
       const full = momentumResult.fullSl.tp50;
       const half = momentumResult.halfSl.tp50;
+      const pullback = momentumResult.pullback.tp50;
       const signalPct = momentumResult.totalDays > 0 ? (momentumResult.daysWithSignal / momentumResult.totalDays) * 100 : 0;
       return (
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
-            <strong className="text-foreground">momentum candle analysis</strong> — scans m15 candles (09:30 – {sessionEndLabel} ny) with body ≥ {bodyPct} of range, then walks forward to market close to measure tp 50% hit rate against two stop variants. anti-overlap: next trade only after prior gate (sl full + tp 100%) resolves.
+            <strong className="text-foreground">momentum candle analysis</strong> — scans m15 candles (09:30 – {sessionEndLabel} ny) with body ≥ {bodyPct} of range, then walks forward to market close to measure tp 50% hit rate against three entry variants (sl full, sl half, pullback 50%). anti-overlap: next setup only after all variants resolve.
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <div className="rounded-lg border border-border bg-card p-3">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">total trades</p>
               <p className="text-[18px] font-semibold text-foreground">{momentumResult.totalTrades}</p>
@@ -423,9 +424,13 @@ const Index = () => {
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate · sl half</p>
               <p className="text-[18px] font-semibold text-foreground">{half.winRate.toFixed(1)}%</p>
             </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate · pullback</p>
+              <p className="text-[18px] font-semibold text-foreground">{pullback.winRate.toFixed(1)}%</p>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
             <MomentumResultCard
               title="sl full (ujung candle) · tp 50%"
               subtitle={subtitle}
@@ -435,6 +440,11 @@ const Index = () => {
               title="sl half (50% candle) · tp 50%"
               subtitle={subtitle}
               stats={half}
+            />
+            <MomentumResultCard
+              title="pullback 50% · sl full · rr 1:2"
+              subtitle={subtitle}
+              stats={pullback}
             />
           </div>
 
@@ -450,6 +460,7 @@ const Index = () => {
               totalTrades: momentumResult.totalTrades,
               fullSl: momentumResult.fullSl,
               halfSl: momentumResult.halfSl,
+              pullback: momentumResult.pullback,
             }}
           />
         </div>
