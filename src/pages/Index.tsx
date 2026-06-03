@@ -632,82 +632,12 @@ const Index = () => {
     }
 
     if (activeMode === "pullback" && pullbackResult) {
-      const renderSide = (label: string, side: { tp1: any; tp2: any }) => (
-        <div className="rounded-lg border border-border bg-card p-4 space-y-2">
-          <p className="text-[12px] uppercase tracking-wide text-muted-foreground">{label}</p>
-          {(["tp1", "tp2"] as const).map((k) => {
-            const s = side[k];
-            return (
-              <div key={k} className="flex items-center justify-between text-[13px]">
-                <span className="text-muted-foreground">{k === "tp1" ? "TP1 (RR 1:1)" : "TP2 (RR 1:2)"}</span>
-                <span className="text-foreground tabular-nums">
-                  {s.wins}W · {s.losses}L · {s.open}O · <span className="text-primary font-medium">{s.winRate.toFixed(1)}%</span>
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      );
       return (
-        <div className="space-y-4">
-          <div className="rounded-lg border border-border bg-card p-4">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div>
-                <p className="text-[13px] text-foreground font-medium lowercase">pullback 50% strategy</p>
-                <p className="text-[11px] text-muted-foreground lowercase">
-                  body ≥ {(pullbackResult.params.bodyThreshold * 100).toFixed(0)}% · pullback {(pullbackResult.params.pullbackLevel * 100).toFixed(0)}% · session end {Math.floor(pullbackResult.params.sessionEndMinutes / 60)}:{String(pullbackResult.params.sessionEndMinutes % 60).padStart(2, "0")}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-[13px] text-foreground tabular-nums">{pullbackResult.totalTrades} trades · {pullbackResult.totalDays} days</p>
-              </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {renderSide("overall", pullbackResult.overall)}
-            {renderSide("bullish", pullbackResult.bullish)}
-            {renderSide("bearish", pullbackResult.bearish)}
-          </div>
-          {pullbackResult.trades.length > 0 && (
-            <div className="rounded-lg border border-border bg-card overflow-hidden">
-              <div className="px-4 py-2 border-b border-border">
-                <p className="text-[12px] uppercase tracking-wide text-muted-foreground">recent trades</p>
-              </div>
-              <div className="max-h-80 overflow-y-auto">
-                <table className="w-full text-[12px]">
-                  <thead className="bg-muted/40 text-muted-foreground">
-                    <tr>
-                      <th className="text-left px-3 py-2">date</th>
-                      <th className="text-left px-3 py-2">time</th>
-                      <th className="text-left px-3 py-2">dir</th>
-                      <th className="text-right px-3 py-2">entry</th>
-                      <th className="text-right px-3 py-2">stop</th>
-                      <th className="text-right px-3 py-2">tp1</th>
-                      <th className="text-right px-3 py-2">tp2</th>
-                      <th className="text-center px-3 py-2">tp1</th>
-                      <th className="text-center px-3 py-2">tp2</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pullbackResult.trades.slice(-50).reverse().map((t, idx) => (
-                      <tr key={idx} className="border-t border-border/60">
-                        <td className="px-3 py-1.5 text-foreground">{t.date}</td>
-                        <td className="px-3 py-1.5 text-foreground">{t.triggerTime}</td>
-                        <td className={`px-3 py-1.5 ${t.direction === "bullish" ? "text-green-500" : "text-red-500"}`}>{t.direction}</td>
-                        <td className="px-3 py-1.5 text-right tabular-nums text-foreground">{t.entry.toFixed(2)}</td>
-                        <td className="px-3 py-1.5 text-right tabular-nums text-foreground">{t.stop.toFixed(2)}</td>
-                        <td className="px-3 py-1.5 text-right tabular-nums text-foreground">{t.target1.toFixed(2)}</td>
-                        <td className="px-3 py-1.5 text-right tabular-nums text-foreground">{t.target2.toFixed(2)}</td>
-                        <td className={`px-3 py-1.5 text-center ${t.tp1Outcome === "win" ? "text-green-500" : t.tp1Outcome === "loss" ? "text-red-500" : "text-muted-foreground"}`}>{t.tp1Outcome}</td>
-                        <td className={`px-3 py-1.5 text-center ${t.tp2Outcome === "win" ? "text-green-500" : t.tp2Outcome === "loss" ? "text-red-500" : "text-muted-foreground"}`}>{t.tp2Outcome}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
+        <PullbackReport
+          result={pullbackResult}
+          symbol={symbol}
+          dateRange={`${analysisMaxDays}d`}
+        />
       );
     }
 
