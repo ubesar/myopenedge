@@ -62,6 +62,7 @@ export interface MomentumResult {
   totalTrades: number;
   fullSl: { tp50: TpStats };
   halfSl: { tp50: TpStats };
+  pullback: { tp50: TpStats };
   trades: MomentumTrade[];
   // legacy compat (unused by new UI)
   bodyRatioThreshold: number;
