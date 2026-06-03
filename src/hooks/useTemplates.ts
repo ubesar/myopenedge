@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-
+import { supabase as _supaClient } from "@/integrations/supabase/client";
 // @ts-ignore - some tables not in generated types
-const sb: any = supabase as any;
+const supabase: any = _supaClient as any;
+
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { AnalysisMode } from "@/components/ControlPanel";
@@ -55,7 +55,7 @@ export const useTemplates = () => {
   const saveTemplate = async (name: string, params: TemplateParams) => {
     if (!user) return;
     setLoading(true);
-    const { error } = await sb.from("analysis_templates").upsert(
+    const { error } = await supabase.from("analysis_templates").upsert(
       {
         user_id: user.id,
         name,
@@ -80,7 +80,7 @@ export const useTemplates = () => {
   };
 
   const deleteTemplate = async (id: string) => {
-    const { error } = await sb.from("analysis_templates").delete().eq("id", id);
+    const { error } = await supabase.from("analysis_templates").delete().eq("id", id);
     if (error) {
       toast.error("Gagal menghapus template");
     } else {

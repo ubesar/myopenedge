@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ImagePlus, Trash2, Loader2, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-
+import { supabase as _supaClient } from "@/integrations/supabase/client";
 // @ts-ignore - some tables not in generated types
-const sb: any = supabase as any;
+const supabase: any = _supaClient as any;
+
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { extractTradeScreenshotPath, resolveTradeScreenshotUrl } from "@/lib/trade-screenshot-url";
@@ -90,7 +90,7 @@ const TradeDetailDialog = ({ open, onOpenChange, trade }: TradeDetailDialogProps
       return;
     }
 
-    const { error: insertErr } = await sb.from("attachments").insert({
+    const { error: insertErr } = await supabase.from("attachments").insert({
       user_id: user.id,
       trade_id: trade.id,
       file_url: path,
@@ -111,7 +111,7 @@ const TradeDetailDialog = ({ open, onOpenChange, trade }: TradeDetailDialogProps
   };
 
   const handleDelete = async (att: Attachment) => {
-    const { error: deleteErr } = await sb.from("attachments").delete().eq("id", att.id);
+    const { error: deleteErr } = await supabase.from("attachments").delete().eq("id", att.id);
 
     if (deleteErr) {
       toast.error("Failed to delete");
@@ -129,7 +129,7 @@ const TradeDetailDialog = ({ open, onOpenChange, trade }: TradeDetailDialogProps
 
   const saveNotes = async () => {
     setSaving(true);
-    const { error } = await sb.from("trades").update({ notes }).eq("id", trade.id);
+    const { error } = await supabase.from("trades").update({ notes }).eq("id", trade.id);
     setSaving(false);
 
     if (error) {

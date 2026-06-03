@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-
+import { supabase as _supaClient } from "@/integrations/supabase/client";
 // @ts-ignore - some tables not in generated types
-const sb: any = supabase as any;
+const supabase: any = _supaClient as any;
+
 import { useAuth } from "@/contexts/AuthContext";
 import { Trash2, Loader2, Package, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
@@ -69,7 +69,7 @@ const ImportHistory = ({ refreshKey, onDelete }: ImportHistoryProps) => {
         .select("id", { count: "exact", head: true })
         .eq("account_id", acct.id);
       if (count === 0) {
-        await sb.from("accounts").delete().eq("id", acct.id).eq("user_id", user.id);
+        await supabase.from("accounts").delete().eq("id", acct.id).eq("user_id", user.id);
       }
     }
   };
