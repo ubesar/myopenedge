@@ -126,23 +126,23 @@ function resolveOutcome(
 }
 
 /**
- * Stop-entry variant: trade only activates when price trades through `entry`.
+ * Limit-entry variant: trade activates only when price pulls back through `entry`.
+ * Bullish: trigger when bar.low <= entry. Bearish: trigger when bar.high >= entry.
  * Once triggered, evaluate SL/TP on the same and subsequent bars.
- * If never triggered before session end, outcome = "open".
  */
-function resolveStopEntry(
+function resolveLimitEntry(
   bars: CandleBar[],
   startIdx: number,
   direction: TradeDirection,
   entry: number,
   stop: number,
   target: number,
-): { outcome: TradeOutcome; resolvedIdx: number } {
+): { outcome: TradeOutcome; resolvedIdx: number; triggered: boolean } {
   let triggered = false;
   for (let i = startIdx + 1; i < bars.length; i++) {
     const b = bars[i];
     if (!triggered) {
-      const trig = direction === "bullish" ? b.high >= entry : b.low <= entry;
+      const trig = direction === "bullish" ? b.low <= entry : b.high >= entry;
       if (!trig) continue;
       triggered = true;
     }
@@ -155,11 +155,11 @@ function resolveStopEntry(
       hitStop = b.high >= stop;
       hitTarget = b.low <= target;
     }
-    if (hitStop && hitTarget) return { outcome: "loss", resolvedIdx: i };
-    if (hitTarget) return { outcome: "win", resolvedIdx: i };
-    if (hitStop) return { outcome: "loss", resolvedIdx: i };
+    if (hitStop && hitTarget) return { outcome: "loss", resolvedIdx: i, triggered };
+    if (hitTarget) return { outcome: "win", resolvedIdx: i, triggered };
+    if (hitStop) return { outcome: "loss", resolvedIdx: i, triggered };
   }
-  return { outcome: "open", resolvedIdx: bars.length - 1 };
+  return { outcome: "open", resolvedIdx: bars.length - 1, triggered };
 }
 
 export function analyzeMomentum(
@@ -233,16 +233,17 @@ export function analyzeMomentum(
       const slFull = direction === "bullish" ? c.low : c.high;
       const tpFull = direction === "bullish" ? entryFull + range * 0.5 : entryFull - range * 0.5;
 
-      // Variant 2 — SL Half: pending stop entry beyond candle, SL at candle midpoint, TP = 50% of range from entry
-      const entryHalf = direction === "bullish" ? c.high : c.low;
+      // Variant 2 — Pullback 50% limit entry, SL full (candle end), TP = 2× risk → RR 1:2
       const midpoint = (c.high + c.low) / 2;
-      const slHalf = midpoint;
-      const tpHalf = direction === "bullish" ? entryHalf + range * 0.5 : entryHalf - range * 0.5;
+      const entryHalf = midpoint;
+      const slHalf = direction === "bullish" ? c.low : c.high;
+      // risk = range/2; reward = range → TP set so reward = 2× risk
+      const tpHalf = direction === "bullish" ? midpoint + range : midpoint - range;
 
       const full = resolveOutcome(m15, i, direction, slFull, tpFull);
-      const half = resolveStopEntry(m15, i, direction, entryHalf, slHalf, tpHalf);
+      const half = resolveLimitEntry(m15, i, direction, entryHalf, slHalf, tpHalf);
 
-      // Gate next signal until variant 1 (always-active) resolves (TP or SL hit)
+      // Gate next signal until BOTH variants resolve (TP or SL hit)
       trades.push({
         date,
         entryTime: c.time,
@@ -254,11 +255,11 @@ export function analyzeMomentum(
         tp50: tpFull,
         fullSl_tp50: full.outcome,
         halfSl_tp50: half.outcome,
-        resolvedAt: full.resolvedIdx,
+        resolvedAt: Math.max(full.resolvedIdx, half.resolvedIdx),
       });
 
       signalsToday++;
-      gateUntil = full.resolvedIdx;
+      gateUntil = Math.max(full.resolvedIdx, half.resolvedIdx);
     }
 
     if (signalsToday > 0) daysWithSignal++;
