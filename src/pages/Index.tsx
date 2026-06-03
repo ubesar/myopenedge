@@ -26,6 +26,7 @@ import { analyzeOutsideDay, type OutsideDayResult } from "@/lib/outsideday-analy
 import { analyzeGlobexIB, type GlobexIBResult } from "@/lib/globex-ib-analysis";
 import { analyzeLondonIB, type LondonIBResult } from "@/lib/london-ib-analysis";
 import { analyzePullback, type PullbackResult } from "@/lib/pullback-analysis";
+import PullbackReport from "@/components/PullbackReport";
 import InsideBarReport from "@/components/InsideBarReport";
 import OutsideDayReport from "@/components/OutsideDayReport";
 import GlobexIBDashboard from "@/components/GlobexIBDashboard";
