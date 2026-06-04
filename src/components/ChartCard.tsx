@@ -9,7 +9,7 @@ interface ChartCardProps {
   subtitle?: string;
   totalDays: number;
   bars: BarData[];
-  legendItems?: { label: string; color: string }[];
+  legendItems?: { label: string; color?: string }[];
   settingsGrid?: { label: string; value: string }[];
 }
 
