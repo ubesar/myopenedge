@@ -32,23 +32,17 @@ export interface PullbackSideStats {
   winRate: number;
 }
 
-export interface PullbackStats {
-  tp1: PullbackSideStats;
-  tp2: PullbackSideStats;
-}
-
 export interface PullbackResult {
   totalDays: number;
   totalTrades: number;
-  bullish: PullbackStats;
-  bearish: PullbackStats;
-  overall: PullbackStats;
+  bullish: PullbackSideStats;
+  bearish: PullbackSideStats;
+  overall: PullbackSideStats;
   trades: PullbackTrade[];
   params: {
     bodyThreshold: number;
     pullbackLevel: number;
     tp1Ratio: number;
-    tp2Ratio: number;
     sessionEndMinutes: number;
     stopMode: "full" | "half";
   };
@@ -58,7 +52,6 @@ export interface PullbackOptions {
   bodyThreshold?: number;        // default 0.7
   pullbackLevel?: number;        // default 0.5
   tp1Ratio?: number;             // default 0.5  (RR 1:1)
-  tp2Ratio?: number;             // default 1.0  (RR 1:2)
   sessionEndMinutes?: number;    // default 780  (13:00 NY)
   stopMode?: "full" | "half";    // default "full"
   triggerLookahead?: number;     // default 2 (candle 2 & 3)
