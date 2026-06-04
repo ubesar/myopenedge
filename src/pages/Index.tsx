@@ -557,54 +557,8 @@ const Index = () => {
             </div>
           </div>
 
-          {(() => {
-            const resolved = s.wins + s.losses;
-            const tpPct = resolved > 0 ? (s.wins / resolved) * 100 : 0;
-            const slPct = resolved > 0 ? (s.losses / resolved) * 100 : 0;
-            const bResolved = s.bullish.wins + s.bullish.losses;
-            const bTp = bResolved > 0 ? (s.bullish.wins / bResolved) * 100 : 0;
-            const bSl = bResolved > 0 ? (s.bullish.losses / bResolved) * 100 : 0;
-            const rResolved = s.bearish.wins + s.bearish.losses;
-            const rTp = rResolved > 0 ? (s.bearish.wins / rResolved) * 100 : 0;
-            const rSl = rResolved > 0 ? (s.bearish.losses / rResolved) * 100 : 0;
-            return (
-              <div className="flex flex-col xl:flex-row gap-4">
-                <ChartCard
-                  title="overall · tp vs sl"
-                  subtitle={subtitle}
-                  totalDays={resolved}
-                  bars={[
-                    { name: "tp hit", value: tpPct, color: "primary" },
-                    { name: "sl hit", value: slPct, color: "muted" },
-                  ]}
-                  legendItems={[{ label: "% tp hit", color: "" }, { label: "% sl hit", color: "" }]}
-                />
-                <ChartCard
-                  title="bullish · tp vs sl"
-                  subtitle={`${s.bullish.total} signals · ${bResolved} resolved`}
-                  totalDays={bResolved}
-                  bars={[
-                    { name: "tp hit", value: bTp, color: "primary" },
-                    { name: "sl hit", value: bSl, color: "muted" },
-                  ]}
-                  legendItems={[{ label: "% tp hit", color: "" }, { label: "% sl hit", color: "" }]}
-                />
-                <ChartCard
-                  title="bearish · tp vs sl"
-                  subtitle={`${s.bearish.total} signals · ${rResolved} resolved`}
-                  totalDays={rResolved}
-                  bars={[
-                    { name: "tp hit", value: rTp, color: "primary" },
-                    { name: "sl hit", value: rSl, color: "muted" },
-                  ]}
-                  legendItems={[{ label: "% tp hit", color: "" }, { label: "% sl hit", color: "" }]}
-                />
-              </div>
-            );
-          })()}
-
           <MomentumResultCard
-            title="50% pullback · win / loss / open breakdown"
+            title="50% pullback · sl ujung candle · tp opposite end"
             subtitle={subtitle}
             stats={s}
           />
