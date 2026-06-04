@@ -48,86 +48,6 @@ function StackedBar({ side, label }: { side: PullbackSideStats; label: string })
   );
 }
 
-function TPCard({
-  title,
-  subtitle,
-  metaLine,
-  bullish,
-  bearish,
-  overall,
-}: {
-  title: string;
-  subtitle: string;
-  metaLine: string;
-  bullish: PullbackSideStats;
-  bearish: PullbackSideStats;
-  overall: PullbackSideStats;
-}) {
-  const yTicks = [100, 75, 50, 25, 0];
-
-  return (
-    <div className="rounded-xl border border-border bg-card p-5 lg:p-6">
-      {/* header */}
-      <div className="flex items-start justify-between gap-4 mb-1">
-        <div>
-          <p className="text-[14px] font-semibold text-foreground lowercase">{title}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate</p>
-          <p className="text-[22px] font-semibold text-foreground tabular-nums leading-tight">
-            {fmtPct(overall.winRate)}
-          </p>
-        </div>
-      </div>
-      <p className="text-[11px] text-muted-foreground lowercase mb-0.5">{subtitle}</p>
-      <p className="text-[11px] text-muted-foreground lowercase mb-5">{metaLine}</p>
-
-      {/* chart */}
-      <div className="flex items-stretch gap-3 h-[280px]">
-        {/* y axis */}
-        <div className="flex flex-col justify-between text-[10px] text-muted-foreground py-0 w-8 shrink-0">
-          {yTicks.map((t) => (
-            <span key={t} className="leading-none">{t}%</span>
-          ))}
-        </div>
-        {/* bars area with gridlines */}
-        <div className="relative flex-1">
-          {/* gridlines */}
-          <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
-            {yTicks.map((t) => (
-              <div key={t} className="border-t border-border/40 w-full h-0" />
-            ))}
-          </div>
-          {/* bars */}
-          <div className="relative h-full flex items-end justify-around gap-4 pt-1 pb-6">
-            <StackedBar side={bullish} label="bullish" />
-            <StackedBar side={bearish} label="bearish" />
-          </div>
-        </div>
-      </div>
-
-      {/* sub stats */}
-      <div className="grid grid-cols-2 gap-4 mt-5 pt-4 border-t border-border/60">
-        <div>
-          <p className="text-[12px] text-foreground lowercase font-medium">bullish</p>
-          <p className="text-[11px] text-muted-foreground lowercase">win rate {fmtPct(bullish.winRate)}</p>
-        </div>
-        <div>
-          <p className="text-[12px] text-foreground lowercase font-medium">bearish</p>
-          <p className="text-[11px] text-muted-foreground lowercase">win rate {fmtPct(bearish.winRate)}</p>
-        </div>
-      </div>
-
-      {/* legend */}
-      <div className="flex items-center justify-center gap-5 mt-4 text-[11px] text-muted-foreground lowercase">
-        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-primary" /> win</span>
-        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-muted-foreground/60" /> loss</span>
-        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-muted/60 border border-border" /> open</span>
-      </div>
-    </div>
-  );
-}
-
 function InsightCell({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="rounded-lg border border-border/60 bg-card/50 p-4">
@@ -145,39 +65,78 @@ const PullbackReport = ({ result, symbol, dateRange, bodyThresholdPct }: Props) 
   const endH = Math.floor(result.params.sessionEndMinutes / 60);
   const endM = String(result.params.sessionEndMinutes % 60).padStart(2, "0");
 
-  const tp1Reward = Math.round(result.params.tp1Ratio * 100);
-  const tp2RewardMul = Math.round(result.params.tp2Ratio / result.params.tp1Ratio);
+  const tpReward = Math.round(result.params.tp1Ratio * 100);
 
-  const tp1Sub = `${sym} · entry @ ${pbPct}% · sl ujung · reward = ${tp1Reward}% candle (= risk)`;
-  const tp2Sub = `${sym} · entry @ ${pbPct}% · sl ujung · reward = ${Math.round(result.params.tp2Ratio * 100)}% candle (${tp2RewardMul}× risk)`;
+  const subtitle = `${sym} · entry @ ${pbPct}% · sl ujung · reward = ${tpReward}% candle (= risk)`;
   const meta = `m15 · body ≥ ${bodyPct}% · 09:30 – ${endH}:${endM} ny · ${dateRange}`;
 
-  // expectancy (using overall side)
-  const exp1 = expectancy(result.overall.tp1, 1); // RR 1:1
-  const exp2 = expectancy(result.overall.tp2, result.params.tp2Ratio / result.params.tp1Ratio);
+  const exp = expectancy(result.overall, 1); // RR 1:1
 
   const daysWithSignal = new Set(result.trades.map(t => t.date)).size;
   const dayPct = result.totalDays > 0 ? (daysWithSignal / result.totalDays) * 100 : 0;
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <TPCard
-          title="tp 1 · rr 1:1"
-          subtitle={tp1Sub}
-          metaLine={meta}
-          bullish={{ ...result.bullish.tp1 }}
-          bearish={{ ...result.bearish.tp1 }}
-          overall={result.overall.tp1}
-        />
-        <TPCard
-          title="tp 2 · rr 1:2"
-          subtitle={tp2Sub}
-          metaLine={meta}
-          bullish={{ ...result.bullish.tp2 }}
-          bearish={{ ...result.bearish.tp2 }}
-          overall={result.overall.tp2}
-        />
+      <div className="rounded-xl border border-border bg-card p-5 lg:p-6">
+        {/* header */}
+        <div className="flex items-start justify-between gap-4 mb-1">
+          <div>
+            <p className="text-[14px] font-semibold text-foreground lowercase">
+              pullback 50% · rr 1:1
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate</p>
+            <p className="text-[22px] font-semibold text-foreground tabular-nums leading-tight">
+              {fmtPct(result.overall.winRate)}
+            </p>
+          </div>
+        </div>
+        <p className="text-[11px] text-muted-foreground lowercase mb-0.5">{subtitle}</p>
+        <p className="text-[11px] text-muted-foreground lowercase mb-5">{meta}</p>
+
+        {/* chart */}
+        <div className="flex items-stretch gap-3 h-[280px]">
+          {/* y axis */}
+          <div className="flex flex-col justify-between text-[10px] text-muted-foreground py-0 w-8 shrink-0">
+            {[100, 75, 50, 25, 0].map((t) => (
+              <span key={t} className="leading-none">{t}%</span>
+            ))}
+          </div>
+          {/* bars area with gridlines */}
+          <div className="relative flex-1">
+            {/* gridlines */}
+            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+              {[100, 75, 50, 25, 0].map((t) => (
+                <div key={t} className="border-t border-border/40 w-full h-0" />
+              ))}
+            </div>
+            {/* bars */}
+            <div className="relative h-full flex items-end justify-around gap-4 pt-1 pb-6">
+              <StackedBar side={result.bullish} label="bullish" />
+              <StackedBar side={result.bearish} label="bearish" />
+            </div>
+          </div>
+        </div>
+
+        {/* sub stats */}
+        <div className="grid grid-cols-2 gap-4 mt-5 pt-4 border-t border-border/60">
+          <div>
+            <p className="text-[12px] text-foreground lowercase font-medium">bullish</p>
+            <p className="text-[11px] text-muted-foreground lowercase">win rate {fmtPct(result.bullish.winRate)}</p>
+          </div>
+          <div>
+            <p className="text-[12px] text-foreground lowercase font-medium">bearish</p>
+            <p className="text-[11px] text-muted-foreground lowercase">win rate {fmtPct(result.bearish.winRate)}</p>
+          </div>
+        </div>
+
+        {/* legend */}
+        <div className="flex items-center justify-center gap-5 mt-4 text-[11px] text-muted-foreground lowercase">
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-primary" /> win</span>
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-muted-foreground/60" /> loss</span>
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-muted/60 border border-border" /> open</span>
+        </div>
       </div>
 
       <div className="rounded-xl border border-border bg-card p-5">
@@ -191,14 +150,14 @@ const PullbackReport = ({ result, symbol, dateRange, bodyThresholdPct }: Props) 
             sub={`across ${result.totalDays} days`}
           />
           <InsightCell
-            label="tp1 · rr 1:1 · expectancy"
-            value={fmtR(exp1)}
-            sub={`wr ${fmtPct(result.overall.tp1.winRate)} · ${result.overall.tp1.wins}W/${result.overall.tp1.losses}L`}
+            label="expectancy"
+            value={fmtR(exp)}
+            sub={`wr ${fmtPct(result.overall.winRate)} · ${result.overall.wins}W/${result.overall.losses}L`}
           />
           <InsightCell
-            label="tp2 · rr 1:2 · expectancy"
-            value={fmtR(exp2)}
-            sub={`wr ${fmtPct(result.overall.tp2.winRate)} · ${result.overall.tp2.wins}W/${result.overall.tp2.losses}L`}
+            label="bullish win rate"
+            value={fmtPct(result.bullish.winRate)}
+            sub={`${result.bullish.wins}W/${result.bullish.losses}L`}
           />
           <InsightCell
             label="days with signal"
