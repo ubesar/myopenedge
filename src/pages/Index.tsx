@@ -577,7 +577,7 @@ const Index = () => {
                     { name: "tp hit", value: tpPct, color: "primary" },
                     { name: "sl hit", value: slPct, color: "muted" },
                   ]}
-                  legendItems={[{ label: "% tp hit" }, { label: "% sl hit" }]}
+                  legendItems={[{ label: "% tp hit", color: "" }, { label: "% sl hit", color: "" }]}
                 />
                 <ChartCard
                   title="bullish · tp vs sl"
@@ -587,7 +587,7 @@ const Index = () => {
                     { name: "tp hit", value: bTp, color: "primary" },
                     { name: "sl hit", value: bSl, color: "muted" },
                   ]}
-                  legendItems={[{ label: "% tp hit" }, { label: "% sl hit" }]}
+                  legendItems={[{ label: "% tp hit", color: "" }, { label: "% sl hit", color: "" }]}
                 />
                 <ChartCard
                   title="bearish · tp vs sl"
@@ -597,7 +597,7 @@ const Index = () => {
                     { name: "tp hit", value: rTp, color: "primary" },
                     { name: "sl hit", value: rSl, color: "muted" },
                   ]}
-                  legendItems={[{ label: "% tp hit" }, { label: "% sl hit" }]}
+                  legendItems={[{ label: "% tp hit", color: "" }, { label: "% sl hit", color: "" }]}
                 />
               </div>
             );
