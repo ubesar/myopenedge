@@ -164,6 +164,9 @@ export function analyzePullback50(
 
       const r = resolvePullback(m15, i, direction, entry, stop, target);
 
+      // Skip unresolved/untriggered trades — only count win/loss outcomes.
+      if (r.outcome === "open") continue;
+
       trades.push({
         date,
         signalTime: c.time,
