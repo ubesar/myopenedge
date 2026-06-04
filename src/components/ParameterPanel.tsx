@@ -170,6 +170,7 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="globex-ib">IB: globex overnight</SelectItem>}
               {!isFree && <SelectItem value="london-ib">IB: london session</SelectItem>}
               {!isFree && <SelectItem value="momentum">momentum candle continuation (mcc)</SelectItem>}
+              {!isFree && <SelectItem value="pullback50">50% pullback strategy</SelectItem>}
               <SelectItem value="occ">opening candle continuation</SelectItem>
               {!isFree && <SelectItem value="gapfill">gap fill statistics</SelectItem>}
               {!isFree && <SelectItem value="insidebar">inside bar</SelectItem>}
@@ -178,7 +179,7 @@ const ParameterPanel = ({
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}
 
-          {mode === "momentum" && (
+          {(mode === "momentum" || mode === "pullback50") && (
             <>
               <p className="text-[11px] text-muted-foreground">scan session end (ny)</p>
               <Select value={momentumSessionEnd} onValueChange={(v) => { setMomentumSessionEnd(v); setSelectedTemplateId("custom"); }}>
@@ -194,7 +195,7 @@ const ParameterPanel = ({
                   <SelectItem value="840">14:00</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-[10px] text-muted-foreground">m15 momentum candles scanned from 09:30 ny up to this time. body threshold fixed at 70% (prd v3). walk-forward to 16:00 close.</p>
+              <p className="text-[10px] text-muted-foreground">{mode === "pullback50" ? "m15 momentum candles scanned from 09:30 ny up to this time. entry on 50% pullback, sl at far end, tp at opposite end of candle 1." : "m15 momentum candles scanned from 09:30 ny up to this time. body threshold fixed at 70% (prd v3). walk-forward to 16:00 close."}</p>
             </>
           )}
 
