@@ -524,6 +524,62 @@ const Index = () => {
       );
     }
 
+    if (activeMode === "pullback50" && pullback50Result) {
+      const sessionEndH = Math.floor(pullback50Result.sessionEndMinutes / 60);
+      const sessionEndM = pullback50Result.sessionEndMinutes % 60;
+      const sessionEndLabel = `${String(sessionEndH).padStart(2, "0")}:${String(sessionEndM).padStart(2, "0")}`;
+      const bodyPct = `${Math.round(pullback50Result.bodyThreshold * 100)}%`;
+      const subtitle = `${symbol} · m15 · body ≥ ${bodyPct} · 09:30 – ${sessionEndLabel} ny · ${formatDateRange(analysisMaxDays)}`;
+      const s = pullback50Result.stats;
+      const signalPct = pullback50Result.totalDays > 0 ? (pullback50Result.daysWithSignal / pullback50Result.totalDays) * 100 : 0;
+      return (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
+            <strong className="text-foreground">50% pullback strategy</strong> — scans m15 momentum candles (09:30 – {sessionEndLabel} ny, body ≥ {bodyPct}). entry triggers when price retraces to 50% of candle 1. sl at far end of candle 1, tp at opposite end. walks forward to 16:00 close.
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">total signals</p>
+              <p className="text-[18px] font-semibold text-foreground">{pullback50Result.totalTrades}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">days w/ signal</p>
+              <p className="text-[18px] font-semibold text-foreground">{pullback50Result.daysWithSignal}/{pullback50Result.totalDays} <span className="text-[11px] text-muted-foreground">({signalPct.toFixed(0)}%)</span></p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate</p>
+              <p className="text-[18px] font-semibold text-foreground">{s.winRate.toFixed(1)}%</p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">wins / losses / open</p>
+              <p className="text-[14px] font-semibold text-foreground">{s.wins} / {s.losses} / {s.open}</p>
+            </div>
+          </div>
+
+          <MomentumResultCard
+            title="50% pullback · sl ujung candle · tp opposite end"
+            subtitle={subtitle}
+            stats={s}
+          />
+
+          <AITradingInsight
+            mode="momentum"
+            symbol={symbol}
+            analysisData={{
+              method: "50% Pullback Strategy",
+              totalDays: pullback50Result.totalDays,
+              daysWithSignal: pullback50Result.daysWithSignal,
+              sessionEndMinutes: pullback50Result.sessionEndMinutes,
+              bodyThreshold: pullback50Result.bodyThreshold,
+              totalTrades: pullback50Result.totalTrades,
+              stats: s,
+            }}
+          />
+        </div>
+      );
+    }
+
     if (activeMode === "gapfill" && gapFillResult) {
       return (
         <GapFillDashboard
