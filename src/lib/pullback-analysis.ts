@@ -85,7 +85,6 @@ export function analyzePullback(bars: BarData[], options: PullbackOptions = {}):
   const bodyThreshold = options.bodyThreshold ?? 0.7;
   const pullbackLevel = options.pullbackLevel ?? 0.5;
   const tp1Ratio = options.tp1Ratio ?? 0.5;
-  const tp2Ratio = options.tp2Ratio ?? 1.0;
   const sessionEndMinutes = options.sessionEndMinutes ?? 780;
   const stopMode = options.stopMode ?? "full";
   const maxDays = options.maxDays ?? 0;
@@ -180,40 +179,33 @@ export function analyzePullback(bars: BarData[], options: PullbackOptions = {}):
       const riskPerShare = Math.abs(entry - stop);
       if (riskPerShare <= 0) continue;
 
-      const target1 = direction === "bullish"
+      const target = direction === "bullish"
         ? entry + range * tp1Ratio
         : entry - range * tp1Ratio;
-      const target2 = direction === "bullish"
-        ? entry + range * tp2Ratio
-        : entry - range * tp2Ratio;
 
       // Walk-forward from trigger candle to end of session (< 16:00)
-      const walk = (target: number): { outcome: TradeOutcome; resolvedTime?: string } => {
-        for (let j = triggerIdx; j < m15.length; j++) {
-          const b = m15[j];
-          if (timeToMinutes(b.time) >= RTH_END) break;
-          let hitStop = false;
-          let hitTarget = false;
-          if (direction === "bullish") {
-            hitStop = b.low <= stop;
-            hitTarget = b.high >= target;
-          } else {
-            hitStop = b.high >= stop;
-            hitTarget = b.low <= target;
-          }
-          if (hitStop && hitTarget) return { outcome: "loss", resolvedTime: b.time };
-          if (hitTarget) return { outcome: "win", resolvedTime: b.time };
-          if (hitStop) return { outcome: "loss", resolvedTime: b.time };
+      let outcome: TradeOutcome = "open";
+      let resolvedTime: string | undefined;
+      for (let j = triggerIdx; j < m15.length; j++) {
+        const b = m15[j];
+        if (timeToMinutes(b.time) >= RTH_END) break;
+        let hitStop = false;
+        let hitTarget = false;
+        if (direction === "bullish") {
+          hitStop = b.low <= stop;
+          hitTarget = b.high >= target;
+        } else {
+          hitStop = b.high >= stop;
+          hitTarget = b.low <= target;
         }
-        return { outcome: "open" };
-      };
+        if (hitStop && hitTarget) { outcome = "loss"; resolvedTime = b.time; break; }
+        if (hitTarget) { outcome = "win"; resolvedTime = b.time; break; }
+        if (hitStop) { outcome = "loss"; resolvedTime = b.time; break; }
+      }
 
-      const tp1 = walk(target1);
-      const tp2 = walk(target2);
-
-      // Gating: block new entries until TP2 resolves
-      if (tp2.outcome !== "open" && tp2.resolvedTime) {
-        const resolvedIdx = m15.findIndex(b => b.time === tp2.resolvedTime);
+      // Gating: block new entries until trade resolves
+      if (outcome !== "open" && resolvedTime) {
+        const resolvedIdx = m15.findIndex(b => b.time === resolvedTime);
         openUntilIndex = resolvedIdx >= 0 ? resolvedIdx : m15.length;
       } else {
         openUntilIndex = m15.length;
@@ -222,35 +214,28 @@ export function analyzePullback(bars: BarData[], options: PullbackOptions = {}):
       trades.push({
         date,
         triggerTime: c.time,
-        resolvedTime: tp2.resolvedTime,
+        resolvedTime,
         direction,
         entry,
         stop,
-        target1,
-        target2,
+        target,
         bodyRatio: ratio,
         rangePts: range,
-        tp1Outcome: tp1.outcome,
-        tp2Outcome: tp2.outcome,
+        outcome,
       });
     }
   }
 
   // Aggregate stats
-  const mk = (): PullbackStats => ({ tp1: emptySide(), tp2: emptySide() });
-  const bullish = mk();
-  const bearish = mk();
-  const overall = mk();
+  const bullish = emptySide();
+  const bearish = emptySide();
+  const overall = emptySide();
 
-  const tally = (stats: PullbackStats, t: PullbackTrade) => {
-    stats.tp1.total++;
-    if (t.tp1Outcome === "win") stats.tp1.wins++;
-    else if (t.tp1Outcome === "loss") stats.tp1.losses++;
-    else stats.tp1.open++;
-    stats.tp2.total++;
-    if (t.tp2Outcome === "win") stats.tp2.wins++;
-    else if (t.tp2Outcome === "loss") stats.tp2.losses++;
-    else stats.tp2.open++;
+  const tally = (stats: PullbackSideStats, t: PullbackTrade) => {
+    stats.total++;
+    if (t.outcome === "win") stats.wins++;
+    else if (t.outcome === "loss") stats.losses++;
+    else stats.open++;
   };
 
   for (const t of trades) {
@@ -258,10 +243,7 @@ export function analyzePullback(bars: BarData[], options: PullbackOptions = {}):
     tally(t.direction === "bullish" ? bullish : bearish, t);
   }
 
-  [overall, bullish, bearish].forEach(s => {
-    finalizeSide(s.tp1);
-    finalizeSide(s.tp2);
-  });
+  [overall, bullish, bearish].forEach(s => finalizeSide(s));
 
   return {
     totalDays: dates.length,
@@ -270,6 +252,6 @@ export function analyzePullback(bars: BarData[], options: PullbackOptions = {}):
     bearish,
     overall,
     trades,
-    params: { bodyThreshold, pullbackLevel, tp1Ratio, tp2Ratio, sessionEndMinutes, stopMode },
+    params: { bodyThreshold, pullbackLevel, tp1Ratio, sessionEndMinutes, stopMode },
   };
 }
