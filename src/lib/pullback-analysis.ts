@@ -161,9 +161,23 @@ export function analyzePullback(bars: BarData[], options: PullbackOptions = {}):
         ? c.low + range * pullbackLevel
         : c.high - range * pullbackLevel;
 
-      const next = m15[i + 1];
-      const tagged = direction === "bullish" ? next.low <= mid : next.high >= mid;
-      if (!tagged) continue;
+      // Trigger window: try candle i+1 .. i+triggerLookahead (default 2 → candle 2 & 3).
+      // If an intermediate candle does not trigger AND is itself a momentum candle,
+      // invalidate the current trigger so the outer loop promotes that candle.
+      const triggerLookahead = options.triggerLookahead ?? 2;
+      let triggerIdx = -1;
+      for (let k = 1; k <= triggerLookahead && i + k < m15.length; k++) {
+        const nb = m15[i + k];
+        if (timeToMinutes(nb.time) >= RTH_END) break;
+        const tagged = direction === "bullish" ? nb.low <= mid : nb.high >= mid;
+        if (tagged) { triggerIdx = i + k; break; }
+        const nbRange = nb.high - nb.low;
+        if (nbRange > 0) {
+          const nbRatio = Math.abs(nb.close - nb.open) / nbRange;
+          if (nbRatio >= bodyThreshold && nb.close !== nb.open) break; // invalidated
+        }
+      }
+      if (triggerIdx === -1) continue;
 
       const entry = mid;
       const fullStop = direction === "bullish" ? c.low : c.high;
