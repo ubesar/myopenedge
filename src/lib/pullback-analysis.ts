@@ -63,6 +63,7 @@ export interface PullbackOptions {
   tp2Ratio?: number;             // default 1.0  (RR 1:2)
   sessionEndMinutes?: number;    // default 780  (13:00 NY)
   stopMode?: "full" | "half";    // default "full"
+  triggerLookahead?: number;     // default 2 (candle 2 & 3)
   maxDays?: number;
   weekdays?: number[];           // default [1..5]
 }
