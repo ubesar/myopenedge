@@ -18,12 +18,10 @@ export interface PullbackTrade {
   direction: "bullish" | "bearish";
   entry: number;
   stop: number;
-  target1: number;
-  target2: number;
+  target: number;
   bodyRatio: number;
   rangePts: number;
-  tp1Outcome: TradeOutcome;
-  tp2Outcome: TradeOutcome;
+  outcome: TradeOutcome;
 }
 
 export interface PullbackSideStats {
