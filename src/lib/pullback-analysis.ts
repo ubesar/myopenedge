@@ -196,9 +196,9 @@ export function analyzePullback(bars: BarData[], options: PullbackOptions = {}):
         ? entry + range * tp2Ratio
         : entry - range * tp2Ratio;
 
-      // Walk-forward from i+1 to end of session (< 16:00)
+      // Walk-forward from trigger candle to end of session (< 16:00)
       const walk = (target: number): { outcome: TradeOutcome; resolvedTime?: string } => {
-        for (let j = i + 1; j < m15.length; j++) {
+        for (let j = triggerIdx; j < m15.length; j++) {
           const b = m15[j];
           if (timeToMinutes(b.time) >= RTH_END) break;
           let hitStop = false;
