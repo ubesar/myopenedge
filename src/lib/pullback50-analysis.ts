@@ -71,6 +71,7 @@ function resolvePullback(
   entry: number,
   stop: number,
   target: number,
+  bodyThreshold: number,
 ): { outcome: TradeOutcome; resolvedIdx: number; triggered: boolean } {
   let triggered = false;
   let triggerDeadline = Math.min(startIdx + MAX_TRIGGER_LOOKAHEAD, bars.length - 1);
