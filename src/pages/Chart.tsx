@@ -25,6 +25,7 @@ const Chart = () => {
   const [interval, setInterval] = useState("5min");
   const [showIB, setShowIB] = useState(true);
   const [showMC, setShowMC] = useState(true);
+  const [showPB, setShowPB] = useState(false);
   const [mccBodyRatio, setMccBodyRatio] = useState(0.70);
 
   useEffect(() => {
