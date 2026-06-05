@@ -85,7 +85,7 @@ function resolvePullback(
         // (it will become the new candle 1 in the outer loop).
         const range = b.high - b.low;
         const body = Math.abs(b.close - b.open);
-        const isMomentum = range > 0 && b.close !== b.open && body / range >= BODY_THRESHOLD;
+        const isMomentum = range > 0 && b.close !== b.open && body / range >= bodyThreshold;
         if (isMomentum) {
           return { outcome: "open", resolvedIdx: i - 1, triggered: false };
         }
