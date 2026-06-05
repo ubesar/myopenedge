@@ -531,52 +531,72 @@ const Index = () => {
       const sessionEndH = Math.floor(pullback50Result.sessionEndMinutes / 60);
       const sessionEndM = pullback50Result.sessionEndMinutes % 60;
       const sessionEndLabel = `${String(sessionEndH).padStart(2, "0")}:${String(sessionEndM).padStart(2, "0")}`;
-      const bodyPct = `${Math.round(pullback50Result.bodyThreshold * 100)}%`;
-      const subtitle = `${symbol} · m15 · body ≥ ${bodyPct} · 09:30 – ${sessionEndLabel} ny · ${formatDateRange(analysisMaxDays)}`;
-      const s = pullback50Result.stats;
-      const signalPct = pullback50Result.totalDays > 0 ? (pullback50Result.daysWithSignal / pullback50Result.totalDays) * 100 : 0;
+
+      const renderBlock = (label: string, res: Pullback50Result) => {
+        const bodyPct = `${Math.round(res.bodyThreshold * 100)}%`;
+        const subtitle = `${symbol} · m15 · body ≥ ${bodyPct} · 09:30 – ${sessionEndLabel} ny · ${formatDateRange(analysisMaxDays)}`;
+        const s = res.stats;
+        const signalPct = res.totalDays > 0 ? (res.daysWithSignal / res.totalDays) * 100 : 0;
+        return (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="rounded-md bg-primary/10 text-primary text-[11px] font-semibold px-2 py-0.5 uppercase tracking-wider">{label}</span>
+              <span className="text-[11px] text-muted-foreground">body threshold ≥ {bodyPct}</span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="rounded-lg border border-border bg-card p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">total signals</p>
+                <p className="text-[18px] font-semibold text-foreground">{res.totalTrades}</p>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">days w/ signal</p>
+                <p className="text-[18px] font-semibold text-foreground">{res.daysWithSignal}/{res.totalDays} <span className="text-[11px] text-muted-foreground">({signalPct.toFixed(0)}%)</span></p>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate</p>
+                <p className="text-[18px] font-semibold text-foreground">{s.winRate.toFixed(1)}%</p>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">wins / losses</p>
+                <p className="text-[14px] font-semibold text-foreground">{s.wins} / {s.losses}</p>
+              </div>
+            </div>
+            <MomentumResultCard
+              title={`50% pullback · body ≥ ${bodyPct} · sl ujung candle · tp opposite end`}
+              subtitle={subtitle}
+              stats={s}
+            />
+          </div>
+        );
+      };
+
       return (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
-            <strong className="text-foreground">50% pullback strategy</strong> — scans m15 momentum candles (09:30 – {sessionEndLabel} ny, body ≥ {bodyPct}). entry triggers when price retraces to 50% of candle 1. sl at far end of candle 1, tp at opposite end. walks forward to 16:00 close.
+            <strong className="text-foreground">50% pullback strategy</strong> — scans m15 momentum candles (09:30 – {sessionEndLabel} ny). entry triggers when price retraces to 50% of candle 1. sl at far end of candle 1, tp at opposite end. results shown for both body ≥ 70% and body ≥ 50% thresholds.
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">total signals</p>
-              <p className="text-[18px] font-semibold text-foreground">{pullback50Result.totalTrades}</p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">days w/ signal</p>
-              <p className="text-[18px] font-semibold text-foreground">{pullback50Result.daysWithSignal}/{pullback50Result.totalDays} <span className="text-[11px] text-muted-foreground">({signalPct.toFixed(0)}%)</span></p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate</p>
-              <p className="text-[18px] font-semibold text-foreground">{s.winRate.toFixed(1)}%</p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">wins / losses / open</p>
-              <p className="text-[14px] font-semibold text-foreground">{s.wins} / {s.losses} / {s.open}</p>
-            </div>
-          </div>
-
-          <MomentumResultCard
-            title="50% pullback · sl ujung candle · tp opposite end"
-            subtitle={subtitle}
-            stats={s}
-          />
+          {renderBlock("body ≥ 70%", pullback50Result)}
+          {pullback50Result50 && renderBlock("body ≥ 50%", pullback50Result50)}
 
           <AITradingInsight
             mode="momentum"
             symbol={symbol}
             analysisData={{
               method: "50% Pullback Strategy",
-              totalDays: pullback50Result.totalDays,
-              daysWithSignal: pullback50Result.daysWithSignal,
               sessionEndMinutes: pullback50Result.sessionEndMinutes,
-              bodyThreshold: pullback50Result.bodyThreshold,
-              totalTrades: pullback50Result.totalTrades,
-              stats: s,
+              body70: {
+                totalDays: pullback50Result.totalDays,
+                daysWithSignal: pullback50Result.daysWithSignal,
+                totalTrades: pullback50Result.totalTrades,
+                stats: pullback50Result.stats,
+              },
+              body50: pullback50Result50 ? {
+                totalDays: pullback50Result50.totalDays,
+                daysWithSignal: pullback50Result50.daysWithSignal,
+                totalTrades: pullback50Result50.totalTrades,
+                stats: pullback50Result50.stats,
+              } : null,
             }}
           />
         </div>
