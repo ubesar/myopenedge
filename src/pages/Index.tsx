@@ -283,10 +283,12 @@ const Index = () => {
           setOutsideDayResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, outsidePct: a.outsidePct, bullishFilledPct: a.bullish.filledGapPct, bearishFilledPct: a.bearish.filledGapPct });
         } else if (effectiveMode === "pullback50") {
-          const a = analyzePullback50(values as any, effectiveMaxDays, weekdays, momentumSessionEnd);
-          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
-          setPullback50Result(a);
-          addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, sessionEndMinutes: a.sessionEndMinutes, winRate: a.stats.winRate });
+          const a70 = analyzePullback50(values as any, effectiveMaxDays, weekdays, momentumSessionEnd, 0.7);
+          const a50 = analyzePullback50(values as any, effectiveMaxDays, weekdays, momentumSessionEnd, 0.5);
+          if (a70.totalDays === 0 && a50.totalDays === 0) { toast.error("Not enough data."); return; }
+          setPullback50Result(a70);
+          setPullback50Result50(a50);
+          addRun(effectiveMode, ticker, { totalTrades70: a70.totalTrades, winRate70: a70.stats.winRate, totalTrades50: a50.totalTrades, winRate50: a50.stats.winRate, sessionEndMinutes: a70.sessionEndMinutes });
         }
       }
 
