@@ -62,6 +62,8 @@ function finalizeTp(s: TpStats) {
  * If both SL and TP hit in the same bar -> loss (conservative).
  * If never triggered before market close -> outcome = "open".
  */
+const MAX_TRIGGER_LOOKAHEAD = 2; // candle 2 and candle 3 only
+
 function resolvePullback(
   bars: CandleBar[],
   startIdx: number,
@@ -71,12 +73,18 @@ function resolvePullback(
   target: number,
 ): { outcome: TradeOutcome; resolvedIdx: number; triggered: boolean } {
   let triggered = false;
+  let triggerDeadline = Math.min(startIdx + MAX_TRIGGER_LOOKAHEAD, bars.length - 1);
   for (let i = startIdx + 1; i < bars.length; i++) {
     const b = bars[i];
     if (!triggered) {
       // Bullish: price retraces DOWN into midpoint. Bearish: price retraces UP into midpoint.
       const trig = direction === "bullish" ? b.low <= entry : b.high >= entry;
-      if (!trig) continue;
+      if (!trig) {
+        if (i >= triggerDeadline) {
+          return { outcome: "open", resolvedIdx: i, triggered: false };
+        }
+        continue;
+      }
       triggered = true;
     }
     let hitStop: boolean;
