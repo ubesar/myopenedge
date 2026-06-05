@@ -180,7 +180,7 @@ export function analyzePullback50(
       const stop = direction === "bullish" ? c.low : c.high;
       const target = direction === "bullish" ? c.high : c.low;
 
-      const r = resolvePullback(m15, i, direction, entry, stop, target);
+      const r = resolvePullback(m15, i, direction, entry, stop, target, bodyThreshold);
 
       // Skip unresolved/untriggered trades — only count win/loss outcomes.
       if (r.outcome === "open") continue;
