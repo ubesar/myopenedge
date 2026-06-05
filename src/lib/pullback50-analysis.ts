@@ -173,7 +173,7 @@ export function analyzePullback50(
       if (range <= 0) continue;
       const body = Math.abs(c.close - c.open);
       if (c.close === c.open) continue;
-      if (body / range < BODY_THRESHOLD) continue;
+      if (body / range < bodyThreshold) continue;
 
       const direction: TradeDirection = c.close > c.open ? "bullish" : "bearish";
       const entry = (c.high + c.low) / 2;
