@@ -80,6 +80,14 @@ function resolvePullback(
       // Bullish: price retraces DOWN into midpoint. Bearish: price retraces UP into midpoint.
       const trig = direction === "bullish" ? b.low <= entry : b.high >= entry;
       if (!trig) {
+        // Invalidate candle 1 if this untriggered bar is itself a momentum candle
+        // (it will become the new candle 1 in the outer loop).
+        const range = b.high - b.low;
+        const body = Math.abs(b.close - b.open);
+        const isMomentum = range > 0 && b.close !== b.open && body / range >= BODY_THRESHOLD;
+        if (isMomentum) {
+          return { outcome: "open", resolvedIdx: i - 1, triggered: false };
+        }
         if (i >= triggerDeadline) {
           return { outcome: "open", resolvedIdx: i, triggered: false };
         }
