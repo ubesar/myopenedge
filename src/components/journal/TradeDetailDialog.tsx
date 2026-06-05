@@ -1,10 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ImagePlus, Trash2, Loader2, X } from "lucide-react";
-import { supabase as _supaClient } from "@/integrations/supabase/client";
-// @ts-ignore - some tables not in generated types
-const supabase: any = _supaClient as any;
-
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { extractTradeScreenshotPath, resolveTradeScreenshotUrl } from "@/lib/trade-screenshot-url";

@@ -73,7 +73,23 @@ Deno.serve(async (req) => {
   const isPro =
     profile?.subscription_status === "active" || profile?.subscription_status === "pro";
 
-  // rate limiting removed — quota dikelola di sisi provider (massive api)
+  const serviceClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+  const maxRequests = isPro ? 100 : 20;
+  const { data: allowed, error: rlError } = await serviceClient.rpc("check_rate_limit", {
+    _user_id: userId,
+    _endpoint: "twelvedata-proxy",
+    _max_requests: maxRequests,
+  });
+
+  if (rlError || allowed === false) {
+    return new Response(
+      JSON.stringify({ error: "Rate limit exceeded. Please try again later.", retryAfterMinutes: 60 }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
 
   let symbol: string | null = null;
   let interval = "5min";
