@@ -117,6 +117,7 @@ export function analyzePullback50(
   maxDays: number = 0,
   weekdays: number[] = [1, 2, 3, 4, 5],
   sessionEndMinutes: number = 13 * 60,
+  bodyThreshold: number = DEFAULT_BODY_THRESHOLD,
 ): Pullback50Result {
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
