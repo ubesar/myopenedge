@@ -218,7 +218,7 @@ export function analyzePullback50(
     totalDays,
     daysWithSignal,
     sessionEndMinutes,
-    bodyThreshold: BODY_THRESHOLD,
+    bodyThreshold: bodyThreshold,
     totalTrades: trades.length,
     stats,
     trades,
