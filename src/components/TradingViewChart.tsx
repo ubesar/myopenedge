@@ -7,9 +7,12 @@ import {
   CandlestickSeries,
   HistogramSeries,
   LineSeries,
+  createSeriesMarkers,
   type IChartApi,
   type ISeriesApi,
+  type ISeriesMarkersPluginApi,
   type CandlestickData,
+  type SeriesMarker,
   type Time,
 } from "lightweight-charts";
 
@@ -18,10 +21,11 @@ interface TradingViewChartProps {
   interval: string;
   showIB?: boolean;
   showMC?: boolean;
+  showPB?: boolean;
   mccBodyRatio?: number;
 }
 
-const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, mccBodyRatio = 0.70 }: TradingViewChartProps) => {
+const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, showPB = false, mccBodyRatio = 0.70 }: TradingViewChartProps) => {
   const MCC_BODY_RATIO = mccBodyRatio;
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
