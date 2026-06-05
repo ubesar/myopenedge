@@ -33,7 +33,7 @@ export interface Pullback50Result {
 
 const IB_START = 9 * 60 + 30;   // 09:30 NY
 const MARKET_CLOSE = 16 * 60;   // 16:00 NY
-const BODY_THRESHOLD = 0.7;
+const DEFAULT_BODY_THRESHOLD = 0.7;
 const TF_MINUTES = 15;
 
 function parseDateTime(dt: string): Date {
@@ -71,6 +71,7 @@ function resolvePullback(
   entry: number,
   stop: number,
   target: number,
+  bodyThreshold: number,
 ): { outcome: TradeOutcome; resolvedIdx: number; triggered: boolean } {
   let triggered = false;
   let triggerDeadline = Math.min(startIdx + MAX_TRIGGER_LOOKAHEAD, bars.length - 1);
@@ -84,7 +85,7 @@ function resolvePullback(
         // (it will become the new candle 1 in the outer loop).
         const range = b.high - b.low;
         const body = Math.abs(b.close - b.open);
-        const isMomentum = range > 0 && b.close !== b.open && body / range >= BODY_THRESHOLD;
+        const isMomentum = range > 0 && b.close !== b.open && body / range >= bodyThreshold;
         if (isMomentum) {
           return { outcome: "open", resolvedIdx: i - 1, triggered: false };
         }
@@ -116,6 +117,7 @@ export function analyzePullback50(
   maxDays: number = 0,
   weekdays: number[] = [1, 2, 3, 4, 5],
   sessionEndMinutes: number = 13 * 60,
+  bodyThreshold: number = DEFAULT_BODY_THRESHOLD,
 ): Pullback50Result {
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
@@ -171,14 +173,14 @@ export function analyzePullback50(
       if (range <= 0) continue;
       const body = Math.abs(c.close - c.open);
       if (c.close === c.open) continue;
-      if (body / range < BODY_THRESHOLD) continue;
+      if (body / range < bodyThreshold) continue;
 
       const direction: TradeDirection = c.close > c.open ? "bullish" : "bearish";
       const entry = (c.high + c.low) / 2;
       const stop = direction === "bullish" ? c.low : c.high;
       const target = direction === "bullish" ? c.high : c.low;
 
-      const r = resolvePullback(m15, i, direction, entry, stop, target);
+      const r = resolvePullback(m15, i, direction, entry, stop, target, bodyThreshold);
 
       // Skip unresolved/untriggered trades — only count win/loss outcomes.
       if (r.outcome === "open") continue;
@@ -216,7 +218,7 @@ export function analyzePullback50(
     totalDays,
     daysWithSignal,
     sessionEndMinutes,
-    bodyThreshold: BODY_THRESHOLD,
+    bodyThreshold: bodyThreshold,
     totalTrades: trades.length,
     stats,
     trades,
