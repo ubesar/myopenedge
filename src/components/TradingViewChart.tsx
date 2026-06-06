@@ -366,6 +366,9 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
           const MAX_LOOKAHEAD = 2; // candle 2 & 3
           const dayBars: Record<string, typeof sorted> = {};
           for (const bar of sorted) {
+            const t = bar.datetime.split(" ")[1];
+            // Match /app: session 09:30–16:00 NY only
+            if (t < "09:30:00" || t >= "16:00:00") continue;
             const date = bar.datetime.split(" ")[0];
             if (!dayBars[date]) dayBars[date] = [];
             dayBars[date].push(bar);
