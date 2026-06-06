@@ -439,8 +439,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
               if (resolvedIdx < 0) continue;
 
               const startTs = toTs(b.datetime);
-              const endIdx = resolvedIdx > 0 ? resolvedIdx : Math.min(i + 4, bars.length - 1);
-              const endTs = toTs(bars[endIdx].datetime);
+              const endTs = toTs(bars[resolvedIdx].datetime);
 
               // Horizontal level lines (entry/SL/TP) spanning candle1 → resolution
               const entrySeries = chart.addSeries(LineSeries, { ...lineOpts, color: "#2962FF", lineWidth: 1, lineStyle: 2, title: "" });
