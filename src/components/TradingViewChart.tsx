@@ -435,6 +435,8 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
               }
               if (invalidated) continue;
               if (!triggered) continue;
+              // Match /app: skip "open" outcomes (triggered but never hit SL/TP)
+              if (resolvedIdx < 0) continue;
 
               const startTs = toTs(b.datetime);
               const endIdx = resolvedIdx > 0 ? resolvedIdx : Math.min(i + 4, bars.length - 1);
