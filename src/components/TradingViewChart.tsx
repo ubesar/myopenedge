@@ -465,7 +465,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
                 pbMarkers.push({ time: startTs, position: "belowBar", color: "#26a69a", shape: "arrowDown", text: `TP ${target.toFixed(2)}` });
               }
 
-              gateUntil = resolvedIdx > 0 ? resolvedIdx : deadline;
+              gateUntil = resolvedIdx;
             }
           }
 
