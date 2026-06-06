@@ -563,6 +563,50 @@ const Index = () => {
             stats={s}
           />
 
+          {pullback50Result.trades.length > 0 && (
+            <div className="rounded-lg border border-border bg-card overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+                <p className="text-[12px] font-semibold text-foreground">trade history</p>
+                <p className="text-[10px] text-muted-foreground">{pullback50Result.trades.length} signals</p>
+              </div>
+              <div className="max-h-[420px] overflow-auto">
+                <table className="w-full text-[11px]">
+                  <thead className="sticky top-0 bg-card border-b border-border">
+                    <tr className="text-left text-muted-foreground">
+                      <th className="px-3 py-2 font-medium">date</th>
+                      <th className="px-3 py-2 font-medium">time</th>
+                      <th className="px-3 py-2 font-medium">dir</th>
+                      <th className="px-3 py-2 font-medium text-right">entry</th>
+                      <th className="px-3 py-2 font-medium text-right">sl</th>
+                      <th className="px-3 py-2 font-medium text-right">tp</th>
+                      <th className="px-3 py-2 font-medium text-center">outcome</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...pullback50Result.trades].reverse().map((t, idx) => {
+                      const isWin = t.outcome === "win";
+                      const dirColor = t.direction === "bullish" ? "text-emerald-500" : "text-rose-500";
+                      const outColor = isWin ? "text-emerald-500 bg-emerald-500/10" : "text-rose-500 bg-rose-500/10";
+                      return (
+                        <tr key={idx} className="border-b border-border/40 hover:bg-muted/30">
+                          <td className="px-3 py-1.5 text-foreground/80">{t.date}</td>
+                          <td className="px-3 py-1.5 text-foreground/80">{t.signalTime}</td>
+                          <td className={`px-3 py-1.5 font-medium ${dirColor}`}>{t.direction === "bullish" ? "buy" : "sell"}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/90 tabular-nums">{t.entry.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.stop.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.target.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-center">
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${outColor}`}>{t.outcome}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           <AITradingInsight
             mode="momentum"
             symbol={symbol}
