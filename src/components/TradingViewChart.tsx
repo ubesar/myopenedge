@@ -366,6 +366,9 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
           const MAX_LOOKAHEAD = 2; // candle 2 & 3
           const dayBars: Record<string, typeof sorted> = {};
           for (const bar of sorted) {
+            const t = bar.datetime.split(" ")[1];
+            // Match /app: session 09:30–16:00 NY only
+            if (t < "09:30:00" || t >= "16:00:00") continue;
             const date = bar.datetime.split(" ")[0];
             if (!dayBars[date]) dayBars[date] = [];
             dayBars[date].push(bar);
@@ -432,10 +435,11 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
               }
               if (invalidated) continue;
               if (!triggered) continue;
+              // Match /app: skip "open" outcomes (triggered but never hit SL/TP)
+              if (resolvedIdx < 0) continue;
 
               const startTs = toTs(b.datetime);
-              const endIdx = resolvedIdx > 0 ? resolvedIdx : Math.min(i + 4, bars.length - 1);
-              const endTs = toTs(bars[endIdx].datetime);
+              const endTs = toTs(bars[resolvedIdx].datetime);
 
               // Horizontal level lines (entry/SL/TP) spanning candle1 → resolution
               const entrySeries = chart.addSeries(LineSeries, { ...lineOpts, color: "#2962FF", lineWidth: 1, lineStyle: 2, title: "" });
@@ -461,7 +465,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
                 pbMarkers.push({ time: startTs, position: "belowBar", color: "#26a69a", shape: "arrowDown", text: `TP ${target.toFixed(2)}` });
               }
 
-              gateUntil = resolvedIdx > 0 ? resolvedIdx : deadline;
+              gateUntil = resolvedIdx;
             }
           }
 
