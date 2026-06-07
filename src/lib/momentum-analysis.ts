@@ -169,8 +169,14 @@ export function analyzeMomentum(
   ibWindowMinutes: number = 30,
   maxDays: number = 0,
   bodyRatio: number = 0.70,
-  weekdays: number[] = [1, 2, 3, 4, 5]
+  weekdays: number[] = [1, 2, 3, 4, 5],
+  superMultiplier: number = 1.5,
+  avgPeriod: number = 15
 ): MomentumResult {
+  // Rolling history of opening-candle body sizes per TF across all sessions
+  // (Pine ta.sma(BodyRange(), 15) reproduced for the opening candle only).
+  const bodyHistoryByTf: Record<string, number[]> = {};
+  for (const cfg of TF_CONFIGS) bodyHistoryByTf[cfg.tf] = [];
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
     const date = bar.datetime.split(" ")[0];
