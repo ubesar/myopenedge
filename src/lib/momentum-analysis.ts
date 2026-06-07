@@ -239,7 +239,7 @@ export function analyzeMomentum(
     const sessionClose = sessionBars5min[sessionBars5min.length - 1].close;
 
     const timeframes = TF_CONFIGS.map(cfg =>
-      evaluateMCC(sessionBars5min, cfg.minutes, bodyRatio, sessionOpen, sessionClose)
+      evaluateMCC(sessionBars5min, cfg.minutes, bodyRatio, sessionOpen, sessionClose, bodyHistoryByTf[cfg.tf], superMultiplier, avgPeriod)
     );
 
     const defaultTf = timeframes.find(t => t.tf === DEFAULT_TF) || timeframes[0];
