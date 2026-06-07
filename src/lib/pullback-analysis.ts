@@ -241,7 +241,7 @@ export function analyzePullback(bars: BarData[], options: PullbackOptions = {}):
         entry,
         stop,
         target,
-        bodyRatio: ratio,
+        bodyRatio: range > 0 ? body / range : 0,
         rangePts: range,
         outcome,
       });
