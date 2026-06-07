@@ -106,7 +106,10 @@ function evaluateMCC(
   tfMinutes: number,
   bodyRatio: number,
   sessionOpen: number,
-  sessionClose: number
+  sessionClose: number,
+  bodyHistory: number[],
+  superMultiplier: number,
+  avgPeriod: number
 ): MomentumTFResult {
   const tf = TF_CONFIGS.find(t => t.minutes === tfMinutes)?.tf || `M${tfMinutes}`;
   const candles = aggregateBars(sessionBars5min, tfMinutes);
@@ -126,7 +129,21 @@ function evaluateMCC(
     opening.close > opening.open ? "bullish" :
     opening.close < opening.open ? "bearish" : "none";
 
-  const hasMomentum = direction !== "none" && ratio >= bodyRatio;
+  // Push opening body to rolling history (Pine ta.sma includes current bar)
+  bodyHistory.push(body);
+
+  // Super/Solid Body Candle: body > sma(body, avgPeriod) * superMultiplier.
+  // Warm-up fallback: use body/range ratio threshold.
+  let hasMomentum = false;
+  if (direction !== "none") {
+    if (bodyHistory.length >= avgPeriod) {
+      const slice = bodyHistory.slice(-avgPeriod);
+      const avg = slice.reduce((a, b) => a + b, 0) / slice.length;
+      hasMomentum = body > avg * superMultiplier;
+    } else {
+      hasMomentum = ratio >= bodyRatio;
+    }
+  }
 
   // Continuation: session close direction matches opening direction
   const sessionBullish = sessionClose > sessionOpen;
