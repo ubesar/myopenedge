@@ -49,12 +49,16 @@ export interface PullbackResult {
 }
 
 export interface PullbackOptions {
-  bodyThreshold?: number;        // default 0.7
+  bodyThreshold?: number;        // default 0.7 (fallback only when not enough history for super-body)
   pullbackLevel?: number;        // default 0.5
   tp1Ratio?: number;             // default 0.5  (RR 1:1)
   sessionEndMinutes?: number;    // default 780  (13:00 NY)
   stopMode?: "full" | "half";    // default "full"
   triggerLookahead?: number;     // default 2 (candle 2 & 3)
+  /** super-body multiplier vs SMA(body, avgPeriod). default 1.5 (Pine "Super/Solid Body Candle") */
+  superMultiplier?: number;
+  /** lookback period for SMA(body). default 15 */
+  avgPeriod?: number;
   maxDays?: number;
   weekdays?: number[];           // default [1..5]
 }
