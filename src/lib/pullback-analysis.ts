@@ -91,8 +91,13 @@ export function analyzePullback(bars: BarData[], options: PullbackOptions = {}):
   const tp1Ratio = options.tp1Ratio ?? 0.5;
   const sessionEndMinutes = options.sessionEndMinutes ?? 780;
   const stopMode = options.stopMode ?? "full";
+  const superMultiplier = options.superMultiplier ?? 1.5;
+  const avgPeriod = options.avgPeriod ?? 15;
   const maxDays = options.maxDays ?? 0;
   const weekdays = options.weekdays ?? [1, 2, 3, 4, 5];
+
+  // Rolling history of M15 body sizes across all sessions (Pine: ta.sma(BodyRange(), 15))
+  const bodyHistory: number[] = [];
 
   // Group bars by date
   const byDate = new Map<string, BarData[]>();
