@@ -166,6 +166,58 @@ const PullbackReport = ({ result, symbol, dateRange, bodyThresholdPct }: Props) 
           />
         </div>
       </div>
+
+      {/* history */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+            pullback 50% history — {sym}
+          </p>
+          <p className="text-[11px] text-muted-foreground lowercase">{result.trades.length} trades</p>
+        </div>
+        {result.trades.length === 0 ? (
+          <p className="text-[12px] text-muted-foreground lowercase">no trades found in selected range.</p>
+        ) : (
+          <div className="max-h-[420px] overflow-auto rounded-md border border-border/60">
+            <table className="w-full text-[11px] tabular-nums">
+              <thead className="sticky top-0 bg-muted/60 backdrop-blur text-muted-foreground lowercase">
+                <tr>
+                  <th className="text-left px-3 py-2 font-medium">date</th>
+                  <th className="text-left px-3 py-2 font-medium">trigger</th>
+                  <th className="text-left px-3 py-2 font-medium">resolved</th>
+                  <th className="text-left px-3 py-2 font-medium">dir</th>
+                  <th className="text-right px-3 py-2 font-medium">entry</th>
+                  <th className="text-right px-3 py-2 font-medium">stop</th>
+                  <th className="text-right px-3 py-2 font-medium">target</th>
+                  <th className="text-right px-3 py-2 font-medium">range</th>
+                  <th className="text-left px-3 py-2 font-medium">outcome</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...result.trades].reverse().map((t, i) => {
+                  const dirColor = t.direction === "bullish" ? "text-emerald-400" : "text-red-400";
+                  const outColor =
+                    t.outcome === "win" ? "text-emerald-400" :
+                    t.outcome === "loss" ? "text-red-400" : "text-muted-foreground";
+                  return (
+                    <tr key={i} className="border-t border-border/40 hover:bg-muted/30">
+                      <td className="px-3 py-1.5 text-foreground">{t.date}</td>
+                      <td className="px-3 py-1.5 text-foreground">{t.triggerTime}</td>
+                      <td className="px-3 py-1.5 text-muted-foreground">{t.resolvedTime ?? "—"}</td>
+                      <td className={`px-3 py-1.5 lowercase ${dirColor}`}>{t.direction}</td>
+                      <td className="px-3 py-1.5 text-right text-foreground">{t.entry.toFixed(2)}</td>
+                      <td className="px-3 py-1.5 text-right text-foreground">{t.stop.toFixed(2)}</td>
+                      <td className="px-3 py-1.5 text-right text-foreground">{t.target.toFixed(2)}</td>
+                      <td className="px-3 py-1.5 text-right text-muted-foreground">{t.rangePts.toFixed(2)}</td>
+                      <td className={`px-3 py-1.5 lowercase font-medium ${outColor}`}>{t.outcome}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
