@@ -186,7 +186,10 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
                 if (!payload) return <rect />;
                 const { open, close, high, low, time } = payload;
                 const isUp = close >= open;
-                const color = isUp ? "#22c55e" : "#ef4444";
+                const tier = superTier.get(time);
+                const color = tier === "superBull" ? "#39ff14"
+                  : tier === "superBear" ? "#ff2bd6"
+                  : isUp ? "#22c55e" : "#ef4444";
                 const yAxisHeight = props.background?.height || 360;
                 const range = domainMax - domainMin;
                 const toY = (val: number) => {
