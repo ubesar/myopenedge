@@ -142,19 +142,34 @@ export function analyzePullback(bars: BarData[], options: PullbackOptions = {}):
 
     let openUntilIndex = -1; // gating
 
+    // Helper: Pine "Super/Solid Body Candle" — body > sma(body, avgPeriod) * superMultiplier.
+    // Falls back to bodyThreshold ratio when not enough history yet.
+    const isSuperBody = (body: number, range: number): boolean => {
+      if (range <= 0 || body <= 0) return false;
+      if (bodyHistory.length >= avgPeriod) {
+        const slice = bodyHistory.slice(-avgPeriod);
+        const avg = slice.reduce((a, b) => a + b, 0) / slice.length;
+        return body > avg * superMultiplier;
+      }
+      // warm-up fallback: use body/range ratio
+      return body / range >= bodyThreshold;
+    };
+
     for (let i = 0; i < m15.length - 1; i++) {
+      const c = m15[i];
+      const range = c.high - c.low;
+      const body = Math.abs(c.close - c.open);
+      // Push body to rolling history BEFORE testing (Pine ta.sma includes current bar)
+      bodyHistory.push(body);
+
       if (i <= openUntilIndex) continue;
 
-      const c = m15[i];
       const tMin = timeToMinutes(c.time);
-      if (tMin >= sessionEndMinutes) break;
+      if (tMin >= sessionEndMinutes) continue;
 
-      const range = c.high - c.low;
       if (range <= 0) continue;
-      const body = Math.abs(c.close - c.open);
-      const ratio = body / range;
-      if (ratio < bodyThreshold) continue;
       if (c.close === c.open) continue;
+      if (!isSuperBody(body, range)) continue;
 
       const direction: "bullish" | "bearish" = c.close > c.open ? "bullish" : "bearish";
       const mid = direction === "bullish"
@@ -162,7 +177,7 @@ export function analyzePullback(bars: BarData[], options: PullbackOptions = {}):
         : c.high - range * pullbackLevel;
 
       // Trigger window: try candle i+1 .. i+triggerLookahead (default 2 → candle 2 & 3).
-      // If an intermediate candle does not trigger AND is itself a momentum candle,
+      // If an intermediate candle does not trigger AND is itself a super-body momentum candle,
       // invalidate the current trigger so the outer loop promotes that candle.
       const triggerLookahead = options.triggerLookahead ?? 2;
       let triggerIdx = -1;
@@ -172,10 +187,8 @@ export function analyzePullback(bars: BarData[], options: PullbackOptions = {}):
         const tagged = direction === "bullish" ? nb.low <= mid : nb.high >= mid;
         if (tagged) { triggerIdx = i + k; break; }
         const nbRange = nb.high - nb.low;
-        if (nbRange > 0) {
-          const nbRatio = Math.abs(nb.close - nb.open) / nbRange;
-          if (nbRatio >= bodyThreshold && nb.close !== nb.open) break; // invalidated
-        }
+        const nbBody = Math.abs(nb.close - nb.open);
+        if (nb.close !== nb.open && isSuperBody(nbBody, nbRange)) break; // invalidated
       }
       if (triggerIdx === -1) continue;
 
