@@ -7,12 +7,9 @@ import {
   CandlestickSeries,
   HistogramSeries,
   LineSeries,
-  createSeriesMarkers,
   type IChartApi,
   type ISeriesApi,
-  type ISeriesMarkersPluginApi,
   type CandlestickData,
-  type SeriesMarker,
   type Time,
 } from "lightweight-charts";
 
@@ -21,19 +18,16 @@ interface TradingViewChartProps {
   interval: string;
   showIB?: boolean;
   showMC?: boolean;
-  showPB?: boolean;
   mccBodyRatio?: number;
 }
 
-const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, showPB = false, mccBodyRatio = 0.70 }: TradingViewChartProps) => {
+const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, mccBodyRatio = 0.70 }: TradingViewChartProps) => {
   const MCC_BODY_RATIO = mccBodyRatio;
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   const ibSeriesListRef = useRef<ISeriesApi<"Line">[]>([]);
-  const pbSeriesListRef = useRef<ISeriesApi<"Line">[]>([]);
-  const pbMarkersRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null);
   const [chartReady, setChartReady] = useState(false);
   const [ohlc, setOhlc] = useState<{
     o: number; h: number; l: number; c: number; change: number; changePct: number;
@@ -351,134 +345,6 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
           seriesRef.current!.setData(recolored);
         }
 
-        // Clear previous PB50 overlays
-        for (const s of pbSeriesListRef.current) {
-          try { chart.removeSeries(s); } catch {}
-        }
-        pbSeriesListRef.current = [];
-        if (pbMarkersRef.current) {
-          try { pbMarkersRef.current.setMarkers([]); } catch {}
-        }
-
-        // PB50 — 50% pullback strategy markers (15m only, intraday)
-        if (showPB && interval === "15min" && sorted.length > 0) {
-          const PB_BODY = 0.70;
-          const MAX_LOOKAHEAD = 2; // candle 2 & 3
-          const dayBars: Record<string, typeof sorted> = {};
-          for (const bar of sorted) {
-            const t = bar.datetime.split(" ")[1];
-            // Match /app: session 09:30–16:00 NY only
-            if (t < "09:30:00" || t >= "16:00:00") continue;
-            const date = bar.datetime.split(" ")[0];
-            if (!dayBars[date]) dayBars[date] = [];
-            dayBars[date].push(bar);
-          }
-          const toTs = (dt: string) =>
-            Math.floor(new Date(dt.replace(" ", "T") + "Z").getTime() / 1000) as Time;
-
-          const pbMarkers: SeriesMarker<Time>[] = [];
-          const lineOpts = { priceScaleId: "right", lastValueVisible: false, crosshairMarkerVisible: false, priceLineVisible: false };
-
-          for (const date of Object.keys(dayBars).sort()) {
-            const bars = dayBars[date];
-            // Only consider bars within 09:30–13:00 NY as candle 1
-            let gateUntil = -1;
-            for (let i = 0; i < bars.length - 1; i++) {
-              if (i <= gateUntil) continue;
-              const b = bars[i];
-              const t = b.datetime.split(" ")[1];
-              if (t < "09:30:00" || t >= "13:00:00") continue;
-
-              const o = parseFloat(b.open);
-              const h = parseFloat(b.high);
-              const l = parseFloat(b.low);
-              const c = parseFloat(b.close);
-              const range = h - l;
-              if (range <= 0 || c === o) continue;
-              const body = Math.abs(c - o);
-              if (body / range < PB_BODY) continue;
-
-              const isBull = c > o;
-              const entry = (h + l) / 2;
-              const stop = isBull ? l : h;
-              const target = isBull ? h : l;
-
-              // Check trigger on candle 2 / 3
-              let triggered = false;
-              let invalidated = false;
-              let resolvedIdx = -1;
-              const deadline = Math.min(i + MAX_LOOKAHEAD, bars.length - 1);
-              for (let j = i + 1; j < bars.length; j++) {
-                const nb = bars[j];
-                const nh = parseFloat(nb.high);
-                const nl = parseFloat(nb.low);
-                const no = parseFloat(nb.open);
-                const nc = parseFloat(nb.close);
-                if (!triggered) {
-                  const trig = isBull ? nl <= entry : nh >= entry;
-                  if (!trig) {
-                    // invalidate if untriggered bar is itself a momentum candle
-                    const nr = nh - nl;
-                    const nbody = Math.abs(nc - no);
-                    if (nr > 0 && nc !== no && nbody / nr >= PB_BODY) {
-                      invalidated = true;
-                      break;
-                    }
-                    if (j >= deadline) break;
-                    continue;
-                  }
-                  triggered = true;
-                }
-                const hitStop = isBull ? nl <= stop : nh >= stop;
-                const hitTarget = isBull ? nh >= target : nl <= target;
-                if (hitStop || hitTarget) { resolvedIdx = j; break; }
-              }
-              if (invalidated) continue;
-              if (!triggered) continue;
-              // Match /app: skip "open" outcomes (triggered but never hit SL/TP)
-              if (resolvedIdx < 0) continue;
-
-              const startTs = toTs(b.datetime);
-              const endTs = toTs(bars[resolvedIdx].datetime);
-
-              // Horizontal level lines (entry/SL/TP) spanning candle1 → resolution
-              const entrySeries = chart.addSeries(LineSeries, { ...lineOpts, color: "#2962FF", lineWidth: 1, lineStyle: 2, title: "" });
-              entrySeries.setData([{ time: startTs, value: entry }, { time: endTs, value: entry }]);
-              pbSeriesListRef.current.push(entrySeries);
-
-              const slSeries = chart.addSeries(LineSeries, { ...lineOpts, color: "#ef5350", lineWidth: 1, lineStyle: 2, title: "" });
-              slSeries.setData([{ time: startTs, value: stop }, { time: endTs, value: stop }]);
-              pbSeriesListRef.current.push(slSeries);
-
-              const tpSeries = chart.addSeries(LineSeries, { ...lineOpts, color: "#26a69a", lineWidth: 1, lineStyle: 2, title: "" });
-              tpSeries.setData([{ time: startTs, value: target }, { time: endTs, value: target }]);
-              pbSeriesListRef.current.push(tpSeries);
-
-              // Arrow markers on candle 1
-              if (isBull) {
-                pbMarkers.push({ time: startTs, position: "belowBar", color: "#2962FF", shape: "arrowUp", text: `E ${entry.toFixed(2)}` });
-                pbMarkers.push({ time: startTs, position: "belowBar", color: "#ef5350", shape: "arrowDown", text: `SL ${stop.toFixed(2)}` });
-                pbMarkers.push({ time: startTs, position: "aboveBar", color: "#26a69a", shape: "arrowUp", text: `TP ${target.toFixed(2)}` });
-              } else {
-                pbMarkers.push({ time: startTs, position: "aboveBar", color: "#2962FF", shape: "arrowDown", text: `E ${entry.toFixed(2)}` });
-                pbMarkers.push({ time: startTs, position: "aboveBar", color: "#ef5350", shape: "arrowUp", text: `SL ${stop.toFixed(2)}` });
-                pbMarkers.push({ time: startTs, position: "belowBar", color: "#26a69a", shape: "arrowDown", text: `TP ${target.toFixed(2)}` });
-              }
-
-              gateUntil = resolvedIdx;
-            }
-          }
-
-          if (pbMarkers.length > 0) {
-            pbMarkers.sort((a, b) => (a.time as number) - (b.time as number));
-            if (!pbMarkersRef.current) {
-              pbMarkersRef.current = createSeriesMarkers(seriesRef.current!, pbMarkers);
-            } else {
-              pbMarkersRef.current.setMarkers(pbMarkers);
-            }
-          }
-        }
-
         if (candles.length > 0) {
           const last = candles[candles.length - 1];
           setOhlc({
@@ -498,7 +364,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
     };
 
     fetchData();
-  }, [symbol, interval, chartReady, showIB, showMC, showPB, mccBodyRatio]);
+  }, [symbol, interval, chartReady, showIB, showMC, mccBodyRatio]);
 
   const isPositive = ohlc ? ohlc.change >= 0 : true;
 

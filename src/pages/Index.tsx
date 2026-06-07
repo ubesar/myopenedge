@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import AITradingInsight from "@/components/AITradingInsight";
 import ContinuationStackCard from "@/components/ContinuationStackCard";
-import MomentumResultCard from "@/components/MomentumResultCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Navigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -26,7 +25,8 @@ import { analyzeInsideBar, type InsideBarResult } from "@/lib/insidebar-analysis
 import { analyzeOutsideDay, type OutsideDayResult } from "@/lib/outsideday-analysis";
 import { analyzeGlobexIB, type GlobexIBResult } from "@/lib/globex-ib-analysis";
 import { analyzeLondonIB, type LondonIBResult } from "@/lib/london-ib-analysis";
-import { analyzePullback50, type Pullback50Result } from "@/lib/pullback50-analysis";
+import { analyzePullback, type PullbackResult } from "@/lib/pullback-analysis";
+import PullbackReport from "@/components/PullbackReport";
 import InsideBarReport from "@/components/InsideBarReport";
 import OutsideDayReport from "@/components/OutsideDayReport";
 import GlobexIBDashboard from "@/components/GlobexIBDashboard";
@@ -60,7 +60,7 @@ const Index = () => {
   const [outsideDayResult, setOutsideDayResult] = useState<OutsideDayResult | null>(null);
   const [globexIBResult, setGlobexIBResult] = useState<GlobexIBResult | null>(null);
   const [londonIBResult, setLondonIBResult] = useState<LondonIBResult | null>(null);
-  const [pullback50Result, setPullback50Result] = useState<Pullback50Result | null>(null);
+  const [pullbackResult, setPullbackResult] = useState<PullbackResult | null>(null);
   const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
   const [occMaxDays, setOccMaxDays] = useState<number>(0);
   const [occWeekdays, setOccWeekdays] = useState<number[]>([1,2,3,4,5]);
@@ -156,7 +156,7 @@ const Index = () => {
     return { values: deduped };
   };
 
-  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50", weekdays: number[] = [1,2,3,4,5], momentumSessionEnd: number = 13 * 60) => {
+  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50", weekdays: number[] = [1,2,3,4,5]) => {
     let effectiveIbWindow = ibWindow;
     let effectiveMaxDays = maxDays;
     let effectiveMode = mode;
@@ -171,7 +171,7 @@ const Index = () => {
     }
 
     setLoading(true);
-    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null); setPullback50Result(null);
+    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null); setPullbackResult(null);
     setSymbol(ticker); setActiveMode(effectiveMode); setAnalysisMaxDays(effectiveMaxDays); setAnalysisWeekdays(weekdays);
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
@@ -254,10 +254,10 @@ const Index = () => {
           setResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
         } else if (effectiveMode === "momentum") {
-          const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, parseFloat(bodyRatio), weekdays, momentumSessionEnd);
+          const a = analyzeMomentum(values as any, effectiveIbWindow, effectiveMaxDays, parseFloat(bodyRatio), weekdays);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setMomentumResult(a);
-          addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, sessionEndMinutes: a.sessionEndMinutes, fullSlWinRate: a.fullSl.tp50.winRate, halfSlWinRate: a.halfSl.tp50.winRate });
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, tfStats: a.tfStats });
         } else if (effectiveMode === "occ") {
           setOccRawBars(values as any);
           setOccMaxDays(effectiveMaxDays);
@@ -281,11 +281,11 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setOutsideDayResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, outsidePct: a.outsidePct, bullishFilledPct: a.bullish.filledGapPct, bearishFilledPct: a.bearish.filledGapPct });
-        } else if (effectiveMode === "pullback50") {
-          const a = analyzePullback50(values as any, effectiveMaxDays, weekdays, momentumSessionEnd);
+        } else if (effectiveMode === "pullback") {
+          const a = analyzePullback(values as any, { maxDays: effectiveMaxDays, weekdays });
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
-          setPullback50Result(a);
-          addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, sessionEndMinutes: a.sessionEndMinutes, winRate: a.stats.winRate });
+          setPullbackResult(a);
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, totalTrades: a.totalTrades, overall: a.overall });
         }
       }
 
@@ -296,10 +296,10 @@ const Index = () => {
     }
   };
 
-  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullback50Result;
+  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullbackResult;
 
   const reportTitle = hasResults
-    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "pullback50" ? "50% pullback strategy report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
+    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : activeMode === "pullback" ? "pullback 50% strategy report" : "gap fill statistics report"}`
     : "";
 
   const renderCharts = () => {
@@ -399,64 +399,73 @@ const Index = () => {
     }
 
     if (activeMode === "momentum" && momentumResult) {
-      const sessionEndH = Math.floor(momentumResult.sessionEndMinutes / 60);
-      const sessionEndM = momentumResult.sessionEndMinutes % 60;
-      const sessionEndLabel = `${String(sessionEndH).padStart(2, "0")}:${String(sessionEndM).padStart(2, "0")}`;
-      const bodyPct = `${Math.round(momentumResult.bodyThreshold * 100)}%`;
-      const subtitle = `${symbol} · m15 · body ≥ ${bodyPct} · 09:30 – ${sessionEndLabel} ny · ${formatDateRange(analysisMaxDays)}`;
-      const full = momentumResult.fullSl.tp50;
-      const half = momentumResult.halfSl.tp50;
-      const signalPct = momentumResult.totalDays > 0 ? (momentumResult.daysWithSignal / momentumResult.totalDays) * 100 : 0;
+      const bodyPct = `${Math.round(momentumResult.bodyRatioThreshold * 100)}%`;
+      const TFS: { tf: import("@/components/ParameterPanel").OCCTimeframe; label: string }[] = [
+        { tf: "M5", label: "5min opening candle" },
+        { tf: "M15", label: "15min opening candle" },
+        { tf: "M30", label: "30min opening candle" },
+        { tf: "H1", label: "60min opening candle" },
+      ];
       return (
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
-            <strong className="text-foreground">momentum candle analysis</strong> — scans m15 candles (09:30 – {sessionEndLabel} ny) with body ≥ {bodyPct} of range, then walks forward to market close to measure tp 50% hit rate against two stop variants. anti-overlap: next trade only after prior gate (sl full + tp 100%) resolves.
+            <strong className="text-foreground">momentum candle continuation (mcc)</strong> — measures the probability that the session closes in the same direction as the ny opening candle, only when that candle shows valid momentum (body ≥ {bodyPct} of total range). days without momentum on the opening candle are treated as neutral / no-signal.
           </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">total trades</p>
-              <p className="text-[18px] font-semibold text-foreground">{momentumResult.totalTrades}</p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">days w/ signal</p>
-              <p className="text-[18px] font-semibold text-foreground">{momentumResult.daysWithSignal}/{momentumResult.totalDays} <span className="text-[11px] text-muted-foreground">({signalPct.toFixed(0)}%)</span></p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate · sl full</p>
-              <p className="text-[18px] font-semibold text-foreground">{full.winRate.toFixed(1)}%</p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate · sl half</p>
-              <p className="text-[18px] font-semibold text-foreground">{half.winRate.toFixed(1)}%</p>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <MomentumResultCard
-              title="sl full (ujung candle) · tp 50%"
-              subtitle={subtitle}
-              stats={full}
-            />
-            <MomentumResultCard
-              title="sl half (50% candle) · tp 50%"
-              subtitle={subtitle}
-              stats={half}
-            />
+            {TFS.map(({ tf, label }) => {
+              const stats = momentumResult.tfStats[tf];
+              if (!stats) return null;
+              const bullTotal = stats.bullishSignals;
+              const bearTotal = stats.bearishSignals;
+              const bullContPct = bullTotal > 0 ? (stats.bullishContinued / bullTotal) * 100 : 0;
+              const bullRevPct = bullTotal > 0 ? (stats.bullishReversed / bullTotal) * 100 : 0;
+              const bearContPct = bearTotal > 0 ? (stats.bearishContinued / bearTotal) * 100 : 0;
+              const bearRevPct = bearTotal > 0 ? (stats.bearishReversed / bearTotal) * 100 : 0;
+              return (
+                <ContinuationStackCard
+                  key={tf}
+                  title={label}
+                  subtitle={`${symbol} · mcc · body ≥ ${bodyPct} · ${formatDateRange(analysisMaxDays)}`}
+                  columns={[
+                    {
+                      label: "bullish opening",
+                      bottomPct: bullContPct,
+                      topPct: bullRevPct,
+                      bottomLabel: "continued",
+                      topLabel: "reversed",
+                      total: bullTotal,
+                    },
+                    {
+                      label: "bearish opening",
+                      bottomPct: bearContPct,
+                      topPct: bearRevPct,
+                      bottomLabel: "continued",
+                      topLabel: "reversed",
+                      total: bearTotal,
+                    },
+                  ]}
+                  legend={[
+                    { label: "% continued", colorClass: "bg-chart-bar-a" },
+                    { label: "% reversed", colorClass: "bg-chart-bar-b" },
+                  ]}
+                />
+              );
+            })}
           </div>
-
           <AITradingInsight
             mode="momentum"
             symbol={symbol}
             analysisData={{
-              method: "Momentum Candle Analysis (PRD v3)",
+              method: "Momentum Candle Continuation (MCC)",
               totalDays: momentumResult.totalDays,
-              daysWithSignal: momentumResult.daysWithSignal,
-              sessionEndMinutes: momentumResult.sessionEndMinutes,
-              bodyThreshold: momentumResult.bodyThreshold,
-              totalTrades: momentumResult.totalTrades,
-              fullSl: momentumResult.fullSl,
-              halfSl: momentumResult.halfSl,
+              bodyRatioThreshold: momentumResult.bodyRatioThreshold,
+              tfStats: momentumResult.tfStats,
+              lastDay: momentumResult.lastDay ? {
+                date: momentumResult.lastDay.date,
+                timeframes: momentumResult.lastDay.timeframes.map(t => ({
+                  tf: t.tf, direction: t.direction, hasMomentum: t.hasMomentum, continued: t.continued,
+                })),
+              } : null,
             }}
           />
         </div>
@@ -520,106 +529,6 @@ const Index = () => {
               }}
             />
           )}
-        </div>
-      );
-    }
-
-    if (activeMode === "pullback50" && pullback50Result) {
-      const sessionEndH = Math.floor(pullback50Result.sessionEndMinutes / 60);
-      const sessionEndM = pullback50Result.sessionEndMinutes % 60;
-      const sessionEndLabel = `${String(sessionEndH).padStart(2, "0")}:${String(sessionEndM).padStart(2, "0")}`;
-      const bodyPct = `${Math.round(pullback50Result.bodyThreshold * 100)}%`;
-      const subtitle = `${symbol} · m15 · body ≥ ${bodyPct} · 09:30 – ${sessionEndLabel} ny · ${formatDateRange(analysisMaxDays)}`;
-      const s = pullback50Result.stats;
-      const signalPct = pullback50Result.totalDays > 0 ? (pullback50Result.daysWithSignal / pullback50Result.totalDays) * 100 : 0;
-      return (
-        <div className="space-y-4">
-          <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
-            <strong className="text-foreground">50% pullback strategy</strong> — scans m15 momentum candles (09:30 – {sessionEndLabel} ny, body ≥ {bodyPct}). entry triggers when price retraces to 50% of candle 1. sl at far end of candle 1, tp at opposite end. walks forward to 16:00 close.
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">total signals</p>
-              <p className="text-[18px] font-semibold text-foreground">{pullback50Result.totalTrades}</p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">days w/ signal</p>
-              <p className="text-[18px] font-semibold text-foreground">{pullback50Result.daysWithSignal}/{pullback50Result.totalDays} <span className="text-[11px] text-muted-foreground">({signalPct.toFixed(0)}%)</span></p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate</p>
-              <p className="text-[18px] font-semibold text-foreground">{s.winRate.toFixed(1)}%</p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">wins / losses / open</p>
-              <p className="text-[14px] font-semibold text-foreground">{s.wins} / {s.losses} / {s.open}</p>
-            </div>
-          </div>
-
-          <MomentumResultCard
-            title="50% pullback · sl ujung candle · tp opposite end"
-            subtitle={subtitle}
-            stats={s}
-          />
-
-          {pullback50Result.trades.length > 0 && (
-            <div className="rounded-lg border border-border bg-card overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
-                <p className="text-[12px] font-semibold text-foreground">trade history</p>
-                <p className="text-[10px] text-muted-foreground">{pullback50Result.trades.length} signals</p>
-              </div>
-              <div className="max-h-[420px] overflow-auto">
-                <table className="w-full text-[11px]">
-                  <thead className="sticky top-0 bg-card border-b border-border">
-                    <tr className="text-left text-muted-foreground">
-                      <th className="px-3 py-2 font-medium">date</th>
-                      <th className="px-3 py-2 font-medium">time</th>
-                      <th className="px-3 py-2 font-medium">dir</th>
-                      <th className="px-3 py-2 font-medium text-right">entry</th>
-                      <th className="px-3 py-2 font-medium text-right">sl</th>
-                      <th className="px-3 py-2 font-medium text-right">tp</th>
-                      <th className="px-3 py-2 font-medium text-center">outcome</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[...pullback50Result.trades].reverse().map((t, idx) => {
-                      const isWin = t.outcome === "win";
-                      const dirColor = t.direction === "bullish" ? "text-emerald-500" : "text-rose-500";
-                      const outColor = isWin ? "text-emerald-500 bg-emerald-500/10" : "text-rose-500 bg-rose-500/10";
-                      return (
-                        <tr key={idx} className="border-b border-border/40 hover:bg-muted/30">
-                          <td className="px-3 py-1.5 text-foreground/80">{t.date}</td>
-                          <td className="px-3 py-1.5 text-foreground/80">{t.signalTime}</td>
-                          <td className={`px-3 py-1.5 font-medium ${dirColor}`}>{t.direction === "bullish" ? "buy" : "sell"}</td>
-                          <td className="px-3 py-1.5 text-right text-foreground/90 tabular-nums">{t.entry.toFixed(2)}</td>
-                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.stop.toFixed(2)}</td>
-                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.target.toFixed(2)}</td>
-                          <td className="px-3 py-1.5 text-center">
-                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${outColor}`}>{t.outcome}</span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          <AITradingInsight
-            mode="momentum"
-            symbol={symbol}
-            analysisData={{
-              method: "50% Pullback Strategy",
-              totalDays: pullback50Result.totalDays,
-              daysWithSignal: pullback50Result.daysWithSignal,
-              sessionEndMinutes: pullback50Result.sessionEndMinutes,
-              bodyThreshold: pullback50Result.bodyThreshold,
-              totalTrades: pullback50Result.totalTrades,
-              stats: s,
-            }}
-          />
         </div>
       );
     }
@@ -719,6 +628,16 @@ const Index = () => {
           symbol={symbol}
           dateRange={formatDateRange(analysisMaxDays)}
           weekdays={formatWeekdays(analysisWeekdays)}
+        />
+      );
+    }
+
+    if (activeMode === "pullback" && pullbackResult) {
+      return (
+        <PullbackReport
+          result={pullbackResult}
+          symbol={symbol}
+          dateRange={`${analysisMaxDays}d`}
         />
       );
     }
