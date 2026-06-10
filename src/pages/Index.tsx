@@ -289,11 +289,12 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setPullbackResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, totalTrades: a.totalTrades, overall: a.overall });
-        } else if (effectiveMode === "ib-pullback") {
-          const a = analyzeIBPullback(values as any, effectiveIbWindow, effectiveMaxDays, weekdays);
+        } else if (effectiveMode === "ib-pullback" || effectiveMode === "ib-pullback-stacked") {
+          const stopMode = effectiveMode === "ib-pullback-stacked" ? "next-level" : "ib-extreme";
+          const a = analyzeIBPullback(values as any, effectiveIbWindow, effectiveMaxDays, weekdays, stopMode);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setIbPullbackResult(a);
-          addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindowMinutes: a.ibWindowMinutes, overall: a.overall });
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindowMinutes: a.ibWindowMinutes, overall: a.overall, stopMode });
         }
       }
 
@@ -305,9 +306,10 @@ const Index = () => {
   };
 
   const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullbackResult || ibPullbackResult;
+  const ibPullbackStopMode: "ib-extreme" | "next-level" = activeMode === "ib-pullback-stacked" ? "next-level" : "ib-extreme";
 
   const reportTitle = hasResults
-    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : activeMode === "pullback" ? "pullback 50% strategy report" : activeMode === "ib-pullback" ? "IB pullback 25/50/75% strategy report" : "gap fill statistics report"}`
+    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : activeMode === "pullback" ? "pullback 50% strategy report" : activeMode === "ib-pullback" ? "IB pullback 25/50/75% strategy report (SL = IB extreme)" : activeMode === "ib-pullback-stacked" ? "IB pullback 25/50/75% strategy report (SL = next level)" : "gap fill statistics report"}`
     : "";
 
   const renderCharts = () => {
@@ -650,13 +652,14 @@ const Index = () => {
       );
     }
 
-    if (activeMode === "ib-pullback" && ibPullbackResult) {
+    if ((activeMode === "ib-pullback" || activeMode === "ib-pullback-stacked") && ibPullbackResult) {
       return (
         <IBPullbackDashboard
           result={ibPullbackResult}
           symbol={symbol}
           dateRange={formatDateRange(analysisMaxDays)}
           weekdays={formatWeekdays(analysisWeekdays)}
+          stopMode={ibPullbackStopMode}
         />
       );
     }
