@@ -6,6 +6,7 @@ interface Props {
   symbol: string;
   dateRange: string;
   weekdays: string;
+  stopMode?: "ib-extreme" | "next-level";
 }
 
 const LEVELS: PullbackLevel[] = [25, 50, 75];
@@ -26,16 +27,21 @@ const buildColumns = (side: IBPullbackSideStats) =>
     };
   });
 
-const IBPullbackDashboard = ({ result, symbol, dateRange, weekdays }: Props) => {
+const IBPullbackDashboard = ({ result, symbol, dateRange, weekdays, stopMode = "ib-extreme" }: Props) => {
   const longCols = buildColumns(result.longSide);
   const shortCols = buildColumns(result.shortSide);
+
+  const slDescription = stopMode === "next-level"
+    ? "next pullback level (25→50, 50→75, 75→IB extreme)"
+    : "IB 100% (opposite IB extreme)";
 
   const settings = (formedFirst: string) => [
     { label: "IB window", value: `${result.ibWindowMinutes} min` },
     { label: "session", value: "09:30 – 16:00 ET" },
     { label: "candle timeframe", value: "5min" },
     { label: "formed first", value: formedFirst },
-    { label: "TP / SL", value: "IB 0% / IB 100%" },
+    { label: "TP", value: "IB 0% (same-side IB extreme)" },
+    { label: "SL", value: slDescription },
     { label: "entry trigger", value: "touch level" },
     { label: "date range", value: dateRange },
     { label: "weekdays", value: weekdays },
@@ -44,7 +50,7 @@ const IBPullbackDashboard = ({ result, symbol, dateRange, weekdays }: Props) => 
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
-        <strong className="text-foreground">IB pullback strategy</strong> — when <em>IB low forms first</em> → look for <span className="text-buy font-medium">long</span> at 25/50/75% pullback, TP at IB high (0%), SL at IB low (100%). When <em>IB high forms first</em> → look for <span className="text-sell font-medium">short</span>, TP at IB low (0%), SL at IB high (100%).
+        <strong className="text-foreground">IB pullback strategy</strong> — when <em>IB low forms first</em> → look for <span className="text-buy font-medium">long</span> at 25/50/75% pullback. when <em>IB high forms first</em> → look for <span className="text-sell font-medium">short</span>. TP = IB 0% (same-side extreme). SL = {slDescription}.
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">

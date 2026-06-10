@@ -78,11 +78,14 @@ function finalize(stats: LevelStats, total: number) {
   stats.triggerRate = total > 0 ? (stats.triggered / total) * 100 : 0;
 }
 
+export type IBPullbackStopMode = "ib-extreme" | "next-level";
+
 export function analyzeIBPullback(
   bars: BarData[],
   ibWindowMinutes: number = 60,
   maxDays: number = 0,
-  weekdays: number[] = [1, 2, 3, 4, 5]
+  weekdays: number[] = [1, 2, 3, 4, 5],
+  stopMode: IBPullbackStopMode = "ib-extreme"
 ): IBPullbackResult {
   const ibEnd = IB_START + ibWindowMinutes;
 
@@ -145,13 +148,22 @@ export function analyzeIBPullback(
     });
 
     for (const level of LEVELS) {
-      // Long (low-first): 0%=high, 100%=low → entry = high - (level/100)*range; SL=low; TP=high
-      // Short (high-first): 0%=low, 100%=high → entry = low + (level/100)*range; SL=high; TP=low
+      // Long (low-first): 0%=high, 100%=low → entry = high - (level/100)*range
+      // Short (high-first): 0%=low, 100%=high → entry = low + (level/100)*range
       const entry = side === "long"
         ? ibHigh - (level / 100) * range
         : ibLow + (level / 100) * range;
-      const stop = side === "long" ? ibLow : ibHigh;
       const target = side === "long" ? ibHigh : ibLow;
+      // SL: ib-extreme → opposite IB extreme. next-level → next deeper pullback level (25→50, 50→75, 75→IB extreme).
+      let stop: number;
+      if (stopMode === "next-level") {
+        const nextLevel = level === 25 ? 50 : level === 50 ? 75 : 100;
+        stop = side === "long"
+          ? ibHigh - (nextLevel / 100) * range
+          : ibLow + (nextLevel / 100) * range;
+      } else {
+        stop = side === "long" ? ibLow : ibHigh;
+      }
 
       let triggered = false;
       let outcome: "win" | "loss" | "no-trigger" | "open" = "no-trigger";
