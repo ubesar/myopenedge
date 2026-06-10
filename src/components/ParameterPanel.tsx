@@ -174,6 +174,7 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="insidebar">inside bar</SelectItem>}
               {!isFree && <SelectItem value="outsideday">outside day</SelectItem>}
               {!isFree && <SelectItem value="pullback">pullback 50% (m15)</SelectItem>}
+              {!isFree && <SelectItem value="ib-pullback">IB pullback 25/50/75%</SelectItem>}
             </SelectContent>
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}
@@ -234,7 +235,7 @@ const ParameterPanel = ({
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for more days</p>}
 
-          {(mode === "ib" || mode === "momentum" || mode === "globex-ib" || mode === "london-ib") && (
+          {(mode === "ib" || mode === "momentum" || mode === "globex-ib" || mode === "london-ib" || mode === "ib-pullback") && (
             <>
               <p className="text-[11px] text-muted-foreground">IB window</p>
               <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => { if (!isFree) { setIbWindow(v); setSelectedTemplateId("custom"); } }} disabled={isFree}>
