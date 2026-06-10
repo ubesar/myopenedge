@@ -26,6 +26,8 @@ import { analyzeOutsideDay, type OutsideDayResult } from "@/lib/outsideday-analy
 import { analyzeGlobexIB, type GlobexIBResult } from "@/lib/globex-ib-analysis";
 import { analyzeLondonIB, type LondonIBResult } from "@/lib/london-ib-analysis";
 import { analyzePullback, type PullbackResult } from "@/lib/pullback-analysis";
+import { analyzeIBPullback, type IBPullbackResult } from "@/lib/ib-pullback-analysis";
+import IBPullbackDashboard from "@/components/IBPullbackDashboard";
 import PullbackReport from "@/components/PullbackReport";
 import InsideBarReport from "@/components/InsideBarReport";
 import OutsideDayReport from "@/components/OutsideDayReport";
@@ -61,6 +63,7 @@ const Index = () => {
   const [globexIBResult, setGlobexIBResult] = useState<GlobexIBResult | null>(null);
   const [londonIBResult, setLondonIBResult] = useState<LondonIBResult | null>(null);
   const [pullbackResult, setPullbackResult] = useState<PullbackResult | null>(null);
+  const [ibPullbackResult, setIbPullbackResult] = useState<IBPullbackResult | null>(null);
   const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
   const [occMaxDays, setOccMaxDays] = useState<number>(0);
   const [occWeekdays, setOccWeekdays] = useState<number[]>([1,2,3,4,5]);
@@ -171,7 +174,7 @@ const Index = () => {
     }
 
     setLoading(true);
-    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null); setPullbackResult(null);
+    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null); setPullbackResult(null); setIbPullbackResult(null);
     setSymbol(ticker); setActiveMode(effectiveMode); setAnalysisMaxDays(effectiveMaxDays); setAnalysisWeekdays(weekdays);
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
@@ -286,6 +289,11 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setPullbackResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, totalTrades: a.totalTrades, overall: a.overall });
+        } else if (effectiveMode === "ib-pullback") {
+          const a = analyzeIBPullback(values as any, effectiveIbWindow, effectiveMaxDays, weekdays);
+          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setIbPullbackResult(a);
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindowMinutes: a.ibWindowMinutes, overall: a.overall });
         }
       }
 
@@ -296,10 +304,10 @@ const Index = () => {
     }
   };
 
-  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullbackResult;
+  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullbackResult || ibPullbackResult;
 
   const reportTitle = hasResults
-    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : activeMode === "pullback" ? "pullback 50% strategy report" : "gap fill statistics report"}`
+    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : activeMode === "pullback" ? "pullback 50% strategy report" : activeMode === "ib-pullback" ? "IB pullback 25/50/75% strategy report" : "gap fill statistics report"}`
     : "";
 
   const renderCharts = () => {
@@ -638,6 +646,17 @@ const Index = () => {
           result={pullbackResult}
           symbol={symbol}
           dateRange={`${analysisMaxDays}d`}
+        />
+      );
+    }
+
+    if (activeMode === "ib-pullback" && ibPullbackResult) {
+      return (
+        <IBPullbackDashboard
+          result={ibPullbackResult}
+          symbol={symbol}
+          dateRange={formatDateRange(analysisMaxDays)}
+          weekdays={formatWeekdays(analysisWeekdays)}
         />
       );
     }
