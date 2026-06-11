@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export type AnalysisMode = "ib" | "momentum" | "occ" | "gapfill" | "insidebar" | "outsideday" | "globex-ib" | "london-ib" | "pullback" | "ib-pullback" | "ib-pullback-stacked";
+export type AnalysisMode = "ib" | "momentum" | "occ" | "gapfill" | "insidebar" | "outsideday" | "globex-ib" | "london-ib" | "pullback" | "ib-pullback" | "ib-pullback-stacked" | "momentum-fib-pullback";
 
 interface ControlPanelProps {
   onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => void;
