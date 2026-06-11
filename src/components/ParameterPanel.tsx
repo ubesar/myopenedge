@@ -176,6 +176,7 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="pullback">pullback 50% (m15)</SelectItem>}
               {!isFree && <SelectItem value="ib-pullback">IB pullback 25/50/75% (SL = IB extreme)</SelectItem>}
               {!isFree && <SelectItem value="ib-pullback-stacked">IB pullback 25/50/75% (SL = next level)</SelectItem>}
+              {!isFree && <SelectItem value="momentum-fib-pullback">momentum candle fib pullback (0.2/0/-0.5)</SelectItem>}
             </SelectContent>
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}
