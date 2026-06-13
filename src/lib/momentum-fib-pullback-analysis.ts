@@ -65,7 +65,7 @@ export interface MFPResult {
 
 // NY session windows
 const MOMENTUM_START = 9 * 60 + 30;   // 09:30
-const MOMENTUM_END = 13 * 60;          // 13:00 — last allowed C1 time
+const MOMENTUM_END = 10 * 60 + 30;    // 10:30 — last allowed C1 time
 const MARKET_CLOSE = 16 * 60;          // 16:00 — TP/SL search ends
 
 function parseDateTime(dt: string): Date {
@@ -103,7 +103,7 @@ function emptyStats(): MFPTFStats {
  *   - Entry: buy stop at C1 high (long) or sell stop at C1 low (short).
  *   - SL: C2 wick (C2 low for long, C2 high for short).
  *   - TP: 1:2 RR — entry ± 2×(entry - SL).
- *   - C1 must form between 09:30 and 13:00 ET.
+ *   - C1 must form between 09:30 and 10:30 ET.
  *   - SL/TP resolution allowed until 16:00 ET.
  *
  * Fib reference (for the 0.2 pullback level only):
@@ -165,7 +165,7 @@ export function analyzeMomentumFibPullback(
       const isSuper = body > avg * superMultiplier && c1.close !== c1.open;
       if (!isSuper) continue;
 
-      // C1 must be in momentum search window (09:30–13:00)
+      // C1 must be in momentum search window (09:30–10:30)
       const c1Min = timeToMinutes(c1.time);
       if (c1Min < MOMENTUM_START || c1Min > MOMENTUM_END) continue;
 
