@@ -39,7 +39,7 @@ const MomentumFibPullbackDashboard = ({ result, symbol, dateRange, weekdays }: P
   const settings = [
     { label: "timeframe", value: "M15 only" },
     { label: "super body filter", value: `body > sma(body,${result.avgPeriod}) × ${result.superMultiplier}` },
-    { label: "C1 window", value: "09:30 – 13:00 ET" },
+    { label: "C1 window", value: "09:30 – 10:30 ET" },
     { label: "TP/SL window", value: "until 16:00 ET" },
     { label: "entry", value: "stop order at C1 high/low (after C2 touches fib 0.2)" },
     { label: "stop loss", value: "C2 wick (low for long / high for short)" },
@@ -51,7 +51,7 @@ const MomentumFibPullbackDashboard = ({ result, symbol, dateRange, weekdays }: P
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
-        <strong className="text-foreground">momentum candle fib pullback · M15</strong> — find a super-body momentum candle (C1) between 09:30–13:00 ET. The very next M15 candle (C2) must (1) pullback to <span className="font-medium">fib 0.2</span> and (2) trigger the stop order at C1's high/low in the same bar. Otherwise skip and look for the next C1. <span className="font-medium">SL = C2 wick</span>, <span className="font-medium">TP = RR 1:2</span>. Resolution allowed until 16:00 ET.
+        <strong className="text-foreground">momentum candle fib pullback · M15</strong> — find a super-body momentum candle (C1) between 09:30–10:30 ET. The very next M15 candle (C2) must (1) pullback to <span className="font-medium">fib 0.2</span> and (2) trigger the stop order at C1's high/low in the same bar. Otherwise skip and look for the next C1. <span className="font-medium">SL = C2 wick</span>, <span className="font-medium">TP = RR 1:2</span>. Resolution allowed until 16:00 ET.
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
