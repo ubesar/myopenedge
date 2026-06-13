@@ -192,7 +192,7 @@ export function analyzeMomentumFibPullback(
       const sl = side === "long" ? c2.low : c2.high;
       const risk = Math.abs(entry - sl);
       if (risk <= 0) continue;
-      const tp = side === "long" ? entry + risk : entry - risk;
+      const tp = side === "long" ? entry + risk * 2 : entry - risk * 2;
 
       stats.triggered++;
       if (side === "long") stats.longTriggered++; else stats.shortTriggered++;
