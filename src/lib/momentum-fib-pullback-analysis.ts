@@ -102,7 +102,7 @@ function emptyStats(): MFPTFStats {
  *     If either fails, abandon this setup and search for the next momentum candle.
  *   - Entry: buy stop at C1 high (long) or sell stop at C1 low (short).
  *   - SL: C2 wick (C2 low for long, C2 high for short).
- *   - TP: 1:1 RR — entry ± (entry - SL).
+ *   - TP: 1:2 RR — entry ± 2×(entry - SL).
  *   - C1 must form between 09:30 and 13:00 ET.
  *   - SL/TP resolution allowed until 16:00 ET.
  *
@@ -192,7 +192,7 @@ export function analyzeMomentumFibPullback(
       const sl = side === "long" ? c2.low : c2.high;
       const risk = Math.abs(entry - sl);
       if (risk <= 0) continue;
-      const tp = side === "long" ? entry + risk : entry - risk;
+      const tp = side === "long" ? entry + risk * 2 : entry - risk * 2;
 
       stats.triggered++;
       if (side === "long") stats.longTriggered++; else stats.shortTriggered++;
