@@ -174,6 +174,7 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="london-ib">IB: london session</SelectItem>}
               {!isFree && <SelectItem value="momentum">momentum candle continuation (mcc)</SelectItem>}
               {!isFree && <SelectItem value="pullback50">50% pullback strategy</SelectItem>}
+              {!isFree && <SelectItem value="orb">opening range breakout (orb)</SelectItem>}
               <SelectItem value="occ">opening candle continuation</SelectItem>
               {!isFree && <SelectItem value="gapfill">gap fill statistics</SelectItem>}
               {!isFree && <SelectItem value="insidebar">inside bar</SelectItem>}
@@ -201,6 +202,24 @@ const ParameterPanel = ({
               <p className="text-[10px] text-muted-foreground">{mode === "pullback50" ? "m15 momentum candles scanned from 09:30 ny up to this time. entry on 50% pullback, sl at far end, tp at opposite end of candle 1." : "m15 momentum candles scanned from 09:30 ny up to this time. body threshold fixed at 70% (prd v3). walk-forward to 16:00 close."}</p>
             </>
           )}
+
+          {mode === "orb" && (
+            <>
+              <p className="text-[11px] text-muted-foreground">orb timeframe</p>
+              <Select value={orbTimeframe} onValueChange={(v) => { setOrbTimeframe(v as ORBTimeframeStr); setSelectedTemplateId("custom"); }}>
+                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">m5 (09:30 – 09:35)</SelectItem>
+                  <SelectItem value="15">m15 (09:30 – 09:45)</SelectItem>
+                  <SelectItem value="30">m30 (09:30 – 10:00)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground">opening range candle must be a momentum candle (body ≥ 70%). bullish → buy stop @ high, sl @ low. bearish → sell stop @ low, sl @ high. tp1 rr 1:0.5, tp2 rr 1:1. valid until 16:00 ny.</p>
+            </>
+          )}
+
 
 
           <button
