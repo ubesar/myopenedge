@@ -755,7 +755,6 @@ const Index = () => {
       const s = ib2575Result.stats;
       const subtitle = `${symbol} · IB ${ib2575Result.ibWindowMinutes}min · confirm @ 10:25 · ${formatDateRange(analysisMaxDays)}`;
       const signalPct = ib2575Result.totalDays > 0 ? (ib2575Result.daysWithSignal / ib2575Result.totalDays) * 100 : 0;
-      const trigPct = ib2575Result.totalTrades > 0 ? (ib2575Result.triggeredTrades / ib2575Result.totalTrades) * 100 : 0;
       return (
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
@@ -808,7 +807,6 @@ const Index = () => {
                       <th className="px-3 py-2 font-medium text-right">entry</th>
                       <th className="px-3 py-2 font-medium text-right">sl</th>
                       <th className="px-3 py-2 font-medium text-right">tp</th>
-                      <th className="px-3 py-2 font-medium text-center">filled</th>
                       <th className="px-3 py-2 font-medium text-center">outcome</th>
                     </tr>
                   </thead>
@@ -829,9 +827,6 @@ const Index = () => {
                           <td className="px-3 py-1.5 text-right text-foreground/90 tabular-nums font-medium">{t.entry.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.stop.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.target.toFixed(2)}</td>
-                          <td className="px-3 py-1.5 text-center">
-                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${t.triggered ? "text-emerald-500 bg-emerald-500/10" : "text-muted-foreground bg-muted/40"}`}>{t.triggered ? "yes" : "no"}</span>
-                          </td>
                           <td className="px-3 py-1.5 text-center">
                             <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${outCls}`}>{t.outcome}</span>
                           </td>
