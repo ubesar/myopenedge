@@ -755,14 +755,13 @@ const Index = () => {
       const s = ib2575Result.stats;
       const subtitle = `${symbol} · IB ${ib2575Result.ibWindowMinutes}min · confirm @ 10:25 · ${formatDateRange(analysisMaxDays)}`;
       const signalPct = ib2575Result.totalDays > 0 ? (ib2575Result.daysWithSignal / ib2575Result.totalDays) * 100 : 0;
-      const trigPct = ib2575Result.totalTrades > 0 ? (ib2575Result.triggeredTrades / ib2575Result.totalTrades) * 100 : 0;
       return (
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
             <strong className="text-foreground">IB 25/75 quarter levels</strong> — at 10:25 ny the 5m confirmation candle close is checked against the IB fibonacci levels (IB0/25/50/75/100 derived from the {ib2575Result.ibWindowMinutes}min IB range).
-            close &lt; IB25 → <span className="text-rose-500 font-medium">short limit @ IB25</span>, SL IB50, TP IB0 (IB Low).
-            close &gt; IB75 → <span className="text-emerald-500 font-medium">long limit @ IB75</span>, SL IB50, TP IB100 (IB High).
-            RR fixed 1:1. limit valid until 16:00 ny close.
+            close &lt; IB25 → <span className="text-rose-500 font-medium">short market @ close</span>, SL IB50, TP IB0 (IB Low).
+            close &gt; IB75 → <span className="text-emerald-500 font-medium">long market @ close</span>, SL IB50, TP IB100 (IB High).
+            valid until 16:00 ny close.
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -771,20 +770,21 @@ const Index = () => {
               <p className="text-[18px] font-semibold text-foreground">{ib2575Result.totalTrades}<span className="text-[11px] text-muted-foreground">/{ib2575Result.totalDays} ({signalPct.toFixed(0)}%)</span></p>
             </div>
             <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">limit filled</p>
-              <p className="text-[18px] font-semibold text-foreground">{ib2575Result.triggeredTrades} <span className="text-[11px] text-muted-foreground">({trigPct.toFixed(0)}%)</span></p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate · rr 1:1</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate</p>
               <p className="text-[18px] font-semibold text-foreground">{s.winRate.toFixed(1)}%</p>
             </div>
             <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">wins / losses</p>
-              <p className="text-[18px] font-semibold text-foreground"><span className="text-emerald-500">{s.wins}</span> / <span className="text-rose-500">{s.losses}</span><span className="text-[11px] text-muted-foreground"> · {s.open} open</span></p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">wins</p>
+              <p className="text-[18px] font-semibold text-emerald-500">{s.wins}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">losses / open</p>
+              <p className="text-[18px] font-semibold text-foreground"><span className="text-rose-500">{s.losses}</span> <span className="text-[11px] text-muted-foreground">/ {s.open}</span></p>
             </div>
           </div>
 
-          <MomentumResultCard title="ib 25/75 quarter levels · rr 1:1" subtitle={subtitle} stats={s} />
+          <MomentumResultCard title="ib 25/75 quarter levels · market entry" subtitle={subtitle} stats={s} />
+
 
           {ib2575Result.trades.length > 0 && (
             <div className="rounded-lg border border-border bg-card overflow-hidden">
@@ -807,7 +807,6 @@ const Index = () => {
                       <th className="px-3 py-2 font-medium text-right">entry</th>
                       <th className="px-3 py-2 font-medium text-right">sl</th>
                       <th className="px-3 py-2 font-medium text-right">tp</th>
-                      <th className="px-3 py-2 font-medium text-center">filled</th>
                       <th className="px-3 py-2 font-medium text-center">outcome</th>
                     </tr>
                   </thead>
@@ -828,9 +827,6 @@ const Index = () => {
                           <td className="px-3 py-1.5 text-right text-foreground/90 tabular-nums font-medium">{t.entry.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.stop.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.target.toFixed(2)}</td>
-                          <td className="px-3 py-1.5 text-center">
-                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${t.triggered ? "text-emerald-500 bg-emerald-500/10" : "text-muted-foreground bg-muted/40"}`}>{t.triggered ? "yes" : "no"}</span>
-                          </td>
                           <td className="px-3 py-1.5 text-center">
                             <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${outCls}`}>{t.outcome}</span>
                           </td>

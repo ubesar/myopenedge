@@ -222,7 +222,7 @@ const ParameterPanel = ({
           )}
 
           {mode === "ib2575" && (
-            <p className="text-[10px] text-muted-foreground">at 10:25 ny, close of the 5m confirmation candle vs ib quarter levels. close &lt; IB25 → short limit @ IB25, SL IB50, TP IB0. close &gt; IB75 → long limit @ IB75, SL IB50, TP IB100. RR 1:1. valid until 16:00 ny.</p>
+            <p className="text-[10px] text-muted-foreground">at 10:25 ny, close of the 5m confirmation candle vs ib quarter levels. close &lt; IB25 → short market @ close, SL IB50, TP IB0. close &gt; IB75 → long market @ close, SL IB50, TP IB100. valid until 16:00 ny.</p>
           )}
 
 
