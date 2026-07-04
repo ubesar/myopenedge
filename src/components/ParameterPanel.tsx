@@ -175,6 +175,7 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="momentum">momentum candle continuation (mcc)</SelectItem>}
               {!isFree && <SelectItem value="pullback50">50% pullback strategy</SelectItem>}
               {!isFree && <SelectItem value="orb">opening range breakout (orb)</SelectItem>}
+              {!isFree && <SelectItem value="ib2575">IB 25/75 quarter levels</SelectItem>}
               <SelectItem value="occ">opening candle continuation</SelectItem>
               {!isFree && <SelectItem value="gapfill">gap fill statistics</SelectItem>}
               {!isFree && <SelectItem value="insidebar">inside bar</SelectItem>}
@@ -220,6 +221,12 @@ const ParameterPanel = ({
             </>
           )}
 
+          {mode === "ib2575" && (
+            <p className="text-[10px] text-muted-foreground">at 10:25 ny, close of the 5m confirmation candle vs ib quarter levels. close &lt; IB25 → short limit @ IB25, SL IB50, TP IB0. close &gt; IB75 → long limit @ IB75, SL IB50, TP IB100. RR 1:1. valid until 16:00 ny.</p>
+          )}
+
+
+
 
 
           <button
@@ -259,7 +266,7 @@ const ParameterPanel = ({
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for more days</p>}
 
-          {(mode === "ib" || mode === "globex-ib" || mode === "london-ib") && (
+          {(mode === "ib" || mode === "globex-ib" || mode === "london-ib" || mode === "ib2575") && (
             <>
               <p className="text-[11px] text-muted-foreground">IB window</p>
               <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => { if (!isFree) { setIbWindow(v); setSelectedTemplateId("custom"); } }} disabled={isFree}>

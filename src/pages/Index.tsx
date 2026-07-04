@@ -28,6 +28,7 @@ import { analyzeGlobexIB, type GlobexIBResult } from "@/lib/globex-ib-analysis";
 import { analyzeLondonIB, type LondonIBResult } from "@/lib/london-ib-analysis";
 import { analyzePullback50, type Pullback50Result } from "@/lib/pullback50-analysis";
 import { analyzeORB, type ORBResult, type ORBTimeframe } from "@/lib/orb-analysis";
+import { analyzeIB2575, type IB2575Result } from "@/lib/ib2575-analysis";
 import InsideBarReport from "@/components/InsideBarReport";
 import OutsideDayReport from "@/components/OutsideDayReport";
 import GlobexIBDashboard from "@/components/GlobexIBDashboard";
@@ -63,6 +64,7 @@ const Index = () => {
   const [londonIBResult, setLondonIBResult] = useState<LondonIBResult | null>(null);
   const [pullback50Result, setPullback50Result] = useState<Pullback50Result | null>(null);
   const [orbResult, setOrbResult] = useState<ORBResult | null>(null);
+  const [ib2575Result, setIb2575Result] = useState<IB2575Result | null>(null);
   const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
   const [occMaxDays, setOccMaxDays] = useState<number>(0);
   const [occWeekdays, setOccWeekdays] = useState<number[]>([1,2,3,4,5]);
@@ -173,7 +175,7 @@ const Index = () => {
     }
 
     setLoading(true);
-    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null); setPullback50Result(null); setOrbResult(null);
+    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null); setPullback50Result(null); setOrbResult(null); setIb2575Result(null);
     setSymbol(ticker); setActiveMode(effectiveMode); setAnalysisMaxDays(effectiveMaxDays); setAnalysisWeekdays(weekdays);
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
@@ -294,6 +296,11 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setOrbResult(a);
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, timeframe: tf, tp1WinRate: a.tp1Stats.winRate, tp2WinRate: a.tp2Stats.winRate });
+        } else if (effectiveMode === "ib2575") {
+          const a = analyzeIB2575(values as any, effectiveIbWindow, effectiveMaxDays, weekdays);
+          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setIb2575Result(a);
+          addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, ibWindow: effectiveIbWindow, winRate: a.stats.winRate, triggeredTrades: a.triggeredTrades });
         }
       }
 
@@ -304,10 +311,10 @@ const Index = () => {
     }
   };
 
-  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullback50Result || orbResult;
+  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullback50Result || orbResult || ib2575Result;
 
   const reportTitle = hasResults
-    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "pullback50" ? "50% pullback strategy report" : activeMode === "orb" ? "opening range breakout report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
+    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "pullback50" ? "50% pullback strategy report" : activeMode === "orb" ? "opening range breakout report" : activeMode === "ib2575" ? "IB 25/75 quarter levels report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
     : "";
 
   const renderCharts = () => {
@@ -743,6 +750,116 @@ const Index = () => {
         </div>
       );
     }
+
+    if (activeMode === "ib2575" && ib2575Result) {
+      const s = ib2575Result.stats;
+      const subtitle = `${symbol} · IB ${ib2575Result.ibWindowMinutes}min · confirm @ 10:25 · ${formatDateRange(analysisMaxDays)}`;
+      const signalPct = ib2575Result.totalDays > 0 ? (ib2575Result.daysWithSignal / ib2575Result.totalDays) * 100 : 0;
+      const trigPct = ib2575Result.totalTrades > 0 ? (ib2575Result.triggeredTrades / ib2575Result.totalTrades) * 100 : 0;
+      return (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
+            <strong className="text-foreground">IB 25/75 quarter levels</strong> — at 10:25 ny the 5m confirmation candle close is checked against the IB fibonacci levels (IB0/25/50/75/100 derived from the {ib2575Result.ibWindowMinutes}min IB range).
+            close &lt; IB25 → <span className="text-rose-500 font-medium">short limit @ IB25</span>, SL IB50, TP IB0 (IB Low).
+            close &gt; IB75 → <span className="text-emerald-500 font-medium">long limit @ IB75</span>, SL IB50, TP IB100 (IB High).
+            RR fixed 1:1. limit valid until 16:00 ny close.
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">setups</p>
+              <p className="text-[18px] font-semibold text-foreground">{ib2575Result.totalTrades}<span className="text-[11px] text-muted-foreground">/{ib2575Result.totalDays} ({signalPct.toFixed(0)}%)</span></p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">limit filled</p>
+              <p className="text-[18px] font-semibold text-foreground">{ib2575Result.triggeredTrades} <span className="text-[11px] text-muted-foreground">({trigPct.toFixed(0)}%)</span></p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate · rr 1:1</p>
+              <p className="text-[18px] font-semibold text-foreground">{s.winRate.toFixed(1)}%</p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">wins / losses</p>
+              <p className="text-[18px] font-semibold text-foreground"><span className="text-emerald-500">{s.wins}</span> / <span className="text-rose-500">{s.losses}</span><span className="text-[11px] text-muted-foreground"> · {s.open} open</span></p>
+            </div>
+          </div>
+
+          <MomentumResultCard title="ib 25/75 quarter levels · rr 1:1" subtitle={subtitle} stats={s} />
+
+          {ib2575Result.trades.length > 0 && (
+            <div className="rounded-lg border border-border bg-card overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+                <p className="text-[12px] font-semibold text-foreground">trade history</p>
+                <p className="text-[10px] text-muted-foreground">{ib2575Result.trades.length} setups</p>
+              </div>
+              <div className="max-h-[420px] overflow-auto">
+                <table className="w-full text-[11px]">
+                  <thead className="sticky top-0 bg-card border-b border-border">
+                    <tr className="text-left text-muted-foreground">
+                      <th className="px-3 py-2 font-medium">date</th>
+                      <th className="px-3 py-2 font-medium">dir</th>
+                      <th className="px-3 py-2 font-medium text-right">ib low</th>
+                      <th className="px-3 py-2 font-medium text-right">ib25</th>
+                      <th className="px-3 py-2 font-medium text-right">ib50</th>
+                      <th className="px-3 py-2 font-medium text-right">ib75</th>
+                      <th className="px-3 py-2 font-medium text-right">ib high</th>
+                      <th className="px-3 py-2 font-medium text-right">10:25 close</th>
+                      <th className="px-3 py-2 font-medium text-right">entry</th>
+                      <th className="px-3 py-2 font-medium text-right">sl</th>
+                      <th className="px-3 py-2 font-medium text-right">tp</th>
+                      <th className="px-3 py-2 font-medium text-center">filled</th>
+                      <th className="px-3 py-2 font-medium text-center">outcome</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...ib2575Result.trades].reverse().map((t, idx) => {
+                      const dirColor = t.direction === "bullish" ? "text-emerald-500" : "text-rose-500";
+                      const outCls = t.outcome === "win" ? "text-emerald-500 bg-emerald-500/10" : t.outcome === "loss" ? "text-rose-500 bg-rose-500/10" : "text-muted-foreground bg-muted/40";
+                      return (
+                        <tr key={idx} className="border-b border-border/40 hover:bg-muted/30">
+                          <td className="px-3 py-1.5 text-foreground/80">{t.date}</td>
+                          <td className={`px-3 py-1.5 font-medium ${dirColor}`}>{t.direction === "bullish" ? "long" : "short"}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/60 tabular-nums">{t.ibLow.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.ib25.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.ib50.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.ib75.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/60 tabular-nums">{t.ibHigh.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/80 tabular-nums">{t.confirmClose.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/90 tabular-nums font-medium">{t.entry.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.stop.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.target.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-center">
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${t.triggered ? "text-emerald-500 bg-emerald-500/10" : "text-muted-foreground bg-muted/40"}`}>{t.triggered ? "yes" : "no"}</span>
+                          </td>
+                          <td className="px-3 py-1.5 text-center">
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${outCls}`}>{t.outcome}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <AITradingInsight
+            mode="momentum"
+            symbol={symbol}
+            analysisData={{
+              method: `IB 25/75 quarter levels (IB ${ib2575Result.ibWindowMinutes}min)`,
+              totalDays: ib2575Result.totalDays,
+              daysWithSignal: ib2575Result.daysWithSignal,
+              triggeredTrades: ib2575Result.triggeredTrades,
+              totalTrades: ib2575Result.totalTrades,
+              stats: s,
+            }}
+          />
+        </div>
+      );
+    }
+
+
 
 
     if (activeMode === "gapfill" && gapFillResult) {
