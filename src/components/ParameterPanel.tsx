@@ -175,6 +175,7 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="momentum">momentum candle continuation (mcc)</SelectItem>}
               {!isFree && <SelectItem value="pullback50">50% pullback strategy</SelectItem>}
               {!isFree && <SelectItem value="orb">opening range breakout (orb)</SelectItem>}
+              {!isFree && <SelectItem value="ib2575">IB 25/75 quarter levels</SelectItem>}
               <SelectItem value="occ">opening candle continuation</SelectItem>
               {!isFree && <SelectItem value="gapfill">gap fill statistics</SelectItem>}
               {!isFree && <SelectItem value="insidebar">inside bar</SelectItem>}
