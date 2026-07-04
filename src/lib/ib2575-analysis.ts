@@ -60,30 +60,29 @@ function finalizeTp(s: TpStats) {
  * Limit order: bullish (long @ IB75) fills when bar.low <= entry; bearish (short @ IB25) fills when bar.high >= entry.
  * After fill, in same/subsequent bars: SL/TP tracked. If both hit same bar -> conservative loss.
  */
+/**
+ * Market order: filled immediately at confirmation close.
+ * Walk subsequent m5 bars until MARKET_CLOSE tracking SL/TP.
+ * If both hit same bar -> conservative loss.
+ */
 function resolve(
   m5: CandleBar[],
   startIdx: number,
   direction: TradeDirection,
-  entry: number,
   stop: number,
   target: number,
-): { triggered: boolean; outcome: TradeOutcome } {
-  let triggered = false;
+): TradeOutcome {
   for (let i = startIdx; i < m5.length; i++) {
     const b = m5[i];
-    if (!triggered) {
-      const fill = direction === "bullish" ? b.low <= entry : b.high >= entry;
-      if (!fill) continue;
-      triggered = true;
-    }
     const hitStop = direction === "bullish" ? b.low <= stop : b.high >= stop;
     const hitTp = direction === "bullish" ? b.high >= target : b.low <= target;
-    if (hitStop && hitTp) return { triggered, outcome: "loss" };
-    if (hitTp) return { triggered, outcome: "win" };
-    if (hitStop) return { triggered, outcome: "loss" };
+    if (hitStop && hitTp) return "loss";
+    if (hitTp) return "win";
+    if (hitStop) return "loss";
   }
-  return { triggered, outcome: "open" };
+  return "open";
 }
+
 
 export function analyzeIB2575(
   bars: BarData[],
@@ -162,12 +161,12 @@ export function analyzeIB2575(
     else if (confirm.close > ib75) direction = "bullish";
     if (!direction) continue;
 
-    const entry = direction === "bullish" ? ib75 : ib25;
+    const entry = confirm.close; // market order @ 10:25 close
     const stop = ib50;
     const target = direction === "bullish" ? ibHigh : ibLow;
 
     // Walk from next bar after confirmation
-    const r = resolve(m5, confirmIdx + 1, direction, entry, stop, target);
+    const outcome = resolve(m5, confirmIdx + 1, direction, stop, target);
 
     trades.push({
       date,
@@ -175,11 +174,12 @@ export function analyzeIB2575(
       ibHigh, ibLow, ib25, ib50, ib75,
       confirmClose: confirm.close,
       entry, stop, target,
-      triggered: r.triggered,
-      outcome: r.triggered ? r.outcome : "open",
+      triggered: true,
+      outcome,
     });
     daysWithSignal++;
   }
+
 
   const stats = emptyTp();
   let triggeredTrades = 0;
