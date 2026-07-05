@@ -309,6 +309,7 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setIb2575Result(a);
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, ibWindow: effectiveIbWindow, winRate: a.stats.winRate, triggeredTrades: a.triggeredTrades });
+        }
       }
 
     } catch (err: any) {
