@@ -29,6 +29,7 @@ import { analyzeLondonIB, type LondonIBResult } from "@/lib/london-ib-analysis";
 import { analyzePullback50, type Pullback50Result } from "@/lib/pullback50-analysis";
 import { analyzeORB, type ORBResult, type ORBTimeframe } from "@/lib/orb-analysis";
 import { analyzeIB2575, type IB2575Result } from "@/lib/ib2575-analysis";
+import { analyzeMCM152am, type MCM152amResult } from "@/lib/mcm15-2am-analysis";
 import InsideBarReport from "@/components/InsideBarReport";
 import OutsideDayReport from "@/components/OutsideDayReport";
 import GlobexIBDashboard from "@/components/GlobexIBDashboard";
@@ -65,6 +66,7 @@ const Index = () => {
   const [pullback50Result, setPullback50Result] = useState<Pullback50Result | null>(null);
   const [orbResult, setOrbResult] = useState<ORBResult | null>(null);
   const [ib2575Result, setIb2575Result] = useState<IB2575Result | null>(null);
+  const [mcm152amResult, setMcm152amResult] = useState<MCM152amResult | null>(null);
   const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
   const [occMaxDays, setOccMaxDays] = useState<number>(0);
   const [occWeekdays, setOccWeekdays] = useState<number[]>([1,2,3,4,5]);
@@ -175,7 +177,7 @@ const Index = () => {
     }
 
     setLoading(true);
-    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null); setPullback50Result(null); setOrbResult(null); setIb2575Result(null);
+    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null); setPullback50Result(null); setOrbResult(null); setIb2575Result(null); setMcm152amResult(null);
     setSymbol(ticker); setActiveMode(effectiveMode); setAnalysisMaxDays(effectiveMaxDays); setAnalysisWeekdays(weekdays);
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
@@ -301,6 +303,11 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setIb2575Result(a);
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, ibWindow: effectiveIbWindow, winRate: a.stats.winRate, triggeredTrades: a.triggeredTrades });
+        } else if (effectiveMode === "mcm15-2am") {
+          const a = analyzeMCM152am(values as any, effectiveMaxDays, weekdays);
+          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setMcm152amResult(a);
+          addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, tp1WinRate: a.tp1Stats.winRate, tp2WinRate: a.tp2Stats.winRate });
         }
       }
 
@@ -311,10 +318,10 @@ const Index = () => {
     }
   };
 
-  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullback50Result || orbResult || ib2575Result;
+  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullback50Result || orbResult || ib2575Result || mcm152amResult;
 
   const reportTitle = hasResults
-    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "pullback50" ? "50% pullback strategy report" : activeMode === "orb" ? "opening range breakout report" : activeMode === "ib2575" ? "IB 25/75 quarter levels report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
+    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "pullback50" ? "50% pullback strategy report" : activeMode === "orb" ? "opening range breakout report" : activeMode === "ib2575" ? "IB 25/75 quarter levels report" : activeMode === "mcm15-2am" ? "m15 momentum @ 02:00 ny report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
     : "";
 
   const renderCharts = () => {
@@ -854,6 +861,117 @@ const Index = () => {
         </div>
       );
     }
+
+    if (activeMode === "mcm15-2am" && mcm152amResult) {
+      const bodyPct = `${Math.round(mcm152amResult.bodyThreshold * 100)}%`;
+      const subtitle = `${symbol} · m15 @ 02:00 ny (fallback 02:15) · body ≥ ${bodyPct} · ${formatDateRange(analysisMaxDays)}`;
+      const tp1 = mcm152amResult.tp1Stats;
+      const tp2 = mcm152amResult.tp2Stats;
+      const signalPct = mcm152amResult.totalDays > 0 ? (mcm152amResult.daysWithSignal / mcm152amResult.totalDays) * 100 : 0;
+      const trigPct = mcm152amResult.totalTrades > 0 ? (mcm152amResult.triggeredTrades / mcm152amResult.totalTrades) * 100 : 0;
+      return (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
+            <strong className="text-foreground">m15 momentum @ 02:00 ny</strong> — scans the m15 candle at 02:00 ny (body ≥ {bodyPct}). if not a momentum candle, fallback to 02:15. otherwise skip the day.
+            bullish → <span className="text-emerald-500 font-medium">buy stop @ high</span>, sl @ low. bearish → <span className="text-rose-500 font-medium">sell stop @ low</span>, sl @ high.
+            tp1 rr 1:0.5 &amp; tp2 rr 1:1 tracked independently until 16:00 ny close.
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">setups</p>
+              <p className="text-[18px] font-semibold text-foreground">{mcm152amResult.totalTrades}<span className="text-[11px] text-muted-foreground">/{mcm152amResult.totalDays} ({signalPct.toFixed(0)}%)</span></p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">scan 02:00 / 02:15</p>
+              <p className="text-[18px] font-semibold text-foreground">{mcm152amResult.scan0200} <span className="text-[11px] text-muted-foreground">/ {mcm152amResult.scan0215}</span></p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">triggered</p>
+              <p className="text-[18px] font-semibold text-foreground">{mcm152amResult.triggeredTrades} <span className="text-[11px] text-muted-foreground">({trigPct.toFixed(0)}%)</span></p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">tp1 / tp2 win</p>
+              <p className="text-[18px] font-semibold text-foreground">{tp1.winRate.toFixed(1)}% <span className="text-[11px] text-muted-foreground">/ {tp2.winRate.toFixed(1)}%</span></p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <MomentumResultCard title="tp1 · rr 1:0.5" subtitle={subtitle} stats={tp1} />
+            <MomentumResultCard title="tp2 · rr 1:1" subtitle={subtitle} stats={tp2} />
+          </div>
+
+          {mcm152amResult.trades.length > 0 && (
+            <div className="rounded-lg border border-border bg-card overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+                <p className="text-[12px] font-semibold text-foreground">trade history</p>
+                <p className="text-[10px] text-muted-foreground">{mcm152amResult.trades.length} setups</p>
+              </div>
+              <div className="max-h-[420px] overflow-auto">
+                <table className="w-full text-[11px]">
+                  <thead className="sticky top-0 bg-card border-b border-border">
+                    <tr className="text-left text-muted-foreground">
+                      <th className="px-3 py-2 font-medium">date</th>
+                      <th className="px-3 py-2 font-medium">scan</th>
+                      <th className="px-3 py-2 font-medium">dir</th>
+                      <th className="px-3 py-2 font-medium text-right">entry</th>
+                      <th className="px-3 py-2 font-medium text-right">sl</th>
+                      <th className="px-3 py-2 font-medium text-right">tp1</th>
+                      <th className="px-3 py-2 font-medium text-right">tp2</th>
+                      <th className="px-3 py-2 font-medium text-center">trig</th>
+                      <th className="px-3 py-2 font-medium text-center">tp1</th>
+                      <th className="px-3 py-2 font-medium text-center">tp2</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...mcm152amResult.trades].reverse().map((t, idx) => {
+                      const dirColor = t.direction === "bullish" ? "text-emerald-500" : "text-rose-500";
+                      const badge = (o: string) => o === "win" ? "text-emerald-500 bg-emerald-500/10" : o === "loss" ? "text-rose-500 bg-rose-500/10" : "text-muted-foreground bg-muted/40";
+                      return (
+                        <tr key={idx} className="border-b border-border/40 hover:bg-muted/30">
+                          <td className="px-3 py-1.5 text-foreground/80">{t.date}</td>
+                          <td className="px-3 py-1.5 text-foreground/70 tabular-nums">{t.scanTime}</td>
+                          <td className={`px-3 py-1.5 font-medium ${dirColor}`}>{t.direction === "bullish" ? "buy" : "sell"}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/90 tabular-nums">{t.entry.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.stop.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.tp1.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.tp2.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-center">
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${t.triggered ? "text-emerald-500 bg-emerald-500/10" : "text-muted-foreground bg-muted/40"}`}>{t.triggered ? "yes" : "no"}</span>
+                          </td>
+                          <td className="px-3 py-1.5 text-center">
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${badge(t.outcomeTp1)}`}>{t.outcomeTp1}</span>
+                          </td>
+                          <td className="px-3 py-1.5 text-center">
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${badge(t.outcomeTp2)}`}>{t.outcomeTp2}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <AITradingInsight
+            mode="momentum"
+            symbol={symbol}
+            analysisData={{
+              method: "M15 Momentum @ 02:00 NY (fallback 02:15)",
+              totalDays: mcm152amResult.totalDays,
+              daysWithSignal: mcm152amResult.daysWithSignal,
+              triggeredTrades: mcm152amResult.triggeredTrades,
+              scan0200: mcm152amResult.scan0200,
+              scan0215: mcm152amResult.scan0215,
+              tp1Stats: tp1,
+              tp2Stats: tp2,
+            }}
+          />
+        </div>
+      );
+    }
+
 
 
 

@@ -176,6 +176,7 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="pullback50">50% pullback strategy</SelectItem>}
               {!isFree && <SelectItem value="orb">opening range breakout (orb)</SelectItem>}
               {!isFree && <SelectItem value="ib2575">IB 25/75 quarter levels</SelectItem>}
+              {!isFree && <SelectItem value="mcm15-2am">m15 momentum @ 02:00 ny</SelectItem>}
               <SelectItem value="occ">opening candle continuation</SelectItem>
               {!isFree && <SelectItem value="gapfill">gap fill statistics</SelectItem>}
               {!isFree && <SelectItem value="insidebar">inside bar</SelectItem>}
@@ -223,6 +224,10 @@ const ParameterPanel = ({
 
           {mode === "ib2575" && (
             <p className="text-[10px] text-muted-foreground">at 10:25 ny, close of the 5m confirmation candle vs ib quarter levels. close &lt; IB25 → short market @ close, SL IB50, TP IB0. close &gt; IB75 → long market @ close, SL IB50, TP IB100. valid until 16:00 ny.</p>
+          )}
+
+          {mode === "mcm15-2am" && (
+            <p className="text-[10px] text-muted-foreground">scans the m15 candle at 02:00 ny (body ≥ 70%). if not a momentum candle, fallback to 02:15. bullish → buy stop @ high, sl @ low. bearish → sell stop @ low, sl @ high. tp1 rr 1:0.5 &amp; tp2 rr 1:1 tracked independently until 16:00 ny close.</p>
           )}
 
 
