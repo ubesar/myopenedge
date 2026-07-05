@@ -309,12 +309,6 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setIb2575Result(a);
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, ibWindow: effectiveIbWindow, winRate: a.stats.winRate, triggeredTrades: a.triggeredTrades });
-        } else if (effectiveMode === "mcm15-2am") {
-          const a = analyzeMCM152am(values as any, effectiveMaxDays, weekdays);
-          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
-          setMcm152amResult(a);
-          addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, tp1WinRate: a.tp1Stats.winRate, tp2WinRate: a.tp2Stats.winRate });
-        }
       }
 
     } catch (err: any) {
