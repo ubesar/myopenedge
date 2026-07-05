@@ -862,6 +862,117 @@ const Index = () => {
       );
     }
 
+    if (activeMode === "mcm15-2am" && mcm152amResult) {
+      const bodyPct = `${Math.round(mcm152amResult.bodyThreshold * 100)}%`;
+      const subtitle = `${symbol} · m15 @ 02:00 ny (fallback 02:15) · body ≥ ${bodyPct} · ${formatDateRange(analysisMaxDays)}`;
+      const tp1 = mcm152amResult.tp1Stats;
+      const tp2 = mcm152amResult.tp2Stats;
+      const signalPct = mcm152amResult.totalDays > 0 ? (mcm152amResult.daysWithSignal / mcm152amResult.totalDays) * 100 : 0;
+      const trigPct = mcm152amResult.totalTrades > 0 ? (mcm152amResult.triggeredTrades / mcm152amResult.totalTrades) * 100 : 0;
+      return (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
+            <strong className="text-foreground">m15 momentum @ 02:00 ny</strong> — scans the m15 candle at 02:00 ny (body ≥ {bodyPct}). if not a momentum candle, fallback to 02:15. otherwise skip the day.
+            bullish → <span className="text-emerald-500 font-medium">buy stop @ high</span>, sl @ low. bearish → <span className="text-rose-500 font-medium">sell stop @ low</span>, sl @ high.
+            tp1 rr 1:0.5 &amp; tp2 rr 1:1 tracked independently until 16:00 ny close.
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">setups</p>
+              <p className="text-[18px] font-semibold text-foreground">{mcm152amResult.totalTrades}<span className="text-[11px] text-muted-foreground">/{mcm152amResult.totalDays} ({signalPct.toFixed(0)}%)</span></p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">scan 02:00 / 02:15</p>
+              <p className="text-[18px] font-semibold text-foreground">{mcm152amResult.scan0200} <span className="text-[11px] text-muted-foreground">/ {mcm152amResult.scan0215}</span></p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">triggered</p>
+              <p className="text-[18px] font-semibold text-foreground">{mcm152amResult.triggeredTrades} <span className="text-[11px] text-muted-foreground">({trigPct.toFixed(0)}%)</span></p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">tp1 / tp2 win</p>
+              <p className="text-[18px] font-semibold text-foreground">{tp1.winRate.toFixed(1)}% <span className="text-[11px] text-muted-foreground">/ {tp2.winRate.toFixed(1)}%</span></p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <MomentumResultCard title="tp1 · rr 1:0.5" subtitle={subtitle} stats={tp1} />
+            <MomentumResultCard title="tp2 · rr 1:1" subtitle={subtitle} stats={tp2} />
+          </div>
+
+          {mcm152amResult.trades.length > 0 && (
+            <div className="rounded-lg border border-border bg-card overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+                <p className="text-[12px] font-semibold text-foreground">trade history</p>
+                <p className="text-[10px] text-muted-foreground">{mcm152amResult.trades.length} setups</p>
+              </div>
+              <div className="max-h-[420px] overflow-auto">
+                <table className="w-full text-[11px]">
+                  <thead className="sticky top-0 bg-card border-b border-border">
+                    <tr className="text-left text-muted-foreground">
+                      <th className="px-3 py-2 font-medium">date</th>
+                      <th className="px-3 py-2 font-medium">scan</th>
+                      <th className="px-3 py-2 font-medium">dir</th>
+                      <th className="px-3 py-2 font-medium text-right">entry</th>
+                      <th className="px-3 py-2 font-medium text-right">sl</th>
+                      <th className="px-3 py-2 font-medium text-right">tp1</th>
+                      <th className="px-3 py-2 font-medium text-right">tp2</th>
+                      <th className="px-3 py-2 font-medium text-center">trig</th>
+                      <th className="px-3 py-2 font-medium text-center">tp1</th>
+                      <th className="px-3 py-2 font-medium text-center">tp2</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...mcm152amResult.trades].reverse().map((t, idx) => {
+                      const dirColor = t.direction === "bullish" ? "text-emerald-500" : "text-rose-500";
+                      const badge = (o: string) => o === "win" ? "text-emerald-500 bg-emerald-500/10" : o === "loss" ? "text-rose-500 bg-rose-500/10" : "text-muted-foreground bg-muted/40";
+                      return (
+                        <tr key={idx} className="border-b border-border/40 hover:bg-muted/30">
+                          <td className="px-3 py-1.5 text-foreground/80">{t.date}</td>
+                          <td className="px-3 py-1.5 text-foreground/70 tabular-nums">{t.scanTime}</td>
+                          <td className={`px-3 py-1.5 font-medium ${dirColor}`}>{t.direction === "bullish" ? "buy" : "sell"}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/90 tabular-nums">{t.entry.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.stop.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.tp1.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.tp2.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-center">
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${t.triggered ? "text-emerald-500 bg-emerald-500/10" : "text-muted-foreground bg-muted/40"}`}>{t.triggered ? "yes" : "no"}</span>
+                          </td>
+                          <td className="px-3 py-1.5 text-center">
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${badge(t.outcomeTp1)}`}>{t.outcomeTp1}</span>
+                          </td>
+                          <td className="px-3 py-1.5 text-center">
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${badge(t.outcomeTp2)}`}>{t.outcomeTp2}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <AITradingInsight
+            mode="momentum"
+            symbol={symbol}
+            analysisData={{
+              method: "M15 Momentum @ 02:00 NY (fallback 02:15)",
+              totalDays: mcm152amResult.totalDays,
+              daysWithSignal: mcm152amResult.daysWithSignal,
+              triggeredTrades: mcm152amResult.triggeredTrades,
+              scan0200: mcm152amResult.scan0200,
+              scan0215: mcm152amResult.scan0215,
+              tp1Stats: tp1,
+              tp2Stats: tp2,
+            }}
+          />
+        </div>
+      );
+    }
+
+
 
 
 
