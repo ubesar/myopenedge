@@ -182,8 +182,8 @@ const Index = () => {
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
     try {
-      if (effectiveMode === "globex-ib" || effectiveMode === "london-ib") {
-        // Both use Massive API via massive-bars edge function
+      if (effectiveMode === "globex-ib" || effectiveMode === "london-ib" || effectiveMode === "mcm15-2am") {
+        // All three use Massive API via massive-bars edge function
         // Split into 90-day client-side batches to avoid CPU timeout
         const MASSIVE_BATCH_DAYS = 90;
         const MASSIVE_BATCH_DELAY = 2000;
@@ -192,7 +192,7 @@ const Index = () => {
         const globalFrom = new Date(now);
         globalFrom.setDate(globalFrom.getDate() - calendarDaysNeeded);
 
-        const label = effectiveMode === "london-ib" ? "London" : "Globex";
+        const label = effectiveMode === "london-ib" ? "London" : effectiveMode === "mcm15-2am" ? "02:00 NY" : "Globex";
         const totalBatches = Math.ceil(calendarDaysNeeded / MASSIVE_BATCH_DAYS);
         toast.info(`Fetching ${effectiveMaxDays} days of ${label} data (${totalBatches} batch${totalBatches > 1 ? "es" : ""})...`, { duration: 5000 });
 
@@ -241,11 +241,17 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough overnight data."); return; }
           setGlobexIBResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
-        } else {
+        } else if (effectiveMode === "london-ib") {
           const a = analyzeLondonIB(deduped, effectiveIbWindow, effectiveMaxDays, weekdays);
           if (a.totalDays === 0) { toast.error("Not enough London session data."); return; }
           setLondonIBResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
+        } else {
+          // mcm15-2am
+          const a = analyzeMCM152am(deduped as any, effectiveMaxDays, weekdays);
+          if (a.totalDays === 0) { toast.error("Not enough overnight data around 02:00 NY."); return; }
+          setMcm152amResult(a);
+          addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, tp1WinRate: a.tp1Stats.winRate, tp2WinRate: a.tp2Stats.winRate });
         }
       } else {
         const json = await fetchMarketData(ticker, effectiveMaxDays);
