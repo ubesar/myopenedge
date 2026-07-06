@@ -192,7 +192,7 @@ const Index = () => {
         const globalFrom = new Date(now);
         globalFrom.setDate(globalFrom.getDate() - calendarDaysNeeded);
 
-        const label = effectiveMode === "london-ib" ? "London" : effectiveMode === "mcm15-2am" ? "02:00 NY" : "Globex";
+        const label = effectiveMode === "london-ib" ? "London" : effectiveMode === "mcm15-2am" ? "04:00 NY" : "Globex";
         const totalBatches = Math.ceil(calendarDaysNeeded / MASSIVE_BATCH_DAYS);
         toast.info(`Fetching ${effectiveMaxDays} days of ${label} data (${totalBatches} batch${totalBatches > 1 ? "es" : ""})...`, { duration: 5000 });
 
