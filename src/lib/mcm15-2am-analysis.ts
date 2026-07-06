@@ -37,8 +37,8 @@ export interface MCM152amResult {
   trades: MCM152amTrade[];
 }
 
-const SCAN_1 = 2 * 60;       // 02:00 NY
-const SCAN_2 = 2 * 60 + 15;  // 02:15 NY
+const SCAN_1 = 4 * 60;       // 04:00 NY
+const SCAN_2 = 4 * 60 + 15;  // 04:15 NY
 const SESSION_END = 16 * 60; // walk-forward until 16:00 NY
 const BODY_THRESHOLD = 0.7;
 const TF_MINUTES = 15;
