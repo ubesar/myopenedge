@@ -192,7 +192,7 @@ const Index = () => {
         const globalFrom = new Date(now);
         globalFrom.setDate(globalFrom.getDate() - calendarDaysNeeded);
 
-        const label = effectiveMode === "london-ib" ? "London" : effectiveMode === "mcm15-2am" ? "02:00 NY" : "Globex";
+        const label = effectiveMode === "london-ib" ? "London" : effectiveMode === "mcm15-2am" ? "04:00 NY" : "Globex";
         const totalBatches = Math.ceil(calendarDaysNeeded / MASSIVE_BATCH_DAYS);
         toast.info(`Fetching ${effectiveMaxDays} days of ${label} data (${totalBatches} batch${totalBatches > 1 ? "es" : ""})...`, { duration: 5000 });
 
@@ -249,7 +249,7 @@ const Index = () => {
         } else {
           // mcm15-2am
           const a = analyzeMCM152am(deduped as any, effectiveMaxDays, weekdays);
-          if (a.totalDays === 0) { toast.error("Not enough overnight data around 02:00 NY."); return; }
+          if (a.totalDays === 0) { toast.error("Not enough pre-market data around 04:00 NY."); return; }
           setMcm152amResult(a);
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, tp1WinRate: a.tp1Stats.winRate, tp2WinRate: a.tp2Stats.winRate });
         }
@@ -322,7 +322,7 @@ const Index = () => {
   const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullback50Result || orbResult || ib2575Result || mcm152amResult;
 
   const reportTitle = hasResults
-    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "pullback50" ? "50% pullback strategy report" : activeMode === "orb" ? "opening range breakout report" : activeMode === "ib2575" ? "IB 25/75 quarter levels report" : activeMode === "mcm15-2am" ? "m15 momentum @ 02:00 ny report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
+    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "pullback50" ? "50% pullback strategy report" : activeMode === "orb" ? "opening range breakout report" : activeMode === "ib2575" ? "IB 25/75 quarter levels report" : activeMode === "mcm15-2am" ? "m15 momentum @ 04:00 ny report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
     : "";
 
   const renderCharts = () => {
@@ -865,7 +865,7 @@ const Index = () => {
 
     if (activeMode === "mcm15-2am" && mcm152amResult) {
       const bodyPct = `${Math.round(mcm152amResult.bodyThreshold * 100)}%`;
-      const subtitle = `${symbol} · m15 @ 02:00 ny (fallback 02:15) · body ≥ ${bodyPct} · ${formatDateRange(analysisMaxDays)}`;
+      const subtitle = `${symbol} · m15 @ 04:00 ny (fallback 04:15) · body ≥ ${bodyPct} · ${formatDateRange(analysisMaxDays)}`;
       const tp1 = mcm152amResult.tp1Stats;
       const tp2 = mcm152amResult.tp2Stats;
       const signalPct = mcm152amResult.totalDays > 0 ? (mcm152amResult.daysWithSignal / mcm152amResult.totalDays) * 100 : 0;
@@ -873,7 +873,7 @@ const Index = () => {
       return (
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
-            <strong className="text-foreground">m15 momentum @ 02:00 ny</strong> — scans the m15 candle at 02:00 ny (body ≥ {bodyPct}). if not a momentum candle, fallback to 02:15. otherwise skip the day.
+            <strong className="text-foreground">m15 momentum @ 04:00 ny</strong> — scans the m15 candle at 04:00 ny (body ≥ {bodyPct}). if not a momentum candle, fallback to 04:15. otherwise skip the day.
             bullish → <span className="text-emerald-500 font-medium">buy stop @ high</span>, sl @ low. bearish → <span className="text-rose-500 font-medium">sell stop @ low</span>, sl @ high.
             tp1 rr 1:0.5 &amp; tp2 rr 1:1 tracked independently until 16:00 ny close.
           </div>
@@ -884,7 +884,7 @@ const Index = () => {
               <p className="text-[18px] font-semibold text-foreground">{mcm152amResult.totalTrades}<span className="text-[11px] text-muted-foreground">/{mcm152amResult.totalDays} ({signalPct.toFixed(0)}%)</span></p>
             </div>
             <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">scan 02:00 / 02:15</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">scan 04:00 / 04:15</p>
               <p className="text-[18px] font-semibold text-foreground">{mcm152amResult.scan0200} <span className="text-[11px] text-muted-foreground">/ {mcm152amResult.scan0215}</span></p>
             </div>
             <div className="rounded-lg border border-border bg-card p-3">
@@ -959,7 +959,7 @@ const Index = () => {
             mode="momentum"
             symbol={symbol}
             analysisData={{
-              method: "M15 Momentum @ 02:00 NY (fallback 02:15)",
+              method: "M15 Momentum @ 04:00 NY (fallback 04:15)",
               totalDays: mcm152amResult.totalDays,
               daysWithSignal: mcm152amResult.daysWithSignal,
               triggeredTrades: mcm152amResult.triggeredTrades,

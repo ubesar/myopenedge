@@ -37,8 +37,8 @@ export interface MCM152amResult {
   trades: MCM152amTrade[];
 }
 
-const SCAN_1 = 2 * 60;       // 02:00 NY
-const SCAN_2 = 2 * 60 + 15;  // 02:15 NY
+const SCAN_1 = 4 * 60;       // 04:00 NY
+const SCAN_2 = 4 * 60 + 15;  // 04:15 NY
 const SESSION_END = 16 * 60; // walk-forward until 16:00 NY
 const BODY_THRESHOLD = 0.7;
 const TF_MINUTES = 15;
@@ -156,7 +156,7 @@ export function analyzeMCM152am(
     totalDays++;
 
     // Find candles at 02:00 and 02:15
-    const c0200 = m15.find((c) => c.time === "02:00");
+    const c0200 = m15.find((c) => c.time === "04:00");
     if (!c0200) continue;
 
     let chosen: { candle: CandleBar; idx: number; scanTime: string } | null = null;
@@ -164,15 +164,15 @@ export function analyzeMCM152am(
     const mom1 = isMomentum(c0200);
     if (mom1.ok) {
       const idx = m15.indexOf(c0200);
-      chosen = { candle: c0200, idx, scanTime: "02:00" };
+      chosen = { candle: c0200, idx, scanTime: "04:00" };
       scan0200++;
     } else {
-      const c0215 = m15.find((c) => c.time === "02:15");
+      const c0215 = m15.find((c) => c.time === "04:15");
       if (c0215) {
         const mom2 = isMomentum(c0215);
         if (mom2.ok) {
           const idx = m15.indexOf(c0215);
-          chosen = { candle: c0215, idx, scanTime: "02:15" };
+          chosen = { candle: c0215, idx, scanTime: "04:15" };
           scan0215++;
         }
       }
