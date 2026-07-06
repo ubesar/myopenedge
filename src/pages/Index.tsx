@@ -959,7 +959,7 @@ const Index = () => {
             mode="momentum"
             symbol={symbol}
             analysisData={{
-              method: "M15 Momentum @ 02:00 NY (fallback 02:15)",
+              method: "M15 Momentum @ 04:00 NY (fallback 04:15)",
               totalDays: mcm152amResult.totalDays,
               daysWithSignal: mcm152amResult.daysWithSignal,
               triggeredTrades: mcm152amResult.triggeredTrades,
