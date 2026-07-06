@@ -249,7 +249,7 @@ const Index = () => {
         } else {
           // mcm15-2am
           const a = analyzeMCM152am(deduped as any, effectiveMaxDays, weekdays);
-          if (a.totalDays === 0) { toast.error("Not enough overnight data around 02:00 NY."); return; }
+          if (a.totalDays === 0) { toast.error("Not enough pre-market data around 04:00 NY."); return; }
           setMcm152amResult(a);
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, tp1WinRate: a.tp1Stats.winRate, tp2WinRate: a.tp2Stats.winRate });
         }
