@@ -115,6 +115,7 @@ export function analyzeORB(
   timeframe: ORBTimeframe,
   maxDays: number = 0,
   weekdays: number[] = [1, 2, 3, 4, 5],
+  candleMode: ORBCandleMode = "momentum",
 ): ORBResult {
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
