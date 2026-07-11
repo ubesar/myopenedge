@@ -174,7 +174,7 @@ export function analyzeORB(
     if (range <= 0) continue;
     const body = Math.abs(orb.close - orb.open);
     if (orb.close === orb.open) continue;
-    if (body / range < BODY_THRESHOLD) continue;
+    if (candleMode === "momentum" && body / range < BODY_THRESHOLD) continue;
 
     const direction: TradeDirection = orb.close > orb.open ? "bullish" : "bearish";
     const entry = direction === "bullish" ? orb.high : orb.low;
