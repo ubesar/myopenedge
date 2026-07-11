@@ -220,7 +220,22 @@ const ParameterPanel = ({
                   <SelectItem value="30">m30 (09:30 – 10:00)</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-[10px] text-muted-foreground">opening range candle must be a momentum candle (body ≥ 70%). bullish → buy stop @ high, sl @ low. bearish → sell stop @ low, sl @ high. tp1 rr 1:0.5, tp2 rr 1:1. valid until 16:00 ny.</p>
+              <p className="text-[11px] text-muted-foreground">orb candle type</p>
+              <Select value={orbCandleMode} onValueChange={(v) => { setOrbCandleMode(v as ORBCandleModeStr); setSelectedTemplateId("custom"); }}>
+                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="momentum">momentum candle (body ≥ 70%)</SelectItem>
+                  <SelectItem value="any">any candle (direction only)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground">
+                {orbCandleMode === "momentum"
+                  ? "opening range candle must be a momentum candle (body ≥ 70%)."
+                  : "any bullish candle → long setup, any bearish candle → short setup (no body threshold)."}
+                {" "}bullish → buy stop @ high, sl @ low. bearish → sell stop @ low, sl @ high. tp1 rr 1:0.5, tp2 rr 1:1. valid until 16:00 ny.
+              </p>
             </>
           )}
 
