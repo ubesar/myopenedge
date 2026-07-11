@@ -12,6 +12,8 @@ interface BarData {
 
 export type ORBTimeframe = 5 | 15 | 30;
 
+export type ORBCandleMode = "momentum" | "any";
+
 export interface ORBTrade {
   date: string;
   timeframe: ORBTimeframe;
@@ -29,6 +31,7 @@ export interface ORBTrade {
 
 export interface ORBResult {
   timeframe: ORBTimeframe;
+  candleMode: ORBCandleMode;
   totalDays: number;
   daysWithSignal: number;
   bodyThreshold: number;
