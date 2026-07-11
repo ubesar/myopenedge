@@ -13,9 +13,10 @@ export type MomentumBodyRatio = "0.50" | "0.60" | "0.70" | "0.80";
 export type OCCBodyRatio = "0.40" | "0.50" | "0.60";
 
 export type ORBTimeframeStr = "5" | "15" | "30";
+export type ORBCandleModeStr = "momentum" | "any";
 
 interface ParameterPanelProps {
-  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio, weekdays: number[], momentumSessionEnd: number, orbTimeframe: ORBTimeframeStr) => void;
+  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio, weekdays: number[], momentumSessionEnd: number, orbTimeframe: ORBTimeframeStr, orbCandleMode: ORBCandleModeStr) => void;
   loading: boolean;
   isFree?: boolean;
   occTimeframe?: OCCTimeframe;
