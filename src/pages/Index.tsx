@@ -300,7 +300,7 @@ const Index = () => {
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, sessionEndMinutes: a.sessionEndMinutes, winRate: a.stats.winRate });
         } else if (effectiveMode === "orb") {
           const tf = parseInt(orbTimeframe) as ORBTimeframe;
-          const a = analyzeORB(values as any, tf, effectiveMaxDays, weekdays);
+          const a = analyzeORB(values as any, tf, effectiveMaxDays, weekdays, orbCandleMode);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setOrbResult(a);
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, timeframe: tf, tp1WinRate: a.tp1Stats.winRate, tp2WinRate: a.tp2Stats.winRate });
