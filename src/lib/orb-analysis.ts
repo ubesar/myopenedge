@@ -12,6 +12,8 @@ interface BarData {
 
 export type ORBTimeframe = 5 | 15 | 30;
 
+export type ORBCandleMode = "momentum" | "any";
+
 export interface ORBTrade {
   date: string;
   timeframe: ORBTimeframe;
@@ -29,6 +31,7 @@ export interface ORBTrade {
 
 export interface ORBResult {
   timeframe: ORBTimeframe;
+  candleMode: ORBCandleMode;
   totalDays: number;
   daysWithSignal: number;
   bodyThreshold: number;
@@ -112,6 +115,7 @@ export function analyzeORB(
   timeframe: ORBTimeframe,
   maxDays: number = 0,
   weekdays: number[] = [1, 2, 3, 4, 5],
+  candleMode: ORBCandleMode = "momentum",
 ): ORBResult {
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
@@ -170,7 +174,7 @@ export function analyzeORB(
     if (range <= 0) continue;
     const body = Math.abs(orb.close - orb.open);
     if (orb.close === orb.open) continue;
-    if (body / range < BODY_THRESHOLD) continue;
+    if (candleMode === "momentum" && body / range < BODY_THRESHOLD) continue;
 
     const direction: TradeDirection = orb.close > orb.open ? "bullish" : "bearish";
     const entry = direction === "bullish" ? orb.high : orb.low;
@@ -222,9 +226,10 @@ export function analyzeORB(
 
   return {
     timeframe,
+    candleMode,
     totalDays,
     daysWithSignal,
-    bodyThreshold: BODY_THRESHOLD,
+    bodyThreshold: candleMode === "momentum" ? BODY_THRESHOLD : 0,
     totalTrades: trades.length,
     triggeredTrades,
     tp1Stats,

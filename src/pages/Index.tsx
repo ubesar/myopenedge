@@ -162,7 +162,7 @@ const Index = () => {
     return { values: deduped };
   };
 
-  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50", weekdays: number[] = [1,2,3,4,5], momentumSessionEnd: number = 13 * 60, orbTimeframe: "5" | "15" | "30" = "5") => {
+  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50", weekdays: number[] = [1,2,3,4,5], momentumSessionEnd: number = 13 * 60, orbTimeframe: "5" | "15" | "30" = "5", orbCandleMode: "momentum" | "any" = "momentum") => {
     let effectiveIbWindow = ibWindow;
     let effectiveMaxDays = maxDays;
     let effectiveMode = mode;
@@ -300,7 +300,7 @@ const Index = () => {
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, sessionEndMinutes: a.sessionEndMinutes, winRate: a.stats.winRate });
         } else if (effectiveMode === "orb") {
           const tf = parseInt(orbTimeframe) as ORBTimeframe;
-          const a = analyzeORB(values as any, tf, effectiveMaxDays, weekdays);
+          const a = analyzeORB(values as any, tf, effectiveMaxDays, weekdays, orbCandleMode);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setOrbResult(a);
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, timeframe: tf, tp1WinRate: a.tp1Stats.winRate, tp2WinRate: a.tp2Stats.winRate });
@@ -650,8 +650,9 @@ const Index = () => {
     if (activeMode === "orb" && orbResult) {
       const tf = orbResult.timeframe;
       const orbEndLabel = tf === 5 ? "09:35" : tf === 15 ? "09:45" : "10:00";
-      const bodyPct = `${Math.round(orbResult.bodyThreshold * 100)}%`;
-      const subtitle = `${symbol} · m${tf} orb (09:30 – ${orbEndLabel} ny) · body ≥ ${bodyPct} · ${formatDateRange(analysisMaxDays)}`;
+      const isMomentumMode = orbResult.candleMode === "momentum";
+      const modeLabel = isMomentumMode ? `momentum candle (body ≥ ${Math.round(orbResult.bodyThreshold * 100)}%)` : "any candle (direction only)";
+      const subtitle = `${symbol} · m${tf} orb (09:30 – ${orbEndLabel} ny) · ${modeLabel} · ${formatDateRange(analysisMaxDays)}`;
       const tp1 = orbResult.tp1Stats;
       const tp2 = orbResult.tp2Stats;
       const signalPct = orbResult.totalDays > 0 ? (orbResult.daysWithSignal / orbResult.totalDays) * 100 : 0;
@@ -659,7 +660,7 @@ const Index = () => {
       return (
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
-            <strong className="text-foreground">opening range breakout (orb {tf}m)</strong> — first m{tf} candle of nyse session (09:30 – {orbEndLabel} ny) must be a momentum candle (body ≥ {bodyPct}). bullish → buy stop @ orb high, sl @ orb low. bearish → sell stop @ orb low, sl @ orb high. tp1 rr 1:0.5 &amp; tp2 rr 1:1 tracked independently until 16:00 close.
+            <strong className="text-foreground">opening range breakout (orb {tf}m)</strong> — first m{tf} candle of nyse session (09:30 – {orbEndLabel} ny) {isMomentumMode ? <>must be a momentum candle (body ≥ {Math.round(orbResult.bodyThreshold * 100)}%)</> : <>any bullish/bearish candle qualifies (no body threshold)</>}. bullish → buy stop @ orb high, sl @ orb low. bearish → sell stop @ orb low, sl @ orb high. tp1 rr 1:0.5 &amp; tp2 rr 1:1 tracked independently until 16:00 close.
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
