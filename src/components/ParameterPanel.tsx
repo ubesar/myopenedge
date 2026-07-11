@@ -66,6 +66,7 @@ const ParameterPanel = ({
   const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [momentumSessionEnd, setMomentumSessionEnd] = useState<string>("780"); // 13:00
   const [orbTimeframe, setOrbTimeframe] = useState<ORBTimeframeStr>("5");
+  const [orbCandleMode, setOrbCandleMode] = useState<ORBCandleModeStr>("momentum");
 
   const [selectedTemplateId, setSelectedTemplateId] = useState("custom");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -75,7 +76,7 @@ const ParameterPanel = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!symbol.trim()) return;
-    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio, weekdays, parseInt(momentumSessionEnd), orbTimeframe);
+    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio, weekdays, parseInt(momentumSessionEnd), orbTimeframe, orbCandleMode);
   };
 
   const handleTemplateSelect = (id: string) => {
