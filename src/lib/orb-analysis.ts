@@ -226,9 +226,10 @@ export function analyzeORB(
 
   return {
     timeframe,
+    candleMode,
     totalDays,
     daysWithSignal,
-    bodyThreshold: BODY_THRESHOLD,
+    bodyThreshold: candleMode === "momentum" ? BODY_THRESHOLD : 0,
     totalTrades: trades.length,
     triggeredTrades,
     tp1Stats,
