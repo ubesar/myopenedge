@@ -41,6 +41,7 @@ const AnimatedRoutes = () => {
         <Route path="/terms_conditions" element={<PageTransition><TermsConditions /></PageTransition>} />
         <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
         <Route path="/forecast" element={<PageTransition><Forecast /></PageTransition>} />
+        <Route path="/consistency-calculator" element={<PageTransition><ConsistencyCalculator /></PageTransition>} />
         <Route path="/admin-x9k7-88f2-vqp9" element={<PageTransition><AdminPanel /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
