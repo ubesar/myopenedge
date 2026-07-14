@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { Helmet, HelmetProvider } from "react-helmet-async";
-import { Plus, X } from "lucide-react";
+import { Plus, X, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 const PLANS = ["Premium Plan", "Rapid Pro Plan", "Standard Plan"];
 const ACCOUNT_SIZES = ["5K", "10K", "25K", "50K", "100K", "150K", "200K"];
@@ -20,6 +22,7 @@ type Result = {
 };
 
 const ConsistencyCalculator = () => {
+  const navigate = useNavigate();
   const [plan, setPlan] = useState(PLANS[0]);
   const [accountSize, setAccountSize] = useState("50K");
   const [phase, setPhase] = useState(PHASES[0]);
@@ -62,73 +65,52 @@ const ConsistencyCalculator = () => {
           content="Check whether your daily P/L passes the FundedNext 40% consistency rule."
         />
         <meta property="og:type" content="website" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="FundedNext Consistency Rule Calculator" />
-        <meta
-          name="twitter:description"
-          content="Check whether your daily P/L passes the FundedNext 40% consistency rule."
-        />
       </Helmet>
 
-      <div
-        className="fn-calc min-h-screen w-full py-10 px-4"
-        style={{
-          // scoped design tokens (oklch) — dark teal theme
-          ["--fn-bg" as string]: "oklch(0.18 0.03 165)",
-          ["--fn-fg" as string]: "oklch(0.96 0.01 160)",
-          ["--fn-card" as string]: "oklch(0.22 0.035 165)",
-          ["--fn-input" as string]: "oklch(0.14 0.025 165)",
-          ["--fn-border" as string]: "oklch(0.32 0.03 165)",
-          ["--fn-muted" as string]: "oklch(0.65 0.02 160)",
-          ["--fn-primary" as string]: "oklch(0.75 0.15 165)",
-          ["--fn-primary-fg" as string]: "oklch(0.15 0.02 165)",
-          ["--fn-success" as string]: "oklch(0.78 0.16 160)",
-          ["--fn-danger" as string]: "oklch(0.65 0.22 25)",
-          background:
-            "radial-gradient(ellipse 80% 50% at 50% 0%, oklch(0.25 0.06 165 / 0.5), transparent), var(--fn-bg)",
-          color: "var(--fn-fg)",
-        }}
-      >
+      <div className="min-h-screen w-full bg-background text-foreground py-8 px-4">
         <div className="max-w-3xl mx-auto space-y-6">
-          <header className="text-center space-y-2 mb-2">
-            <h1 className="text-2xl md:text-3xl font-semibold" style={{ color: "var(--fn-fg)" }}>
-              FundedNext Consistency Rule Calculator
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(-1)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1.5" /> back
+            </Button>
+          </div>
+
+          <header className="text-center space-y-2">
+            <h1 className="text-2xl md:text-3xl font-semibold lowercase">
+              fundednext consistency rule calculator
             </h1>
-            <p style={{ color: "var(--fn-muted)" }} className="text-sm">
-              Rapid Pro Challenge — 40% daily profit limit
+            <p className="text-sm text-muted-foreground lowercase">
+              rapid pro challenge — 40% daily profit limit
             </p>
           </header>
 
           {/* PLAN CARD */}
           <Card>
-            <Field label="Plan">
+            <Field label="plan">
               <Select value={plan} onChange={setPlan} options={PLANS} />
             </Field>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Field label="Account Size">
+              <Field label="account size">
                 <Select value={accountSize} onChange={setAccountSize} options={ACCOUNT_SIZES} />
               </Field>
-              <Field label="Phase">
+              <Field label="phase">
                 <Select value={phase} onChange={setPhase} options={PHASES} />
               </Field>
-              <Field label="Target">
+              <Field label="target">
                 <div className="relative">
-                  <span
-                    className="absolute left-3 top-1/2 -translate-y-1/2 font-semibold"
-                    style={{ color: "var(--fn-primary)" }}
-                  >
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-semibold text-primary">
                     $
                   </span>
                   <input
                     type="number"
                     value={target}
                     onChange={(e) => setTarget(parseFloat(e.target.value) || 0)}
-                    className="w-full pl-7 pr-3 py-2.5 rounded-lg outline-none font-semibold"
-                    style={{
-                      background: "var(--fn-input)",
-                      border: "1px solid var(--fn-border)",
-                      color: "var(--fn-primary)",
-                    }}
+                    className="w-full pl-7 pr-3 py-2.5 rounded-md bg-input border border-border text-primary font-semibold outline-none focus:ring-1 focus:ring-ring"
                   />
                 </div>
               </Field>
@@ -138,19 +120,15 @@ const ConsistencyCalculator = () => {
           {/* DAILY P/L CARD */}
           <Card>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-semibold">Daily P/L</h2>
+              <h2 className="text-base font-semibold lowercase">daily p/l</h2>
               <button
                 onClick={addRow}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-opacity hover:opacity-90"
-                style={{ background: "var(--fn-primary)", color: "var(--fn-primary-fg)" }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity lowercase"
               >
-                <Plus className="h-4 w-4" /> Add Row
+                <Plus className="h-4 w-4" /> add row
               </button>
             </div>
-            <div
-              className="border-t mb-3"
-              style={{ borderColor: "var(--fn-border)" }}
-            />
+            <div className="border-t border-border mb-3" />
             <div className="space-y-2">
               {rows.map((val, i) => {
                 const num = parseFloat(val) || 0;
@@ -161,24 +139,15 @@ const ConsistencyCalculator = () => {
                       type="number"
                       value={val}
                       onChange={(e) => updateRow(i, e.target.value)}
-                      className="flex-1 px-3 py-2.5 rounded-lg outline-none"
-                      style={{
-                        background: "var(--fn-input)",
-                        border: "1px solid var(--fn-border)",
-                        color: "var(--fn-fg)",
-                      }}
+                      className="flex-1 px-3 py-2.5 rounded-md bg-input border border-border text-foreground outline-none focus:ring-1 focus:ring-ring"
                     />
-                    <span className="w-12 text-sm text-right" style={{ color: "var(--fn-muted)" }}>
+                    <span className="w-12 text-sm text-right text-muted-foreground">
                       {pct.toFixed(0)}%
                     </span>
                     <button
                       onClick={() => removeRow(i)}
-                      className="p-2 rounded-lg transition-opacity hover:opacity-80"
-                      style={{
-                        background: "oklch(0.28 0.08 25)",
-                        color: "var(--fn-danger)",
-                      }}
-                      aria-label="Remove row"
+                      className="p-2 rounded-md bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
+                      aria-label="remove row"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -186,15 +155,14 @@ const ConsistencyCalculator = () => {
                 );
               })}
             </div>
-            <p className="mt-4 text-sm font-semibold">
-              Total Net PnL: <span>{usd(total)}</span>
+            <p className="mt-4 text-sm font-semibold lowercase">
+              total net pnl: <span className="text-primary">{usd(total)}</span>
             </p>
             <button
               onClick={check}
-              className="mt-4 w-full py-3 rounded-lg font-semibold text-base transition-opacity hover:opacity-90"
-              style={{ background: "var(--fn-primary)", color: "var(--fn-primary-fg)" }}
+              className="mt-4 w-full py-3 rounded-md font-semibold text-base bg-primary text-primary-foreground hover:opacity-90 transition-opacity lowercase"
             >
-              Check Consistency
+              check consistency
             </button>
           </Card>
 
@@ -205,56 +173,45 @@ const ConsistencyCalculator = () => {
                 <Donut percent={result.contribution} pass={result.pass} />
                 <div className="flex-1 space-y-3 w-full">
                   <div
-                    className="px-4 py-3 rounded-lg text-sm font-medium"
-                    style={{
-                      background: result.pass
-                        ? "oklch(0.3 0.08 165 / 0.5)"
-                        : "oklch(0.3 0.12 25 / 0.35)",
-                      color: result.pass ? "var(--fn-success)" : "var(--fn-danger)",
-                      border: `1px solid ${
-                        result.pass ? "var(--fn-success)" : "var(--fn-danger)"
-                      }`,
-                    }}
+                    className={`px-4 py-3 rounded-md text-sm font-medium border ${
+                      result.pass
+                        ? "border-[hsl(var(--profit))] bg-[hsl(var(--profit)/0.12)] text-[hsl(var(--profit))]"
+                        : "border-destructive bg-destructive/10 text-destructive"
+                    }`}
                   >
                     {result.pass
-                      ? "🚀 You meet the consistency rule"
-                      : "⚠️ You exceeded the 40% daily profit limit"}
+                      ? "🚀 you meet the consistency rule"
+                      : "⚠️ you exceeded the 40% daily profit limit"}
                   </div>
-                  <div className="text-sm space-y-1.5" style={{ color: "var(--fn-fg)" }}>
+                  <div className="text-sm space-y-1.5 text-foreground">
                     <p>
-                      Largest day: <b>{result.contribution.toFixed(0)}%</b> of net{" "}
-                      <b>{usd(result.total)}</b>. Limit <b>40%</b>.
+                      largest day: <b>{result.contribution.toFixed(0)}%</b> of net{" "}
+                      <b>{usd(result.total)}</b>. limit <b>40%</b>.
                     </p>
                     <p>
-                      Target shortfall: <b>{usd(result.shortfall)}</b>
+                      target shortfall: <b>{usd(result.shortfall)}</b>
                     </p>
                     {!result.pass && result.recommendation > 0 && (
-                      <p>
-                        Recommendation: You need to make{" "}
-                        <b>{usd(result.recommendation)}</b> more to satisfy your consistency rule
+                      <p className="text-muted-foreground">
+                        recommendation: you need to make{" "}
+                        <b className="text-foreground">{usd(result.recommendation)}</b> more to
+                        satisfy your consistency rule
                       </p>
                     )}
                   </div>
                 </div>
               </div>
               <div className="mt-5">
-                <p className="text-xs mb-2" style={{ color: "var(--fn-muted)" }}>
-                  Profit Target Progress
+                <p className="text-xs mb-2 text-muted-foreground lowercase">
+                  profit target progress
                 </p>
-                <div
-                  className="h-2 rounded-full overflow-hidden"
-                  style={{ background: "var(--fn-input)" }}
-                >
+                <div className="h-2 rounded-full overflow-hidden bg-input">
                   <div
-                    className="h-full rounded-full transition-all"
-                    style={{
-                      width: `${result.progress}%`,
-                      background:
-                        "linear-gradient(90deg, oklch(0.6 0.2 250), oklch(0.75 0.16 165))",
-                    }}
+                    className="h-full rounded-full transition-all bg-primary"
+                    style={{ width: `${result.progress}%` }}
                   />
                 </div>
-                <p className="text-xs text-right mt-1" style={{ color: "var(--fn-primary)" }}>
+                <p className="text-xs text-right mt-1 text-primary">
                   {usd(result.total)} / {usd(target)}
                 </p>
               </div>
@@ -267,22 +224,14 @@ const ConsistencyCalculator = () => {
 };
 
 const Card = ({ children }: { children: React.ReactNode }) => (
-  <section
-    className="rounded-2xl p-5 md:p-6 space-y-4 shadow-lg"
-    style={{
-      background: "var(--fn-card)",
-      border: "1px solid var(--fn-border)",
-    }}
-  >
+  <section className="rounded-xl p-5 md:p-6 space-y-4 bg-card border border-border shadow-lg">
     {children}
   </section>
 );
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <label className="block space-y-1.5">
-    <span className="text-xs" style={{ color: "var(--fn-muted)" }}>
-      {label}
-    </span>
+    <span className="text-xs text-muted-foreground lowercase">{label}</span>
     {children}
   </label>
 );
@@ -299,11 +248,8 @@ const Select = ({
   <select
     value={value}
     onChange={(e) => onChange(e.target.value)}
-    className="w-full px-3 py-2.5 rounded-lg outline-none appearance-none cursor-pointer"
+    className="w-full px-3 py-2.5 rounded-md bg-input border border-border text-foreground outline-none appearance-none cursor-pointer focus:ring-1 focus:ring-ring"
     style={{
-      background: "var(--fn-input)",
-      border: "1px solid var(--fn-border)",
-      color: "var(--fn-fg)",
       backgroundImage:
         "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E\")",
       backgroundRepeat: "no-repeat",
@@ -312,7 +258,7 @@ const Select = ({
     }}
   >
     {options.map((o) => (
-      <option key={o} value={o} style={{ background: "var(--fn-card)" }}>
+      <option key={o} value={o} className="bg-card">
         {o}
       </option>
     ))}
@@ -321,27 +267,18 @@ const Select = ({
 
 const Donut = ({ percent, pass }: { percent: number; pass: boolean }) => {
   const p = Math.min(100, Math.max(0, percent));
-  const color = pass ? "var(--fn-success)" : "var(--fn-danger)";
+  const color = pass ? "hsl(var(--profit))" : "hsl(var(--destructive))";
   return (
     <div
       className="relative rounded-full flex items-center justify-center flex-shrink-0"
       style={{
         width: 110,
         height: 110,
-        background: `conic-gradient(${color} ${p}%, oklch(0.28 0.03 165) ${p}%)`,
+        background: `conic-gradient(${color} ${p}%, hsl(var(--muted)) ${p}%)`,
       }}
     >
-      <div
-        className="rounded-full flex items-center justify-center"
-        style={{
-          width: 82,
-          height: 82,
-          background: "var(--fn-card)",
-        }}
-      >
-        <span className="font-bold text-lg" style={{ color: "var(--fn-fg)" }}>
-          {p.toFixed(0)}%
-        </span>
+      <div className="rounded-full flex items-center justify-center bg-card" style={{ width: 82, height: 82 }}>
+        <span className="font-bold text-lg text-foreground">{p.toFixed(0)}%</span>
       </div>
     </div>
   );
