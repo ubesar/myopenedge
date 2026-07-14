@@ -18,6 +18,7 @@ import WhatsInPlay from "@/pages/WhatsInPlay";
 import Journal from "@/pages/Journal";
 import AdminPanel from "@/pages/AdminPanel";
 import Forecast from "@/pages/Forecast";
+import ConsistencyCalculator from "@/pages/ConsistencyCalculator";
 
 const AnimatedRoutes = () => {
   const location = useLocation();
