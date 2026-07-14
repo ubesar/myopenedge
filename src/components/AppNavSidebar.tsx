@@ -25,7 +25,7 @@ const workspaceItems = [
   { icon: TrendingUp, label: "combo builder", href: "/whats-in-play" },
   { icon: Brain, label: "ai forecast", href: "/forecast" },
   { icon: Cpu, label: "algos", href: "/algos" },
-  { icon: Eye, label: "watchlist", href: "/watchlist" },
+  { icon: Calculator, label: "consistency calc", href: "/consistency-calculator" },
   { icon: BookOpen, label: "journal", href: "/journal" },
 ];
 

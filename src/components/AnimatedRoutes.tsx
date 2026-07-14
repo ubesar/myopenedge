@@ -9,7 +9,7 @@ import Docs from "@/pages/Docs";
 import AIAssistant from "@/pages/AIAssistant";
 import Algos from "@/pages/Algos";
 import Chart from "@/pages/Chart";
-import Watchlist from "@/pages/Watchlist";
+
 import NotFound from "@/pages/NotFound";
 import TermsConditions from "@/pages/TermsConditions";
 import PaddleLiveGuide from "@/pages/PaddleLiveGuide";
@@ -32,7 +32,7 @@ const AnimatedRoutes = () => {
         <Route path="/ai-assistant" element={<PageTransition><AIAssistant /></PageTransition>} />
         <Route path="/algos" element={<PageTransition><Algos /></PageTransition>} />
         <Route path="/chart" element={<PageTransition><Chart /></PageTransition>} />
-        <Route path="/watchlist" element={<PageTransition><Watchlist /></PageTransition>} />
+        <Route path="/watchlist" element={<PageTransition><ConsistencyCalculator /></PageTransition>} />
         <Route path="/whats-in-play" element={<PageTransition><WhatsInPlay /></PageTransition>} />
         <Route path="/journal" element={<PageTransition><Journal /></PageTransition>} />
         <Route path="/upgrade" element={<PageTransition><Upgrade /></PageTransition>} />
