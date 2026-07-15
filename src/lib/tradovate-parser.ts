@@ -96,6 +96,12 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
   const iContract = colIdx("Contract");
   const iAccount = colIdx("Account");
 
+  // Detect any fee / commission columns (e.g. Fees, Commission, Trade Fees & Comm)
+  const feeColIndices = headers
+    .map((h, i) => ({ h, i }))
+    .filter(({ h }) => /fee|comm/i.test(h))
+    .map(({ i }) => i);
+
   // Parse only filled orders
   const filledOrders: TradovateOrder[] = [];
   for (let i = 1; i < lines.length; i++) {
@@ -106,6 +112,11 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
     const avgPrice = parseFloat(cols[iAvgPrice]);
     const filledQty = parseInt(cols[iFilledQty], 10);
     if (isNaN(avgPrice) || isNaN(filledQty) || filledQty <= 0) continue;
+
+    const orderFees = feeColIndices.reduce(
+      (sum, idx) => sum + Math.abs(parseFloat(cols[idx]) || 0),
+      0
+    );
 
     filledOrders.push({
       orderId: cols[iOrderId],
@@ -119,6 +130,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
       timestamp: cols[iTimestamp]?.trim(),
       status,
       contract: cols[iContract]?.trim(),
+      fees: orderFees,
     });
   }
 
