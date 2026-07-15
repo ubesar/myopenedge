@@ -8,7 +8,9 @@ import { extractTradeScreenshotPath, resolveTradeScreenshotUrl } from "@/lib/tra
 
 interface Trade {
   id: string;
+  pnl_gross: number;
   pnl_net: number;
+  fees: number | null;
   side: string;
   close_time: string;
   open_time: string;
@@ -18,6 +20,8 @@ interface Trade {
   r_multiple?: number | null;
   notes?: string | null;
 }
+
+const netPnl = (t: Trade) => t.pnl_gross - (t.fees || 0);
 
 interface Attachment {
   id: string;
