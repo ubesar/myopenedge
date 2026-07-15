@@ -88,11 +88,13 @@ const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogPr
   }, [open, loadDayAttachments]);
 
   const stats = useMemo(() => {
-    const winners = dayTrades.filter((t) => t.pnl_net > 0).length;
-    const losers = dayTrades.filter((t) => t.pnl_net < 0).length;
-    const totalPnl = dayTrades.reduce((s, t) => s + t.pnl_net, 0);
+    const winners = dayTrades.filter((t) => netPnl(t) > 0).length;
+    const losers = dayTrades.filter((t) => netPnl(t) < 0).length;
+    const grossPnl = dayTrades.reduce((s, t) => s + t.pnl_gross, 0);
+    const totalFees = dayTrades.reduce((s, t) => s + (t.fees || 0), 0);
+    const totalPnl = grossPnl - totalFees;
     const winRate = dayTrades.length > 0 ? Math.round((winners / dayTrades.length) * 100) : 0;
-    return { total: dayTrades.length, winners, losers, totalPnl, winRate };
+    return { total: dayTrades.length, winners, losers, grossPnl, totalFees, totalPnl, winRate };
   }, [dayTrades]);
 
   const fmtDate = (d: string) => {
