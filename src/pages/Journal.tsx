@@ -74,7 +74,7 @@ const Journal = () => {
       setLoading(true);
       let query = supabase
         .from("trades")
-        .select("id, pnl_net, side, close_time, open_time, symbol, account_id, qty, playbook, r_multiple, notes")
+        .select("id, pnl_gross, pnl_net, fees, side, close_time, open_time, symbol, account_id, qty, playbook, r_multiple, notes")
         .eq("user_id", user.id)
         .order("close_time", { ascending: false });
 
