@@ -175,8 +175,8 @@ const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogPr
                             </span>
                           </td>
                           <td className="px-4 py-3 text-center text-foreground">{t.qty || 1}</td>
-                          <td className={`px-4 py-3 font-bold ${t.pnl_net >= 0 ? "text-green-400" : "text-red-400"}`}>
-                            {fmtPnl(t.pnl_net)}
+                          <td className={`px-4 py-3 font-bold ${netPnl(t) >= 0 ? "text-green-400" : "text-red-400"}`}>
+                            {fmtPnl(netPnl(t))}
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
