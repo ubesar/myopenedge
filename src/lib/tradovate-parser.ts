@@ -141,11 +141,21 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
 
   // FIFO matching per product
   const trades: ParsedTrade[] = [];
-  const positionQueue: { side: "Buy" | "Sell"; price: number; qty: number; time: string; product: string; account: string; orderIds: string[] }[] = [];
+  const positionQueue: {
+    side: "Buy" | "Sell";
+    price: number;
+    qty: number;
+    time: string;
+    product: string;
+    account: string;
+    orderIds: string[];
+    fees: number;
+  }[] = [];
 
   for (const order of filledOrders) {
     let remaining = order.filledQty;
     const product = order.product;
+    const orderFeeTotal = order.fees;
 
     while (remaining > 0) {
       // Find opposite side in queue for same product
@@ -154,7 +164,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
       );
 
       if (oppositeIdx === -1) {
-        // No opposite — add to queue
+        // No opposite — add to queue with the remaining portion of this order's fees
         positionQueue.push({
           side: order.side,
           price: order.avgPrice,
@@ -163,6 +173,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
           product,
           account: order.account,
           orderIds: [order.orderId],
+          fees: orderFeeTotal * (remaining / order.filledQty),
         });
         break;
       }
@@ -175,8 +186,6 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
       const isLong = opposite.side === "Buy";
       const entryPrice = isLong ? opposite.price : order.avgPrice;
       const exitPrice = isLong ? order.avgPrice : opposite.price;
-      const entryTime = isLong ? opposite.time : order.fillTime;
-      const exitTime = isLong ? order.fillTime : opposite.time;
 
       // For short: entry is Sell (earlier), exit is Buy (later)
       const openTime = isLong ? opposite.time : opposite.time;
@@ -186,6 +195,11 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
 
       const priceDiff = isLong ? closePrice - openPrice : openPrice - closePrice;
       const pnl = priceDiff * matchQty * pointValue;
+
+      // Allocate fees proportionally to the matched quantity
+      const oppositeFees = opposite.fees * (matchQty / opposite.qty);
+      const orderFees = orderFeeTotal * (matchQty / order.filledQty);
+      const totalFees = oppositeFees + orderFees;
 
       // Collect unique orderIds from both sides
       const tradeOrderIds = [...new Set([...opposite.orderIds, order.orderId])];
@@ -199,7 +213,8 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
         open_time: parseTradovateDate(openTime),
         close_time: parseTradovateDate(closeTime),
         pnl_gross: pnl,
-        pnl_net: pnl,
+        pnl_net: pnl - totalFees,
+        fees: totalFees,
         source: "TRADOVATE",
         account_name: order.account,
         order_ids: tradeOrderIds,
@@ -207,6 +222,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
 
       remaining -= matchQty;
       opposite.qty -= matchQty;
+      opposite.fees -= oppositeFees;
       if (opposite.qty <= 0) {
         positionQueue.splice(oppositeIdx, 1);
       }
