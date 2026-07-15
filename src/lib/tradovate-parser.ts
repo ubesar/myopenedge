@@ -15,6 +15,7 @@ interface TradovateOrder {
   timestamp: string;
   status: string;
   contract: string;
+  fees: number; // sum of fee/commission columns for this fill
 }
 
 export interface ParsedTrade {
@@ -27,6 +28,7 @@ export interface ParsedTrade {
   close_time: string;
   pnl_gross: number;
   pnl_net: number;
+  fees: number;
   source: string;
   account_name: string; // auto-detected from CSV
   order_ids: string[]; // Tradovate orderIds used in this trade
