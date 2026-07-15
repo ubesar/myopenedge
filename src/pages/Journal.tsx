@@ -15,7 +15,9 @@ import { Loader2, Calendar, BarChart3, Upload, ChevronDown, History } from "luci
 
 interface Trade {
   id: string;
+  pnl_gross: number;
   pnl_net: number;
+  fees: number | null;
   side: string;
   close_time: string;
   open_time: string;
