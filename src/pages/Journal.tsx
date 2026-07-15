@@ -15,7 +15,9 @@ import { Loader2, Calendar, BarChart3, Upload, ChevronDown, History } from "luci
 
 interface Trade {
   id: string;
+  pnl_gross: number;
   pnl_net: number;
+  fees: number | null;
   side: string;
   close_time: string;
   open_time: string;
@@ -72,7 +74,7 @@ const Journal = () => {
       setLoading(true);
       let query = supabase
         .from("trades")
-        .select("id, pnl_net, side, close_time, open_time, symbol, account_id, qty, playbook, r_multiple, notes")
+        .select("id, pnl_gross, pnl_net, fees, side, close_time, open_time, symbol, account_id, qty, playbook, r_multiple, notes")
         .eq("user_id", user.id)
         .order("close_time", { ascending: false });
 

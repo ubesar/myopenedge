@@ -15,6 +15,7 @@ interface TradovateOrder {
   timestamp: string;
   status: string;
   contract: string;
+  fees: number; // sum of fee/commission columns for this fill
 }
 
 export interface ParsedTrade {
@@ -27,6 +28,7 @@ export interface ParsedTrade {
   close_time: string;
   pnl_gross: number;
   pnl_net: number;
+  fees: number;
   source: string;
   account_name: string; // auto-detected from CSV
   order_ids: string[]; // Tradovate orderIds used in this trade
@@ -94,6 +96,12 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
   const iContract = colIdx("Contract");
   const iAccount = colIdx("Account");
 
+  // Detect any fee / commission columns (e.g. Fees, Commission, Trade Fees & Comm)
+  const feeColIndices = headers
+    .map((h, i) => ({ h, i }))
+    .filter(({ h }) => /fee|comm/i.test(h))
+    .map(({ i }) => i);
+
   // Parse only filled orders
   const filledOrders: TradovateOrder[] = [];
   for (let i = 1; i < lines.length; i++) {
@@ -104,6 +112,11 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
     const avgPrice = parseFloat(cols[iAvgPrice]);
     const filledQty = parseInt(cols[iFilledQty], 10);
     if (isNaN(avgPrice) || isNaN(filledQty) || filledQty <= 0) continue;
+
+    const orderFees = feeColIndices.reduce(
+      (sum, idx) => sum + Math.abs(parseFloat(cols[idx]) || 0),
+      0
+    );
 
     filledOrders.push({
       orderId: cols[iOrderId],
@@ -117,6 +130,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
       timestamp: cols[iTimestamp]?.trim(),
       status,
       contract: cols[iContract]?.trim(),
+      fees: orderFees,
     });
   }
 
@@ -127,11 +141,21 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
 
   // FIFO matching per product
   const trades: ParsedTrade[] = [];
-  const positionQueue: { side: "Buy" | "Sell"; price: number; qty: number; time: string; product: string; account: string; orderIds: string[] }[] = [];
+  const positionQueue: {
+    side: "Buy" | "Sell";
+    price: number;
+    qty: number;
+    time: string;
+    product: string;
+    account: string;
+    orderIds: string[];
+    fees: number;
+  }[] = [];
 
   for (const order of filledOrders) {
     let remaining = order.filledQty;
     const product = order.product;
+    const orderFeeTotal = order.fees;
 
     while (remaining > 0) {
       // Find opposite side in queue for same product
@@ -140,7 +164,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
       );
 
       if (oppositeIdx === -1) {
-        // No opposite — add to queue
+        // No opposite — add to queue with the remaining portion of this order's fees
         positionQueue.push({
           side: order.side,
           price: order.avgPrice,
@@ -149,6 +173,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
           product,
           account: order.account,
           orderIds: [order.orderId],
+          fees: orderFeeTotal * (remaining / order.filledQty),
         });
         break;
       }
@@ -161,8 +186,6 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
       const isLong = opposite.side === "Buy";
       const entryPrice = isLong ? opposite.price : order.avgPrice;
       const exitPrice = isLong ? order.avgPrice : opposite.price;
-      const entryTime = isLong ? opposite.time : order.fillTime;
-      const exitTime = isLong ? order.fillTime : opposite.time;
 
       // For short: entry is Sell (earlier), exit is Buy (later)
       const openTime = isLong ? opposite.time : opposite.time;
@@ -172,6 +195,11 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
 
       const priceDiff = isLong ? closePrice - openPrice : openPrice - closePrice;
       const pnl = priceDiff * matchQty * pointValue;
+
+      // Allocate fees proportionally to the matched quantity
+      const oppositeFees = opposite.fees * (matchQty / opposite.qty);
+      const orderFees = orderFeeTotal * (matchQty / order.filledQty);
+      const totalFees = oppositeFees + orderFees;
 
       // Collect unique orderIds from both sides
       const tradeOrderIds = [...new Set([...opposite.orderIds, order.orderId])];
@@ -185,7 +213,8 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
         open_time: parseTradovateDate(openTime),
         close_time: parseTradovateDate(closeTime),
         pnl_gross: pnl,
-        pnl_net: pnl,
+        pnl_net: pnl - totalFees,
+        fees: totalFees,
         source: "TRADOVATE",
         account_name: order.account,
         order_ids: tradeOrderIds,
@@ -193,6 +222,7 @@ export function parseTradovateCSV(csvText: string): ParsedTrade[] {
 
       remaining -= matchQty;
       opposite.qty -= matchQty;
+      opposite.fees -= oppositeFees;
       if (opposite.qty <= 0) {
         positionQueue.splice(oppositeIdx, 1);
       }
