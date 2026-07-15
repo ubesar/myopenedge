@@ -7,7 +7,9 @@ import { resolveTradeScreenshotUrl } from "@/lib/trade-screenshot-url";
 
 interface Trade {
   id: string;
+  pnl_gross: number;
   pnl_net: number;
+  fees: number | null;
   side: string;
   close_time: string;
   open_time: string;
@@ -16,6 +18,8 @@ interface Trade {
   qty?: number;
   notes?: string | null;
 }
+
+const netPnl = (t: Trade) => t.pnl_gross - (t.fees || 0);
 
 interface Attachment {
   id: string;
