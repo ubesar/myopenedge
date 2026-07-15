@@ -136,6 +136,7 @@ const TradovateImport = ({ onImportComplete }: TradovateImportProps) => {
         close_time: t.close_time,
         pnl_gross: t.pnl_gross,
         pnl_net: t.pnl_net,
+        fees: t.fees,
         source: "TRADOVATE",
         import_batch_id: batch.id,
         account_id: accountIdMap.get(t.account_name) || null,
