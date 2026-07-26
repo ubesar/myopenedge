@@ -172,7 +172,6 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="london-ib">IB: london session</SelectItem>}
               {!isFree && <SelectItem value="momentum">momentum candle continuation (mcc)</SelectItem>}
               {!isFree && <SelectItem value="pullback50">50% pullback strategy</SelectItem>}
-              {!isFree && <SelectItem value="orb">opening range breakout (orb)</SelectItem>}
               {!isFree && <SelectItem value="ib2575">IB 25/75 quarter levels</SelectItem>}
               {!isFree && <SelectItem value="mcm15-2am">m15 momentum @ 04:00 ny</SelectItem>}
               <SelectItem value="occ">opening candle continuation</SelectItem>
