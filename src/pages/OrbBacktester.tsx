@@ -31,7 +31,7 @@ type RRChoice = "0.5" | "1";
 interface ExecRow {
   date: string;
   time: string;
-  ticker: string;
+  ticker: Ticker;
   direction: "long" | "short";
   entry: number;
   stop: number;
