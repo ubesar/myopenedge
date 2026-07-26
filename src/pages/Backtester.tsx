@@ -302,11 +302,16 @@ const Backtester = () => {
   }, [result]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex">
-      <AppNavSidebar />
-      <div className="flex-1 lg:ml-64 flex flex-col">
-        <MobileHeader />
-        <main className="flex-1 p-4 lg:p-6 space-y-4 max-w-[1400px] w-full mx-auto">
+    <div className="flex h-screen bg-background overflow-hidden">
+      <AppNavSidebar
+        collapsed={isMobile ? !mobileOpen : collapsed}
+        onToggle={() => (isMobile ? setMobileOpen(!mobileOpen) : setCollapsed(!collapsed))}
+      />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {isMobile && (
+          <MobileHeader onMenuToggle={() => setMobileOpen(!mobileOpen)} title="backtester" />
+        )}
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4 max-w-[1400px] w-full mx-auto">
           <div>
             <h1 className="text-2xl font-bold lowercase">backtester</h1>
             <p className="text-sm text-muted-foreground lowercase">
