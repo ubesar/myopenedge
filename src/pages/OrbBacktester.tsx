@@ -121,6 +121,8 @@ const OrbBacktester = () => {
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   const [tf, setTf] = useState<"5" | "15" | "30">("15");
   const [rr, setRr] = useState<RRChoice>("1");
+  const [candleMode, setCandleMode] = useState<"momentum" | "any">("any");
+  const [slMode, setSlMode] = useState<"full" | "half">("full");
   const [loading, setLoading] = useState(false);
 
   const [rows, setRows] = useState<ExecRow[]>([]);
