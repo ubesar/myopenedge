@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Helmet, HelmetProvider } from "react-helmet-async";
-import { Plus, X, ArrowLeft } from "lucide-react";
+import { Plus, X, ArrowLeft, Save, Trash2, FolderOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const PLANS = ["Premium Plan", "Rapid Pro Plan", "Standard Plan"];
 const ACCOUNT_SIZES = ["5K", "10K", "25K", "50K", "100K", "150K", "200K"];
