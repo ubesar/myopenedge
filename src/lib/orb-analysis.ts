@@ -13,6 +13,7 @@ interface BarData {
 export type ORBTimeframe = 5 | 15 | 30;
 
 export type ORBCandleMode = "momentum" | "any";
+export type ORBSlMode = "full" | "half";
 
 export interface ORBTrade {
   date: string;
