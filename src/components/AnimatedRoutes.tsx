@@ -32,14 +32,13 @@ const AnimatedRoutes = () => {
         <Route path="/algos" element={<PageTransition><Algos /></PageTransition>} />
         <Route path="/chart" element={<PageTransition><Chart /></PageTransition>} />
         <Route path="/watchlist" element={<PageTransition><ConsistencyCalculator /></PageTransition>} />
-        <Route path="/whats-in-play" element={<PageTransition><WhatsInPlay /></PageTransition>} />
+        <Route path="/orb-backtester" element={<PageTransition><OrbBacktester /></PageTransition>} />
         <Route path="/journal" element={<PageTransition><Journal /></PageTransition>} />
         <Route path="/upgrade" element={<PageTransition><Upgrade /></PageTransition>} />
         <Route path="/docs" element={<PageTransition><Docs /></PageTransition>} />
         <Route path="/docs/paddle-guide" element={<PageTransition><PaddleLiveGuide /></PageTransition>} />
         <Route path="/terms_conditions" element={<PageTransition><TermsConditions /></PageTransition>} />
         <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
-        <Route path="/forecast" element={<PageTransition><Forecast /></PageTransition>} />
         <Route path="/consistency-calculator" element={<PageTransition><ConsistencyCalculator /></PageTransition>} />
         <Route path="/admin-x9k7-88f2-vqp9" element={<PageTransition><AdminPanel /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
