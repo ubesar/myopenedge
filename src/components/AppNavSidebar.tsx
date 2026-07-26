@@ -22,7 +22,6 @@ const workspaceItems = [
   { icon: Bot, label: "ai assistant", href: "/ai-assistant" },
   { icon: FlaskConical, label: "edge lab", href: "/app" },
   { icon: CandlestickChart, label: "chart", href: "/chart" },
-  { icon: TrendingUp, label: "orb backtester", href: "/orb-backtester" },
   { icon: Cpu, label: "algos", href: "/algos" },
   { icon: Calculator, label: "consistency calc", href: "/consistency-calculator" },
   { icon: BookOpen, label: "journal", href: "/journal" },
