@@ -12,11 +12,9 @@ export type OCCTimeframe = "M5" | "M15" | "M30" | "H1";
 export type MomentumBodyRatio = "0.50" | "0.60" | "0.70" | "0.80";
 export type OCCBodyRatio = "0.40" | "0.50" | "0.60";
 
-export type ORBTimeframeStr = "5" | "15" | "30";
-export type ORBCandleModeStr = "momentum" | "any";
 
 interface ParameterPanelProps {
-  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio, weekdays: number[], momentumSessionEnd: number, orbTimeframe: ORBTimeframeStr, orbCandleMode: ORBCandleModeStr) => void;
+  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio, weekdays: number[], momentumSessionEnd: number) => void;
   loading: boolean;
   isFree?: boolean;
   occTimeframe?: OCCTimeframe;
@@ -65,8 +63,6 @@ const ParameterPanel = ({
   const [occBodyRatio, setOccBodyRatio] = useState<OCCBodyRatio>("0.50");
   const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [momentumSessionEnd, setMomentumSessionEnd] = useState<string>("780"); // 13:00
-  const [orbTimeframe, setOrbTimeframe] = useState<ORBTimeframeStr>("5");
-  const [orbCandleMode, setOrbCandleMode] = useState<ORBCandleModeStr>("momentum");
 
   const [selectedTemplateId, setSelectedTemplateId] = useState("custom");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -76,7 +72,7 @@ const ParameterPanel = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!symbol.trim()) return;
-    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio, weekdays, parseInt(momentumSessionEnd), orbTimeframe, orbCandleMode);
+    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio, weekdays, parseInt(momentumSessionEnd));
   };
 
   const handleTemplateSelect = (id: string) => {
