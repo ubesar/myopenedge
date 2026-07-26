@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   ChevronLeft, ChevronRight, Rocket, Bot, FlaskConical, CandlestickChart,
-  TrendingUp, Cpu, Calculator, Users, BookOpen, Brain,
+  TrendingUp, Cpu, Calculator, Users, BookOpen,
   Crown, LogOut, Menu, X
 } from "lucide-react";
 import logo from "@/assets/logo.png";
@@ -22,8 +22,7 @@ const workspaceItems = [
   { icon: Bot, label: "ai assistant", href: "/ai-assistant" },
   { icon: FlaskConical, label: "edge lab", href: "/app" },
   { icon: CandlestickChart, label: "chart", href: "/chart" },
-  { icon: TrendingUp, label: "combo builder", href: "/whats-in-play" },
-  { icon: Brain, label: "ai forecast", href: "/forecast" },
+  { icon: TrendingUp, label: "orb backtester", href: "/orb-backtester" },
   { icon: Cpu, label: "algos", href: "/algos" },
   { icon: Calculator, label: "consistency calc", href: "/consistency-calculator" },
   { icon: BookOpen, label: "journal", href: "/journal" },
