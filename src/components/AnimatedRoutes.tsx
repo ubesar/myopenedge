@@ -17,6 +17,7 @@ import ResetPassword from "@/pages/ResetPassword";
 import Journal from "@/pages/Journal";
 import AdminPanel from "@/pages/AdminPanel";
 import ConsistencyCalculator from "@/pages/ConsistencyCalculator";
+import ProRoute from "./ProRoute";
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -26,7 +27,7 @@ const AnimatedRoutes = () => {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
-        <Route path="/app" element={<PageTransition><Index /></PageTransition>} />
+        <Route path="/app" element={<ProRoute><PageTransition><Index /></PageTransition></ProRoute>} />
         <Route path="/ai-assistant" element={<PageTransition><AIAssistant /></PageTransition>} />
         <Route path="/algos" element={<PageTransition><Algos /></PageTransition>} />
         <Route path="/chart" element={<PageTransition><Chart /></PageTransition>} />
