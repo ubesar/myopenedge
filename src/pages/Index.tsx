@@ -27,7 +27,6 @@ import { analyzeOutsideDay, type OutsideDayResult } from "@/lib/outsideday-analy
 import { analyzeGlobexIB, type GlobexIBResult } from "@/lib/globex-ib-analysis";
 import { analyzeLondonIB, type LondonIBResult } from "@/lib/london-ib-analysis";
 import { analyzePullback50, type Pullback50Result } from "@/lib/pullback50-analysis";
-import { analyzeORB, type ORBResult, type ORBTimeframe } from "@/lib/orb-analysis";
 import { analyzeIB2575, type IB2575Result } from "@/lib/ib2575-analysis";
 import { analyzeMCM152am, type MCM152amResult } from "@/lib/mcm15-2am-analysis";
 import InsideBarReport from "@/components/InsideBarReport";
@@ -64,7 +63,6 @@ const Index = () => {
   const [globexIBResult, setGlobexIBResult] = useState<GlobexIBResult | null>(null);
   const [londonIBResult, setLondonIBResult] = useState<LondonIBResult | null>(null);
   const [pullback50Result, setPullback50Result] = useState<Pullback50Result | null>(null);
-  const [orbResult, setOrbResult] = useState<ORBResult | null>(null);
   const [ib2575Result, setIb2575Result] = useState<IB2575Result | null>(null);
   const [mcm152amResult, setMcm152amResult] = useState<MCM152amResult | null>(null);
   const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
@@ -162,7 +160,7 @@ const Index = () => {
     return { values: deduped };
   };
 
-  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50", weekdays: number[] = [1,2,3,4,5], momentumSessionEnd: number = 13 * 60, orbTimeframe: "5" | "15" | "30" = "5", orbCandleMode: "momentum" | "any" = "momentum") => {
+  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50", weekdays: number[] = [1,2,3,4,5], momentumSessionEnd: number = 13 * 60) => {
     let effectiveIbWindow = ibWindow;
     let effectiveMaxDays = maxDays;
     let effectiveMode = mode;
@@ -177,7 +175,7 @@ const Index = () => {
     }
 
     setLoading(true);
-    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null); setPullback50Result(null); setOrbResult(null); setIb2575Result(null); setMcm152amResult(null);
+    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null); setPullback50Result(null); setIb2575Result(null); setMcm152amResult(null);
     setSymbol(ticker); setActiveMode(effectiveMode); setAnalysisMaxDays(effectiveMaxDays); setAnalysisWeekdays(weekdays);
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
@@ -298,12 +296,6 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setPullback50Result(a);
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, sessionEndMinutes: a.sessionEndMinutes, winRate: a.stats.winRate });
-        } else if (effectiveMode === "orb") {
-          const tf = parseInt(orbTimeframe) as ORBTimeframe;
-          const a = analyzeORB(values as any, tf, effectiveMaxDays, weekdays, orbCandleMode);
-          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
-          setOrbResult(a);
-          addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, timeframe: tf, tp1WinRate: a.tp1Stats.winRate, tp2WinRate: a.tp2Stats.winRate });
         } else if (effectiveMode === "ib2575") {
           const a = analyzeIB2575(values as any, effectiveIbWindow, effectiveMaxDays, weekdays);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
