@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Helmet, HelmetProvider } from "react-helmet-async";
-import { Plus, X, ArrowLeft } from "lucide-react";
+import { Plus, X, ArrowLeft, Save, Trash2, FolderOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const PLANS = ["Premium Plan", "Rapid Pro Plan", "Standard Plan"];
 const ACCOUNT_SIZES = ["5K", "10K", "25K", "50K", "100K", "150K", "200K"];
@@ -21,6 +22,19 @@ type Result = {
   progress: number;
 };
 
+const STORAGE_KEY = "consistency-calculator-saves";
+
+type SavedCalc = {
+  id: string;
+  name: string;
+  createdAt: number;
+  plan: string;
+  accountSize: string;
+  phase: string;
+  target: number;
+  rows: string[];
+};
+
 const ConsistencyCalculator = () => {
   const navigate = useNavigate();
   const [plan, setPlan] = useState(PLANS[0]);
@@ -29,6 +43,20 @@ const ConsistencyCalculator = () => {
   const [target, setTarget] = useState(3000);
   const [rows, setRows] = useState<string[]>(["1200", "1200", "600"]);
   const [result, setResult] = useState<Result | null>(null);
+  const [saves, setSaves] = useState<SavedCalc[]>([]);
+  const [showLoad, setShowLoad] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) setSaves(JSON.parse(raw));
+    } catch {}
+  }, []);
+
+  const persist = (list: SavedCalc[]) => {
+    setSaves(list);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  };
 
   const total = useMemo(
     () => rows.reduce((s, v) => s + (parseFloat(v) || 0), 0),
@@ -51,6 +79,39 @@ const ConsistencyCalculator = () => {
   const removeRow = (i: number) => setRows(rows.filter((_, idx) => idx !== i));
   const addRow = () => setRows([...rows, ""]);
 
+  const saveCalc = () => {
+    const defaultName = `${plan} ${accountSize} · ${new Date().toLocaleDateString()}`;
+    const name = window.prompt("save name", defaultName)?.trim();
+    if (!name) return;
+    const entry: SavedCalc = {
+      id: crypto.randomUUID(),
+      name,
+      createdAt: Date.now(),
+      plan,
+      accountSize,
+      phase,
+      target,
+      rows,
+    };
+    persist([entry, ...saves]);
+    toast.success("saved");
+  };
+
+  const loadCalc = (s: SavedCalc) => {
+    setPlan(s.plan);
+    setAccountSize(s.accountSize);
+    setPhase(s.phase);
+    setTarget(s.target);
+    setRows(s.rows);
+    setResult(null);
+    setShowLoad(false);
+    toast.success(`loaded "${s.name}"`);
+  };
+
+  const deleteCalc = (id: string) => {
+    persist(saves.filter((s) => s.id !== id));
+  };
+
   return (
     <HelmetProvider>
       <Helmet>
@@ -69,7 +130,7 @@ const ConsistencyCalculator = () => {
 
       <div className="min-h-screen w-full bg-background text-foreground py-8 px-4">
         <div className="max-w-3xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <Button
               variant="ghost"
               size="sm"
@@ -78,7 +139,55 @@ const ConsistencyCalculator = () => {
             >
               <ArrowLeft className="h-4 w-4 mr-1.5" /> back
             </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowLoad((v) => !v)}
+              >
+                <FolderOpen className="h-4 w-4 mr-1.5" /> load ({saves.length})
+              </Button>
+              <Button size="sm" onClick={saveCalc}>
+                <Save className="h-4 w-4 mr-1.5" /> save
+              </Button>
+            </div>
           </div>
+
+          {showLoad && (
+            <Card>
+              <h2 className="text-base font-semibold lowercase mb-2">saved calculations</h2>
+              {saves.length === 0 ? (
+                <p className="text-sm text-muted-foreground lowercase">no saved calculations yet.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {saves.map((s) => (
+                    <li
+                      key={s.id}
+                      className="flex items-center justify-between gap-3 p-3 rounded-md bg-input border border-border"
+                    >
+                      <button
+                        onClick={() => loadCalc(s)}
+                        className="flex-1 text-left"
+                      >
+                        <div className="text-sm font-medium">{s.name}</div>
+                        <div className="text-xs text-muted-foreground lowercase">
+                          {s.plan} · {s.accountSize} · {s.phase} · {s.rows.length} rows ·{" "}
+                          {new Date(s.createdAt).toLocaleString()}
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => deleteCalc(s.id)}
+                        className="p-2 rounded-md bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors"
+                        aria-label="delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+          )}
 
           <header className="text-center space-y-2">
             <h1 className="text-2xl md:text-3xl font-semibold lowercase">
