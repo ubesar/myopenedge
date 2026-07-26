@@ -13,6 +13,7 @@ interface BarData {
 export type ORBTimeframe = 5 | 15 | 30;
 
 export type ORBCandleMode = "momentum" | "any";
+export type ORBSlMode = "full" | "half";
 
 export interface ORBTrade {
   date: string;
@@ -116,6 +117,7 @@ export function analyzeORB(
   maxDays: number = 0,
   weekdays: number[] = [1, 2, 3, 4, 5],
   candleMode: ORBCandleMode = "momentum",
+  slMode: ORBSlMode = "full",
 ): ORBResult {
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
@@ -178,7 +180,10 @@ export function analyzeORB(
 
     const direction: TradeDirection = orb.close > orb.open ? "bullish" : "bearish";
     const entry = direction === "bullish" ? orb.high : orb.low;
-    const stop = direction === "bullish" ? orb.low : orb.high;
+    const fullStop = direction === "bullish" ? orb.low : orb.high;
+    const stop = slMode === "half"
+      ? (direction === "bullish" ? entry - range * 0.5 : entry + range * 0.5)
+      : fullStop;
     const tp1 = direction === "bullish" ? entry + range * 0.5 : entry - range * 0.5;
     const tp2 = direction === "bullish" ? entry + range : entry - range;
 

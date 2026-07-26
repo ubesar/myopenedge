@@ -121,6 +121,8 @@ const OrbBacktester = () => {
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   const [tf, setTf] = useState<"5" | "15" | "30">("15");
   const [rr, setRr] = useState<RRChoice>("1");
+  const [candleMode, setCandleMode] = useState<"momentum" | "any">("any");
+  const [slMode, setSlMode] = useState<"full" | "half">("full");
   const [loading, setLoading] = useState(false);
 
   const [rows, setRows] = useState<ExecRow[]>([]);
@@ -139,19 +141,21 @@ const OrbBacktester = () => {
       if (!values.length) { toast.error("No market data returned"); return; }
 
       const timeframe = parseInt(tf) as ORBTimeframe;
-      const result = analyzeORB(values as any, timeframe, 0, [1, 2, 3, 4, 5], "any");
+      const result = analyzeORB(values as any, timeframe, 0, [1, 2, 3, 4, 5], candleMode, slMode);
 
       const startStr = format(startDate, "yyyy-MM-dd");
       const endStr = format(endDate, "yyyy-MM-dd");
       const inRange = result.trades.filter((t) => t.date >= startStr && t.date <= endStr && t.triggered);
 
-      const rrMul = rr === "0.5" ? 0.5 : 1;
       const built: ExecRow[] = inRange
         .map((t: ORBTrade) => {
           const outcome = rr === "0.5" ? t.outcomeTp1 : t.outcomeTp2;
           if (outcome === "open") return null;
-          const positionSize = RISK / Math.abs(t.entry - t.stop);
-          const pnl = outcome === "win" ? RISK * rrMul : -RISK;
+          const tp = rr === "0.5" ? t.tp1 : t.tp2;
+          const slDist = Math.abs(t.entry - t.stop);
+          const tpDist = Math.abs(tp - t.entry);
+          const positionSize = RISK / slDist;
+          const pnl = outcome === "win" ? RISK * (tpDist / slDist) : -RISK;
           return {
             date: t.date,
             time: t.orbTime,
@@ -260,15 +264,38 @@ const OrbBacktester = () => {
               </div>
 
               <div className="space-y-2">
+                <Label className="text-xs">candle filter</Label>
+                <Select value={candleMode} onValueChange={(v) => setCandleMode(v as "momentum" | "any")}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">any candle (direction only)</SelectItem>
+                    <SelectItem value="momentum">momentum candle (body ≥ 70% range)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">stop loss</Label>
+                <Select value={slMode} onValueChange={(v) => setSlMode(v as "full" | "half")}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full">sl full range (opposite end)</SelectItem>
+                    <SelectItem value="half">sl 50% range (midpoint)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label className="text-xs">take profit</Label>
                 <Select value={rr} onValueChange={(v) => setRr(v as RRChoice)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="0.5">0.5 R (half of range)</SelectItem>
-                    <SelectItem value="1">1 R (full range)</SelectItem>
+                    <SelectItem value="0.5">0.5 × range from entry</SelectItem>
+                    <SelectItem value="1">1 × range from entry</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
 
               <div className="space-y-2">
                 <Label className="text-xs">risk per trade</Label>
