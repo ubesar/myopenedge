@@ -14,10 +14,9 @@ import NotFound from "@/pages/NotFound";
 import TermsConditions from "@/pages/TermsConditions";
 import PaddleLiveGuide from "@/pages/PaddleLiveGuide";
 import ResetPassword from "@/pages/ResetPassword";
-import WhatsInPlay from "@/pages/WhatsInPlay";
 import Journal from "@/pages/Journal";
 import AdminPanel from "@/pages/AdminPanel";
-import Forecast from "@/pages/Forecast";
+import OrbBacktester from "@/pages/OrbBacktester";
 import ConsistencyCalculator from "@/pages/ConsistencyCalculator";
 
 const AnimatedRoutes = () => {
