@@ -188,6 +188,9 @@ const WEEKDAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const Backtester = () => {
   const { user, loading: authLoading } = useAuth();
   const { isActive } = useSubscription();
+  const isMobile = useIsMobile();
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [symbol, setSymbol] = useState("QQQ");
   const [strategy, setStrategy] = useState<StrategyKey>("pb50");
   const [maxDays, setMaxDays] = useState("120");
