@@ -1,8 +1,21 @@
 import { useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { format, differenceInCalendarDays } from "date-fns";
+import { format, differenceInCalendarDays, parseISO, getDay } from "date-fns";
 import { CalendarIcon, Play, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ReferenceLine,
+  Cell,
+} from "recharts";
 
 import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
 import { Button } from "@/components/ui/button";
@@ -20,9 +33,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { analyzeORB, type ORBTimeframe, type ORBTrade } from "@/lib/orb-analysis";
 
 /**
- * ORB Backtester
+ * Edgeful-style ORB Backtester
  * Fixed $100 risk per trade. Position size = 100 / |entry - stop|.
- * PnL per trade: RR-based (0.5R → +$50 win / -$100 loss; 1R → +$100 / -$100).
+ * Includes equity curve, distribution histogram, monthly & weekday breakdown, trade log.
  */
 
 type Ticker = "QQQ" | "GLD";
@@ -46,6 +59,9 @@ interface Summary {
   netPnl: number;
   maxDrawdown: number;
   profitFactor: number;
+  avgWin: number;
+  avgLoss: number;
+  expectancy: number;
 }
 
 const RISK = 100;
@@ -54,10 +70,6 @@ const BATCH_OUTPUTSIZE = 5000;
 const BATCH_DELAY_MS = 3000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/**
- * TODO: swap this for a real Supabase-backed persistence layer.
- * Currently a pure client-side computation over live TwelveData bars.
- */
 async function fetchBars(ticker: string, totalDays: number) {
   if (totalDays <= MAX_BATCH_DAYS) {
     const { data, error } = await supabase.functions.invoke("twelvedata-proxy", {
@@ -88,7 +100,8 @@ async function fetchBars(ticker: string, totalDays: number) {
 }
 
 function computeSummary(rows: ExecRow[]): Summary {
-  if (rows.length === 0) return { totalTrades: 0, winRate: 0, netPnl: 0, maxDrawdown: 0, profitFactor: 0 };
+  if (rows.length === 0)
+    return { totalTrades: 0, winRate: 0, netPnl: 0, maxDrawdown: 0, profitFactor: 0, avgWin: 0, avgLoss: 0, expectancy: 0 };
   const wins = rows.filter((r) => r.outcome === "win");
   const losses = rows.filter((r) => r.outcome === "loss");
   const netPnl = rows.reduce((a, r) => a + r.pnl, 0);
@@ -101,13 +114,92 @@ function computeSummary(rows: ExecRow[]): Summary {
     const dd = peak - cum;
     if (dd > maxDd) maxDd = dd;
   }
+  const avgWin = wins.length ? grossW / wins.length : 0;
+  const avgLoss = losses.length ? grossL / losses.length : 0;
   return {
     totalTrades: rows.length,
     winRate: (wins.length / rows.length) * 100,
     netPnl,
     maxDrawdown: maxDd,
     profitFactor: grossL > 0 ? grossW / grossL : wins.length > 0 ? Infinity : 0,
+    avgWin,
+    avgLoss,
+    expectancy: netPnl / rows.length,
   };
+}
+
+// Build equity curve data from sorted rows
+function buildEquityCurve(rows: ExecRow[]) {
+  let cum = 0;
+  return [
+    { i: 0, label: "start", equity: 0, date: "" },
+    ...rows.map((r, idx) => {
+      cum += r.pnl;
+      return { i: idx + 1, label: r.date, equity: cum, date: r.date };
+    }),
+  ];
+}
+
+// Build distribution histogram (bin size $25)
+function buildDistribution(rows: ExecRow[]) {
+  if (rows.length === 0) return [];
+  const bin = 25;
+  const buckets = new Map<number, number>();
+  for (const r of rows) {
+    const b = Math.floor(r.pnl / bin) * bin;
+    buckets.set(b, (buckets.get(b) ?? 0) + 1);
+  }
+  const keys = Array.from(buckets.keys()).sort((a, b) => a - b);
+  return keys.map((k) => ({
+    range: `${k >= 0 ? "+" : ""}${k}`,
+    bucket: k,
+    count: buckets.get(k)!,
+  }));
+}
+
+// Monthly breakdown
+function buildMonthly(rows: ExecRow[]) {
+  const m = new Map<string, { pnl: number; wins: number; total: number }>();
+  for (const r of rows) {
+    const key = r.date.slice(0, 7); // YYYY-MM
+    const cur = m.get(key) ?? { pnl: 0, wins: 0, total: 0 };
+    cur.pnl += r.pnl;
+    cur.total++;
+    if (r.outcome === "win") cur.wins++;
+    m.set(key, cur);
+  }
+  return Array.from(m.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([month, v]) => ({
+      month,
+      label: format(parseISO(month + "-01"), "MMM yyyy"),
+      pnl: v.pnl,
+      trades: v.total,
+      winRate: v.total ? (v.wins / v.total) * 100 : 0,
+    }));
+}
+
+// Weekday breakdown (Mon–Fri)
+const WEEKDAY_LABELS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+function buildWeekday(rows: ExecRow[]) {
+  const w = new Map<number, { pnl: number; wins: number; total: number }>();
+  for (const r of rows) {
+    const d = getDay(parseISO(r.date));
+    const cur = w.get(d) ?? { pnl: 0, wins: 0, total: 0 };
+    cur.pnl += r.pnl;
+    cur.total++;
+    if (r.outcome === "win") cur.wins++;
+    w.set(d, cur);
+  }
+  return [1, 2, 3, 4, 5].map((d) => {
+    const v = w.get(d) ?? { pnl: 0, wins: 0, total: 0 };
+    return {
+      day: WEEKDAY_LABELS[d],
+      pnl: v.pnl,
+      trades: v.total,
+      winRate: v.total ? (v.wins / v.total) * 100 : 0,
+    };
+  });
 }
 
 const OrbBacktester = () => {
@@ -116,7 +208,7 @@ const OrbBacktester = () => {
 
   const [ticker, setTicker] = useState<Ticker>("QQQ");
   const [startDate, setStartDate] = useState<Date | undefined>(() => {
-    const d = new Date(); d.setMonth(d.getMonth() - 1); return d;
+    const d = new Date(); d.setMonth(d.getMonth() - 3); return d;
   });
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   const [tf, setTf] = useState<"5" | "15" | "30">("15");
@@ -127,7 +219,12 @@ const OrbBacktester = () => {
 
   const [rows, setRows] = useState<ExecRow[]>([]);
   const [ran, setRan] = useState(false);
+
   const summary = useMemo(() => computeSummary(rows), [rows]);
+  const equityData = useMemo(() => buildEquityCurve(rows), [rows]);
+  const distData = useMemo(() => buildDistribution(rows), [rows]);
+  const monthlyData = useMemo(() => buildMonthly(rows), [rows]);
+  const weekdayData = useMemo(() => buildWeekday(rows), [rows]);
 
   if (!authLoading && !user) return <Navigate to="/auth" replace />;
 
@@ -192,12 +289,11 @@ const OrbBacktester = () => {
         <MobileHeader onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)} title="orb backtester" />
 
         <div className="p-4 lg:p-6 space-y-4 lg:space-y-6 max-w-[1600px] mx-auto w-full">
-          {/* Header */}
           <header className="space-y-1">
             <p className="section-label">strategy lab</p>
             <h1 className="text-2xl font-bold tracking-tight">opening range breakout backtester</h1>
             <p className="text-sm text-muted-foreground">
-              historical probabilities with strict $100 fixed risk per trade. position size sized dynamically to the orb range.
+              edgeful-style historical stats with strict $100 fixed risk per trade — equity curve, pnl distribution, monthly & weekday breakdown.
             </p>
           </header>
 
@@ -296,7 +392,6 @@ const OrbBacktester = () => {
                 </Select>
               </div>
 
-
               <div className="space-y-2">
                 <Label className="text-xs">risk per trade</Label>
                 <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-secondary/40">
@@ -320,13 +415,146 @@ const OrbBacktester = () => {
                 <MetricCard label="net pnl" value={ran ? fmt$(summary.netPnl) : "—"} tone={summary.netPnl >= 0 ? "pos" : "neg"} disabled={!ran} />
                 <MetricCard label="max drawdown" value={ran ? fmt$(-summary.maxDrawdown) : "—"} tone="neg" disabled={!ran} />
                 <MetricCard label="profit factor" value={ran ? (isFinite(summary.profitFactor) ? summary.profitFactor.toFixed(2) : "∞") : "—"} tone={summary.profitFactor >= 1 ? "pos" : "neg"} disabled={!ran} />
+                <MetricCard label="avg win" value={ran ? fmt$(summary.avgWin) : "—"} tone="pos" disabled={!ran} />
+                <MetricCard label="avg loss" value={ran ? fmt$(-summary.avgLoss) : "—"} tone="neg" disabled={!ran} />
+                <MetricCard label="expectancy" value={ran ? fmt$(summary.expectancy) : "—"} tone={summary.expectancy >= 0 ? "pos" : "neg"} disabled={!ran} />
               </div>
 
-              {/* Table */}
+              {/* Equity curve */}
+              <Card className="p-4">
+                <div className="mb-3">
+                  <p className="section-label">equity curve</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">cumulative pnl over sequential trades</p>
+                </div>
+                <div className="h-64 w-full">
+                  {rows.length === 0 ? (
+                    <EmptyChart text={ran ? "no resolved trades" : "run a backtest to see the equity curve"} />
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={equityData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                        <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="i" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
+                        <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} width={50} />
+                        <Tooltip
+                          contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                          labelFormatter={(l, p) => (p?.[0]?.payload?.date ? `trade #${l} · ${p[0].payload.date}` : `trade #${l}`)}
+                          formatter={(v: number) => [fmt$(v), "equity"]}
+                        />
+                        <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="2 2" />
+                        <Line type="monotone" dataKey="equity" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </Card>
+
+              {/* Distribution + Weekday */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+                <Card className="p-4">
+                  <div className="mb-3">
+                    <p className="section-label">pnl distribution</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">trade outcomes bucketed by $25</p>
+                  </div>
+                  <div className="h-56 w-full">
+                    {rows.length === 0 ? (
+                      <EmptyChart text="—" />
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={distData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                          <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="range" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
+                          <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} width={30} allowDecimals={false} />
+                          <Tooltip
+                            contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                            formatter={(v: number) => [v, "trades"]}
+                            labelFormatter={(l) => `bucket $${l}`}
+                          />
+                          <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                            {distData.map((d, i) => (
+                              <Cell key={i} fill={d.bucket >= 0 ? "hsl(var(--primary))" : "hsl(var(--destructive))"} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </Card>
+
+                <Card className="p-4">
+                  <div className="mb-3">
+                    <p className="section-label">weekday breakdown</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">net pnl & win rate per weekday</p>
+                  </div>
+                  <div className="h-56 w-full">
+                    {rows.length === 0 ? (
+                      <EmptyChart text="—" />
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={weekdayData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                          <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="day" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
+                          <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} width={50} tickFormatter={(v) => `$${v}`} />
+                          <Tooltip
+                            contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                            formatter={(v: number, _n, p: any) => {
+                              const wr = p?.payload?.winRate ?? 0;
+                              const trades = p?.payload?.trades ?? 0;
+                              return [`${fmt$(v)} · ${wr.toFixed(0)}% wr · ${trades} trades`, "pnl"];
+                            }}
+                          />
+                          <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="2 2" />
+                          <Bar dataKey="pnl" radius={[4, 4, 0, 0]}>
+                            {weekdayData.map((d, i) => (
+                              <Cell key={i} fill={d.pnl >= 0 ? "hsl(var(--primary))" : "hsl(var(--destructive))"} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </Card>
+              </div>
+
+              {/* Monthly breakdown */}
+              <Card className="p-4">
+                <div className="mb-3">
+                  <p className="section-label">monthly breakdown</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">net pnl per calendar month</p>
+                </div>
+                <div className="h-56 w-full">
+                  {rows.length === 0 ? (
+                    <EmptyChart text="—" />
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={monthlyData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                        <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
+                        <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} width={50} tickFormatter={(v) => `$${v}`} />
+                        <Tooltip
+                          contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                          formatter={(v: number, _n, p: any) => {
+                            const wr = p?.payload?.winRate ?? 0;
+                            const trades = p?.payload?.trades ?? 0;
+                            return [`${fmt$(v)} · ${wr.toFixed(0)}% wr · ${trades} trades`, "pnl"];
+                          }}
+                        />
+                        <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="2 2" />
+                        <Bar dataKey="pnl" radius={[4, 4, 0, 0]}>
+                          {monthlyData.map((d, i) => (
+                            <Cell key={i} fill={d.pnl >= 0 ? "hsl(var(--primary))" : "hsl(var(--destructive))"} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </Card>
+
+              {/* Trade log */}
               <Card className="overflow-hidden">
                 <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                   <div>
-                    <p className="section-label">execution history</p>
+                    <p className="section-label">trade log</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {ran ? `${rows.length} resolved trade${rows.length === 1 ? "" : "s"} · rr ${rr}` : "no backtest yet"}
                     </p>
@@ -349,7 +577,7 @@ const OrbBacktester = () => {
                       {rows.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={7} className="text-center text-muted-foreground text-sm py-10">
-                            {ran ? "no resolved trades in range" : "run a backtest to see execution history"}
+                            {ran ? "no resolved trades in range" : "run a backtest to see the trade log"}
                           </TableCell>
                         </TableRow>
                       ) : (
@@ -390,18 +618,28 @@ const OrbBacktester = () => {
   );
 };
 
-const MetricCard = ({ label, value, tone, disabled }: { label: string; value: string; tone?: "pos" | "neg"; disabled?: boolean }) => (
-  <Card className="p-3 lg:p-4">
-    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{label}</p>
-    <p className={cn(
-      "text-lg lg:text-2xl font-bold mt-1 font-mono tabular-nums",
-      disabled && "text-muted-foreground",
-      !disabled && tone === "pos" && "text-emerald-500",
-      !disabled && tone === "neg" && "text-rose-500",
-    )}>
-      {value}
-    </p>
-  </Card>
-);
+function MetricCard({ label, value, tone, disabled }: { label: string; value: string; tone?: "pos" | "neg"; disabled?: boolean }) {
+  return (
+    <Card className="p-3">
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className={cn(
+        "text-lg font-bold mt-1 font-mono",
+        disabled && "text-muted-foreground",
+        !disabled && tone === "pos" && "text-emerald-500",
+        !disabled && tone === "neg" && "text-rose-500"
+      )}>
+        {value}
+      </p>
+    </Card>
+  );
+}
+
+function EmptyChart({ text }: { text: string }) {
+  return (
+    <div className="h-full w-full flex items-center justify-center text-xs text-muted-foreground">
+      {text}
+    </div>
+  );
+}
 
 export default OrbBacktester;
