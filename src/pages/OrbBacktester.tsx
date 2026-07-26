@@ -141,19 +141,21 @@ const OrbBacktester = () => {
       if (!values.length) { toast.error("No market data returned"); return; }
 
       const timeframe = parseInt(tf) as ORBTimeframe;
-      const result = analyzeORB(values as any, timeframe, 0, [1, 2, 3, 4, 5], "any");
+      const result = analyzeORB(values as any, timeframe, 0, [1, 2, 3, 4, 5], candleMode, slMode);
 
       const startStr = format(startDate, "yyyy-MM-dd");
       const endStr = format(endDate, "yyyy-MM-dd");
       const inRange = result.trades.filter((t) => t.date >= startStr && t.date <= endStr && t.triggered);
 
-      const rrMul = rr === "0.5" ? 0.5 : 1;
       const built: ExecRow[] = inRange
         .map((t: ORBTrade) => {
           const outcome = rr === "0.5" ? t.outcomeTp1 : t.outcomeTp2;
           if (outcome === "open") return null;
-          const positionSize = RISK / Math.abs(t.entry - t.stop);
-          const pnl = outcome === "win" ? RISK * rrMul : -RISK;
+          const tp = rr === "0.5" ? t.tp1 : t.tp2;
+          const slDist = Math.abs(t.entry - t.stop);
+          const tpDist = Math.abs(tp - t.entry);
+          const positionSize = RISK / slDist;
+          const pnl = outcome === "win" ? RISK * (tpDist / slDist) : -RISK;
           return {
             date: t.date,
             time: t.orbTime,
