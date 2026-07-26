@@ -46,12 +46,32 @@ const ConsistencyCalculator = () => {
   const [saves, setSaves] = useState<SavedCalc[]>([]);
   const [showLoad, setShowLoad] = useState(false);
 
+  const DRAFT_KEY = "consistency-calculator-draft";
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) setSaves(JSON.parse(raw));
+      const draft = localStorage.getItem(DRAFT_KEY);
+      if (draft) {
+        const d = JSON.parse(draft);
+        if (d.plan) setPlan(d.plan);
+        if (d.accountSize) setAccountSize(d.accountSize);
+        if (d.phase) setPhase(d.phase);
+        if (typeof d.target === "number") setTarget(d.target);
+        if (Array.isArray(d.rows)) setRows(d.rows);
+      }
     } catch {}
   }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        DRAFT_KEY,
+        JSON.stringify({ plan, accountSize, phase, target, rows })
+      );
+    } catch {}
+  }, [plan, accountSize, phase, target, rows]);
 
   const persist = (list: SavedCalc[]) => {
     setSaves(list);
