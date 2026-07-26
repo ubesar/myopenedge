@@ -22,6 +22,19 @@ type Result = {
   progress: number;
 };
 
+const STORAGE_KEY = "consistency-calculator-saves";
+
+type SavedCalc = {
+  id: string;
+  name: string;
+  createdAt: number;
+  plan: string;
+  accountSize: string;
+  phase: string;
+  target: number;
+  rows: string[];
+};
+
 const ConsistencyCalculator = () => {
   const navigate = useNavigate();
   const [plan, setPlan] = useState(PLANS[0]);
@@ -30,6 +43,20 @@ const ConsistencyCalculator = () => {
   const [target, setTarget] = useState(3000);
   const [rows, setRows] = useState<string[]>(["1200", "1200", "600"]);
   const [result, setResult] = useState<Result | null>(null);
+  const [saves, setSaves] = useState<SavedCalc[]>([]);
+  const [showLoad, setShowLoad] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) setSaves(JSON.parse(raw));
+    } catch {}
+  }, []);
+
+  const persist = (list: SavedCalc[]) => {
+    setSaves(list);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  };
 
   const total = useMemo(
     () => rows.reduce((s, v) => s + (parseFloat(v) || 0), 0),
@@ -51,6 +78,39 @@ const ConsistencyCalculator = () => {
   const updateRow = (i: number, v: string) => setRows(rows.map((r, idx) => (idx === i ? v : r)));
   const removeRow = (i: number) => setRows(rows.filter((_, idx) => idx !== i));
   const addRow = () => setRows([...rows, ""]);
+
+  const saveCalc = () => {
+    const defaultName = `${plan} ${accountSize} · ${new Date().toLocaleDateString()}`;
+    const name = window.prompt("save name", defaultName)?.trim();
+    if (!name) return;
+    const entry: SavedCalc = {
+      id: crypto.randomUUID(),
+      name,
+      createdAt: Date.now(),
+      plan,
+      accountSize,
+      phase,
+      target,
+      rows,
+    };
+    persist([entry, ...saves]);
+    toast.success("saved");
+  };
+
+  const loadCalc = (s: SavedCalc) => {
+    setPlan(s.plan);
+    setAccountSize(s.accountSize);
+    setPhase(s.phase);
+    setTarget(s.target);
+    setRows(s.rows);
+    setResult(null);
+    setShowLoad(false);
+    toast.success(`loaded "${s.name}"`);
+  };
+
+  const deleteCalc = (id: string) => {
+    persist(saves.filter((s) => s.id !== id));
+  };
 
   return (
     <HelmetProvider>
