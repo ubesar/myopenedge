@@ -92,27 +92,27 @@ async function fetchMarketData(ticker: string, totalDays: number) {
 }
 
 function toBTTradesPB50(trades: Pullback50Trade[]): BTTrade[] {
-  return trades
-    .filter((t) => t.outcome === "win" || t.outcome === "loss")
-    .map((t) => {
-      const slDist = Math.abs(t.entry - t.stop);
-      const tpDist = Math.abs(t.target - t.entry);
-      const qty = slDist > 0 ? RISK_USD / slDist : 0;
-      const rMultiple = t.outcome === "win" ? tpDist / slDist : -1;
-      const pnl = rMultiple * RISK_USD;
-      return {
-        date: t.date,
-        time: t.signalTime,
-        direction: t.direction,
-        entry: t.entry,
-        stop: t.stop,
-        target: t.target,
-        outcome: t.outcome,
-        rMultiple,
-        pnl,
-        qty,
-      };
+  const out: BTTrade[] = [];
+  for (const t of trades) {
+    if (t.outcome !== "win" && t.outcome !== "loss") continue;
+    const slDist = Math.abs(t.entry - t.stop);
+    const tpDist = Math.abs(t.target - t.entry);
+    const qty = slDist > 0 ? RISK_USD / slDist : 0;
+    const rMultiple = t.outcome === "win" ? tpDist / slDist : -1;
+    out.push({
+      date: t.date,
+      time: t.signalTime,
+      direction: t.direction,
+      entry: t.entry,
+      stop: t.stop,
+      target: t.target,
+      outcome: t.outcome,
+      rMultiple,
+      pnl: rMultiple * RISK_USD,
+      qty,
     });
+  }
+  return out;
 }
 
 function toBTTradesIB2575(trades: IB2575Trade[]): BTTrade[] {
