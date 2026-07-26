@@ -203,38 +203,6 @@ const ParameterPanel = ({
             </>
           )}
 
-          {mode === "orb" && (
-            <>
-              <p className="text-[11px] text-muted-foreground">orb timeframe</p>
-              <Select value={orbTimeframe} onValueChange={(v) => { setOrbTimeframe(v as ORBTimeframeStr); setSelectedTemplateId("custom"); }}>
-                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">m5 (09:30 – 09:35)</SelectItem>
-                  <SelectItem value="15">m15 (09:30 – 09:45)</SelectItem>
-                  <SelectItem value="30">m30 (09:30 – 10:00)</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-[11px] text-muted-foreground">orb candle type</p>
-              <Select value={orbCandleMode} onValueChange={(v) => { setOrbCandleMode(v as ORBCandleModeStr); setSelectedTemplateId("custom"); }}>
-                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="momentum">momentum candle (body ≥ 70%)</SelectItem>
-                  <SelectItem value="any">any candle (direction only)</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-[10px] text-muted-foreground">
-                {orbCandleMode === "momentum"
-                  ? "opening range candle must be a momentum candle (body ≥ 70%)."
-                  : "any bullish candle → long setup, any bearish candle → short setup (no body threshold)."}
-                {" "}bullish → buy stop @ high, sl @ low. bearish → sell stop @ low, sl @ high. tp1 rr 1:0.5, tp2 rr 1:1. valid until 16:00 ny.
-              </p>
-            </>
-          )}
-
           {mode === "ib2575" && (
             <p className="text-[10px] text-muted-foreground">at 10:25 ny, close of the 5m confirmation candle vs ib quarter levels. close &lt; IB25 → short market @ close, SL IB50, TP IB0. close &gt; IB75 → long market @ close, SL IB50, TP IB100. valid until 16:00 ny.</p>
           )}
