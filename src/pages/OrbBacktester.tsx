@@ -264,15 +264,38 @@ const OrbBacktester = () => {
               </div>
 
               <div className="space-y-2">
+                <Label className="text-xs">candle filter</Label>
+                <Select value={candleMode} onValueChange={(v) => setCandleMode(v as "momentum" | "any")}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">any candle (direction only)</SelectItem>
+                    <SelectItem value="momentum">momentum candle (body ≥ 70% range)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">stop loss</Label>
+                <Select value={slMode} onValueChange={(v) => setSlMode(v as "full" | "half")}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full">sl full range (opposite end)</SelectItem>
+                    <SelectItem value="half">sl 50% range (midpoint)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label className="text-xs">take profit</Label>
                 <Select value={rr} onValueChange={(v) => setRr(v as RRChoice)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="0.5">0.5 R (half of range)</SelectItem>
-                    <SelectItem value="1">1 R (full range)</SelectItem>
+                    <SelectItem value="0.5">0.5 × range from entry</SelectItem>
+                    <SelectItem value="1">1 × range from entry</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
 
               <div className="space-y-2">
                 <Label className="text-xs">risk per trade</Label>
