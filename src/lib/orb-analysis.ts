@@ -180,7 +180,10 @@ export function analyzeORB(
 
     const direction: TradeDirection = orb.close > orb.open ? "bullish" : "bearish";
     const entry = direction === "bullish" ? orb.high : orb.low;
-    const stop = direction === "bullish" ? orb.low : orb.high;
+    const fullStop = direction === "bullish" ? orb.low : orb.high;
+    const stop = slMode === "half"
+      ? (direction === "bullish" ? entry - range * 0.5 : entry + range * 0.5)
+      : fullStop;
     const tp1 = direction === "bullish" ? entry + range * 0.5 : entry - range * 0.5;
     const tp2 = direction === "bullish" ? entry + range : entry - range;
 
