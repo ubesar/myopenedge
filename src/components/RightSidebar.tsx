@@ -10,7 +10,6 @@ const bookmarks = [
   "IB: initial balance breakout",
   "IB: initial ... by levels",
   "outside days",
-  "opening range indicator",
 ];
 
 const stockWatchlist = ["QQQ", "TSLA", "NVDA", "SPY", "BULL", "GLD", "HIMS"];

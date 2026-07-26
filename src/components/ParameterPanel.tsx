@@ -12,11 +12,9 @@ export type OCCTimeframe = "M5" | "M15" | "M30" | "H1";
 export type MomentumBodyRatio = "0.50" | "0.60" | "0.70" | "0.80";
 export type OCCBodyRatio = "0.40" | "0.50" | "0.60";
 
-export type ORBTimeframeStr = "5" | "15" | "30";
-export type ORBCandleModeStr = "momentum" | "any";
 
 interface ParameterPanelProps {
-  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio, weekdays: number[], momentumSessionEnd: number, orbTimeframe: ORBTimeframeStr, orbCandleMode: ORBCandleModeStr) => void;
+  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio, weekdays: number[], momentumSessionEnd: number) => void;
   loading: boolean;
   isFree?: boolean;
   occTimeframe?: OCCTimeframe;
@@ -65,8 +63,6 @@ const ParameterPanel = ({
   const [occBodyRatio, setOccBodyRatio] = useState<OCCBodyRatio>("0.50");
   const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [momentumSessionEnd, setMomentumSessionEnd] = useState<string>("780"); // 13:00
-  const [orbTimeframe, setOrbTimeframe] = useState<ORBTimeframeStr>("5");
-  const [orbCandleMode, setOrbCandleMode] = useState<ORBCandleModeStr>("momentum");
 
   const [selectedTemplateId, setSelectedTemplateId] = useState("custom");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -76,7 +72,7 @@ const ParameterPanel = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!symbol.trim()) return;
-    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio, weekdays, parseInt(momentumSessionEnd), orbTimeframe, orbCandleMode);
+    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio, weekdays, parseInt(momentumSessionEnd));
   };
 
   const handleTemplateSelect = (id: string) => {
@@ -176,7 +172,6 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="london-ib">IB: london session</SelectItem>}
               {!isFree && <SelectItem value="momentum">momentum candle continuation (mcc)</SelectItem>}
               {!isFree && <SelectItem value="pullback50">50% pullback strategy</SelectItem>}
-              {!isFree && <SelectItem value="orb">opening range breakout (orb)</SelectItem>}
               {!isFree && <SelectItem value="ib2575">IB 25/75 quarter levels</SelectItem>}
               {!isFree && <SelectItem value="mcm15-2am">m15 momentum @ 04:00 ny</SelectItem>}
               <SelectItem value="occ">opening candle continuation</SelectItem>
@@ -204,38 +199,6 @@ const ParameterPanel = ({
                 </SelectContent>
               </Select>
               <p className="text-[10px] text-muted-foreground">{mode === "pullback50" ? "m15 momentum candles scanned from 09:30 ny up to this time. entry on 50% pullback, sl at far end, tp at opposite end of candle 1." : "m15 momentum candles scanned from 09:30 ny up to this time. body threshold fixed at 70% (prd v3). walk-forward to 16:00 close."}</p>
-            </>
-          )}
-
-          {mode === "orb" && (
-            <>
-              <p className="text-[11px] text-muted-foreground">orb timeframe</p>
-              <Select value={orbTimeframe} onValueChange={(v) => { setOrbTimeframe(v as ORBTimeframeStr); setSelectedTemplateId("custom"); }}>
-                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">m5 (09:30 – 09:35)</SelectItem>
-                  <SelectItem value="15">m15 (09:30 – 09:45)</SelectItem>
-                  <SelectItem value="30">m30 (09:30 – 10:00)</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-[11px] text-muted-foreground">orb candle type</p>
-              <Select value={orbCandleMode} onValueChange={(v) => { setOrbCandleMode(v as ORBCandleModeStr); setSelectedTemplateId("custom"); }}>
-                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="momentum">momentum candle (body ≥ 70%)</SelectItem>
-                  <SelectItem value="any">any candle (direction only)</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-[10px] text-muted-foreground">
-                {orbCandleMode === "momentum"
-                  ? "opening range candle must be a momentum candle (body ≥ 70%)."
-                  : "any bullish candle → long setup, any bearish candle → short setup (no body threshold)."}
-                {" "}bullish → buy stop @ high, sl @ low. bearish → sell stop @ low, sl @ high. tp1 rr 1:0.5, tp2 rr 1:1. valid until 16:00 ny.
-              </p>
             </>
           )}
 
