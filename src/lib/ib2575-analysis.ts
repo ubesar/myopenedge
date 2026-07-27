@@ -12,17 +12,17 @@ interface BarData {
 
 export interface IB2575Trade {
   date: string;
-  direction: TradeDirection;   // bullish = long IB75, bearish = short IB25
+  direction: TradeDirection;   // bullish = low-first (buy @ IB25), bearish = high-first (sell @ IB25)
+  firstFormed: "high" | "low"; // which extreme printed first during IB
   ibHigh: number;
   ibLow: number;
-  ib25: number;
-  ib50: number;
-  ib75: number;
-  confirmClose: number;        // close of 10:25 candle
-  entry: number;               // limit @ IB25 (short) or IB75 (long)
+  ib25: number;                // 25% pullback from the first-formed extreme toward the opposite
+  ib50: number;                // midpoint (stop)
+  entry: number;               // IB25 level
   stop: number;                // IB50
-  target: number;              // IB0 (short) or IB100 (long)
-  triggered: boolean;          // limit order filled by 16:00
+  target: number;              // opposite IB extreme (IB0 of the fib)
+  entryTime: string | null;    // HH:MM when IB25 first touched, null if never
+  triggered: boolean;          // whether IB25 was touched between IB end and 16:00
   outcome: TradeOutcome;       // win/loss/open
 }
 
@@ -37,7 +37,6 @@ export interface IB2575Result {
 }
 
 const RTH_START = 9 * 60 + 30;
-const CONFIRM_TIME = 10 * 60 + 25; // 10:25 candle
 const MARKET_CLOSE = 16 * 60;
 
 function parseDateTime(dt: string): Date { return parse(dt, "yyyy-MM-dd HH:mm:ss", new Date()); }
@@ -56,33 +55,38 @@ function finalizeTp(s: TpStats) {
 }
 
 /**
- * Walk m5 bars starting at index `startIdx` (bar AFTER confirmation) until MARKET_CLOSE.
- * Limit order: bullish (long @ IB75) fills when bar.low <= entry; bearish (short @ IB25) fills when bar.high >= entry.
- * After fill, in same/subsequent bars: SL/TP tracked. If both hit same bar -> conservative loss.
+ * Walk m5 bars starting at index `startIdx` looking for the entry touch, then resolve SL/TP.
+ * Bullish (buy @ IB25, SL IB50, TP IB high): triggers when bar.low <= entry.
+ * Bearish (sell @ IB25, SL IB50, TP IB low): triggers when bar.high >= entry.
+ * In the trigger bar and subsequent bars, if both SL and TP are hit in the same bar → conservative loss.
  */
-/**
- * Market order: filled immediately at confirmation close.
- * Walk subsequent m5 bars until MARKET_CLOSE tracking SL/TP.
- * If both hit same bar -> conservative loss.
- */
-function resolve(
+function walk(
   m5: CandleBar[],
   startIdx: number,
   direction: TradeDirection,
+  entry: number,
   stop: number,
   target: number,
-): TradeOutcome {
+): { triggered: boolean; entryTime: string | null; outcome: TradeOutcome } {
+  let triggered = false;
+  let entryTime: string | null = null;
   for (let i = startIdx; i < m5.length; i++) {
     const b = m5[i];
+    if (!triggered) {
+      const hit = direction === "bullish" ? b.low <= entry : b.high >= entry;
+      if (!hit) continue;
+      triggered = true;
+      entryTime = b.time;
+    }
+    // once triggered, evaluate SL/TP on this bar and beyond
     const hitStop = direction === "bullish" ? b.low <= stop : b.high >= stop;
     const hitTp = direction === "bullish" ? b.high >= target : b.low <= target;
-    if (hitStop && hitTp) return "loss";
-    if (hitTp) return "win";
-    if (hitStop) return "loss";
+    if (hitStop && hitTp) return { triggered, entryTime, outcome: "loss" };
+    if (hitTp) return { triggered, entryTime, outcome: "win" };
+    if (hitStop) return { triggered, entryTime, outcome: "loss" };
   }
-  return "open";
+  return { triggered, entryTime, outcome: triggered ? "open" : "open" };
 }
-
 
 export function analyzeIB2575(
   bars: BarData[],
@@ -129,62 +133,80 @@ export function analyzeIB2575(
 
     if (m5[0].time !== "09:30") continue;
 
-    // IB bars: from 09:30 up to (but not including) IB_END
-    const ibBars = m5.filter((b) => {
-      const [h, mi] = b.time.split(":").map(Number);
+    // IB bars: 09:30 up to (not including) IB_END
+    const ibBars: CandleBar[] = [];
+    let firstPostIB = -1;
+    for (let i = 0; i < m5.length; i++) {
+      const [h, mi] = m5[i].time.split(":").map(Number);
       const t = h * 60 + mi;
-      return t >= RTH_START && t < IB_END;
-    });
-    if (ibBars.length === 0) continue;
+      if (t >= RTH_START && t < IB_END) ibBars.push(m5[i]);
+      else if (t >= IB_END) { firstPostIB = i; break; }
+    }
+    if (ibBars.length === 0 || firstPostIB === -1) continue;
 
     const ibHigh = Math.max(...ibBars.map((b) => b.high));
     const ibLow = Math.min(...ibBars.map((b) => b.low));
     const range = ibHigh - ibLow;
     if (range <= 0) continue;
 
-    const ib25 = ibLow + range * 0.25;
-    const ib50 = ibLow + range * 0.5;
-    const ib75 = ibLow + range * 0.75;
+    // Determine which extreme printed first during IB
+    let highBar = -1;
+    let lowBar = -1;
+    for (let i = 0; i < ibBars.length; i++) {
+      if (highBar === -1 && ibBars[i].high >= ibHigh) highBar = i;
+      if (lowBar === -1 && ibBars[i].low <= ibLow) lowBar = i;
+    }
+    let firstFormed: "high" | "low";
+    if (highBar < lowBar) firstFormed = "high";
+    else if (lowBar < highBar) firstFormed = "low";
+    else {
+      // same bar formed both extremes → use candle directionality as tiebreaker
+      // bullish candle (close > open) likely printed low first then rallied to high → low first
+      const b = ibBars[highBar];
+      firstFormed = b.close >= b.open ? "low" : "high";
+    }
 
     totalDays++;
 
-    // Confirmation candle: 5m bar timestamped 10:25 (covers 10:25-10:30)
-    const confirmIdx = m5.findIndex((b) => {
-      const [h, mi] = b.time.split(":").map(Number);
-      return h * 60 + mi === CONFIRM_TIME;
-    });
-    if (confirmIdx === -1) continue;
-    const confirm = m5[confirmIdx];
-
-    let direction: TradeDirection | null = null;
-    if (confirm.close < ib25) direction = "bearish";
-    else if (confirm.close > ib75) direction = "bullish";
-    if (!direction) continue;
-
-    const entry = confirm.close; // market order @ 10:25 close
+    let direction: TradeDirection;
+    let ib25: number;
+    let target: number;
+    if (firstFormed === "low") {
+      // fib drawn from low(100) → high(0). IB25 sits 25% up from low.
+      direction = "bullish";
+      ib25 = ibLow + range * 0.25;
+      target = ibHigh;
+    } else {
+      // fib drawn from high(100) → low(0). IB25 sits 25% down from high.
+      direction = "bearish";
+      ib25 = ibHigh - range * 0.25;
+      target = ibLow;
+    }
+    const ib50 = ibLow + range * 0.5;
+    const entry = ib25;
     const stop = ib50;
-    const target = direction === "bullish" ? ibHigh : ibLow;
 
-    // Walk from next bar after confirmation
-    const outcome = resolve(m5, confirmIdx + 1, direction, stop, target);
+    const { triggered, entryTime, outcome } = walk(m5, firstPostIB, direction, entry, stop, target);
 
     trades.push({
       date,
       direction,
-      ibHigh, ibLow, ib25, ib50, ib75,
-      confirmClose: confirm.close,
+      firstFormed,
+      ibHigh, ibLow,
+      ib25, ib50,
       entry, stop, target,
-      triggered: true,
+      entryTime,
+      triggered,
       outcome,
     });
-    daysWithSignal++;
+    if (triggered) daysWithSignal++;
   }
-
 
   const stats = emptyTp();
   let triggeredTrades = 0;
   for (const t of trades) {
-    if (t.triggered) triggeredTrades++;
+    if (!t.triggered) continue;
+    triggeredTrades++;
     stats.total++;
     const bucket = t.direction === "bullish" ? stats.bullish : stats.bearish;
     bucket.total++;
@@ -197,7 +219,7 @@ export function analyzeIB2575(
   return {
     totalDays,
     daysWithSignal,
-    totalTrades: trades.length,
+    totalTrades: triggeredTrades,
     triggeredTrades,
     ibWindowMinutes: ibWindow,
     stats,
