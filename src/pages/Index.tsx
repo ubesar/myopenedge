@@ -642,21 +642,21 @@ const Index = () => {
 
     if (activeMode === "ib2575" && ib2575Result) {
       const s = ib2575Result.stats;
-      const subtitle = `${symbol} · IB ${ib2575Result.ibWindowMinutes}min · confirm @ 10:25 · ${formatDateRange(analysisMaxDays)}`;
+      const subtitle = `${symbol} · IB ${ib2575Result.ibWindowMinutes}min · IB25 pullback · ${formatDateRange(analysisMaxDays)}`;
       const signalPct = ib2575Result.totalDays > 0 ? (ib2575Result.daysWithSignal / ib2575Result.totalDays) * 100 : 0;
       return (
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
-            <strong className="text-foreground">IB 25/75 quarter levels</strong> — at 10:25 ny the 5m confirmation candle close is checked against the IB fibonacci levels (IB0/25/50/75/100 derived from the {ib2575Result.ibWindowMinutes}min IB range).
-            close &lt; IB25 → <span className="text-rose-500 font-medium">short market @ close</span>, SL IB50, TP IB0 (IB Low).
-            close &gt; IB75 → <span className="text-emerald-500 font-medium">long market @ close</span>, SL IB50, TP IB100 (IB High).
-            valid until 16:00 ny close.
+            <strong className="text-foreground">IB 25 pullback</strong> — after the {ib2575Result.ibWindowMinutes}min IB completes, detect which extreme printed first.
+            IB low first → fib drawn low(100) → high(0): <span className="text-emerald-500 font-medium">buy @ IB25</span>, SL IB50, TP IB high.
+            IB high first → fib drawn high(100) → low(0): <span className="text-rose-500 font-medium">sell @ IB25</span>, SL IB50, TP IB low.
+            entry triggers on first touch of IB25, valid until 16:00 ny close.
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="rounded-lg border border-border bg-card p-3">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">setups</p>
-              <p className="text-[18px] font-semibold text-foreground">{ib2575Result.totalTrades}<span className="text-[11px] text-muted-foreground">/{ib2575Result.totalDays} ({signalPct.toFixed(0)}%)</span></p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">triggered</p>
+              <p className="text-[18px] font-semibold text-foreground">{ib2575Result.triggeredTrades}<span className="text-[11px] text-muted-foreground">/{ib2575Result.totalDays} ({signalPct.toFixed(0)}%)</span></p>
             </div>
             <div className="rounded-lg border border-border bg-card p-3">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate</p>
@@ -672,7 +672,7 @@ const Index = () => {
             </div>
           </div>
 
-          <MomentumResultCard title="ib 25/75 quarter levels · market entry" subtitle={subtitle} stats={s} />
+          <MomentumResultCard title="ib 25 pullback · touch entry" subtitle={subtitle} stats={s} />
 
 
           {ib2575Result.trades.length > 0 && (
@@ -686,13 +686,13 @@ const Index = () => {
                   <thead className="sticky top-0 bg-card border-b border-border">
                     <tr className="text-left text-muted-foreground">
                       <th className="px-3 py-2 font-medium">date</th>
+                      <th className="px-3 py-2 font-medium">first</th>
                       <th className="px-3 py-2 font-medium">dir</th>
                       <th className="px-3 py-2 font-medium text-right">ib low</th>
                       <th className="px-3 py-2 font-medium text-right">ib25</th>
                       <th className="px-3 py-2 font-medium text-right">ib50</th>
-                      <th className="px-3 py-2 font-medium text-right">ib75</th>
                       <th className="px-3 py-2 font-medium text-right">ib high</th>
-                      <th className="px-3 py-2 font-medium text-right">10:25 close</th>
+                      <th className="px-3 py-2 font-medium text-right">entry time</th>
                       <th className="px-3 py-2 font-medium text-right">entry</th>
                       <th className="px-3 py-2 font-medium text-right">sl</th>
                       <th className="px-3 py-2 font-medium text-right">tp</th>
@@ -702,22 +702,23 @@ const Index = () => {
                   <tbody>
                     {[...ib2575Result.trades].reverse().map((t, idx) => {
                       const dirColor = t.direction === "bullish" ? "text-emerald-500" : "text-rose-500";
-                      const outCls = t.outcome === "win" ? "text-emerald-500 bg-emerald-500/10" : t.outcome === "loss" ? "text-rose-500 bg-rose-500/10" : "text-muted-foreground bg-muted/40";
+                      const outLabel = !t.triggered ? "no fill" : t.outcome;
+                      const outCls = !t.triggered ? "text-muted-foreground bg-muted/40" : t.outcome === "win" ? "text-emerald-500 bg-emerald-500/10" : t.outcome === "loss" ? "text-rose-500 bg-rose-500/10" : "text-muted-foreground bg-muted/40";
                       return (
                         <tr key={idx} className="border-b border-border/40 hover:bg-muted/30">
                           <td className="px-3 py-1.5 text-foreground/80">{t.date}</td>
+                          <td className="px-3 py-1.5 text-foreground/70 uppercase">{t.firstFormed}</td>
                           <td className={`px-3 py-1.5 font-medium ${dirColor}`}>{t.direction === "bullish" ? "long" : "short"}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/60 tabular-nums">{t.ibLow.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.ib25.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.ib50.toFixed(2)}</td>
-                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.ib75.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/60 tabular-nums">{t.ibHigh.toFixed(2)}</td>
-                          <td className="px-3 py-1.5 text-right text-foreground/80 tabular-nums">{t.confirmClose.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.entryTime ?? "—"}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/90 tabular-nums font-medium">{t.entry.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.stop.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.target.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-center">
-                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${outCls}`}>{t.outcome}</span>
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${outCls}`}>{outLabel}</span>
                           </td>
                         </tr>
                       );
@@ -732,7 +733,7 @@ const Index = () => {
             mode="momentum"
             symbol={symbol}
             analysisData={{
-              method: `IB 25/75 quarter levels (IB ${ib2575Result.ibWindowMinutes}min)`,
+              method: `IB 25 pullback (IB ${ib2575Result.ibWindowMinutes}min)`,
               totalDays: ib2575Result.totalDays,
               daysWithSignal: ib2575Result.daysWithSignal,
               triggeredTrades: ib2575Result.triggeredTrades,
