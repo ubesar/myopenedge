@@ -320,7 +320,7 @@ const Backtester = () => {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pb50">50% pullback strategy</SelectItem>
-                    <SelectItem value="ib2575">ib 25/75 quarter levels</SelectItem>
+                    <SelectItem value="ib2575">ib 25 pullback</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
