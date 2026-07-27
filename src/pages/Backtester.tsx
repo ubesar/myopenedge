@@ -186,8 +186,6 @@ function computeMetrics(trades: BTTrade[]): Omit<BTResult, "strategy" | "symbol"
 const WEEKDAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const Backtester = () => {
-  const { user, loading: authLoading } = useAuth();
-  const { isActive } = useSubscription();
   const isMobile = useIsMobile();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -197,9 +195,6 @@ const Backtester = () => {
   const [ibWindow, setIbWindow] = useState("60");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BTResult | null>(null);
-
-  if (!authLoading && !user) return <Navigate to="/auth" replace />;
-  if (!authLoading && user && !isActive) return <Navigate to="/upgrade" replace />;
 
   const runBacktest = async () => {
     if (!symbol.trim()) return;
