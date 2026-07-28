@@ -74,12 +74,12 @@ function walk(
   for (let i = startIdx; i < m5.length; i++) {
     const b = m5[i];
     if (!triggered) {
-      const hit = direction === "bullish" ? b.low <= entry : b.high >= entry;
+      // first touch of the entry level (either from above or below)
+      const hit = b.low <= entry && b.high >= entry;
       if (!hit) continue;
       triggered = true;
       entryTime = b.time;
     }
-    // once triggered, evaluate SL/TP on this bar and beyond
     const hitStop = direction === "bullish" ? b.low <= stop : b.high >= stop;
     const hitTp = direction === "bullish" ? b.high >= target : b.low <= target;
     if (hitStop && hitTp) return { triggered, entryTime, outcome: "loss" };
