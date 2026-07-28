@@ -12,17 +12,18 @@ interface BarData {
 
 export interface IB2575Trade {
   date: string;
-  direction: TradeDirection;   // bullish = low-first (buy @ IB25), bearish = high-first (sell @ IB25)
+  direction: TradeDirection;   // bullish = low-first (long @ IB75), bearish = high-first (short @ IB25)
   firstFormed: "high" | "low"; // which extreme printed first during IB
   ibHigh: number;
   ibLow: number;
-  ib25: number;                // 25% pullback from the first-formed extreme toward the opposite
+  ib25: number;                // 25% level from IBL
   ib50: number;                // midpoint (stop)
-  entry: number;               // IB25 level
+  ib75: number;                // 75% level from IBL
+  entry: number;               // IB75 (bullish) or IB25 (bearish)
   stop: number;                // IB50
-  target: number;              // opposite IB extreme (IB0 of the fib)
-  entryTime: string | null;    // HH:MM when IB25 first touched, null if never
-  triggered: boolean;          // whether IB25 was touched between IB end and 16:00
+  target: number;              // IBH (bullish) or IBL (bearish) — RR 1:1
+  entryTime: string | null;    // HH:MM when entry level first touched, null if never
+  triggered: boolean;          // whether entry level was touched between IB end and 16:00
   outcome: TradeOutcome;       // win/loss/open
 }
 
@@ -73,12 +74,12 @@ function walk(
   for (let i = startIdx; i < m5.length; i++) {
     const b = m5[i];
     if (!triggered) {
-      const hit = direction === "bullish" ? b.low <= entry : b.high >= entry;
+      // first touch of the entry level (either from above or below)
+      const hit = b.low <= entry && b.high >= entry;
       if (!hit) continue;
       triggered = true;
       entryTime = b.time;
     }
-    // once triggered, evaluate SL/TP on this bar and beyond
     const hitStop = direction === "bullish" ? b.low <= stop : b.high >= stop;
     const hitTp = direction === "bullish" ? b.high >= target : b.low <= target;
     if (hitStop && hitTp) return { triggered, entryTime, outcome: "loss" };
@@ -169,21 +170,22 @@ export function analyzeIB2575(
     totalDays++;
 
     let direction: TradeDirection;
-    let ib25: number;
+    let entry: number;
     let target: number;
+    const ib25 = ibLow + range * 0.25;
+    const ib50 = ibLow + range * 0.5;
+    const ib75 = ibLow + range * 0.75;
     if (firstFormed === "low") {
-      // fib drawn from low(100) → high(0). IB25 sits 25% up from low.
+      // bullish continuation: pullback to IB75, TP IBH, SL IB50 (RR 1:1)
       direction = "bullish";
-      ib25 = ibLow + range * 0.25;
+      entry = ib75;
       target = ibHigh;
     } else {
-      // fib drawn from high(100) → low(0). IB25 sits 25% down from high.
+      // bearish continuation: pullback to IB25, TP IBL, SL IB50 (RR 1:1)
       direction = "bearish";
-      ib25 = ibHigh - range * 0.25;
+      entry = ib25;
       target = ibLow;
     }
-    const ib50 = ibLow + range * 0.5;
-    const entry = ib25;
     const stop = ib50;
 
     const { triggered, entryTime, outcome } = walk(m5, firstPostIB, direction, entry, stop, target);
@@ -193,7 +195,7 @@ export function analyzeIB2575(
       direction,
       firstFormed,
       ibHigh, ibLow,
-      ib25, ib50,
+      ib25, ib50, ib75,
       entry, stop, target,
       entryTime,
       triggered,

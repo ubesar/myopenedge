@@ -648,9 +648,9 @@ const Index = () => {
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
             <strong className="text-foreground">IB 25 pullback</strong> — after the {ib2575Result.ibWindowMinutes}min IB completes, detect which extreme printed first.
-            IB low first → fib drawn low(100) → high(0): <span className="text-emerald-500 font-medium">buy @ IB25</span>, SL IB50, TP IB high.
-            IB high first → fib drawn high(100) → low(0): <span className="text-rose-500 font-medium">sell @ IB25</span>, SL IB50, TP IB low.
-            entry triggers on first touch of IB25, valid until 16:00 ny close.
+            IB low first → <span className="text-emerald-500 font-medium">long @ IB75</span>, SL IB50, TP IB high (RR 1:1).
+            IB high first → <span className="text-rose-500 font-medium">short @ IB25</span>, SL IB50, TP IB low (RR 1:1).
+            entry triggers on first touch of the entry level, valid until 16:00 ny close.
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -691,6 +691,7 @@ const Index = () => {
                       <th className="px-3 py-2 font-medium text-right">ib low</th>
                       <th className="px-3 py-2 font-medium text-right">ib25</th>
                       <th className="px-3 py-2 font-medium text-right">ib50</th>
+                      <th className="px-3 py-2 font-medium text-right">ib75</th>
                       <th className="px-3 py-2 font-medium text-right">ib high</th>
                       <th className="px-3 py-2 font-medium text-right">entry time</th>
                       <th className="px-3 py-2 font-medium text-right">entry</th>
@@ -712,6 +713,7 @@ const Index = () => {
                           <td className="px-3 py-1.5 text-right text-foreground/60 tabular-nums">{t.ibLow.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.ib25.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.ib50.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.ib75.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/60 tabular-nums">{t.ibHigh.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.entryTime ?? "—"}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/90 tabular-nums font-medium">{t.entry.toFixed(2)}</td>
