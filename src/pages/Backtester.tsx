@@ -37,6 +37,7 @@ interface BTResult {
   symbol: string;
   totalDays: number;
   trades: BTTrade[];
+  bars: any[];
   wins: number;
   losses: number;
   winRate: number;
