@@ -170,21 +170,22 @@ export function analyzeIB2575(
     totalDays++;
 
     let direction: TradeDirection;
-    let ib25: number;
+    let entry: number;
     let target: number;
+    const ib25 = ibLow + range * 0.25;
+    const ib50 = ibLow + range * 0.5;
+    const ib75 = ibLow + range * 0.75;
     if (firstFormed === "low") {
-      // fib drawn from low(100) → high(0). IB25 sits 25% up from low.
+      // bullish continuation: pullback to IB75, TP IBH, SL IB50 (RR 1:1)
       direction = "bullish";
-      ib25 = ibLow + range * 0.25;
+      entry = ib75;
       target = ibHigh;
     } else {
-      // fib drawn from high(100) → low(0). IB25 sits 25% down from high.
+      // bearish continuation: pullback to IB25, TP IBL, SL IB50 (RR 1:1)
       direction = "bearish";
-      ib25 = ibHigh - range * 0.25;
+      entry = ib25;
       target = ibLow;
     }
-    const ib50 = ibLow + range * 0.5;
-    const entry = ib25;
     const stop = ib50;
 
     const { triggered, entryTime, outcome } = walk(m5, firstPostIB, direction, entry, stop, target);
@@ -194,7 +195,7 @@ export function analyzeIB2575(
       direction,
       firstFormed,
       ibHigh, ibLow,
-      ib25, ib50,
+      ib25, ib50, ib75,
       entry, stop, target,
       entryTime,
       triggered,
