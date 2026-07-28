@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Loader2, TrendingUp, TrendingDown, DollarSign, Target, Play } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, DollarSign, Target, Play, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
 import {
@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { analyzePullback50, type Pullback50Trade } from "@/lib/pullback50-analysis";
 import { analyzeIB2575, type IB2575Trade } from "@/lib/ib2575-analysis";
+import TradeChartDialog, { type TradeForChart } from "@/components/TradeChartDialog";
 
 type StrategyKey = "pb50" | "ib2575";
 
