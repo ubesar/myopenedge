@@ -12,17 +12,18 @@ interface BarData {
 
 export interface IB2575Trade {
   date: string;
-  direction: TradeDirection;   // bullish = low-first (buy @ IB25), bearish = high-first (sell @ IB25)
+  direction: TradeDirection;   // bullish = low-first (long @ IB75), bearish = high-first (short @ IB25)
   firstFormed: "high" | "low"; // which extreme printed first during IB
   ibHigh: number;
   ibLow: number;
-  ib25: number;                // 25% pullback from the first-formed extreme toward the opposite
+  ib25: number;                // 25% level from IBL
   ib50: number;                // midpoint (stop)
-  entry: number;               // IB25 level
+  ib75: number;                // 75% level from IBL
+  entry: number;               // IB75 (bullish) or IB25 (bearish)
   stop: number;                // IB50
-  target: number;              // opposite IB extreme (IB0 of the fib)
-  entryTime: string | null;    // HH:MM when IB25 first touched, null if never
-  triggered: boolean;          // whether IB25 was touched between IB end and 16:00
+  target: number;              // IBH (bullish) or IBL (bearish) — RR 1:1
+  entryTime: string | null;    // HH:MM when entry level first touched, null if never
+  triggered: boolean;          // whether entry level was touched between IB end and 16:00
   outcome: TradeOutcome;       // win/loss/open
 }
 
