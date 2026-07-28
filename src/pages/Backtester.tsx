@@ -228,6 +228,7 @@ const Backtester = () => {
         symbol: symbol.trim().toUpperCase(),
         totalDays,
         trades,
+        bars: values,
         ...metrics,
       });
       toast.success(`backtest complete: ${trades.length} trades`);
