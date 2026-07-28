@@ -194,6 +194,7 @@ const Backtester = () => {
   const [ibWindow, setIbWindow] = useState("60");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BTResult | null>(null);
+  const [chartTrade, setChartTrade] = useState<TradeForChart | null>(null);
 
   const runBacktest = async () => {
     if (!symbol.trim()) return;
