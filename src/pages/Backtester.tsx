@@ -138,7 +138,7 @@ function toBTTradesIB2575(trades: IB2575Trade[]): BTTrade[] {
     });
 }
 
-function computeMetrics(trades: BTTrade[]): Omit<BTResult, "strategy" | "symbol" | "totalDays" | "trades"> {
+function computeMetrics(trades: BTTrade[]): Omit<BTResult, "strategy" | "symbol" | "totalDays" | "trades" | "bars"> {
   const wins = trades.filter((t) => t.outcome === "win");
   const losses = trades.filter((t) => t.outcome === "loss");
   const totalPnl = trades.reduce((s, t) => s + t.pnl, 0);
