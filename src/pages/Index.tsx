@@ -713,6 +713,7 @@ const Index = () => {
                           <td className="px-3 py-1.5 text-right text-foreground/60 tabular-nums">{t.ibLow.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.ib25.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.ib50.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.ib75.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/60 tabular-nums">{t.ibHigh.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.entryTime ?? "—"}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/90 tabular-nums font-medium">{t.entry.toFixed(2)}</td>
