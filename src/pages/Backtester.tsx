@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Loader2, TrendingUp, TrendingDown, DollarSign, Target, Play } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, DollarSign, Target, Play, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
 import {
@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { analyzePullback50, type Pullback50Trade } from "@/lib/pullback50-analysis";
 import { analyzeIB2575, type IB2575Trade } from "@/lib/ib2575-analysis";
+import TradeChartDialog, { type TradeForChart } from "@/components/TradeChartDialog";
 
 type StrategyKey = "pb50" | "ib2575";
 
@@ -36,6 +37,7 @@ interface BTResult {
   symbol: string;
   totalDays: number;
   trades: BTTrade[];
+  bars: any[];
   wins: number;
   losses: number;
   winRate: number;
@@ -136,7 +138,7 @@ function toBTTradesIB2575(trades: IB2575Trade[]): BTTrade[] {
     });
 }
 
-function computeMetrics(trades: BTTrade[]): Omit<BTResult, "strategy" | "symbol" | "totalDays" | "trades"> {
+function computeMetrics(trades: BTTrade[]): Omit<BTResult, "strategy" | "symbol" | "totalDays" | "trades" | "bars"> {
   const wins = trades.filter((t) => t.outcome === "win");
   const losses = trades.filter((t) => t.outcome === "loss");
   const totalPnl = trades.reduce((s, t) => s + t.pnl, 0);
@@ -192,6 +194,7 @@ const Backtester = () => {
   const [ibWindow, setIbWindow] = useState("60");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BTResult | null>(null);
+  const [chartTrade, setChartTrade] = useState<TradeForChart | null>(null);
 
   const runBacktest = async () => {
     if (!symbol.trim()) return;
@@ -226,6 +229,7 @@ const Backtester = () => {
         symbol: symbol.trim().toUpperCase(),
         totalDays,
         trades,
+        bars: values,
         ...metrics,
       });
       toast.success(`backtest complete: ${trades.length} trades`);
@@ -475,12 +479,20 @@ const Backtester = () => {
                         <th className="text-right py-2 px-2">r</th>
                         <th className="text-right py-2 px-2">pnl</th>
                         <th className="text-left py-2 px-2">outcome</th>
+                        <th className="text-center py-2 px-2">chart</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {result.trades.map((t, i) => (
-                        <tr key={i} className="border-b border-border/40">
-                          <td className="py-1.5 px-2 text-muted-foreground">{i + 1}</td>
+                      {[...result.trades]
+                        .map((t, i) => ({ t, seq: i + 1 }))
+                        .sort((a, b) => {
+                          const d = b.t.date.localeCompare(a.t.date);
+                          if (d !== 0) return d;
+                          return (b.t.time ?? "").localeCompare(a.t.time ?? "");
+                        })
+                        .map(({ t, seq }) => (
+                        <tr key={seq} className="border-b border-border/40">
+                          <td className="py-1.5 px-2 text-muted-foreground">{seq}</td>
                           <td className="py-1.5 px-2">{t.date}</td>
                           <td className="py-1.5 px-2">{t.time ?? "10:25"}</td>
                           <td className={`py-1.5 px-2 font-medium ${t.direction === "bullish" ? "text-emerald-500" : "text-red-500"}`}>
@@ -497,6 +509,27 @@ const Backtester = () => {
                           <td className={`py-1.5 px-2 uppercase text-[10px] ${t.outcome === "win" ? "text-emerald-500" : "text-red-500"}`}>
                             {t.outcome}
                           </td>
+                          <td className="py-1.5 px-2 text-center">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0"
+                              onClick={() =>
+                                setChartTrade({
+                                  date: t.date,
+                                  time: t.time,
+                                  direction: t.direction,
+                                  entry: t.entry,
+                                  stop: t.stop,
+                                  target: t.target,
+                                  outcome: t.outcome,
+                                })
+                              }
+                              title="view 15m chart"
+                            >
+                              <BarChart3 className="h-3.5 w-3.5" />
+                            </Button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -507,6 +540,13 @@ const Backtester = () => {
           )}
         </main>
       </div>
+      <TradeChartDialog
+        open={!!chartTrade}
+        onOpenChange={(v) => !v && setChartTrade(null)}
+        trade={chartTrade}
+        bars={result?.bars ?? []}
+        symbol={result?.symbol ?? ""}
+      />
     </div>
   );
 };
