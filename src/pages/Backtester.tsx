@@ -479,12 +479,20 @@ const Backtester = () => {
                         <th className="text-right py-2 px-2">r</th>
                         <th className="text-right py-2 px-2">pnl</th>
                         <th className="text-left py-2 px-2">outcome</th>
+                        <th className="text-center py-2 px-2">chart</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {result.trades.map((t, i) => (
-                        <tr key={i} className="border-b border-border/40">
-                          <td className="py-1.5 px-2 text-muted-foreground">{i + 1}</td>
+                      {[...result.trades]
+                        .map((t, i) => ({ t, seq: i + 1 }))
+                        .sort((a, b) => {
+                          const d = b.t.date.localeCompare(a.t.date);
+                          if (d !== 0) return d;
+                          return (b.t.time ?? "").localeCompare(a.t.time ?? "");
+                        })
+                        .map(({ t, seq }) => (
+                        <tr key={seq} className="border-b border-border/40">
+                          <td className="py-1.5 px-2 text-muted-foreground">{seq}</td>
                           <td className="py-1.5 px-2">{t.date}</td>
                           <td className="py-1.5 px-2">{t.time ?? "10:25"}</td>
                           <td className={`py-1.5 px-2 font-medium ${t.direction === "bullish" ? "text-emerald-500" : "text-red-500"}`}>
@@ -500,6 +508,27 @@ const Backtester = () => {
                           </td>
                           <td className={`py-1.5 px-2 uppercase text-[10px] ${t.outcome === "win" ? "text-emerald-500" : "text-red-500"}`}>
                             {t.outcome}
+                          </td>
+                          <td className="py-1.5 px-2 text-center">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0"
+                              onClick={() =>
+                                setChartTrade({
+                                  date: t.date,
+                                  time: t.time,
+                                  direction: t.direction,
+                                  entry: t.entry,
+                                  stop: t.stop,
+                                  target: t.target,
+                                  outcome: t.outcome,
+                                })
+                              }
+                              title="view 15m chart"
+                            >
+                              <BarChart3 className="h-3.5 w-3.5" />
+                            </Button>
                           </td>
                         </tr>
                       ))}
