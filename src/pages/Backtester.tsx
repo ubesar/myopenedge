@@ -540,6 +540,13 @@ const Backtester = () => {
           )}
         </main>
       </div>
+      <TradeChartDialog
+        open={!!chartTrade}
+        onOpenChange={(v) => !v && setChartTrade(null)}
+        trade={chartTrade}
+        bars={result?.bars ?? []}
+        symbol={result?.symbol ?? ""}
+      />
     </div>
   );
 };
