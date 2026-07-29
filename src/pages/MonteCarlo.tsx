@@ -15,7 +15,7 @@ import {
 } from "recharts";
 import { analyzePullback50, type Pullback50Trade } from "@/lib/pullback50-analysis";
 import { analyzeIB2575, type IB2575Trade } from "@/lib/ib2575-analysis";
-import { analyzeIB, type IBAnalysisResult } from "@/lib/ib-analysis";
+import { analyzeIB, type AnalysisResult as IBAnalysisResult } from "@/lib/ib-analysis";
 
 type StrategyKey = "pb50" | "ib2575" | "ibbreakout";
 
