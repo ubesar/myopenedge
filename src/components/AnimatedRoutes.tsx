@@ -18,6 +18,7 @@ import Journal from "@/pages/Journal";
 import AdminPanel from "@/pages/AdminPanel";
 import ConsistencyCalculator from "@/pages/ConsistencyCalculator";
 import Backtester from "@/pages/Backtester";
+import MonteCarlo from "@/pages/MonteCarlo";
 import ProRoute from "./ProRoute";
 
 const AnimatedRoutes = () => {
