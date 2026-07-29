@@ -98,10 +98,9 @@ function tradesFromIB(r: IBAnalysisResult): MCTrade[] {
   const out: MCTrade[] = [];
   const total = r.totalDays;
   if (!total) return out;
-  // Interpret "breakout & continues" as win, "breakout & fails" as loss.
-  // Approximation: use holds/breaks split from stats.
-  const wins = Math.round(total * (r.summary.breakoutRate / 100));
-  const losses = total - wins;
+  // Win = clean single breakout that holds; loss = double break (failed breakout) or no break.
+  const wins = r.breakTypeStats.singleBreak;
+  const losses = r.breakTypeStats.doubleBreak + r.breakTypeStats.noBreak;
   for (let i = 0; i < wins; i++) out.push({ pnl: RISK_USD, outcome: "win" });
   for (let i = 0; i < losses; i++) out.push({ pnl: -RISK_USD, outcome: "loss" });
   return out;
