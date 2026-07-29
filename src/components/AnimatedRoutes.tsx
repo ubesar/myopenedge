@@ -18,6 +18,7 @@ import Journal from "@/pages/Journal";
 import AdminPanel from "@/pages/AdminPanel";
 import ConsistencyCalculator from "@/pages/ConsistencyCalculator";
 import Backtester from "@/pages/Backtester";
+import MonteCarlo from "@/pages/MonteCarlo";
 import ProRoute from "./ProRoute";
 
 const AnimatedRoutes = () => {
@@ -41,6 +42,7 @@ const AnimatedRoutes = () => {
         <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
         <Route path="/consistency-calculator" element={<PageTransition><ConsistencyCalculator /></PageTransition>} />
         <Route path="/backtester" element={<ProRoute><PageTransition><Backtester /></PageTransition></ProRoute>} />
+        <Route path="/monte-carlo" element={<ProRoute><PageTransition><MonteCarlo /></PageTransition></ProRoute>} />
         <Route path="/admin-x9k7-88f2-vqp9" element={<PageTransition><AdminPanel /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
