@@ -188,6 +188,9 @@ export function analyzeMomentum(
   let daysWithSignal = 0;
   let totalDays = 0;
 
+  // Build per-day M15 series first, so the momentum SMA(15) can be carried
+  // across the whole (continuous) series like on a chart.
+  const daySeries: { date: string; m15: CandleBar[] }[] = [];
   for (const date of dates) {
     const dayBars = byDate.get(date)!;
     dayBars.sort((a, b) => parseDateTime(a.datetime).getTime() - parseDateTime(b.datetime).getTime());
@@ -208,6 +211,14 @@ export function analyzeMomentum(
 
     const m15 = aggregateBars(m5, TF_MINUTES);
     if (m15.length < 2) continue;
+    daySeries.push({ date, m15 });
+  }
+
+  const flagsByDay = computeMomentumFlagsByDay(daySeries.map(d => d.m15));
+
+  for (let d = 0; d < daySeries.length; d++) {
+    const { date, m15 } = daySeries[d];
+    const flags = flagsByDay[d];
     totalDays++;
 
     let signalsToday = 0;
@@ -222,11 +233,10 @@ export function analyzeMomentum(
 
       const range = c.high - c.low;
       if (range <= 0) continue;
-      const body = Math.abs(c.close - c.open);
-      if (c.close === c.open) continue;
-      if (body / range < BODY_THRESHOLD) continue;
+      const flag = flags[i];
+      if (!flag?.isSuper || !flag.direction) continue;
 
-      const direction: TradeDirection = c.close > c.open ? "bullish" : "bearish";
+      const direction: TradeDirection = flag.direction;
 
       // Variant 1 — SL Full: immediate entry at close, SL beyond candle, TP = 50% of range
       const entryFull = c.close;
@@ -263,6 +273,7 @@ export function analyzeMomentum(
 
     if (signalsToday > 0) daysWithSignal++;
   }
+
 
   const fullTp50 = emptyTp();
   const halfTp50 = emptyTp();
