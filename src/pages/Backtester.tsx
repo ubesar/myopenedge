@@ -192,6 +192,7 @@ const Backtester = () => {
   const [strategy, setStrategy] = useState<StrategyKey>("pb50");
   const [maxDays, setMaxDays] = useState("120");
   const [ibWindow, setIbWindow] = useState("60");
+  const [sessionStart, setSessionStart] = useState("570"); // 09:30 ny open
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BTResult | null>(null);
   const [chartTrade, setChartTrade] = useState<TradeForChart | null>(null);
@@ -210,7 +211,7 @@ const Backtester = () => {
       let totalDays = 0;
 
       if (strategy === "pb50") {
-        const r = analyzePullback50(values, days, [1, 2, 3, 4, 5]);
+        const r = analyzePullback50(values, days, [1, 2, 3, 4, 5], 13 * 60, parseInt(sessionStart));
         trades = toBTTradesPB50(r.trades);
         totalDays = r.totalDays;
       } else {
@@ -358,7 +359,16 @@ const Backtester = () => {
                   </Select>
                 </div>
               ) : (
-                <div className="hidden md:block" />
+                <div className="space-y-1.5">
+                  <Label className="text-xs lowercase">scan session start (ny)</Label>
+                  <Select value={sessionStart} onValueChange={setSessionStart}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="570">09:30 (ny open)</SelectItem>
+                      <SelectItem value="240">04:00</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
             </div>
             <Button onClick={runBacktest} disabled={loading} className="w-full md:w-auto">
