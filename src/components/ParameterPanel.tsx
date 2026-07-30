@@ -223,7 +223,7 @@ const ParameterPanel = ({
           )}
 
           {mode === "mcm15-2am" && (
-            <p className="text-[10px] text-muted-foreground">scans the m15 candle at 04:00 ny (momentum candle: body > 1.5× avg body sma15). if not a momentum candle, fallback to 04:15. bullish → buy stop @ high, sl @ low. bearish → sell stop @ low, sl @ high. tp1 rr 1:0.5 &amp; tp2 rr 1:1 tracked independently until 16:00 ny close.</p>
+            <p className="text-[10px] text-muted-foreground">scans the m15 candle at 04:00 ny (momentum candle: body &gt; 1.5× avg body sma15). if not a momentum candle, fallback to 04:15. bullish → buy stop @ high, sl @ low. bearish → sell stop @ low, sl @ high. tp1 rr 1:0.5 &amp; tp2 rr 1:1 tracked independently until 16:00 ny close.</p>
           )}
 
 
