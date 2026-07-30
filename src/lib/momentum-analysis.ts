@@ -1,5 +1,6 @@
 import { parse } from "date-fns";
 import { aggregateBars, type CandleBar } from "./m15-aggregation";
+import { computeMomentumFlagsByDay, SUPER_BODY_MULT } from "./momentum-candle";
 
 export type { CandleBar };
 
