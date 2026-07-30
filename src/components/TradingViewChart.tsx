@@ -422,12 +422,11 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
                   const trig = isBull ? nl <= entry : nh >= entry;
                   if (!trig) {
                     // invalidate if untriggered bar is itself a momentum candle
-                    const nr = nh - nl;
-                    const nbody = Math.abs(nc - no);
-                    if (nr > 0 && nc !== no && nbody / nr >= PB_BODY) {
+                    if (dayFlags[j]?.isSuper) {
                       invalidated = true;
                       break;
                     }
+
                     if (j >= deadline) break;
                     continue;
                   }
