@@ -136,6 +136,7 @@ export function analyzePullback50(
   let daysWithSignal = 0;
   let totalDays = 0;
 
+  const daySeries: { date: string; m15: CandleBar[] }[] = [];
   for (const date of dates) {
     const dayBars = byDate.get(date)!;
     dayBars.sort((a, b) => parseDateTime(a.datetime).getTime() - parseDateTime(b.datetime).getTime());
@@ -156,6 +157,14 @@ export function analyzePullback50(
 
     const m15 = aggregateBars(m5, TF_MINUTES);
     if (m15.length < 2) continue;
+    daySeries.push({ date, m15 });
+  }
+
+  const flagsByDay = computeMomentumFlagsByDay(daySeries.map((d) => d.m15));
+
+  for (let d = 0; d < daySeries.length; d++) {
+    const { date, m15 } = daySeries[d];
+    const flags = flagsByDay[d];
     totalDays++;
 
     let signalsToday = 0;
@@ -170,16 +179,16 @@ export function analyzePullback50(
 
       const range = c.high - c.low;
       if (range <= 0) continue;
-      const body = Math.abs(c.close - c.open);
-      if (c.close === c.open) continue;
-      if (body / range < BODY_THRESHOLD) continue;
+      const flag = flags[i];
+      if (!flag?.isSuper || !flag.direction) continue;
 
-      const direction: TradeDirection = c.close > c.open ? "bullish" : "bearish";
+      const direction: TradeDirection = flag.direction;
       const entry = (c.high + c.low) / 2;
       const stop = direction === "bullish" ? c.low : c.high;
       const target = direction === "bullish" ? c.high : c.low;
 
-      const r = resolvePullback(m15, i, direction, entry, stop, target);
+      const r = resolvePullback(m15, flags, i, direction, entry, stop, target);
+
 
       // Skip unresolved/untriggered trades — only count win/loss outcomes.
       if (r.outcome === "open") continue;
