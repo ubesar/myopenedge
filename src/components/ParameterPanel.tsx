@@ -14,7 +14,7 @@ export type OCCBodyRatio = "0.40" | "0.50" | "0.60";
 
 
 interface ParameterPanelProps {
-  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio, weekdays: number[], momentumSessionEnd: number) => void;
+  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio, weekdays: number[], momentumSessionEnd: number, sessionStart: number) => void;
   loading: boolean;
   isFree?: boolean;
   occTimeframe?: OCCTimeframe;
@@ -63,6 +63,7 @@ const ParameterPanel = ({
   const [occBodyRatio, setOccBodyRatio] = useState<OCCBodyRatio>("0.50");
   const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [momentumSessionEnd, setMomentumSessionEnd] = useState<string>("780"); // 13:00
+  const [sessionStart, setSessionStart] = useState<string>("570"); // 09:30 ny open
 
   const [selectedTemplateId, setSelectedTemplateId] = useState("custom");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -72,7 +73,7 @@ const ParameterPanel = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!symbol.trim()) return;
-    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio, weekdays, parseInt(momentumSessionEnd));
+    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio, weekdays, parseInt(momentumSessionEnd), parseInt(sessionStart));
   };
 
   const handleTemplateSelect = (id: string) => {
@@ -182,6 +183,21 @@ const ParameterPanel = ({
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}
 
+          {mode === "pullback50" && (
+            <>
+              <p className="text-[11px] text-muted-foreground">scan session start (ny)</p>
+              <Select value={sessionStart} onValueChange={(v) => { setSessionStart(v); setSelectedTemplateId("custom"); }}>
+                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="570">09:30 (ny open)</SelectItem>
+                  <SelectItem value="240">04:00</SelectItem>
+                </SelectContent>
+              </Select>
+            </>
+          )}
+
           {(mode === "momentum" || mode === "pullback50") && (
             <>
               <p className="text-[11px] text-muted-foreground">scan session end (ny)</p>
@@ -198,7 +214,7 @@ const ParameterPanel = ({
                   <SelectItem value="840">14:00</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-[10px] text-muted-foreground">{mode === "pullback50" ? "m15 momentum candles scanned from 09:30 ny up to this time. entry on 50% pullback, sl at far end, tp at opposite end of candle 1." : "m15 momentum candles scanned from 09:30 ny up to this time. body threshold fixed at 70% (prd v3). walk-forward to 16:00 close."}</p>
+              <p className="text-[10px] text-muted-foreground">{mode === "pullback50" ? `m15 momentum candles scanned from ${sessionStart === "240" ? "04:00" : "09:30"} ny up to this time. entry on 50% pullback, sl at far end, tp at opposite end of candle 1. positions closed by 16:00 ny.` : "m15 momentum candles scanned from 09:30 ny up to this time. body threshold fixed at 70% (prd v3). walk-forward to 16:00 close."}</p>
             </>
           )}
 

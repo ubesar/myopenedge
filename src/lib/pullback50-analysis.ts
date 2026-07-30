@@ -24,6 +24,7 @@ export interface Pullback50Trade {
 export interface Pullback50Result {
   totalDays: number;
   daysWithSignal: number;
+  sessionStartMinutes: number;
   sessionEndMinutes: number;
   bodyThreshold: number;
   totalTrades: number;
@@ -116,6 +117,7 @@ export function analyzePullback50(
   maxDays: number = 0,
   weekdays: number[] = [1, 2, 3, 4, 5],
   sessionEndMinutes: number = 13 * 60,
+  sessionStartMinutes: number = IB_START,
 ): Pullback50Result {
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
@@ -141,7 +143,7 @@ export function analyzePullback50(
 
     const sessionRaw = dayBars.filter((b) => {
       const m = getTimeMinutes(parseDateTime(b.datetime));
-      return m >= IB_START && m < MARKET_CLOSE;
+      return m >= sessionStartMinutes && m < MARKET_CLOSE;
     });
     if (sessionRaw.length === 0) continue;
 
@@ -165,7 +167,7 @@ export function analyzePullback50(
       const c = m15[i];
       const [hh, mm] = c.time.split(":").map(Number);
       const tMin = hh * 60 + mm;
-      if (tMin < IB_START || tMin >= sessionEndMinutes) continue;
+      if (tMin < sessionStartMinutes || tMin >= sessionEndMinutes) continue;
 
       const range = c.high - c.low;
       if (range <= 0) continue;
@@ -215,6 +217,7 @@ export function analyzePullback50(
   return {
     totalDays,
     daysWithSignal,
+    sessionStartMinutes,
     sessionEndMinutes,
     bodyThreshold: BODY_THRESHOLD,
     totalTrades: trades.length,
