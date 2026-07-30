@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { computeMomentumFlags, computeMomentumFlagsByDay } from "@/lib/momentum-candle";
 import {
   createChart,
   ColorType,
@@ -303,53 +304,42 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
           }
         }
 
-        // MCC (Momentum Candle Continuation): highlight ONLY the NY Open candle (09:30)
-        // jika body >= 70% dari total range candle.
+        // Momentum Candle (big body) — body vs SMA(15) of body, like the
+        // "Momentum Candle" indicator. Super body (> 1.5x avg) = momentum candle.
         if (showMC && interval !== "1day" && sorted.length > 0) {
-          const dayBarsMap: Record<string, typeof sorted> = {};
-          for (const bar of sorted) {
-            const date = bar.datetime.split(" ")[0];
-            if (!dayBarsMap[date]) dayBarsMap[date] = [];
-            dayBarsMap[date].push(bar);
-          }
+          const ohlcSeries = sorted.map((b) => ({
+            open: parseFloat(b.open),
+            high: parseFloat(b.high),
+            low: parseFloat(b.low),
+            close: parseFloat(b.close),
+          }));
+          const flags = computeMomentumFlags(ohlcSeries);
 
-          const mccTimestamps = new Map<number, boolean>();
           const toTs = (dt: string) =>
             Math.floor(new Date(dt.replace(" ", "T") + "Z").getTime() / 1000);
 
-          for (const date of Object.keys(dayBarsMap).sort()) {
-            const bars = dayBarsMap[date];
-            // Cari candle pembukaan NY (09:30 ET)
-            const opening = bars.find(b => b.datetime.split(" ")[1] === "09:30:00");
-            if (!opening) continue;
-
-            const o = parseFloat(opening.open);
-            const h = parseFloat(opening.high);
-            const l = parseFloat(opening.low);
-            const c = parseFloat(opening.close);
-
-            const body = Math.abs(c - o);
-            const range = h - l;
-            if (range <= 0) continue;
-
-            // Hanya valid jika body >= 70% dari range candle pembukaan
-            if (body / range >= MCC_BODY_RATIO) {
-              const isBull = c >= o;
-              mccTimestamps.set(toTs(opening.datetime), isBull);
+          const colorByTs = new Map<number, string>();
+          sorted.forEach((bar, i) => {
+            const f = flags[i];
+            if (!f.direction) return;
+            let color: string | null = null;
+            if (f.level === "super") {
+              color = f.direction === "bullish" ? "rgb(157,255,0)" : "rgb(210,1,252)";
+            } else if (f.level === "above") {
+              color = f.direction === "bullish" ? "rgb(3,129,108)" : "rgb(243,63,63)";
             }
-          }
+            if (color) colorByTs.set(toTs(bar.datetime), color);
+          });
 
           const recolored = candles.map((c) => {
             const ts = c.time as number;
-            if (mccTimestamps.has(ts)) {
-              const isBull = mccTimestamps.get(ts)!;
-              const color = isBull ? "#00FF66" : "#FF00FF";
-              return { ...c, color, borderColor: color, wickColor: color };
-            }
+            const color = colorByTs.get(ts);
+            if (color) return { ...c, color, borderColor: color, wickColor: color };
             return c;
           });
           seriesRef.current!.setData(recolored);
         }
+
 
         // Clear previous PB50 overlays
         for (const s of pbSeriesListRef.current) {
@@ -362,7 +352,6 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
 
         // PB50 — 50% pullback strategy markers (15m only, intraday)
         if (showPB && interval === "15min" && sorted.length > 0) {
-          const PB_BODY = 0.70;
           const MAX_LOOKAHEAD = 2; // candle 2 & 3
           const dayBars: Record<string, typeof sorted> = {};
           for (const bar of sorted) {
@@ -376,11 +365,26 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
           const toTs = (dt: string) =>
             Math.floor(new Date(dt.replace(" ", "T") + "Z").getTime() / 1000) as Time;
 
+          // Momentum flags (body vs SMA15 of body) computed across the continuous series
+          const pbDates = Object.keys(dayBars).sort();
+          const pbFlagsByDay = computeMomentumFlagsByDay(
+            pbDates.map((d) =>
+              dayBars[d].map((b) => ({
+                open: parseFloat(b.open),
+                high: parseFloat(b.high),
+                low: parseFloat(b.low),
+                close: parseFloat(b.close),
+              }))
+            )
+          );
+
           const pbMarkers: SeriesMarker<Time>[] = [];
           const lineOpts = { priceScaleId: "right", lastValueVisible: false, crosshairMarkerVisible: false, priceLineVisible: false };
 
-          for (const date of Object.keys(dayBars).sort()) {
+          for (let dIdx = 0; dIdx < pbDates.length; dIdx++) {
+            const date = pbDates[dIdx];
             const bars = dayBars[date];
+            const dayFlags = pbFlagsByDay[dIdx];
             // Only consider bars within 09:30–13:00 NY as candle 1
             let gateUntil = -1;
             for (let i = 0; i < bars.length - 1; i++) {
@@ -395,8 +399,9 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
               const c = parseFloat(b.close);
               const range = h - l;
               if (range <= 0 || c === o) continue;
-              const body = Math.abs(c - o);
-              if (body / range < PB_BODY) continue;
+              const flag = dayFlags[i];
+              if (!flag?.isSuper || !flag.direction) continue;
+
 
               const isBull = c > o;
               const entry = (h + l) / 2;
@@ -418,12 +423,11 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
                   const trig = isBull ? nl <= entry : nh >= entry;
                   if (!trig) {
                     // invalidate if untriggered bar is itself a momentum candle
-                    const nr = nh - nl;
-                    const nbody = Math.abs(nc - no);
-                    if (nr > 0 && nc !== no && nbody / nr >= PB_BODY) {
+                    if (dayFlags[j]?.isSuper) {
                       invalidated = true;
                       break;
                     }
+
                     if (j >= deadline) break;
                     continue;
                   }

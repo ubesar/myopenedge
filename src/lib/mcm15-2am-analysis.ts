@@ -1,6 +1,7 @@
 import { parse } from "date-fns";
 import { aggregateBars, type CandleBar } from "./m15-aggregation";
 import type { TpStats, DirStats, TradeDirection, TradeOutcome } from "./momentum-analysis";
+import { computeMomentumFlagsByDay, SUPER_BODY_MULT, type MomentumFlag } from "./momentum-candle";
 
 interface BarData {
   datetime: string;
@@ -40,7 +41,7 @@ export interface MCM152amResult {
 const SCAN_1 = 4 * 60;       // 04:00 NY
 const SCAN_2 = 4 * 60 + 15;  // 04:15 NY
 const SESSION_END = 16 * 60; // walk-forward until 16:00 NY
-const BODY_THRESHOLD = 0.7;
+const BODY_THRESHOLD = SUPER_BODY_MULT; // body > 1.5x avg body SMA(15)
 const TF_MINUTES = 15;
 
 function parseDateTime(dt: string): Date { return parse(dt, "yyyy-MM-dd HH:mm:ss", new Date()); }
@@ -58,13 +59,12 @@ function finalizeTp(s: TpStats) {
   s.bearish.winRate = rd > 0 ? (s.bearish.wins / rd) * 100 : 0;
 }
 
-function isMomentum(c: CandleBar): { ok: boolean; dir: TradeDirection | null; range: number } {
+function momentumAt(c: CandleBar, flag: MomentumFlag | undefined): { ok: boolean; dir: TradeDirection | null; range: number } {
   const range = c.high - c.low;
-  if (range <= 0 || c.close === c.open) return { ok: false, dir: null, range: 0 };
-  const body = Math.abs(c.close - c.open);
-  if (body / range < BODY_THRESHOLD) return { ok: false, dir: null, range };
-  return { ok: true, dir: c.close > c.open ? "bullish" : "bearish", range };
+  if (!flag?.isSuper || !flag.direction) return { ok: false, dir: null, range };
+  return { ok: true, dir: flag.direction, range };
 }
+
 
 function resolve(
   m15: CandleBar[],
@@ -132,14 +132,15 @@ export function analyzeMCM152am(
   let scan0200 = 0;
   let scan0215 = 0;
 
+  const daySeries: { date: string; m15: CandleBar[] }[] = [];
   for (const date of dates) {
     const dayBars = byDate.get(date)!;
     dayBars.sort((a, b) => parseDateTime(a.datetime).getTime() - parseDateTime(b.datetime).getTime());
 
-    // Session window: from 02:00 NY to 16:00 NY (enough for scan + walk-forward)
+    // Include pre-scan bars (from midnight) so the momentum SMA(15) has warm-up data
     const sessionRaw = dayBars.filter((b) => {
       const m = timeMin(parseDateTime(b.datetime));
-      return m >= SCAN_1 && m < SESSION_END;
+      return m < SESSION_END;
     });
     if (sessionRaw.length === 0) continue;
 
@@ -153,26 +154,33 @@ export function analyzeMCM152am(
 
     const m15 = aggregateBars(m5, TF_MINUTES);
     if (m15.length < 2) continue;
+    daySeries.push({ date, m15 });
+  }
+
+  const flagsByDay = computeMomentumFlagsByDay(daySeries.map((d) => d.m15));
+
+  for (let d = 0; d < daySeries.length; d++) {
+    const { date, m15 } = daySeries[d];
+    const flags = flagsByDay[d];
     totalDays++;
 
-    // Find candles at 02:00 and 02:15
-    const c0200 = m15.find((c) => c.time === "04:00");
-    if (!c0200) continue;
+    // Find candles at 04:00 and 04:15
+    const i0200 = m15.findIndex((c) => c.time === "04:00");
+    if (i0200 < 0) continue;
+    const c0200 = m15[i0200];
 
     let chosen: { candle: CandleBar; idx: number; scanTime: string } | null = null;
 
-    const mom1 = isMomentum(c0200);
+    const mom1 = momentumAt(c0200, flags[i0200]);
     if (mom1.ok) {
-      const idx = m15.indexOf(c0200);
-      chosen = { candle: c0200, idx, scanTime: "04:00" };
+      chosen = { candle: c0200, idx: i0200, scanTime: "04:00" };
       scan0200++;
     } else {
-      const c0215 = m15.find((c) => c.time === "04:15");
-      if (c0215) {
-        const mom2 = isMomentum(c0215);
+      const i0215 = m15.findIndex((c) => c.time === "04:15");
+      if (i0215 >= 0) {
+        const mom2 = momentumAt(m15[i0215], flags[i0215]);
         if (mom2.ok) {
-          const idx = m15.indexOf(c0215);
-          chosen = { candle: c0215, idx, scanTime: "04:15" };
+          chosen = { candle: m15[i0215], idx: i0215, scanTime: "04:15" };
           scan0215++;
         }
       }
@@ -181,9 +189,10 @@ export function analyzeMCM152am(
     if (!chosen) continue;
 
     const { candle: c, idx, scanTime } = chosen;
-    const mom = isMomentum(c);
+    const mom = momentumAt(c, flags[idx]);
     const direction = mom.dir!;
     const range = mom.range;
+
     const entry = direction === "bullish" ? c.high : c.low;
     const stop = direction === "bullish" ? c.low : c.high;
     const tp1 = direction === "bullish" ? entry + range * 0.5 : entry - range * 0.5;
