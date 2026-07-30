@@ -1,6 +1,7 @@
 import { parse } from "date-fns";
 import { aggregateBars, type CandleBar } from "./m15-aggregation";
 import type { TpStats, DirStats, TradeDirection, TradeOutcome } from "./momentum-analysis";
+import { computeMomentumFlagsByDay, SUPER_BODY_MULT, type MomentumFlag } from "./momentum-candle";
 
 interface BarData {
   datetime: string;
