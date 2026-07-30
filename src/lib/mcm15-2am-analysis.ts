@@ -40,7 +40,7 @@ export interface MCM152amResult {
 const SCAN_1 = 4 * 60;       // 04:00 NY
 const SCAN_2 = 4 * 60 + 15;  // 04:15 NY
 const SESSION_END = 16 * 60; // walk-forward until 16:00 NY
-const BODY_THRESHOLD = 0.7;
+const BODY_THRESHOLD = SUPER_BODY_MULT; // body > 1.5x avg body SMA(15)
 const TF_MINUTES = 15;
 
 function parseDateTime(dt: string): Date { return parse(dt, "yyyy-MM-dd HH:mm:ss", new Date()); }

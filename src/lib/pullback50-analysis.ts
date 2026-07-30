@@ -34,7 +34,7 @@ export interface Pullback50Result {
 
 const IB_START = 9 * 60 + 30;   // 09:30 NY
 const MARKET_CLOSE = 16 * 60;   // 16:00 NY
-const BODY_THRESHOLD = 0.7;
+const BODY_THRESHOLD = SUPER_BODY_MULT; // body > 1.5x avg body SMA(15)
 const TF_MINUTES = 15;
 
 function parseDateTime(dt: string): Date {
