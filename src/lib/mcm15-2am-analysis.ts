@@ -58,13 +58,12 @@ function finalizeTp(s: TpStats) {
   s.bearish.winRate = rd > 0 ? (s.bearish.wins / rd) * 100 : 0;
 }
 
-function isMomentum(c: CandleBar): { ok: boolean; dir: TradeDirection | null; range: number } {
+function momentumAt(c: CandleBar, flag: MomentumFlag | undefined): { ok: boolean; dir: TradeDirection | null; range: number } {
   const range = c.high - c.low;
-  if (range <= 0 || c.close === c.open) return { ok: false, dir: null, range: 0 };
-  const body = Math.abs(c.close - c.open);
-  if (body / range < BODY_THRESHOLD) return { ok: false, dir: null, range };
-  return { ok: true, dir: c.close > c.open ? "bullish" : "bearish", range };
+  if (!flag?.isSuper || !flag.direction) return { ok: false, dir: null, range };
+  return { ok: true, dir: flag.direction, range };
 }
+
 
 function resolve(
   m15: CandleBar[],
