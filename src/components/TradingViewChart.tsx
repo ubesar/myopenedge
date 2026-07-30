@@ -351,7 +351,6 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
 
         // PB50 — 50% pullback strategy markers (15m only, intraday)
         if (showPB && interval === "15min" && sorted.length > 0) {
-          const PB_BODY = 0.70;
           const MAX_LOOKAHEAD = 2; // candle 2 & 3
           const dayBars: Record<string, typeof sorted> = {};
           for (const bar of sorted) {
@@ -365,11 +364,26 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
           const toTs = (dt: string) =>
             Math.floor(new Date(dt.replace(" ", "T") + "Z").getTime() / 1000) as Time;
 
+          // Momentum flags (body vs SMA15 of body) computed across the continuous series
+          const pbDates = Object.keys(dayBars).sort();
+          const pbFlagsByDay = computeMomentumFlagsByDay(
+            pbDates.map((d) =>
+              dayBars[d].map((b) => ({
+                open: parseFloat(b.open),
+                high: parseFloat(b.high),
+                low: parseFloat(b.low),
+                close: parseFloat(b.close),
+              }))
+            )
+          );
+
           const pbMarkers: SeriesMarker<Time>[] = [];
           const lineOpts = { priceScaleId: "right", lastValueVisible: false, crosshairMarkerVisible: false, priceLineVisible: false };
 
-          for (const date of Object.keys(dayBars).sort()) {
+          for (let dIdx = 0; dIdx < pbDates.length; dIdx++) {
+            const date = pbDates[dIdx];
             const bars = dayBars[date];
+            const dayFlags = pbFlagsByDay[dIdx];
             // Only consider bars within 09:30–13:00 NY as candle 1
             let gateUntil = -1;
             for (let i = 0; i < bars.length - 1; i++) {
@@ -384,8 +398,9 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
               const c = parseFloat(b.close);
               const range = h - l;
               if (range <= 0 || c === o) continue;
-              const body = Math.abs(c - o);
-              if (body / range < PB_BODY) continue;
+              const flag = dayFlags[i];
+              if (!flag?.isSuper || !flag.direction) continue;
+
 
               const isBull = c > o;
               const entry = (h + l) / 2;
