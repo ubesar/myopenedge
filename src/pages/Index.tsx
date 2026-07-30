@@ -160,7 +160,7 @@ const Index = () => {
     return { values: deduped };
   };
 
-  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50", weekdays: number[] = [1,2,3,4,5], momentumSessionEnd: number = 13 * 60) => {
+  const handleRun = async (ticker: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio = "0.50", occBodyRatio: OCCBodyRatio = "0.50", weekdays: number[] = [1,2,3,4,5], momentumSessionEnd: number = 13 * 60, sessionStart: number = 9 * 60 + 30) => {
     let effectiveIbWindow = ibWindow;
     let effectiveMaxDays = maxDays;
     let effectiveMode = mode;
@@ -292,7 +292,7 @@ const Index = () => {
           setOutsideDayResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, outsidePct: a.outsidePct, bullishFilledPct: a.bullish.filledGapPct, bearishFilledPct: a.bearish.filledGapPct });
         } else if (effectiveMode === "pullback50") {
-          const a = analyzePullback50(values as any, effectiveMaxDays, weekdays, momentumSessionEnd);
+          const a = analyzePullback50(values as any, effectiveMaxDays, weekdays, momentumSessionEnd, sessionStart);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setPullback50Result(a);
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, sessionEndMinutes: a.sessionEndMinutes, winRate: a.stats.winRate });
@@ -544,13 +544,14 @@ const Index = () => {
       const sessionEndM = pullback50Result.sessionEndMinutes % 60;
       const sessionEndLabel = `${String(sessionEndH).padStart(2, "0")}:${String(sessionEndM).padStart(2, "0")}`;
       const bodyPct = `${Math.round(pullback50Result.bodyThreshold * 100)}%`;
-      const subtitle = `${symbol} · m15 · body ≥ ${bodyPct} · 09:30 – ${sessionEndLabel} ny · ${formatDateRange(analysisMaxDays)}`;
+      const sessionStartLabel = `${String(Math.floor(pullback50Result.sessionStartMinutes / 60)).padStart(2, "0")}:${String(pullback50Result.sessionStartMinutes % 60).padStart(2, "0")}`;
+      const subtitle = `${symbol} · m15 · body ≥ ${bodyPct} · ${sessionStartLabel} – ${sessionEndLabel} ny · ${formatDateRange(analysisMaxDays)}`;
       const s = pullback50Result.stats;
       const signalPct = pullback50Result.totalDays > 0 ? (pullback50Result.daysWithSignal / pullback50Result.totalDays) * 100 : 0;
       return (
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
-            <strong className="text-foreground">50% pullback strategy</strong> — scans m15 momentum candles (09:30 – {sessionEndLabel} ny, body ≥ {bodyPct}). entry triggers when price retraces to 50% of candle 1. sl at far end of candle 1, tp at opposite end. walks forward to 16:00 close.
+            <strong className="text-foreground">50% pullback strategy</strong> — scans m15 momentum candles ({sessionStartLabel} – {sessionEndLabel} ny, body ≥ {bodyPct}). entry triggers when price retraces to 50% of candle 1. sl at far end of candle 1, tp at opposite end. walks forward to 16:00 close.
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -629,6 +630,7 @@ const Index = () => {
               method: "50% Pullback Strategy",
               totalDays: pullback50Result.totalDays,
               daysWithSignal: pullback50Result.daysWithSignal,
+              sessionStartMinutes: pullback50Result.sessionStartMinutes,
               sessionEndMinutes: pullback50Result.sessionEndMinutes,
               bodyThreshold: pullback50Result.bodyThreshold,
               totalTrades: pullback50Result.totalTrades,
