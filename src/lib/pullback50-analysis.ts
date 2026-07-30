@@ -67,6 +67,7 @@ const MAX_TRIGGER_LOOKAHEAD = 2; // candle 2 and candle 3 only
 
 function resolvePullback(
   bars: CandleBar[],
+  flags: MomentumFlag[],
   startIdx: number,
   direction: TradeDirection,
   entry: number,
@@ -83,10 +84,7 @@ function resolvePullback(
       if (!trig) {
         // Invalidate candle 1 if this untriggered bar is itself a momentum candle
         // (it will become the new candle 1 in the outer loop).
-        const range = b.high - b.low;
-        const body = Math.abs(b.close - b.open);
-        const isMomentum = range > 0 && b.close !== b.open && body / range >= BODY_THRESHOLD;
-        if (isMomentum) {
+        if (flags[i]?.isSuper) {
           return { outcome: "open", resolvedIdx: i - 1, triggered: false };
         }
         if (i >= triggerDeadline) {
@@ -96,6 +94,7 @@ function resolvePullback(
       }
       triggered = true;
     }
+
     let hitStop: boolean;
     let hitTarget: boolean;
     if (direction === "bullish") {
