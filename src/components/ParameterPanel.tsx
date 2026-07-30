@@ -214,7 +214,7 @@ const ParameterPanel = ({
                   <SelectItem value="840">14:00</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-[10px] text-muted-foreground">{mode === "pullback50" ? `m15 momentum candles scanned from ${sessionStart === "240" ? "04:00" : "09:30"} ny up to this time. entry on 50% pullback, sl at far end, tp at opposite end of candle 1. positions closed by 16:00 ny.` : "m15 momentum candles scanned from 09:30 ny up to this time. body threshold fixed at 70% (prd v3). walk-forward to 16:00 close."}</p>
+              <p className="text-[10px] text-muted-foreground">{mode === "pullback50" ? `m15 momentum candles scanned from ${sessionStart === "240" ? "04:00" : "09:30"} ny up to this time. entry on 50% pullback, sl at far end, tp at opposite end of candle 1. positions closed by 16:00 ny.` : "m15 momentum candles scanned from 09:30 ny up to this time. momentum candle = body > 1.5× avg body sma(15). walk-forward to 16:00 close."}</p>
             </>
           )}
 
@@ -223,7 +223,7 @@ const ParameterPanel = ({
           )}
 
           {mode === "mcm15-2am" && (
-            <p className="text-[10px] text-muted-foreground">scans the m15 candle at 04:00 ny (body ≥ 70%). if not a momentum candle, fallback to 04:15. bullish → buy stop @ high, sl @ low. bearish → sell stop @ low, sl @ high. tp1 rr 1:0.5 &amp; tp2 rr 1:1 tracked independently until 16:00 ny close.</p>
+            <p className="text-[10px] text-muted-foreground">scans the m15 candle at 04:00 ny (momentum candle: body > 1.5× avg body sma15). if not a momentum candle, fallback to 04:15. bullish → buy stop @ high, sl @ low. bearish → sell stop @ low, sl @ high. tp1 rr 1:0.5 &amp; tp2 rr 1:1 tracked independently until 16:00 ny close.</p>
           )}
 
 

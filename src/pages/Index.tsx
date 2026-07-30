@@ -417,15 +417,15 @@ const Index = () => {
       const sessionEndH = Math.floor(momentumResult.sessionEndMinutes / 60);
       const sessionEndM = momentumResult.sessionEndMinutes % 60;
       const sessionEndLabel = `${String(sessionEndH).padStart(2, "0")}:${String(sessionEndM).padStart(2, "0")}`;
-      const bodyPct = `${Math.round(momentumResult.bodyThreshold * 100)}%`;
-      const subtitle = `${symbol} · m15 · body ≥ ${bodyPct} · 09:30 – ${sessionEndLabel} ny · ${formatDateRange(analysisMaxDays)}`;
+      const bodyPct = `body > ${momentumResult.bodyThreshold}× avg body (sma15)`;
+      const subtitle = `${symbol} · m15 · ${bodyPct} · 09:30 – ${sessionEndLabel} ny · ${formatDateRange(analysisMaxDays)}`;
       const full = momentumResult.fullSl.tp50;
       const half = momentumResult.halfSl.tp50;
       const signalPct = momentumResult.totalDays > 0 ? (momentumResult.daysWithSignal / momentumResult.totalDays) * 100 : 0;
       return (
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
-            <strong className="text-foreground">momentum candle analysis</strong> — scans m15 candles (09:30 – {sessionEndLabel} ny) with body ≥ {bodyPct} of range, then walks forward to market close to measure tp 50% hit rate against two stop variants. anti-overlap: next trade only after prior gate (sl full + tp 100%) resolves.
+            <strong className="text-foreground">momentum candle analysis</strong> — scans m15 candles (09:30 – {sessionEndLabel} ny) with {bodyPct}, then walks forward to market close to measure tp 50% hit rate against two stop variants. anti-overlap: next trade only after prior gate (sl full + tp 100%) resolves.
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -543,15 +543,15 @@ const Index = () => {
       const sessionEndH = Math.floor(pullback50Result.sessionEndMinutes / 60);
       const sessionEndM = pullback50Result.sessionEndMinutes % 60;
       const sessionEndLabel = `${String(sessionEndH).padStart(2, "0")}:${String(sessionEndM).padStart(2, "0")}`;
-      const bodyPct = `${Math.round(pullback50Result.bodyThreshold * 100)}%`;
+      const bodyPct = `body > ${pullback50Result.bodyThreshold}× avg body (sma15)`;
       const sessionStartLabel = `${String(Math.floor(pullback50Result.sessionStartMinutes / 60)).padStart(2, "0")}:${String(pullback50Result.sessionStartMinutes % 60).padStart(2, "0")}`;
-      const subtitle = `${symbol} · m15 · body ≥ ${bodyPct} · ${sessionStartLabel} – ${sessionEndLabel} ny · ${formatDateRange(analysisMaxDays)}`;
+      const subtitle = `${symbol} · m15 · ${bodyPct} · ${sessionStartLabel} – ${sessionEndLabel} ny · ${formatDateRange(analysisMaxDays)}`;
       const s = pullback50Result.stats;
       const signalPct = pullback50Result.totalDays > 0 ? (pullback50Result.daysWithSignal / pullback50Result.totalDays) * 100 : 0;
       return (
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
-            <strong className="text-foreground">50% pullback strategy</strong> — scans m15 momentum candles ({sessionStartLabel} – {sessionEndLabel} ny, body ≥ {bodyPct}). entry triggers when price retraces to 50% of candle 1. sl at far end of candle 1, tp at opposite end. walks forward to 16:00 close.
+            <strong className="text-foreground">50% pullback strategy</strong> — scans m15 momentum candles ({sessionStartLabel} – {sessionEndLabel} ny, {bodyPct}). entry triggers when price retraces to 50% of candle 1. sl at far end of candle 1, tp at opposite end. walks forward to 16:00 close.
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -750,8 +750,8 @@ const Index = () => {
     }
 
     if (activeMode === "mcm15-2am" && mcm152amResult) {
-      const bodyPct = `${Math.round(mcm152amResult.bodyThreshold * 100)}%`;
-      const subtitle = `${symbol} · m15 @ 04:00 ny (fallback 04:15) · body ≥ ${bodyPct} · ${formatDateRange(analysisMaxDays)}`;
+      const bodyPct = `body > ${mcm152amResult.bodyThreshold}× avg body (sma15)`;
+      const subtitle = `${symbol} · m15 @ 04:00 ny (fallback 04:15) · ${bodyPct} · ${formatDateRange(analysisMaxDays)}`;
       const tp1 = mcm152amResult.tp1Stats;
       const tp2 = mcm152amResult.tp2Stats;
       const signalPct = mcm152amResult.totalDays > 0 ? (mcm152amResult.daysWithSignal / mcm152amResult.totalDays) * 100 : 0;
@@ -759,7 +759,7 @@ const Index = () => {
       return (
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
-            <strong className="text-foreground">m15 momentum @ 04:00 ny</strong> — scans the m15 candle at 04:00 ny (body ≥ {bodyPct}). if not a momentum candle, fallback to 04:15. otherwise skip the day.
+            <strong className="text-foreground">m15 momentum @ 04:00 ny</strong> — scans the m15 candle at 04:00 ny ({bodyPct}). if not a momentum candle, fallback to 04:15. otherwise skip the day.
             bullish → <span className="text-emerald-500 font-medium">buy stop @ high</span>, sl @ low. bearish → <span className="text-rose-500 font-medium">sell stop @ low</span>, sl @ high.
             tp1 rr 1:0.5 &amp; tp2 rr 1:1 tracked independently until 16:00 ny close.
           </div>
