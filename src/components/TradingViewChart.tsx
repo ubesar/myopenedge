@@ -32,7 +32,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   const ibSeriesListRef = useRef<ISeriesApi<"Line">[]>([]);
-  const pbSeriesListRef = useRef<ISeriesApi<"Line">[]>([]);
+  const pbSeriesListRef = useRef<ISeriesApi<"Line" | "Baseline">[]>([]);
   const pbMarkersRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null);
   const [chartReady, setChartReady] = useState(false);
   const [ohlc, setOhlc] = useState<{
