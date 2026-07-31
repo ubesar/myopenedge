@@ -487,22 +487,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
               entrySeries.setData([{ time: startTs, value: entry }, { time: endTs, value: entry }]);
               pbSeriesListRef.current.push(entrySeries);
 
-              // price labels at the position box, TradingView-like badges
-              const rr = Math.abs(target - entry) / Math.max(1e-9, Math.abs(entry - stop));
-              pbMarkers.push({
-                time: startTs,
-                position: isBull ? "aboveBar" : "belowBar",
-                color: "#26a69a",
-                shape: isBull ? "arrowUp" : "arrowDown",
-                text: `TP ${target.toFixed(2)} · ${rr.toFixed(2)}R`,
-              });
-              pbMarkers.push({
-                time: startTs,
-                position: isBull ? "belowBar" : "aboveBar",
-                color: "#ef5350",
-                shape: isBull ? "arrowDown" : "arrowUp",
-                text: `SL ${stop.toFixed(2)} · entry ${entry.toFixed(2)}`,
-              });
+              // no text labels — zones only
 
               gateUntil = resolvedIdx;
             }
