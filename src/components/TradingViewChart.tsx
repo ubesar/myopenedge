@@ -8,6 +8,7 @@ import {
   CandlestickSeries,
   HistogramSeries,
   LineSeries,
+  BaselineSeries,
   createSeriesMarkers,
   type IChartApi,
   type ISeriesApi,
