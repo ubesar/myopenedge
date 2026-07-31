@@ -23,11 +23,10 @@ interface TradingViewChartProps {
   showIB?: boolean;
   showMC?: boolean;
   showPB?: boolean;
-  mccBodyRatio?: number;
 }
 
-const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, showPB = false, mccBodyRatio = 0.70 }: TradingViewChartProps) => {
-  const MCC_BODY_RATIO = mccBodyRatio;
+const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, showPB = false }: TradingViewChartProps) => {
+
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
@@ -502,7 +501,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
     };
 
     fetchData();
-  }, [symbol, interval, chartReady, showIB, showMC, showPB, mccBodyRatio]);
+  }, [symbol, interval, chartReady, showIB, showMC, showPB]);
 
   const isPositive = ohlc ? ohlc.change >= 0 : true;
 

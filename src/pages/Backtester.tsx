@@ -91,6 +91,42 @@ async function fetchMarketData(ticker: string, totalDays: number) {
   return { values: allValues.filter((v) => (seen.has(v.datetime) ? false : (seen.add(v.datetime), true))) };
 }
 
+/** Pre-market capable source (Massive API) — used when the scan starts before 09:30 NY. */
+async function fetchMassiveData(ticker: string, totalDays: number) {
+  const MASSIVE_BATCH_DAYS = 90;
+  const now = new Date();
+  const calendarDaysNeeded = Math.ceil(totalDays * 1.5) + 7;
+  let currentFrom = new Date(now);
+  currentFrom.setDate(currentFrom.getDate() - calendarDaysNeeded);
+  const totalBatches = Math.ceil(calendarDaysNeeded / MASSIVE_BATCH_DAYS);
+
+  let allValues: any[] = [];
+  for (let i = 0; i < totalBatches; i++) {
+    const batchEnd = new Date(currentFrom);
+    batchEnd.setDate(batchEnd.getDate() + MASSIVE_BATCH_DAYS);
+    if (batchEnd > now) batchEnd.setTime(now.getTime());
+    try {
+      const { data, error } = await supabase.functions.invoke("massive-bars", {
+        body: {
+          symbol: ticker,
+          from: currentFrom.toISOString().split("T")[0],
+          to: batchEnd.toISOString().split("T")[0],
+          multiplier: 5,
+          timespan: "minute",
+        },
+      });
+      if (!error && data?.values) allValues = allValues.concat(data.values);
+    } catch (e) {
+      console.error(`massive batch ${i + 1} failed`, e);
+    }
+    currentFrom = new Date(batchEnd);
+    currentFrom.setDate(currentFrom.getDate() + 1);
+    if (i < totalBatches - 1) await sleep(2000);
+  }
+  const seen = new Set<string>();
+  return { values: allValues.filter((v) => (seen.has(v.datetime) ? false : (seen.add(v.datetime), true))) };
+}
+
 function toBTTradesPB50(trades: Pullback50Trade[]): BTTrade[] {
   const out: BTTrade[] = [];
   for (const t of trades) {
@@ -203,7 +239,10 @@ const Backtester = () => {
     setResult(null);
     try {
       const days = parseInt(maxDays);
-      const json = await fetchMarketData(symbol.trim().toUpperCase(), days);
+      const usePreMarket = strategy === "pb50" && parseInt(sessionStart) < 9 * 60 + 30;
+      const json = usePreMarket
+        ? await fetchMassiveData(symbol.trim().toUpperCase(), days)
+        : await fetchMarketData(symbol.trim().toUpperCase(), days);
       const values = json?.values;
       if (!values?.length) throw new Error("no data returned");
 

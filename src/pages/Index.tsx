@@ -180,7 +180,8 @@ const Index = () => {
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
     try {
-      if (effectiveMode === "globex-ib" || effectiveMode === "london-ib" || effectiveMode === "mcm15-2am") {
+      const pb50PreMarket = effectiveMode === "pullback50" && sessionStart < 9 * 60 + 30;
+      if (effectiveMode === "globex-ib" || effectiveMode === "london-ib" || effectiveMode === "mcm15-2am" || pb50PreMarket) {
         // All three use Massive API via massive-bars edge function
         // Split into 90-day client-side batches to avoid CPU timeout
         const MASSIVE_BATCH_DAYS = 90;
@@ -190,7 +191,7 @@ const Index = () => {
         const globalFrom = new Date(now);
         globalFrom.setDate(globalFrom.getDate() - calendarDaysNeeded);
 
-        const label = effectiveMode === "london-ib" ? "London" : effectiveMode === "mcm15-2am" ? "04:00 NY" : "Globex";
+        const label = effectiveMode === "london-ib" ? "London" : effectiveMode === "mcm15-2am" ? "04:00 NY" : pb50PreMarket ? "pre-market" : "Globex";
         const totalBatches = Math.ceil(calendarDaysNeeded / MASSIVE_BATCH_DAYS);
         toast.info(`Fetching ${effectiveMaxDays} days of ${label} data (${totalBatches} batch${totalBatches > 1 ? "es" : ""})...`, { duration: 5000 });
 
@@ -244,6 +245,11 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough London session data."); return; }
           setLondonIBResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
+        } else if (pb50PreMarket) {
+          const a = analyzePullback50(deduped as any, effectiveMaxDays, weekdays, momentumSessionEnd, sessionStart);
+          if (a.totalDays === 0) { toast.error("Not enough pre-market data."); return; }
+          setPullback50Result(a);
+          addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, sessionEndMinutes: a.sessionEndMinutes, winRate: a.stats.winRate });
         } else {
           // mcm15-2am
           const a = analyzeMCM152am(deduped as any, effectiveMaxDays, weekdays);
