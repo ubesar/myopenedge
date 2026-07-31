@@ -180,7 +180,8 @@ const Index = () => {
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
     try {
-      if (effectiveMode === "globex-ib" || effectiveMode === "london-ib" || effectiveMode === "mcm15-2am") {
+      const pb50PreMarket = effectiveMode === "pullback50" && sessionStart < 9 * 60 + 30;
+      if (effectiveMode === "globex-ib" || effectiveMode === "london-ib" || effectiveMode === "mcm15-2am" || pb50PreMarket) {
         // All three use Massive API via massive-bars edge function
         // Split into 90-day client-side batches to avoid CPU timeout
         const MASSIVE_BATCH_DAYS = 90;
