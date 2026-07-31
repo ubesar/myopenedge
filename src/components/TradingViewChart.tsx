@@ -445,29 +445,64 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
               const startTs = toTs(b.datetime);
               const endTs = toTs(bars[resolvedIdx].datetime);
 
-              // Horizontal level lines (entry/SL/TP) spanning candle1 → resolution
-              const entrySeries = chart.addSeries(LineSeries, { ...lineOpts, color: "#2962FF", lineWidth: 1, lineStyle: 2, title: "" });
+              // TradingView-style position tool: shaded risk (red) & reward (green) zones
+              const zoneOpts = {
+                ...lineOpts,
+                lineWidth: 1 as const,
+                baseLineVisible: false,
+                pointMarkersVisible: false,
+                title: "",
+              };
+
+              // risk zone: entry -> SL
+              const riskSeries = chart.addSeries(BaselineSeries, {
+                ...zoneOpts,
+                baseValue: { type: "price" as const, price: entry },
+                topLineColor: "rgba(239,83,80,0.9)",
+                topFillColor1: "rgba(239,83,80,0.28)",
+                topFillColor2: "rgba(239,83,80,0.28)",
+                bottomLineColor: "rgba(239,83,80,0.9)",
+                bottomFillColor1: "rgba(239,83,80,0.28)",
+                bottomFillColor2: "rgba(239,83,80,0.28)",
+              });
+              riskSeries.setData([{ time: startTs, value: stop }, { time: endTs, value: stop }]);
+              pbSeriesListRef.current.push(riskSeries);
+
+              // reward zone: entry -> TP
+              const rewardSeries = chart.addSeries(BaselineSeries, {
+                ...zoneOpts,
+                baseValue: { type: "price" as const, price: entry },
+                topLineColor: "rgba(38,166,154,0.9)",
+                topFillColor1: "rgba(38,166,154,0.25)",
+                topFillColor2: "rgba(38,166,154,0.25)",
+                bottomLineColor: "rgba(38,166,154,0.9)",
+                bottomFillColor1: "rgba(38,166,154,0.25)",
+                bottomFillColor2: "rgba(38,166,154,0.25)",
+              });
+              rewardSeries.setData([{ time: startTs, value: target }, { time: endTs, value: target }]);
+              pbSeriesListRef.current.push(rewardSeries);
+
+              // entry line (dashed) across the position box
+              const entrySeries = chart.addSeries(LineSeries, { ...lineOpts, color: "#c9d1e1", lineWidth: 1, lineStyle: 2, title: "" });
               entrySeries.setData([{ time: startTs, value: entry }, { time: endTs, value: entry }]);
               pbSeriesListRef.current.push(entrySeries);
 
-              const slSeries = chart.addSeries(LineSeries, { ...lineOpts, color: "#ef5350", lineWidth: 1, lineStyle: 2, title: "" });
-              slSeries.setData([{ time: startTs, value: stop }, { time: endTs, value: stop }]);
-              pbSeriesListRef.current.push(slSeries);
-
-              const tpSeries = chart.addSeries(LineSeries, { ...lineOpts, color: "#26a69a", lineWidth: 1, lineStyle: 2, title: "" });
-              tpSeries.setData([{ time: startTs, value: target }, { time: endTs, value: target }]);
-              pbSeriesListRef.current.push(tpSeries);
-
-              // Arrow markers on candle 1
-              if (isBull) {
-                pbMarkers.push({ time: startTs, position: "belowBar", color: "#2962FF", shape: "arrowUp", text: `E ${entry.toFixed(2)}` });
-                pbMarkers.push({ time: startTs, position: "belowBar", color: "#ef5350", shape: "arrowDown", text: `SL ${stop.toFixed(2)}` });
-                pbMarkers.push({ time: startTs, position: "aboveBar", color: "#26a69a", shape: "arrowUp", text: `TP ${target.toFixed(2)}` });
-              } else {
-                pbMarkers.push({ time: startTs, position: "aboveBar", color: "#2962FF", shape: "arrowDown", text: `E ${entry.toFixed(2)}` });
-                pbMarkers.push({ time: startTs, position: "aboveBar", color: "#ef5350", shape: "arrowUp", text: `SL ${stop.toFixed(2)}` });
-                pbMarkers.push({ time: startTs, position: "belowBar", color: "#26a69a", shape: "arrowDown", text: `TP ${target.toFixed(2)}` });
-              }
+              // price labels at the position box, TradingView-like badges
+              const rr = Math.abs(target - entry) / Math.max(1e-9, Math.abs(entry - stop));
+              pbMarkers.push({
+                time: startTs,
+                position: isBull ? "aboveBar" : "belowBar",
+                color: "#26a69a",
+                shape: isBull ? "arrowUp" : "arrowDown",
+                text: `TP ${target.toFixed(2)} · ${rr.toFixed(2)}R`,
+              });
+              pbMarkers.push({
+                time: startTs,
+                position: isBull ? "belowBar" : "aboveBar",
+                color: "#ef5350",
+                shape: isBull ? "arrowDown" : "arrowUp",
+                text: `SL ${stop.toFixed(2)} · entry ${entry.toFixed(2)}`,
+              });
 
               gateUntil = resolvedIdx;
             }
