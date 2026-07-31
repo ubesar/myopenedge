@@ -239,7 +239,10 @@ const Backtester = () => {
     setResult(null);
     try {
       const days = parseInt(maxDays);
-      const json = await fetchMarketData(symbol.trim().toUpperCase(), days);
+      const usePreMarket = strategy === "pb50" && parseInt(sessionStart) < 9 * 60 + 30;
+      const json = usePreMarket
+        ? await fetchMassiveData(symbol.trim().toUpperCase(), days)
+        : await fetchMarketData(symbol.trim().toUpperCase(), days);
       const values = json?.values;
       if (!values?.length) throw new Error("no data returned");
 
