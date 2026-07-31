@@ -22,11 +22,10 @@ const Chart = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [symbol, setSymbol] = useState("QQQ");
   const [symbolInput, setSymbolInput] = useState("QQQ");
-  const [interval, setInterval] = useState("5min");
+  const [interval, setInterval] = useState("15min");
   const [showIB, setShowIB] = useState(true);
   const [showMC, setShowMC] = useState(true);
   const [showPB, setShowPB] = useState(false);
-  const [mccBodyRatio, setMccBodyRatio] = useState(0.70);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
