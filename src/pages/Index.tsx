@@ -245,6 +245,11 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough London session data."); return; }
           setLondonIBResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
+        } else if (pb50PreMarket) {
+          const a = analyzePullback50(deduped as any, effectiveMaxDays, weekdays, momentumSessionEnd, sessionStart);
+          if (a.totalDays === 0) { toast.error("Not enough pre-market data."); return; }
+          setPullback50Result(a);
+          addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, sessionEndMinutes: a.sessionEndMinutes, winRate: a.stats.winRate });
         } else {
           // mcm15-2am
           const a = analyzeMCM152am(deduped as any, effectiveMaxDays, weekdays);
