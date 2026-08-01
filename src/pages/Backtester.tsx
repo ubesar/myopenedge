@@ -296,7 +296,7 @@ const Backtester = () => {
       let totalDays = 0;
 
       if (strategy === "pb50") {
-        const r = analyzePullback50(values, days, [1, 2, 3, 4, 5], 13 * 60, parseInt(sessionStart));
+        const r = analyzePullback50(values, days, [1, 2, 3, 4, 5], 13 * 60, parseInt(sessionStart), dataSource === "csv" ? (m1Bars ?? undefined) : undefined);
         trades = toBTTradesPB50(r.trades);
         totalDays = r.totalDays;
       } else {
