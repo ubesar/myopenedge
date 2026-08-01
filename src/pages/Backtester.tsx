@@ -449,6 +449,41 @@ const Backtester = () => {
                 </div>
               )}
             </div>
+
+            {dataSource === "csv" && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 border-t border-border pt-3">
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label className="text-xs lowercase">ohlc csv file</Label>
+                  <Input
+                    type="file"
+                    accept=".csv,text/csv"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleCsvFile(f);
+                    }}
+                    className="text-xs file:text-xs file:mr-3 file:border-0 file:bg-secondary file:text-secondary-foreground file:rounded file:px-2 file:py-1"
+                  />
+                  <p className="text-[11px] text-muted-foreground lowercase">
+                    {csvBars?.length
+                      ? `${csvName} · ${csvBars.length} bars · ${csvBars[0].datetime.slice(0, 10)} → ${csvBars[csvBars.length - 1].datetime.slice(0, 10)}`
+                      : "format: time,open,high,low,close,volume (ninjatrader export supported)"}
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs lowercase">timezone shift (hours → ny)</Label>
+                  <Select value={csvOffset} onValueChange={setCsvOffset}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {[-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6].map((h) => (
+                        <SelectItem key={h} value={String(h)}>{h > 0 ? `+${h}` : h}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-muted-foreground lowercase">re-import the file after changing</p>
+                </div>
+              </div>
+            )}
+
             <Button onClick={runBacktest} disabled={loading} className="w-full md:w-auto">
               {loading ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" />running…</>
