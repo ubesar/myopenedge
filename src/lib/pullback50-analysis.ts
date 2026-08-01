@@ -74,6 +74,7 @@ function resolvePullback(
   entry: number,
   stop: number,
   target: number,
+  intraOf?: (idx: number) => CandleBar[] | null,
 ): { outcome: TradeOutcome; resolvedIdx: number; triggered: boolean } {
   let triggered = false;
   let triggerDeadline = Math.min(startIdx + MAX_TRIGGER_LOOKAHEAD, bars.length - 1);
@@ -93,24 +94,29 @@ function resolvePullback(
         }
         continue;
       }
-      triggered = true;
     }
 
-    let hitStop: boolean;
-    let hitTarget: boolean;
-    if (direction === "bullish") {
-      hitStop = b.low <= stop;
-      hitTarget = b.high >= target;
-    } else {
-      hitStop = b.high >= stop;
-      hitTarget = b.low <= target;
+    // Walk the finer-grained bars (m1) inside this m15 bar when available, so the
+    // first-touch between SL and TP is resolved accurately instead of guessed.
+    const sub = intraOf?.(i);
+    const seq: CandleBar[] = sub && sub.length > 0 ? sub : [b];
+
+    for (const s of seq) {
+      if (!triggered) {
+        const trig = direction === "bullish" ? s.low <= entry : s.high >= entry;
+        if (!trig) continue;
+        triggered = true;
+      }
+      const hitStop = direction === "bullish" ? s.low <= stop : s.high >= stop;
+      const hitTarget = direction === "bullish" ? s.high >= target : s.low <= target;
+      if (hitStop && hitTarget) return { outcome: "loss", resolvedIdx: i, triggered };
+      if (hitTarget) return { outcome: "win", resolvedIdx: i, triggered };
+      if (hitStop) return { outcome: "loss", resolvedIdx: i, triggered };
     }
-    if (hitStop && hitTarget) return { outcome: "loss", resolvedIdx: i, triggered };
-    if (hitTarget) return { outcome: "win", resolvedIdx: i, triggered };
-    if (hitStop) return { outcome: "loss", resolvedIdx: i, triggered };
   }
   return { outcome: "open", resolvedIdx: bars.length - 1, triggered };
 }
+
 
 export function analyzePullback50(
   bars: BarData[],
