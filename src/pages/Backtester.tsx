@@ -387,6 +387,16 @@ const Backtester = () => {
           <Card className="p-4 space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div className="space-y-1.5">
+                <Label className="text-xs lowercase">data source</Label>
+                <Select value={dataSource} onValueChange={(v) => setDataSource(v as "api" | "csv")}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="api">api key (live data)</SelectItem>
+                    <SelectItem value="csv">import csv (ohlc file)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
                 <Label className="text-xs lowercase">strategy</Label>
                 <Select value={strategy} onValueChange={(v) => setStrategy(v as StrategyKey)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
