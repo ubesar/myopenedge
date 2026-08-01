@@ -484,7 +484,7 @@ const Backtester = () => {
               </div>
             )}
 
-            <Button onClick={runBacktest} disabled={loading} className="w-full md:w-auto">
+            <Button onClick={runBacktest} disabled={loading || (dataSource === "csv" && !csvBars?.length)} className="w-full md:w-auto">
               {loading ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" />running…</>
               ) : (
