@@ -257,6 +257,21 @@ const Backtester = () => {
     }
   };
 
+  const handleM1File = async (file: File) => {
+    try {
+      const text = await file.text();
+      const bars = parseCsvBars(text, parseFloat(csvOffset) || 0);
+      setM1Bars(bars);
+      setM1Name(file.name);
+      toast.success(`${bars.length} m1 bars loaded`);
+    } catch (e: any) {
+      setM1Bars(null);
+      setM1Name("");
+      toast.error(e.message || "failed to parse m1 csv");
+    }
+  };
+
+
   const runBacktest = async () => {
     if (!symbol.trim()) return;
     setLoading(true);
