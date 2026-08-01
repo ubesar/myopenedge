@@ -234,6 +234,9 @@ const Backtester = () => {
   const [csvBars, setCsvBars] = useState<CsvBar[] | null>(null);
   const [csvName, setCsvName] = useState("");
   const [csvOffset, setCsvOffset] = useState("0");
+  const [m1Bars, setM1Bars] = useState<CsvBar[] | null>(null);
+  const [m1Name, setM1Name] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BTResult | null>(null);
   const [chartTrade, setChartTrade] = useState<TradeForChart | null>(null);
