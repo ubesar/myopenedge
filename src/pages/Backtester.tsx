@@ -470,6 +470,23 @@ const Backtester = () => {
                   </p>
                 </div>
                 <div className="space-y-1.5">
+                  <Label className="text-xs lowercase">m1 csv (opsional — resolusi tp/sl)</Label>
+                  <Input
+                    type="file"
+                    accept=".csv,text/csv"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleM1File(f);
+                    }}
+                    className="text-xs file:text-xs file:mr-3 file:border-0 file:bg-secondary file:text-secondary-foreground file:rounded file:px-2 file:py-1"
+                  />
+                  <p className="text-[11px] text-muted-foreground lowercase">
+                    {m1Bars?.length
+                      ? `${m1Name} · ${m1Bars.length} bars · entry tetap m15, urutan tp/sl dari m1`
+                      : "tanpa m1: bila sl & tp kena di bar m15 yang sama dianggap loss"}
+                  </p>
+                </div>
+                <div className="space-y-1.5">
                   <Label className="text-xs lowercase">timezone shift (hours → ny)</Label>
                   <Select value={csvOffset} onValueChange={setCsvOffset}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -481,6 +498,7 @@ const Backtester = () => {
                   </Select>
                   <p className="text-[11px] text-muted-foreground lowercase">re-import the file after changing</p>
                 </div>
+
               </div>
             )}
 
