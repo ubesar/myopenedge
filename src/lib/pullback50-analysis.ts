@@ -124,6 +124,7 @@ export function analyzePullback50(
   weekdays: number[] = [1, 2, 3, 4, 5],
   sessionEndMinutes: number = 13 * 60,
   sessionStartMinutes: number = IB_START,
+  intraBars?: BarData[],
 ): Pullback50Result {
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
@@ -131,6 +132,25 @@ export function analyzePullback50(
     if (!byDate.has(date)) byDate.set(date, []);
     byDate.get(date)!.push(bar);
   }
+
+  // Finer-grained (m1) bars, grouped by date, used only to decide whether SL or TP
+  // is touched first inside an m15 bar.
+  const intraByDate = new Map<string, CandleBar[]>();
+  if (intraBars?.length) {
+    for (const bar of intraBars) {
+      const [date, time] = bar.datetime.split(" ");
+      if (!intraByDate.has(date)) intraByDate.set(date, []);
+      intraByDate.get(date)!.push({
+        time: time.slice(0, 5),
+        open: parseFloat(bar.open),
+        high: parseFloat(bar.high),
+        low: parseFloat(bar.low),
+        close: parseFloat(bar.close),
+      });
+    }
+    for (const arr of intraByDate.values()) arr.sort((a, b) => a.time.localeCompare(b.time));
+  }
+
 
   let dates = Array.from(byDate.keys()).sort();
   if (maxDays > 0) dates = dates.slice(-maxDays);
