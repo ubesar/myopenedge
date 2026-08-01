@@ -16,6 +16,7 @@ import {
 import { analyzePullback50, type Pullback50Trade } from "@/lib/pullback50-analysis";
 import { analyzeIB2575, type IB2575Trade } from "@/lib/ib2575-analysis";
 import TradeChartDialog, { type TradeForChart } from "@/components/TradeChartDialog";
+import { parseCsvBars, type CsvBar } from "@/lib/csv-bars";
 
 type StrategyKey = "pb50" | "ib2575";
 
@@ -229,9 +230,29 @@ const Backtester = () => {
   const [maxDays, setMaxDays] = useState("120");
   const [ibWindow, setIbWindow] = useState("60");
   const [sessionStart, setSessionStart] = useState("570"); // 09:30 ny open
+  const [dataSource, setDataSource] = useState<"api" | "csv">("api");
+  const [csvBars, setCsvBars] = useState<CsvBar[] | null>(null);
+  const [csvName, setCsvName] = useState("");
+  const [csvOffset, setCsvOffset] = useState("0");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BTResult | null>(null);
   const [chartTrade, setChartTrade] = useState<TradeForChart | null>(null);
+
+  const handleCsvFile = async (file: File) => {
+    try {
+      const text = await file.text();
+      const bars = parseCsvBars(text, parseFloat(csvOffset) || 0);
+      setCsvBars(bars);
+      setCsvName(file.name);
+      const guess = file.name.replace(/\.csv$/i, "").split(/[_\-\s]/).find((p) => /^[A-Za-z]{1,6}$/.test(p) && p.toLowerCase() !== "export");
+      if (guess) setSymbol(guess.toUpperCase());
+      toast.success(`${bars.length} bars loaded from ${file.name}`);
+    } catch (e: any) {
+      setCsvBars(null);
+      setCsvName("");
+      toast.error(e.message || "failed to parse csv");
+    }
+  };
 
   const runBacktest = async () => {
     if (!symbol.trim()) return;
@@ -239,12 +260,19 @@ const Backtester = () => {
     setResult(null);
     try {
       const days = parseInt(maxDays);
-      const usePreMarket = strategy === "pb50" && parseInt(sessionStart) < 9 * 60 + 30;
-      const json = usePreMarket
-        ? await fetchMassiveData(symbol.trim().toUpperCase(), days)
-        : await fetchMarketData(symbol.trim().toUpperCase(), days);
-      const values = json?.values;
+      let values: any[];
+      if (dataSource === "csv") {
+        if (!csvBars?.length) throw new Error("import a csv file first");
+        values = csvBars;
+      } else {
+        const usePreMarket = strategy === "pb50" && parseInt(sessionStart) < 9 * 60 + 30;
+        const json = usePreMarket
+          ? await fetchMassiveData(symbol.trim().toUpperCase(), days)
+          : await fetchMarketData(symbol.trim().toUpperCase(), days);
+        values = json?.values;
+      }
       if (!values?.length) throw new Error("no data returned");
+
 
       let trades: BTTrade[] = [];
       let totalDays = 0;
@@ -359,6 +387,16 @@ const Backtester = () => {
           <Card className="p-4 space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div className="space-y-1.5">
+                <Label className="text-xs lowercase">data source</Label>
+                <Select value={dataSource} onValueChange={(v) => setDataSource(v as "api" | "csv")}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="api">api key (live data)</SelectItem>
+                    <SelectItem value="csv">import csv (ohlc file)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
                 <Label className="text-xs lowercase">strategy</Label>
                 <Select value={strategy} onValueChange={(v) => setStrategy(v as StrategyKey)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -382,6 +420,7 @@ const Backtester = () => {
                     <SelectItem value="120">6 months</SelectItem>
                     <SelectItem value="240">12 months</SelectItem>
                     <SelectItem value="480">24 months</SelectItem>
+                    {dataSource === "csv" && <SelectItem value="0">all data in csv</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
@@ -410,7 +449,42 @@ const Backtester = () => {
                 </div>
               )}
             </div>
-            <Button onClick={runBacktest} disabled={loading} className="w-full md:w-auto">
+
+            {dataSource === "csv" && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 border-t border-border pt-3">
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label className="text-xs lowercase">ohlc csv file</Label>
+                  <Input
+                    type="file"
+                    accept=".csv,text/csv"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleCsvFile(f);
+                    }}
+                    className="text-xs file:text-xs file:mr-3 file:border-0 file:bg-secondary file:text-secondary-foreground file:rounded file:px-2 file:py-1"
+                  />
+                  <p className="text-[11px] text-muted-foreground lowercase">
+                    {csvBars?.length
+                      ? `${csvName} · ${csvBars.length} bars · ${csvBars[0].datetime.slice(0, 10)} → ${csvBars[csvBars.length - 1].datetime.slice(0, 10)}`
+                      : "format: time,open,high,low,close,volume (ninjatrader export supported)"}
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs lowercase">timezone shift (hours → ny)</Label>
+                  <Select value={csvOffset} onValueChange={setCsvOffset}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {[-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6].map((h) => (
+                        <SelectItem key={h} value={String(h)}>{h > 0 ? `+${h}` : h}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-muted-foreground lowercase">re-import the file after changing</p>
+                </div>
+              </div>
+            )}
+
+            <Button onClick={runBacktest} disabled={loading || (dataSource === "csv" && !csvBars?.length)} className="w-full md:w-auto">
               {loading ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" />running…</>
               ) : (
