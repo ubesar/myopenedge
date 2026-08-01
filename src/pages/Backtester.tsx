@@ -229,9 +229,29 @@ const Backtester = () => {
   const [maxDays, setMaxDays] = useState("120");
   const [ibWindow, setIbWindow] = useState("60");
   const [sessionStart, setSessionStart] = useState("570"); // 09:30 ny open
+  const [dataSource, setDataSource] = useState<"api" | "csv">("api");
+  const [csvBars, setCsvBars] = useState<CsvBar[] | null>(null);
+  const [csvName, setCsvName] = useState("");
+  const [csvOffset, setCsvOffset] = useState("0");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BTResult | null>(null);
   const [chartTrade, setChartTrade] = useState<TradeForChart | null>(null);
+
+  const handleCsvFile = async (file: File) => {
+    try {
+      const text = await file.text();
+      const bars = parseCsvBars(text, parseFloat(csvOffset) || 0);
+      setCsvBars(bars);
+      setCsvName(file.name);
+      const guess = file.name.replace(/\.csv$/i, "").split(/[_\-\s]/).find((p) => /^[A-Za-z]{1,6}$/.test(p) && p.toLowerCase() !== "export");
+      if (guess) setSymbol(guess.toUpperCase());
+      toast.success(`${bars.length} bars loaded from ${file.name}`);
+    } catch (e: any) {
+      setCsvBars(null);
+      setCsvName("");
+      toast.error(e.message || "failed to parse csv");
+    }
+  };
 
   const runBacktest = async () => {
     if (!symbol.trim()) return;
@@ -239,12 +259,19 @@ const Backtester = () => {
     setResult(null);
     try {
       const days = parseInt(maxDays);
-      const usePreMarket = strategy === "pb50" && parseInt(sessionStart) < 9 * 60 + 30;
-      const json = usePreMarket
-        ? await fetchMassiveData(symbol.trim().toUpperCase(), days)
-        : await fetchMarketData(symbol.trim().toUpperCase(), days);
-      const values = json?.values;
+      let values: any[];
+      if (dataSource === "csv") {
+        if (!csvBars?.length) throw new Error("import a csv file first");
+        values = csvBars;
+      } else {
+        const usePreMarket = strategy === "pb50" && parseInt(sessionStart) < 9 * 60 + 30;
+        const json = usePreMarket
+          ? await fetchMassiveData(symbol.trim().toUpperCase(), days)
+          : await fetchMarketData(symbol.trim().toUpperCase(), days);
+        values = json?.values;
+      }
       if (!values?.length) throw new Error("no data returned");
+
 
       let trades: BTTrade[] = [];
       let totalDays = 0;
