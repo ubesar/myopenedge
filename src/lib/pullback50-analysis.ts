@@ -194,8 +194,23 @@ export function analyzePullback50(
     const flags = flagsByDay[d];
     totalDays++;
 
+    const dayIntra = intraByDate.get(date) ?? null;
+    const intraOf = dayIntra
+      ? (idx: number) => {
+          const t = m15[idx].time.split(":").map(Number);
+          const from = t[0] * 60 + t[1];
+          const to = from + TF_MINUTES;
+          return dayIntra.filter((b) => {
+            const p = b.time.split(":").map(Number);
+            const m = p[0] * 60 + p[1];
+            return m >= from && m < to;
+          });
+        }
+      : undefined;
+
     let signalsToday = 0;
     let gateUntil = -1;
+
 
     for (let i = 0; i < m15.length - 1; i++) {
       if (i <= gateUntil) continue;
