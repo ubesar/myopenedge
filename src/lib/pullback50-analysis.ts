@@ -74,6 +74,7 @@ function resolvePullback(
   entry: number,
   stop: number,
   target: number,
+  intraOf?: (idx: number) => CandleBar[] | null,
 ): { outcome: TradeOutcome; resolvedIdx: number; triggered: boolean } {
   let triggered = false;
   let triggerDeadline = Math.min(startIdx + MAX_TRIGGER_LOOKAHEAD, bars.length - 1);
@@ -93,24 +94,29 @@ function resolvePullback(
         }
         continue;
       }
-      triggered = true;
     }
 
-    let hitStop: boolean;
-    let hitTarget: boolean;
-    if (direction === "bullish") {
-      hitStop = b.low <= stop;
-      hitTarget = b.high >= target;
-    } else {
-      hitStop = b.high >= stop;
-      hitTarget = b.low <= target;
+    // Walk the finer-grained bars (m1) inside this m15 bar when available, so the
+    // first-touch between SL and TP is resolved accurately instead of guessed.
+    const sub = intraOf?.(i);
+    const seq: CandleBar[] = sub && sub.length > 0 ? sub : [b];
+
+    for (const s of seq) {
+      if (!triggered) {
+        const trig = direction === "bullish" ? s.low <= entry : s.high >= entry;
+        if (!trig) continue;
+        triggered = true;
+      }
+      const hitStop = direction === "bullish" ? s.low <= stop : s.high >= stop;
+      const hitTarget = direction === "bullish" ? s.high >= target : s.low <= target;
+      if (hitStop && hitTarget) return { outcome: "loss", resolvedIdx: i, triggered };
+      if (hitTarget) return { outcome: "win", resolvedIdx: i, triggered };
+      if (hitStop) return { outcome: "loss", resolvedIdx: i, triggered };
     }
-    if (hitStop && hitTarget) return { outcome: "loss", resolvedIdx: i, triggered };
-    if (hitTarget) return { outcome: "win", resolvedIdx: i, triggered };
-    if (hitStop) return { outcome: "loss", resolvedIdx: i, triggered };
   }
   return { outcome: "open", resolvedIdx: bars.length - 1, triggered };
 }
+
 
 export function analyzePullback50(
   bars: BarData[],
@@ -118,6 +124,7 @@ export function analyzePullback50(
   weekdays: number[] = [1, 2, 3, 4, 5],
   sessionEndMinutes: number = 13 * 60,
   sessionStartMinutes: number = IB_START,
+  intraBars?: BarData[],
 ): Pullback50Result {
   const byDate = new Map<string, BarData[]>();
   for (const bar of bars) {
@@ -125,6 +132,25 @@ export function analyzePullback50(
     if (!byDate.has(date)) byDate.set(date, []);
     byDate.get(date)!.push(bar);
   }
+
+  // Finer-grained (m1) bars, grouped by date, used only to decide whether SL or TP
+  // is touched first inside an m15 bar.
+  const intraByDate = new Map<string, CandleBar[]>();
+  if (intraBars?.length) {
+    for (const bar of intraBars) {
+      const [date, time] = bar.datetime.split(" ");
+      if (!intraByDate.has(date)) intraByDate.set(date, []);
+      intraByDate.get(date)!.push({
+        time: time.slice(0, 5),
+        open: parseFloat(bar.open),
+        high: parseFloat(bar.high),
+        low: parseFloat(bar.low),
+        close: parseFloat(bar.close),
+      });
+    }
+    for (const arr of intraByDate.values()) arr.sort((a, b) => a.time.localeCompare(b.time));
+  }
+
 
   let dates = Array.from(byDate.keys()).sort();
   if (maxDays > 0) dates = dates.slice(-maxDays);
@@ -168,8 +194,23 @@ export function analyzePullback50(
     const flags = flagsByDay[d];
     totalDays++;
 
+    const dayIntra = intraByDate.get(date) ?? null;
+    const intraOf = dayIntra
+      ? (idx: number) => {
+          const t = m15[idx].time.split(":").map(Number);
+          const from = t[0] * 60 + t[1];
+          const to = from + TF_MINUTES;
+          return dayIntra.filter((b) => {
+            const p = b.time.split(":").map(Number);
+            const m = p[0] * 60 + p[1];
+            return m >= from && m < to;
+          });
+        }
+      : undefined;
+
     let signalsToday = 0;
     let gateUntil = -1;
+
 
     for (let i = 0; i < m15.length - 1; i++) {
       if (i <= gateUntil) continue;
@@ -188,7 +229,7 @@ export function analyzePullback50(
       const stop = direction === "bullish" ? c.low : c.high;
       const target = direction === "bullish" ? c.high : c.low;
 
-      const r = resolvePullback(m15, flags, i, direction, entry, stop, target);
+      const r = resolvePullback(m15, flags, i, direction, entry, stop, target, intraOf);
 
 
       // Skip unresolved/untriggered trades — only count win/loss outcomes.

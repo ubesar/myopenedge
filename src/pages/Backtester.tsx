@@ -234,6 +234,9 @@ const Backtester = () => {
   const [csvBars, setCsvBars] = useState<CsvBar[] | null>(null);
   const [csvName, setCsvName] = useState("");
   const [csvOffset, setCsvOffset] = useState("0");
+  const [m1Bars, setM1Bars] = useState<CsvBar[] | null>(null);
+  const [m1Name, setM1Name] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BTResult | null>(null);
   const [chartTrade, setChartTrade] = useState<TradeForChart | null>(null);
@@ -253,6 +256,21 @@ const Backtester = () => {
       toast.error(e.message || "failed to parse csv");
     }
   };
+
+  const handleM1File = async (file: File) => {
+    try {
+      const text = await file.text();
+      const bars = parseCsvBars(text, parseFloat(csvOffset) || 0);
+      setM1Bars(bars);
+      setM1Name(file.name);
+      toast.success(`${bars.length} m1 bars loaded`);
+    } catch (e: any) {
+      setM1Bars(null);
+      setM1Name("");
+      toast.error(e.message || "failed to parse m1 csv");
+    }
+  };
+
 
   const runBacktest = async () => {
     if (!symbol.trim()) return;
@@ -278,7 +296,7 @@ const Backtester = () => {
       let totalDays = 0;
 
       if (strategy === "pb50") {
-        const r = analyzePullback50(values, days, [1, 2, 3, 4, 5], 13 * 60, parseInt(sessionStart));
+        const r = analyzePullback50(values, days, [1, 2, 3, 4, 5], 13 * 60, parseInt(sessionStart), dataSource === "csv" ? (m1Bars ?? undefined) : undefined);
         trades = toBTTradesPB50(r.trades);
         totalDays = r.totalDays;
       } else {
@@ -470,6 +488,23 @@ const Backtester = () => {
                   </p>
                 </div>
                 <div className="space-y-1.5">
+                  <Label className="text-xs lowercase">m1 csv (opsional — resolusi tp/sl)</Label>
+                  <Input
+                    type="file"
+                    accept=".csv,text/csv"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleM1File(f);
+                    }}
+                    className="text-xs file:text-xs file:mr-3 file:border-0 file:bg-secondary file:text-secondary-foreground file:rounded file:px-2 file:py-1"
+                  />
+                  <p className="text-[11px] text-muted-foreground lowercase">
+                    {m1Bars?.length
+                      ? `${m1Name} · ${m1Bars.length} bars · entry tetap m15, urutan tp/sl dari m1`
+                      : "tanpa m1: bila sl & tp kena di bar m15 yang sama dianggap loss"}
+                  </p>
+                </div>
+                <div className="space-y-1.5">
                   <Label className="text-xs lowercase">timezone shift (hours → ny)</Label>
                   <Select value={csvOffset} onValueChange={setCsvOffset}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -481,6 +516,7 @@ const Backtester = () => {
                   </Select>
                   <p className="text-[11px] text-muted-foreground lowercase">re-import the file after changing</p>
                 </div>
+
               </div>
             )}
 
