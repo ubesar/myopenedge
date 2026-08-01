@@ -16,6 +16,7 @@ import {
 import { analyzePullback50, type Pullback50Trade } from "@/lib/pullback50-analysis";
 import { analyzeIB2575, type IB2575Trade } from "@/lib/ib2575-analysis";
 import TradeChartDialog, { type TradeForChart } from "@/components/TradeChartDialog";
+import { parseCsvBars, type CsvBar } from "@/lib/csv-bars";
 
 type StrategyKey = "pb50" | "ib2575";
 
