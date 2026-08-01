@@ -72,6 +72,9 @@ export function parseCsvBars(text: string, hourOffset = 0): CsvBar[] {
       ohlc = rebuildOhlc(rest);
     }
     if (!ohlc) continue;
+    const [o, h, l, c] = ohlc;
+    // sanity check — drops truncated / malformed rows
+    if (h < l || o > h || o < l || c > h || c < l) continue;
 
     const datetime = hourOffset ? shiftDatetime(dt, hourOffset) : `${dt.replace("T", " ")}${dt.length === 16 ? ":00" : ""}`;
     out.push({
