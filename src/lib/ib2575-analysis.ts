@@ -1,6 +1,7 @@
 import { parse } from "date-fns";
 import type { CandleBar } from "./m15-aggregation";
 import type { TpStats, DirStats, TradeDirection, TradeOutcome } from "./momentum-analysis";
+import { computeMomentumFlagsByDay } from "./momentum-candle";
 
 interface BarData {
   datetime: string;
@@ -12,19 +13,20 @@ interface BarData {
 
 export interface IB2575Trade {
   date: string;
-  direction: TradeDirection;   // bullish = low-first (long @ IB75), bearish = high-first (short @ IB25)
-  firstFormed: "high" | "low"; // which extreme printed first during IB
+  direction: TradeDirection;   // bullish = IB low formed first, bearish = IB high formed first
+  firstFormed: "high" | "low";
   ibHigh: number;
   ibLow: number;
-  ib25: number;                // 25% level from IBL
-  ib50: number;                // midpoint (stop)
-  ib75: number;                // 75% level from IBL
-  entry: number;               // IB75 (bullish) or IB25 (bearish)
+  ib25: number;
+  ib50: number;
+  ib75: number;
+  entry: number;               // limit @ IB75 (long) or IB25 (short)
   stop: number;                // IB50
-  target: number;              // IBH (bullish) or IBL (bearish) — RR 1:1
-  entryTime: string | null;    // HH:MM when entry level first touched, null if never
-  triggered: boolean;          // whether entry level was touched between IB end and 16:00
-  outcome: TradeOutcome;       // win/loss/open
+  target: number;              // IBH (long) or IBL (short) — RR 1:1
+  confirmTime: string | null;  // HH:MM of the m5 momentum candle that confirmed the setup
+  entryTime: string | null;    // HH:MM when the limit order got filled
+  triggered: boolean;          // limit order filled
+  outcome: TradeOutcome;
 }
 
 export interface IB2575Result {
@@ -38,10 +40,15 @@ export interface IB2575Result {
 }
 
 const RTH_START = 9 * 60 + 30;
+const SCAN_END = 13 * 60;      // momentum confirmation scan stops at 13:00 NY
 const MARKET_CLOSE = 16 * 60;
 
 function parseDateTime(dt: string): Date { return parse(dt, "yyyy-MM-dd HH:mm:ss", new Date()); }
 function timeMin(dt: Date): number { return dt.getHours() * 60 + dt.getMinutes(); }
+function minOf(time: string): number {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
+}
 function emptyDir(): DirStats { return { total: 0, wins: 0, losses: 0, winRate: 0 }; }
 function emptyTp(): TpStats {
   return { total: 0, wins: 0, losses: 0, open: 0, winRate: 0, bullish: emptyDir(), bearish: emptyDir() };
@@ -55,12 +62,7 @@ function finalizeTp(s: TpStats) {
   s.bearish.winRate = rd > 0 ? (s.bearish.wins / rd) * 100 : 0;
 }
 
-/**
- * Walk m5 bars starting at index `startIdx` looking for the entry touch, then resolve SL/TP.
- * Bullish (buy @ IB25, SL IB50, TP IB high): triggers when bar.low <= entry.
- * Bearish (sell @ IB25, SL IB50, TP IB low): triggers when bar.high >= entry.
- * In the trigger bar and subsequent bars, if both SL and TP are hit in the same bar → conservative loss.
- */
+/** Walk m5 bars from startIdx: fill the limit order, then resolve SL/TP (same-bar both → loss). */
 function walk(
   m5: CandleBar[],
   startIdx: number,
@@ -73,9 +75,10 @@ function walk(
   let entryTime: string | null = null;
   for (let i = startIdx; i < m5.length; i++) {
     const b = m5[i];
+    if (minOf(b.time) >= MARKET_CLOSE) break;
     if (!triggered) {
-      // first touch of the entry level (either from above or below)
-      const hit = b.low <= entry && b.high >= entry;
+      // limit fill: price must trade back into the entry level
+      const hit = direction === "bullish" ? b.low <= entry : b.high >= entry;
       if (!hit) continue;
       triggered = true;
       entryTime = b.time;
@@ -86,9 +89,17 @@ function walk(
     if (hitTp) return { triggered, entryTime, outcome: "win" };
     if (hitStop) return { triggered, entryTime, outcome: "loss" };
   }
-  return { triggered, entryTime, outcome: triggered ? "open" : "open" };
+  return { triggered, entryTime, outcome: "open" };
 }
 
+/**
+ * IB momentum limit strategy.
+ * 1. Build the initial balance from the first `ibWindow` minutes of RTH (default 60min).
+ * 2. Detect which IB extreme printed first.
+ * 3. Low first  → wait for an m5 momentum (super body) candle closing ABOVE IB75, then buy limit @ IB75 (SL IB50, TP IBH).
+ *    High first → wait for an m5 momentum candle closing BELOW IB25, then sell limit @ IB25 (SL IB50, TP IBL).
+ * 4. Momentum scan window: IB end → 13:00 NY. Position managed until 16:00 NY.
+ */
 export function analyzeIB2575(
   bars: BarData[],
   ibWindow: number = 60,
@@ -110,20 +121,16 @@ export function analyzeIB2575(
 
   const IB_END = RTH_START + ibWindow;
 
-  const trades: IB2575Trade[] = [];
-  let totalDays = 0;
-  let daysWithSignal = 0;
-
+  // Build per-day m5 RTH series first so momentum flags carry the rolling average across days.
+  const daySeries: { date: string; m5: CandleBar[] }[] = [];
   for (const date of dates) {
     const dayBars = byDate.get(date)!;
     dayBars.sort((a, b) => parseDateTime(a.datetime).getTime() - parseDateTime(b.datetime).getTime());
-
     const sessionRaw = dayBars.filter((b) => {
       const m = timeMin(parseDateTime(b.datetime));
       return m >= RTH_START && m < MARKET_CLOSE;
     });
     if (sessionRaw.length === 0) continue;
-
     const m5: CandleBar[] = sessionRaw.map((b) => ({
       time: b.datetime.split(" ")[1].slice(0, 5),
       open: parseFloat(b.open),
@@ -131,15 +138,24 @@ export function analyzeIB2575(
       low: parseFloat(b.low),
       close: parseFloat(b.close),
     }));
-
     if (m5[0].time !== "09:30") continue;
+    daySeries.push({ date, m5 });
+  }
 
-    // IB bars: 09:30 up to (not including) IB_END
+  const flagsByDay = computeMomentumFlagsByDay(daySeries.map((d) => d.m5));
+
+  const trades: IB2575Trade[] = [];
+  let totalDays = 0;
+  let daysWithSignal = 0;
+
+  for (let d = 0; d < daySeries.length; d++) {
+    const { date, m5 } = daySeries[d];
+    const flags = flagsByDay[d];
+
     const ibBars: CandleBar[] = [];
     let firstPostIB = -1;
     for (let i = 0; i < m5.length; i++) {
-      const [h, mi] = m5[i].time.split(":").map(Number);
-      const t = h * 60 + mi;
+      const t = minOf(m5[i].time);
       if (t >= RTH_START && t < IB_END) ibBars.push(m5[i]);
       else if (t >= IB_END) { firstPostIB = i; break; }
     }
@@ -150,7 +166,6 @@ export function analyzeIB2575(
     const range = ibHigh - ibLow;
     if (range <= 0) continue;
 
-    // Determine which extreme printed first during IB
     let highBar = -1;
     let lowBar = -1;
     for (let i = 0; i < ibBars.length; i++) {
@@ -161,34 +176,37 @@ export function analyzeIB2575(
     if (highBar < lowBar) firstFormed = "high";
     else if (lowBar < highBar) firstFormed = "low";
     else {
-      // same bar formed both extremes → use candle directionality as tiebreaker
-      // bullish candle (close > open) likely printed low first then rallied to high → low first
       const b = ibBars[highBar];
       firstFormed = b.close >= b.open ? "low" : "high";
     }
 
     totalDays++;
 
-    let direction: TradeDirection;
-    let entry: number;
-    let target: number;
     const ib25 = ibLow + range * 0.25;
     const ib50 = ibLow + range * 0.5;
     const ib75 = ibLow + range * 0.75;
-    if (firstFormed === "low") {
-      // bullish continuation: pullback to IB75, TP IBH, SL IB50 (RR 1:1)
-      direction = "bullish";
-      entry = ib75;
-      target = ibHigh;
-    } else {
-      // bearish continuation: pullback to IB25, TP IBL, SL IB50 (RR 1:1)
-      direction = "bearish";
-      entry = ib25;
-      target = ibLow;
-    }
+
+    const direction: TradeDirection = firstFormed === "low" ? "bullish" : "bearish";
+    const entry = direction === "bullish" ? ib75 : ib25;
+    const target = direction === "bullish" ? ibHigh : ibLow;
     const stop = ib50;
 
-    const { triggered, entryTime, outcome } = walk(m5, firstPostIB, direction, entry, stop, target);
+    // Confirmation: m5 momentum candle closing beyond the entry level, before 13:00.
+    let confirmIdx = -1;
+    for (let i = firstPostIB; i < m5.length; i++) {
+      const t = minOf(m5[i].time);
+      if (t >= SCAN_END) break;
+      const f = flags[i];
+      if (!f?.isSuper || !f.direction) continue;
+      if (f.direction !== direction) continue;
+      const closedBeyond = direction === "bullish" ? m5[i].close > ib75 : m5[i].close < ib25;
+      if (!closedBeyond) continue;
+      confirmIdx = i;
+      break;
+    }
+    if (confirmIdx === -1) continue;
+
+    const { triggered, entryTime, outcome } = walk(m5, confirmIdx + 1, direction, entry, stop, target);
 
     trades.push({
       date,
@@ -197,6 +215,7 @@ export function analyzeIB2575(
       ibHigh, ibLow,
       ib25, ib50, ib75,
       entry, stop, target,
+      confirmTime: m5[confirmIdx].time,
       entryTime,
       triggered,
       outcome,
