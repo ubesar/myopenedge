@@ -320,7 +320,7 @@ const Index = () => {
   const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullback50Result || ib2575Result || mcm152amResult;
 
   const reportTitle = hasResults
-    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "pullback50" ? "50% pullback strategy report" : activeMode === "ib2575" ? "IB 25 pullback report" : activeMode === "mcm15-2am" ? "m15 momentum @ 04:00 ny report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
+    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "pullback50" ? "50% pullback strategy report" : activeMode === "ib2575" ? "IB momentum limit report" : activeMode === "mcm15-2am" ? "m15 momentum @ 04:00 ny report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
     : "";
 
   const renderCharts = () => {
@@ -650,15 +650,15 @@ const Index = () => {
 
     if (activeMode === "ib2575" && ib2575Result) {
       const s = ib2575Result.stats;
-      const subtitle = `${symbol} · IB ${ib2575Result.ibWindowMinutes}min · IB25 pullback · ${formatDateRange(analysisMaxDays)}`;
+      const subtitle = `${symbol} · IB ${ib2575Result.ibWindowMinutes}min · momentum limit · ${formatDateRange(analysisMaxDays)}`;
       const signalPct = ib2575Result.totalDays > 0 ? (ib2575Result.daysWithSignal / ib2575Result.totalDays) * 100 : 0;
       return (
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
-            <strong className="text-foreground">IB 25 pullback</strong> — after the {ib2575Result.ibWindowMinutes}min IB completes, detect which extreme printed first.
-            IB low first → <span className="text-emerald-500 font-medium">long @ IB75</span>, SL IB50, TP IB high (RR 1:1).
-            IB high first → <span className="text-rose-500 font-medium">short @ IB25</span>, SL IB50, TP IB low (RR 1:1).
-            entry triggers on first touch of the entry level, valid until 16:00 ny close.
+            <strong className="text-foreground">IB momentum limit</strong> — after the {ib2575Result.ibWindowMinutes}min IB completes, detect which extreme printed first.
+            IB low first → wait for an m5 momentum candle closing above IB75, then <span className="text-emerald-500 font-medium">buy limit @ IB75</span>, SL IB50, TP IB high (RR 1:1).
+            IB high first → wait for an m5 momentum candle closing below IB25, then <span className="text-rose-500 font-medium">sell limit @ IB25</span>, SL IB50, TP IB low (RR 1:1).
+            momentum scan until 13:00 ny, position managed until 16:00 ny close.
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -680,7 +680,7 @@ const Index = () => {
             </div>
           </div>
 
-          <MomentumResultCard title="ib 25 pullback · touch entry" subtitle={subtitle} stats={s} />
+          <MomentumResultCard title="ib momentum limit" subtitle={subtitle} stats={s} />
 
 
           {ib2575Result.trades.length > 0 && (
@@ -701,6 +701,7 @@ const Index = () => {
                       <th className="px-3 py-2 font-medium text-right">ib50</th>
                       <th className="px-3 py-2 font-medium text-right">ib75</th>
                       <th className="px-3 py-2 font-medium text-right">ib high</th>
+                      <th className="px-3 py-2 font-medium text-right">confirm</th>
                       <th className="px-3 py-2 font-medium text-right">entry time</th>
                       <th className="px-3 py-2 font-medium text-right">entry</th>
                       <th className="px-3 py-2 font-medium text-right">sl</th>
@@ -723,6 +724,7 @@ const Index = () => {
                           <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.ib50.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.ib75.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/60 tabular-nums">{t.ibHigh.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/60 tabular-nums">{t.confirmTime ?? "—"}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.entryTime ?? "—"}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/90 tabular-nums font-medium">{t.entry.toFixed(2)}</td>
                           <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.stop.toFixed(2)}</td>
@@ -743,7 +745,7 @@ const Index = () => {
             mode="momentum"
             symbol={symbol}
             analysisData={{
-              method: `IB 25 pullback (IB ${ib2575Result.ibWindowMinutes}min)`,
+              method: `IB momentum limit (IB ${ib2575Result.ibWindowMinutes}min)`,
               totalDays: ib2575Result.totalDays,
               daysWithSignal: ib2575Result.daysWithSignal,
               triggeredTrades: ib2575Result.triggeredTrades,

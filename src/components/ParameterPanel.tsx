@@ -173,7 +173,7 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="london-ib">IB: london session</SelectItem>}
               {!isFree && <SelectItem value="momentum">momentum candle continuation (mcc)</SelectItem>}
               {!isFree && <SelectItem value="pullback50">50% pullback strategy</SelectItem>}
-              {!isFree && <SelectItem value="ib2575">IB 25 pullback</SelectItem>}
+              {!isFree && <SelectItem value="ib2575">IB momentum limit (IB25/75)</SelectItem>}
               {!isFree && <SelectItem value="mcm15-2am">m15 momentum @ 04:00 ny</SelectItem>}
               <SelectItem value="occ">opening candle continuation</SelectItem>
               {!isFree && <SelectItem value="gapfill">gap fill statistics</SelectItem>}
@@ -219,7 +219,7 @@ const ParameterPanel = ({
           )}
 
           {mode === "ib2575" && (
-            <p className="text-[10px] text-muted-foreground">after the IB window, detects which extreme (high/low) printed first. low first → buy @ IB25 (25% up from low), SL IB50, TP IB high. high first → sell @ IB25 (25% down from high), SL IB50, TP IB low. entry on first touch of IB25, valid until 16:00 ny.</p>
+            <p className="text-[10px] text-muted-foreground">after the IB window, detects which extreme printed first. low first → wait for an m5 momentum candle closing above IB75, then buy limit @ IB75, SL IB50, TP IB high. high first → wait for an m5 momentum candle closing below IB25, then sell limit @ IB25, SL IB50, TP IB low. momentum scan until 13:00 ny, managed until 16:00 ny.</p>
           )}
 
           {mode === "mcm15-2am" && (

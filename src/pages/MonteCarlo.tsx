@@ -319,7 +319,7 @@ const MonteCarlo = () => {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pb50">50% pullback</SelectItem>
-                    <SelectItem value="ib2575">ib 25 pullback</SelectItem>
+                    <SelectItem value="ib2575">ib momentum limit (ib25/75)</SelectItem>
                     <SelectItem value="ibbreakout">ib breakout</SelectItem>
                   </SelectContent>
                 </Select>
