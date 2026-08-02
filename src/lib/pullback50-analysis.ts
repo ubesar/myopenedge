@@ -163,7 +163,7 @@ export function analyzePullback50(
   let daysWithSignal = 0;
   let totalDays = 0;
 
-  const daySeries: { date: string; m15: CandleBar[] }[] = [];
+  const daySeries: { date: string; m15: CandleBar[]; m5: CandleBar[] }[] = [];
   for (const date of dates) {
     const dayBars = byDate.get(date)!;
     dayBars.sort((a, b) => parseDateTime(a.datetime).getTime() - parseDateTime(b.datetime).getTime());
@@ -184,29 +184,29 @@ export function analyzePullback50(
 
     const m15 = aggregateBars(m5, TF_MINUTES);
     if (m15.length < 2) continue;
-    daySeries.push({ date, m15 });
+    daySeries.push({ date, m15, m5 });
   }
 
   const flagsByDay = computeMomentumFlagsByDay(daySeries.map((d) => d.m15));
 
   for (let d = 0; d < daySeries.length; d++) {
-    const { date, m15 } = daySeries[d];
+    const { date, m15, m5 } = daySeries[d];
     const flags = flagsByDay[d];
     totalDays++;
 
-    const dayIntra = intraByDate.get(date) ?? null;
-    const intraOf = dayIntra
-      ? (idx: number) => {
-          const t = m15[idx].time.split(":").map(Number);
-          const from = t[0] * 60 + t[1];
-          const to = from + TF_MINUTES;
-          return dayIntra.filter((b) => {
-            const p = b.time.split(":").map(Number);
-            const m = p[0] * 60 + p[1];
-            return m >= from && m < to;
-          });
-        }
-      : undefined;
+    // Signals are scanned on m15, but entry/TP/SL resolution walks the finer
+    // series: m1 when supplied, otherwise the native m5 bars.
+    const dayIntra = intraByDate.get(date) ?? m5;
+    const intraOf = (idx: number) => {
+      const t = m15[idx].time.split(":").map(Number);
+      const from = t[0] * 60 + t[1];
+      const to = from + TF_MINUTES;
+      return dayIntra.filter((b) => {
+        const p = b.time.split(":").map(Number);
+        const m = p[0] * 60 + p[1];
+        return m >= from && m < to;
+      });
+    };
 
     let signalsToday = 0;
     let gateUntil = -1;
