@@ -701,6 +701,7 @@ const Index = () => {
                       <th className="px-3 py-2 font-medium text-right">ib50</th>
                       <th className="px-3 py-2 font-medium text-right">ib75</th>
                       <th className="px-3 py-2 font-medium text-right">ib high</th>
+                      <th className="px-3 py-2 font-medium text-right">confirm</th>
                       <th className="px-3 py-2 font-medium text-right">entry time</th>
                       <th className="px-3 py-2 font-medium text-right">entry</th>
                       <th className="px-3 py-2 font-medium text-right">sl</th>
