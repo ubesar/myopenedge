@@ -190,23 +190,23 @@ export function analyzePullback50(
   const flagsByDay = computeMomentumFlagsByDay(daySeries.map((d) => d.m15));
 
   for (let d = 0; d < daySeries.length; d++) {
-    const { date, m15 } = daySeries[d];
+    const { date, m15, m5 } = daySeries[d];
     const flags = flagsByDay[d];
     totalDays++;
 
-    const dayIntra = intraByDate.get(date) ?? null;
-    const intraOf = dayIntra
-      ? (idx: number) => {
-          const t = m15[idx].time.split(":").map(Number);
-          const from = t[0] * 60 + t[1];
-          const to = from + TF_MINUTES;
-          return dayIntra.filter((b) => {
-            const p = b.time.split(":").map(Number);
-            const m = p[0] * 60 + p[1];
-            return m >= from && m < to;
-          });
-        }
-      : undefined;
+    // Signals are scanned on m15, but entry/TP/SL resolution walks the finer
+    // series: m1 when supplied, otherwise the native m5 bars.
+    const dayIntra = intraByDate.get(date) ?? m5;
+    const intraOf = (idx: number) => {
+      const t = m15[idx].time.split(":").map(Number);
+      const from = t[0] * 60 + t[1];
+      const to = from + TF_MINUTES;
+      return dayIntra.filter((b) => {
+        const p = b.time.split(":").map(Number);
+        const m = p[0] * 60 + p[1];
+        return m >= from && m < to;
+      });
+    };
 
     let signalsToday = 0;
     let gateUntil = -1;
