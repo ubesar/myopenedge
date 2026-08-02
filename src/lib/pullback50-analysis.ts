@@ -163,7 +163,7 @@ export function analyzePullback50(
   let daysWithSignal = 0;
   let totalDays = 0;
 
-  const daySeries: { date: string; m15: CandleBar[] }[] = [];
+  const daySeries: { date: string; m15: CandleBar[]; m5: CandleBar[] }[] = [];
   for (const date of dates) {
     const dayBars = byDate.get(date)!;
     dayBars.sort((a, b) => parseDateTime(a.datetime).getTime() - parseDateTime(b.datetime).getTime());
