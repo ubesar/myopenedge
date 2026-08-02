@@ -680,7 +680,7 @@ const Index = () => {
             </div>
           </div>
 
-          <MomentumResultCard title="ib 25 pullback · touch entry" subtitle={subtitle} stats={s} />
+          <MomentumResultCard title="ib momentum limit" subtitle={subtitle} stats={s} />
 
 
           {ib2575Result.trades.length > 0 && (
