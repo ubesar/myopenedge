@@ -184,7 +184,7 @@ export function analyzePullback50(
 
     const m15 = aggregateBars(m5, TF_MINUTES);
     if (m15.length < 2) continue;
-    daySeries.push({ date, m15 });
+    daySeries.push({ date, m15, m5 });
   }
 
   const flagsByDay = computeMomentumFlagsByDay(daySeries.map((d) => d.m15));
