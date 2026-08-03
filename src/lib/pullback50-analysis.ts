@@ -44,6 +44,18 @@ function parseDateTime(dt: string): Date {
 function getTimeMinutes(dt: Date): number {
   return dt.getHours() * 60 + dt.getMinutes();
 }
+function pad2(n: number): string { return String(n).padStart(2, "0"); }
+function fmtDate(d: Date): string {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+/** Minutes → "HH:MM"; minutes past midnight keep counting (24:15, 25:00, …). */
+export function minutesToLabel(min: number): string {
+  return `${pad2(Math.floor(min / 60))}:${pad2(min % 60)}`;
+}
+export function labelToMinutes(label: string): number {
+  const [h, m] = label.split(":").map(Number);
+  return h * 60 + m;
+}
 function emptyDir(): DirStats { return { total: 0, wins: 0, losses: 0, winRate: 0 }; }
 function emptyTp(): TpStats {
   return { total: 0, wins: 0, losses: 0, open: 0, winRate: 0, bullish: emptyDir(), bearish: emptyDir() };
