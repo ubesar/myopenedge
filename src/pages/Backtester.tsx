@@ -230,12 +230,24 @@ const Backtester = () => {
   const [maxDays, setMaxDays] = useState("120");
   const [ibWindow, setIbWindow] = useState("60");
   const [sessionStart, setSessionStart] = useState("570"); // 09:30 ny open
+  const [csvScanStart, setCsvScanStart] = useState("06:00");
+  const [csvScanEnd, setCsvScanEnd] = useState("24:00");
+  const [csvTpDeadline, setCsvTpDeadline] = useState("04:00");
   const [dataSource, setDataSource] = useState<"api" | "csv">("api");
   const [csvBars, setCsvBars] = useState<CsvBar[] | null>(null);
   const [csvName, setCsvName] = useState("");
   const [csvOffset, setCsvOffset] = useState("0");
   const [m1Bars, setM1Bars] = useState<CsvBar[] | null>(null);
   const [m1Name, setM1Name] = useState("");
+
+  const toMin = (v: string) => {
+    const [h, m] = v.split(":").map(Number);
+    return (h || 0) * 60 + (m || 0);
+  };
+  const csvScanStartMin = Math.min(Math.max(toMin(csvScanStart), 6 * 60), 24 * 60);
+  const csvScanEndMin = Math.min(Math.max(toMin(csvScanEnd), csvScanStartMin + 15), 24 * 60);
+  const csvCloseMin = 24 * 60 + toMin(csvTpDeadline);
+
 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BTResult | null>(null);
