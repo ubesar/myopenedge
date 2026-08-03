@@ -308,9 +308,19 @@ const Backtester = () => {
       let totalDays = 0;
 
       if (strategy === "pb50") {
-        const r = analyzePullback50(values, days, [1, 2, 3, 4, 5], 13 * 60, parseInt(sessionStart), dataSource === "csv" ? (m1Bars ?? undefined) : undefined);
+        const isCsv = dataSource === "csv";
+        const r = analyzePullback50(
+          values,
+          days,
+          [1, 2, 3, 4, 5],
+          isCsv ? csvScanEndMin : 13 * 60,
+          isCsv ? csvScanStartMin : parseInt(sessionStart),
+          isCsv ? (m1Bars ?? undefined) : undefined,
+          isCsv ? csvCloseMin : undefined,
+        );
         trades = toBTTradesPB50(r.trades);
         totalDays = r.totalDays;
+
       } else {
         const r = analyzeIB2575(values, parseInt(ibWindow), days, [1, 2, 3, 4, 5]);
         trades = toBTTradesIB2575(r.trades);
