@@ -765,7 +765,10 @@ const Backtester = () => {
         trade={chartTrade}
         bars={result?.bars ?? []}
         symbol={result?.symbol ?? ""}
+        sessionStartMin={dataSource === "csv" ? csvScanStartMin : undefined}
+        sessionEndMin={dataSource === "csv" ? csvCloseMin : undefined}
       />
+
     </div>
   );
 };
