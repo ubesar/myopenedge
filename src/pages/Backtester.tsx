@@ -315,7 +315,7 @@ const Backtester = () => {
           [1, 2, 3, 4, 5],
           isCsv ? csvScanEndMin : 13 * 60,
           isCsv ? csvScanStartMin : parseInt(sessionStart),
-          isCsv ? (m1Bars ?? undefined) : undefined,
+          undefined, // csv sudah m5 → resolusi entry/tp/sl memakai m5 native
           isCsv ? csvCloseMin : undefined,
         );
         trades = toBTTradesPB50(r.trades);
