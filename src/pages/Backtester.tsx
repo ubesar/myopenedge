@@ -525,9 +525,9 @@ const Backtester = () => {
             </div>
 
             {dataSource === "csv" && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 border-t border-border pt-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 border-t border-border pt-3">
                 <div className="space-y-1.5 md:col-span-2">
-                  <Label className="text-xs lowercase">ohlc csv file</Label>
+                  <Label className="text-xs lowercase">ohlc csv file (timeframe m5)</Label>
                   <Input
                     type="file"
                     accept=".csv,text/csv"
@@ -539,27 +539,11 @@ const Backtester = () => {
                   />
                   <p className="text-[11px] text-muted-foreground lowercase">
                     {csvBars?.length
-                      ? `${csvName} · ${csvBars.length} bars · ${csvBars[0].datetime.slice(0, 10)} → ${csvBars[csvBars.length - 1].datetime.slice(0, 10)}`
-                      : "format: time,open,high,low,close,volume (ninjatrader export supported)"}
+                      ? `${csvName} · ${csvBars.length} bars m5 · ${csvBars[0].datetime.slice(0, 10)} → ${csvBars[csvBars.length - 1].datetime.slice(0, 10)}`
+                      : "format: time,open,high,low,close,volume (ninjatrader export) · scan momentum m15 (agregasi), entry/tp/sl m5"}
                   </p>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs lowercase">m1 csv (opsional — resolusi tp/sl)</Label>
-                  <Input
-                    type="file"
-                    accept=".csv,text/csv"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) handleM1File(f);
-                    }}
-                    className="text-xs file:text-xs file:mr-3 file:border-0 file:bg-secondary file:text-secondary-foreground file:rounded file:px-2 file:py-1"
-                  />
-                  <p className="text-[11px] text-muted-foreground lowercase">
-                    {m1Bars?.length
-                      ? `${m1Name} · ${m1Bars.length} bars · entry tetap m15, urutan tp/sl dari m1`
-                      : "tanpa m1: bila sl & tp kena di bar m15 yang sama dianggap loss"}
-                  </p>
-                </div>
+
                 <div className="space-y-1.5">
                   <Label className="text-xs lowercase">timezone data csv</Label>
                   <Select value={csvOffset} onValueChange={setCsvOffset}>
