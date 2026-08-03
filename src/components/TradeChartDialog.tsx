@@ -82,10 +82,12 @@ export default function TradeChartDialog({
       close: parseFloat(x.bar.close),
     }));
 
+  const m15 = aggregateBars(m5, 15);
 
-  // scales
-  const W = 780;
+  // scales — widen the canvas so a full session stays readable
+  const W = Math.max(780, m15.length * 11 + 110);
   const H = 380;
+
   const PL = 50, PR = 60, PT = 20, PB = 30;
   const cw = W - PL - PR;
   const ch = H - PT - PB;
