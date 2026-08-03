@@ -561,17 +561,21 @@ const Backtester = () => {
                   </p>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs lowercase">timezone shift (hours → ny)</Label>
+                  <Label className="text-xs lowercase">timezone data csv</Label>
                   <Select value={csvOffset} onValueChange={setCsvOffset}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {[-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6].map((h) => (
-                        <SelectItem key={h} value={String(h)}>{h > 0 ? `+${h}` : h}</SelectItem>
+                      <SelectItem value="0">wita (waktu asli — tanpa shift)</SelectItem>
+                      {[-13, -12, -11, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6].map((h) => (
+                        <SelectItem key={h} value={String(h)}>shift {h > 0 ? `+${h}` : h} jam</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-[11px] text-muted-foreground lowercase">re-import the file after changing</p>
+                  <p className="text-[11px] text-muted-foreground lowercase">
+                    jam pada csv dianggap wita · re-import file setelah mengubah
+                  </p>
                 </div>
+
 
               </div>
             )}
