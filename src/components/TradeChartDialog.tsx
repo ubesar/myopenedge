@@ -25,40 +25,69 @@ interface Props {
   trade: TradeForChart | null;
   bars: RawBar[];
   symbol: string;
+  /** session window in minutes from midnight; end may exceed 1440 (next-day wrap) */
+  sessionStartMin?: number;
+  sessionEndMin?: number;
 }
 
-const SESSION_START = 9 * 60 + 30;
-const SESSION_END = 16 * 60;
+const DEFAULT_START = 9 * 60 + 30;
+const DEFAULT_END = 16 * 60;
 
 function toMinutes(hhmm: string) {
   const [h, m] = hhmm.split(":").map(Number);
   return h * 60 + m;
 }
 
-export default function TradeChartDialog({ open, onOpenChange, trade, bars, symbol }: Props) {
+function pad2(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+function nextDay(date: string) {
+  const d = new Date(date + "T12:00:00");
+  d.setDate(d.getDate() + 1);
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+export default function TradeChartDialog({
+  open,
+  onOpenChange,
+  trade,
+  bars,
+  symbol,
+  sessionStartMin = DEFAULT_START,
+  sessionEndMin = DEFAULT_END,
+}: Props) {
   if (!trade) return null;
 
-  // filter bars for this trade's date, session 09:30 - 16:00
-  const dayBars = bars.filter((b) => b.datetime.startsWith(trade.date));
-  const m5: CandleBar[] = dayBars
-    .map((b) => ({
-      time: b.datetime.split(" ")[1].slice(0, 5),
-      open: parseFloat(b.open),
-      high: parseFloat(b.high),
-      low: parseFloat(b.low),
-      close: parseFloat(b.close),
-    }))
-    .filter((b) => {
-      const t = toMinutes(b.time);
-      return t >= SESSION_START && t < SESSION_END;
+  const wrapCutoff = sessionEndMin > 24 * 60 ? sessionEndMin - 24 * 60 : 0;
+  const tomorrow = wrapCutoff > 0 ? nextDay(trade.date) : null;
+
+  // bars belonging to this trade's session (may cross midnight into the next date)
+  const m5: CandleBar[] = bars
+    .map((b) => {
+      const [date, time] = b.datetime.split(" ");
+      const raw = toMinutes(time.slice(0, 5));
+      if (date === trade.date) return { date, min: raw, bar: b };
+      if (tomorrow && date === tomorrow && raw < wrapCutoff) return { date, min: raw + 24 * 60, bar: b };
+      return null;
     })
-    .sort((a, b) => toMinutes(a.time) - toMinutes(b.time));
+    .filter((x): x is { date: string; min: number; bar: RawBar } => !!x)
+    .filter((x) => x.min >= sessionStartMin && x.min < sessionEndMin)
+    .sort((a, b) => a.min - b.min)
+    .map((x) => ({
+      time: `${pad2(Math.floor(x.min / 60))}:${pad2(x.min % 60)}`,
+      open: parseFloat(x.bar.open),
+      high: parseFloat(x.bar.high),
+      low: parseFloat(x.bar.low),
+      close: parseFloat(x.bar.close),
+    }));
 
   const m15 = aggregateBars(m5, 15);
 
-  // scales
-  const W = 780;
+  // scales — widen the canvas so a full session stays readable
+  const W = Math.max(780, m15.length * 11 + 110);
   const H = 380;
+
   const PL = 50, PR = 60, PT = 20, PB = 30;
   const cw = W - PL - PR;
   const ch = H - PT - PB;

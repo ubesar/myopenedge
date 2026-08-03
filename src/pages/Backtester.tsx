@@ -230,12 +230,24 @@ const Backtester = () => {
   const [maxDays, setMaxDays] = useState("120");
   const [ibWindow, setIbWindow] = useState("60");
   const [sessionStart, setSessionStart] = useState("570"); // 09:30 ny open
+  const [csvScanStart, setCsvScanStart] = useState("06:00");
+  const [csvScanEnd, setCsvScanEnd] = useState("24:00");
+  const [csvTpDeadline, setCsvTpDeadline] = useState("04:00");
   const [dataSource, setDataSource] = useState<"api" | "csv">("api");
   const [csvBars, setCsvBars] = useState<CsvBar[] | null>(null);
   const [csvName, setCsvName] = useState("");
   const [csvOffset, setCsvOffset] = useState("0");
   const [m1Bars, setM1Bars] = useState<CsvBar[] | null>(null);
   const [m1Name, setM1Name] = useState("");
+
+  const toMin = (v: string) => {
+    const [h, m] = v.split(":").map(Number);
+    return (h || 0) * 60 + (m || 0);
+  };
+  const csvScanStartMin = Math.min(Math.max(toMin(csvScanStart), 6 * 60), 24 * 60);
+  const csvScanEndMin = Math.min(Math.max(toMin(csvScanEnd), csvScanStartMin + 15), 24 * 60);
+  const csvCloseMin = 24 * 60 + toMin(csvTpDeadline);
+
 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BTResult | null>(null);
@@ -296,9 +308,19 @@ const Backtester = () => {
       let totalDays = 0;
 
       if (strategy === "pb50") {
-        const r = analyzePullback50(values, days, [1, 2, 3, 4, 5], 13 * 60, parseInt(sessionStart), dataSource === "csv" ? (m1Bars ?? undefined) : undefined);
+        const isCsv = dataSource === "csv";
+        const r = analyzePullback50(
+          values,
+          days,
+          [1, 2, 3, 4, 5],
+          isCsv ? csvScanEndMin : 13 * 60,
+          isCsv ? csvScanStartMin : parseInt(sessionStart),
+          isCsv ? (m1Bars ?? undefined) : undefined,
+          isCsv ? csvCloseMin : undefined,
+        );
         trades = toBTTradesPB50(r.trades);
         totalDays = r.totalDays;
+
       } else {
         const r = analyzeIB2575(values, parseInt(ibWindow), days, [1, 2, 3, 4, 5]);
         trades = toBTTradesIB2575(r.trades);
@@ -454,6 +476,39 @@ const Backtester = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              ) : dataSource === "csv" ? (
+                <>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">scan start (06:00 – 24:00)</Label>
+                    <Input
+                      type="time"
+                      step={900}
+                      min="06:00"
+                      max="24:00"
+                      value={csvScanStart}
+                      onChange={(e) => setCsvScanStart(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">scan end (max 24:00)</Label>
+                    <Input
+                      type="time"
+                      step={900}
+                      value={csvScanEnd === "24:00" ? "23:59" : csvScanEnd}
+                      onChange={(e) => setCsvScanEnd(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">batas tp/sl (pagi berikutnya)</Label>
+                    <Input
+                      type="time"
+                      step={900}
+                      value={csvTpDeadline}
+                      onChange={(e) => setCsvTpDeadline(e.target.value)}
+                    />
+                    <p className="text-[11px] text-muted-foreground lowercase">posisi ditutup di {csvTpDeadline} hari berikutnya</p>
+                  </div>
+                </>
               ) : (
                 <div className="space-y-1.5">
                   <Label className="text-xs lowercase">scan session start (ny)</Label>
@@ -466,6 +521,7 @@ const Backtester = () => {
                   </Select>
                 </div>
               )}
+
             </div>
 
             {dataSource === "csv" && (
@@ -505,17 +561,21 @@ const Backtester = () => {
                   </p>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs lowercase">timezone shift (hours → ny)</Label>
+                  <Label className="text-xs lowercase">timezone data csv</Label>
                   <Select value={csvOffset} onValueChange={setCsvOffset}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {[-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6].map((h) => (
-                        <SelectItem key={h} value={String(h)}>{h > 0 ? `+${h}` : h}</SelectItem>
+                      <SelectItem value="0">wita (waktu asli — tanpa shift)</SelectItem>
+                      {[-13, -12, -11, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6].map((h) => (
+                        <SelectItem key={h} value={String(h)}>shift {h > 0 ? `+${h}` : h} jam</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-[11px] text-muted-foreground lowercase">re-import the file after changing</p>
+                  <p className="text-[11px] text-muted-foreground lowercase">
+                    jam pada csv dianggap wita · re-import file setelah mengubah
+                  </p>
                 </div>
+
 
               </div>
             )}
@@ -705,7 +765,10 @@ const Backtester = () => {
         trade={chartTrade}
         bars={result?.bars ?? []}
         symbol={result?.symbol ?? ""}
+        sessionStartMin={dataSource === "csv" ? 6 * 60 : undefined}
+        sessionEndMin={dataSource === "csv" ? csvCloseMin : undefined}
       />
+
     </div>
   );
 };

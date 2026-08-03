@@ -44,6 +44,18 @@ function parseDateTime(dt: string): Date {
 function getTimeMinutes(dt: Date): number {
   return dt.getHours() * 60 + dt.getMinutes();
 }
+function pad2(n: number): string { return String(n).padStart(2, "0"); }
+function fmtDate(d: Date): string {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+/** Minutes → "HH:MM"; minutes past midnight keep counting (24:15, 25:00, …). */
+export function minutesToLabel(min: number): string {
+  return `${pad2(Math.floor(min / 60))}:${pad2(min % 60)}`;
+}
+export function labelToMinutes(label: string): number {
+  const [h, m] = label.split(":").map(Number);
+  return h * 60 + m;
+}
 function emptyDir(): DirStats { return { total: 0, wins: 0, losses: 0, winRate: 0 }; }
 function emptyTp(): TpStats {
   return { total: 0, wins: 0, losses: 0, open: 0, winRate: 0, bullish: emptyDir(), bearish: emptyDir() };
@@ -125,30 +137,49 @@ export function analyzePullback50(
   sessionEndMinutes: number = 13 * 60,
   sessionStartMinutes: number = IB_START,
   intraBars?: BarData[],
+  sessionCloseMinutes: number = MARKET_CLOSE,
 ): Pullback50Result {
-  const byDate = new Map<string, BarData[]>();
+  // Sessions may run past midnight (e.g. 06:00 → 04:00 next day). Bars printed
+  // before the wrap cutoff belong to the previous calendar day's session and are
+  // labelled with minutes >= 1440 so ordering stays chronological.
+  const wrapCutoff = sessionCloseMinutes > 24 * 60 ? sessionCloseMinutes - 24 * 60 : 0;
+
+  const sessionKey = (bar: BarData): { date: string; min: number } | null => {
+    const dt = parseDateTime(bar.datetime);
+    const m = getTimeMinutes(dt);
+    if (wrapCutoff > 0 && m < wrapCutoff) {
+      const prev = new Date(dt.getTime());
+      prev.setDate(prev.getDate() - 1);
+      return { date: fmtDate(prev), min: m + 24 * 60 };
+    }
+    return { date: bar.datetime.split(" ")[0], min: m };
+  };
+
+  const byDate = new Map<string, { min: number; bar: BarData }[]>();
   for (const bar of bars) {
-    const date = bar.datetime.split(" ")[0];
-    if (!byDate.has(date)) byDate.set(date, []);
-    byDate.get(date)!.push(bar);
+    const k = sessionKey(bar);
+    if (!k) continue;
+    if (!byDate.has(k.date)) byDate.set(k.date, []);
+    byDate.get(k.date)!.push({ min: k.min, bar });
   }
 
-  // Finer-grained (m1) bars, grouped by date, used only to decide whether SL or TP
-  // is touched first inside an m15 bar.
+  // Finer-grained (m1) bars, grouped by session day, used only to decide whether
+  // SL or TP is touched first inside an m15 bar.
   const intraByDate = new Map<string, CandleBar[]>();
   if (intraBars?.length) {
     for (const bar of intraBars) {
-      const [date, time] = bar.datetime.split(" ");
-      if (!intraByDate.has(date)) intraByDate.set(date, []);
-      intraByDate.get(date)!.push({
-        time: time.slice(0, 5),
+      const k = sessionKey(bar);
+      if (!k) continue;
+      if (!intraByDate.has(k.date)) intraByDate.set(k.date, []);
+      intraByDate.get(k.date)!.push({
+        time: minutesToLabel(k.min),
         open: parseFloat(bar.open),
         high: parseFloat(bar.high),
         low: parseFloat(bar.low),
         close: parseFloat(bar.close),
       });
     }
-    for (const arr of intraByDate.values()) arr.sort((a, b) => a.time.localeCompare(b.time));
+    for (const arr of intraByDate.values()) arr.sort((a, b) => labelToMinutes(a.time) - labelToMinutes(b.time));
   }
 
 
@@ -165,27 +196,24 @@ export function analyzePullback50(
 
   const daySeries: { date: string; m15: CandleBar[]; m5: CandleBar[] }[] = [];
   for (const date of dates) {
-    const dayBars = byDate.get(date)!;
-    dayBars.sort((a, b) => parseDateTime(a.datetime).getTime() - parseDateTime(b.datetime).getTime());
+    const dayBars = byDate.get(date)!.slice().sort((a, b) => a.min - b.min);
 
-    const sessionRaw = dayBars.filter((b) => {
-      const m = getTimeMinutes(parseDateTime(b.datetime));
-      return m >= sessionStartMinutes && m < MARKET_CLOSE;
-    });
+    const sessionRaw = dayBars.filter((b) => b.min >= sessionStartMinutes && b.min < sessionCloseMinutes);
     if (sessionRaw.length === 0) continue;
 
     const m5: CandleBar[] = sessionRaw.map((b) => ({
-      time: b.datetime.split(" ")[1].slice(0, 5),
-      open: parseFloat(b.open),
-      high: parseFloat(b.high),
-      low: parseFloat(b.low),
-      close: parseFloat(b.close),
+      time: minutesToLabel(b.min),
+      open: parseFloat(b.bar.open),
+      high: parseFloat(b.bar.high),
+      low: parseFloat(b.bar.low),
+      close: parseFloat(b.bar.close),
     }));
 
     const m15 = aggregateBars(m5, TF_MINUTES);
     if (m15.length < 2) continue;
     daySeries.push({ date, m15, m5 });
   }
+
 
   const flagsByDay = computeMomentumFlagsByDay(daySeries.map((d) => d.m15));
 
