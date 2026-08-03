@@ -476,6 +476,39 @@ const Backtester = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              ) : dataSource === "csv" ? (
+                <>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">scan start (06:00 – 24:00)</Label>
+                    <Input
+                      type="time"
+                      step={900}
+                      min="06:00"
+                      max="24:00"
+                      value={csvScanStart}
+                      onChange={(e) => setCsvScanStart(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">scan end (max 24:00)</Label>
+                    <Input
+                      type="time"
+                      step={900}
+                      value={csvScanEnd === "24:00" ? "23:59" : csvScanEnd}
+                      onChange={(e) => setCsvScanEnd(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">batas tp/sl (pagi berikutnya)</Label>
+                    <Input
+                      type="time"
+                      step={900}
+                      value={csvTpDeadline}
+                      onChange={(e) => setCsvTpDeadline(e.target.value)}
+                    />
+                    <p className="text-[11px] text-muted-foreground lowercase">posisi ditutup di {csvTpDeadline} hari berikutnya</p>
+                  </div>
+                </>
               ) : (
                 <div className="space-y-1.5">
                   <Label className="text-xs lowercase">scan session start (ny)</Label>
@@ -488,6 +521,7 @@ const Backtester = () => {
                   </Select>
                 </div>
               )}
+
             </div>
 
             {dataSource === "csv" && (
