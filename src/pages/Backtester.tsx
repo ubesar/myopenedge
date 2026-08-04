@@ -766,7 +766,8 @@ const Backtester = () => {
                     </tbody>
                   </table>
                 </div>
-              </Card>
+                </DialogContent>
+              </Dialog>
             </>
           )}
         </main>
