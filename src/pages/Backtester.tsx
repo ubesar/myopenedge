@@ -335,7 +335,7 @@ const Backtester = () => {
         symbol: symbol.trim().toUpperCase(),
         totalDays,
         trades,
-        bars: values,
+        bars: dataSource === "csv" && csvM5Bars?.length ? csvM5Bars : values,
         ...metrics,
       });
       toast.success(`backtest complete: ${trades.length} trades`);
