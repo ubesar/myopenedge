@@ -18,6 +18,7 @@ import { analyzeIB2575, type IB2575Trade } from "@/lib/ib2575-analysis";
 import TradeChartDialog, { type TradeForChart } from "@/components/TradeChartDialog";
 import { parseCsvBars, type CsvBar } from "@/lib/csv-bars";
 import BacktestCalendar from "@/components/BacktestCalendar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type StrategyKey = "pb50" | "ib2575";
 
