@@ -746,7 +746,8 @@ const Backtester = () => {
                               size="sm"
                               variant="ghost"
                               className="h-6 w-6 p-0"
-                              onClick={() =>
+                              onClick={() => {
+                                setSelectedDay(null);
                                 setChartTrade({
                                   date: t.date,
                                   time: t.time,
@@ -755,8 +756,8 @@ const Backtester = () => {
                                   stop: t.stop,
                                   target: t.target,
                                   outcome: t.outcome,
-                                })
-                              }
+                                });
+                              }}
                               title="view 15m chart"
                             >
                               <BarChart3 className="h-3.5 w-3.5" />
