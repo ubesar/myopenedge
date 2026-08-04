@@ -524,21 +524,39 @@ const Backtester = () => {
 
             {dataSource === "csv" && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 border-t border-border pt-3">
-                <div className="space-y-1.5 md:col-span-2">
-                  <Label className="text-xs lowercase">ohlc csv file (timeframe m5)</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs lowercase">csv m15 (scan momentum candle)</Label>
                   <Input
                     type="file"
                     accept=".csv,text/csv"
                     onChange={(e) => {
                       const f = e.target.files?.[0];
-                      if (f) handleCsvFile(f);
+                      if (f) handleCsvFile(f, "m15");
                     }}
                     className="text-xs file:text-xs file:mr-3 file:border-0 file:bg-secondary file:text-secondary-foreground file:rounded file:px-2 file:py-1"
                   />
                   <p className="text-[11px] text-muted-foreground lowercase">
                     {csvBars?.length
-                      ? `${csvName} · ${csvBars.length} bars m5 · ${csvBars[0].datetime.slice(0, 10)} → ${csvBars[csvBars.length - 1].datetime.slice(0, 10)}`
-                      : "format: time,open,high,low,close,volume (ninjatrader export) · scan momentum m15 (agregasi), entry/tp/sl m5"}
+                      ? `${csvName} · ${csvBars.length} bars m15 · ${csvBars[0].datetime.slice(0, 10)} → ${csvBars[csvBars.length - 1].datetime.slice(0, 10)}`
+                      : "format: time,open,high,low,close,volume (ninjatrader export)"}
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs lowercase">csv m5 (entry / tp / sl)</Label>
+                  <Input
+                    type="file"
+                    accept=".csv,text/csv"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleCsvFile(f, "m5");
+                    }}
+                    className="text-xs file:text-xs file:mr-3 file:border-0 file:bg-secondary file:text-secondary-foreground file:rounded file:px-2 file:py-1"
+                  />
+                  <p className="text-[11px] text-muted-foreground lowercase">
+                    {csvM5Bars?.length
+                      ? `${csvM5Name} · ${csvM5Bars.length} bars m5`
+                      : "opsional tapi disarankan · menentukan tp/sl mana yang kena duluan"}
                   </p>
                 </div>
 
@@ -557,10 +575,9 @@ const Backtester = () => {
                     jam pada csv dianggap wita · re-import file setelah mengubah
                   </p>
                 </div>
-
-
               </div>
             )}
+
 
             <Button onClick={runBacktest} disabled={loading || (dataSource === "csv" && !csvBars?.length)} className="w-full md:w-auto">
               {loading ? (
