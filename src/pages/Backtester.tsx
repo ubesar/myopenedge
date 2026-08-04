@@ -235,8 +235,10 @@ const Backtester = () => {
   const [csvScanEnd, setCsvScanEnd] = useState("24:00");
   const [csvTpDeadline, setCsvTpDeadline] = useState("04:00");
   const [dataSource, setDataSource] = useState<"api" | "csv">("api");
-  const [csvBars, setCsvBars] = useState<CsvBar[] | null>(null);
+  const [csvBars, setCsvBars] = useState<CsvBar[] | null>(null); // m15 — momentum scan
   const [csvName, setCsvName] = useState("");
+  const [csvM5Bars, setCsvM5Bars] = useState<CsvBar[] | null>(null); // m5 — entry/tp/sl
+  const [csvM5Name, setCsvM5Name] = useState("");
   const [csvOffset, setCsvOffset] = useState("0");
 
   const toMin = (v: string) => {
