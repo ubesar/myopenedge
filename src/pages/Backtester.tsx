@@ -688,17 +688,11 @@ const Backtester = () => {
                 />
               </Card>
 
-              <Card className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-semibold lowercase">
-                    trade log {selectedDay ? `· ${selectedDay}` : `(${result.trades.length})`}
-                  </h2>
-                  {selectedDay && (
-                    <Button size="sm" variant="ghost" className="h-7 text-xs lowercase" onClick={() => setSelectedDay(null)}>
-                      tampilkan semua
-                    </Button>
-                  )}
-                </div>
+              <Dialog open={!!selectedDay} onOpenChange={(v) => !v && setSelectedDay(null)}>
+                <DialogContent className="max-w-3xl">
+                  <DialogHeader>
+                    <DialogTitle className="text-sm lowercase">trade log · {selectedDay}</DialogTitle>
+                  </DialogHeader>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead className="text-muted-foreground border-b border-border">
