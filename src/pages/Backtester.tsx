@@ -18,6 +18,7 @@ import { analyzeIB2575, type IB2575Trade } from "@/lib/ib2575-analysis";
 import TradeChartDialog, { type TradeForChart } from "@/components/TradeChartDialog";
 import { parseCsvBars, type CsvBar } from "@/lib/csv-bars";
 import BacktestCalendar from "@/components/BacktestCalendar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type StrategyKey = "pb50" | "ib2575";
 
@@ -688,17 +689,11 @@ const Backtester = () => {
                 />
               </Card>
 
-              <Card className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-semibold lowercase">
-                    trade log {selectedDay ? `· ${selectedDay}` : `(${result.trades.length})`}
-                  </h2>
-                  {selectedDay && (
-                    <Button size="sm" variant="ghost" className="h-7 text-xs lowercase" onClick={() => setSelectedDay(null)}>
-                      tampilkan semua
-                    </Button>
-                  )}
-                </div>
+              <Dialog open={!!selectedDay} onOpenChange={(v) => !v && setSelectedDay(null)}>
+                <DialogContent className="max-w-3xl">
+                  <DialogHeader>
+                    <DialogTitle className="text-sm lowercase">trade log · {selectedDay}</DialogTitle>
+                  </DialogHeader>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead className="text-muted-foreground border-b border-border">
@@ -751,7 +746,8 @@ const Backtester = () => {
                               size="sm"
                               variant="ghost"
                               className="h-6 w-6 p-0"
-                              onClick={() =>
+                              onClick={() => {
+                                setSelectedDay(null);
                                 setChartTrade({
                                   date: t.date,
                                   time: t.time,
@@ -760,8 +756,8 @@ const Backtester = () => {
                                   stop: t.stop,
                                   target: t.target,
                                   outcome: t.outcome,
-                                })
-                              }
+                                });
+                              }}
                               title="view 15m chart"
                             >
                               <BarChart3 className="h-3.5 w-3.5" />
@@ -772,7 +768,8 @@ const Backtester = () => {
                     </tbody>
                   </table>
                 </div>
-              </Card>
+                </DialogContent>
+              </Dialog>
             </>
           )}
         </main>
