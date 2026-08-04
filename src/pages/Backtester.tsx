@@ -253,19 +253,30 @@ const Backtester = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BTResult | null>(null);
   const [chartTrade, setChartTrade] = useState<TradeForChart | null>(null);
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
-  const handleCsvFile = async (file: File) => {
+  const handleCsvFile = async (file: File, tf: "m15" | "m5") => {
     try {
       const text = await file.text();
       const bars = parseCsvBars(text, parseFloat(csvOffset) || 0);
-      setCsvBars(bars);
-      setCsvName(file.name);
-      const guess = file.name.replace(/\.csv$/i, "").split(/[_\-\s]/).find((p) => /^[A-Za-z]{1,6}$/.test(p) && p.toLowerCase() !== "export");
-      if (guess) setSymbol(guess.toUpperCase());
-      toast.success(`${bars.length} bars loaded from ${file.name}`);
+      if (tf === "m15") {
+        setCsvBars(bars);
+        setCsvName(file.name);
+        const guess = file.name.replace(/\.csv$/i, "").split(/[_\-\s]/).find((p) => /^[A-Za-z]{1,6}$/.test(p) && p.toLowerCase() !== "export");
+        if (guess) setSymbol(guess.toUpperCase());
+      } else {
+        setCsvM5Bars(bars);
+        setCsvM5Name(file.name);
+      }
+      toast.success(`${bars.length} bars ${tf} loaded from ${file.name}`);
     } catch (e: any) {
-      setCsvBars(null);
-      setCsvName("");
+      if (tf === "m15") {
+        setCsvBars(null);
+        setCsvName("");
+      } else {
+        setCsvM5Bars(null);
+        setCsvM5Name("");
+      }
       toast.error(e.message || "failed to parse csv");
     }
   };
