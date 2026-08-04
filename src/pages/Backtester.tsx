@@ -679,9 +679,26 @@ const Backtester = () => {
                 </div>
               </Card>
 
-              {/* Trade Log */}
+              {/* Trade Log — calendar view */}
               <Card className="p-4">
-                <h2 className="text-sm font-semibold mb-3 lowercase">trade log ({result.trades.length})</h2>
+                <BacktestCalendar
+                  trades={result.trades.map((t) => ({ date: t.date, pnl: t.pnl }))}
+                  selected={selectedDay}
+                  onDayClick={(d) => setSelectedDay((prev) => (prev === d ? null : d))}
+                />
+              </Card>
+
+              <Card className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-semibold lowercase">
+                    trade log {selectedDay ? `· ${selectedDay}` : `(${result.trades.length})`}
+                  </h2>
+                  {selectedDay && (
+                    <Button size="sm" variant="ghost" className="h-7 text-xs lowercase" onClick={() => setSelectedDay(null)}>
+                      tampilkan semua
+                    </Button>
+                  )}
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead className="text-muted-foreground border-b border-border">
@@ -703,12 +720,14 @@ const Backtester = () => {
                     <tbody>
                       {[...result.trades]
                         .map((t, i) => ({ t, seq: i + 1 }))
+                        .filter(({ t }) => !selectedDay || t.date === selectedDay)
                         .sort((a, b) => {
                           const d = b.t.date.localeCompare(a.t.date);
                           if (d !== 0) return d;
                           return (b.t.time ?? "").localeCompare(a.t.time ?? "");
                         })
                         .map(({ t, seq }) => (
+
                         <tr key={seq} className="border-b border-border/40">
                           <td className="py-1.5 px-2 text-muted-foreground">{seq}</td>
                           <td className="py-1.5 px-2">{t.date}</td>
