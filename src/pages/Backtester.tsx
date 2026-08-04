@@ -17,6 +17,7 @@ import { analyzePullback50, type Pullback50Trade } from "@/lib/pullback50-analys
 import { analyzeIB2575, type IB2575Trade } from "@/lib/ib2575-analysis";
 import TradeChartDialog, { type TradeForChart } from "@/components/TradeChartDialog";
 import { parseCsvBars, type CsvBar } from "@/lib/csv-bars";
+import BacktestCalendar from "@/components/BacktestCalendar";
 
 type StrategyKey = "pb50" | "ib2575";
 
@@ -234,8 +235,10 @@ const Backtester = () => {
   const [csvScanEnd, setCsvScanEnd] = useState("24:00");
   const [csvTpDeadline, setCsvTpDeadline] = useState("04:00");
   const [dataSource, setDataSource] = useState<"api" | "csv">("api");
-  const [csvBars, setCsvBars] = useState<CsvBar[] | null>(null);
+  const [csvBars, setCsvBars] = useState<CsvBar[] | null>(null); // m15 — momentum scan
   const [csvName, setCsvName] = useState("");
+  const [csvM5Bars, setCsvM5Bars] = useState<CsvBar[] | null>(null); // m5 — entry/tp/sl
+  const [csvM5Name, setCsvM5Name] = useState("");
   const [csvOffset, setCsvOffset] = useState("0");
 
   const toMin = (v: string) => {
@@ -250,19 +253,30 @@ const Backtester = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BTResult | null>(null);
   const [chartTrade, setChartTrade] = useState<TradeForChart | null>(null);
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
-  const handleCsvFile = async (file: File) => {
+  const handleCsvFile = async (file: File, tf: "m15" | "m5") => {
     try {
       const text = await file.text();
       const bars = parseCsvBars(text, parseFloat(csvOffset) || 0);
-      setCsvBars(bars);
-      setCsvName(file.name);
-      const guess = file.name.replace(/\.csv$/i, "").split(/[_\-\s]/).find((p) => /^[A-Za-z]{1,6}$/.test(p) && p.toLowerCase() !== "export");
-      if (guess) setSymbol(guess.toUpperCase());
-      toast.success(`${bars.length} bars loaded from ${file.name}`);
+      if (tf === "m15") {
+        setCsvBars(bars);
+        setCsvName(file.name);
+        const guess = file.name.replace(/\.csv$/i, "").split(/[_\-\s]/).find((p) => /^[A-Za-z]{1,6}$/.test(p) && p.toLowerCase() !== "export");
+        if (guess) setSymbol(guess.toUpperCase());
+      } else {
+        setCsvM5Bars(bars);
+        setCsvM5Name(file.name);
+      }
+      toast.success(`${bars.length} bars ${tf} loaded from ${file.name}`);
     } catch (e: any) {
-      setCsvBars(null);
-      setCsvName("");
+      if (tf === "m15") {
+        setCsvBars(null);
+        setCsvName("");
+      } else {
+        setCsvM5Bars(null);
+        setCsvM5Name("");
+      }
       toast.error(e.message || "failed to parse csv");
     }
   };
@@ -299,7 +313,7 @@ const Backtester = () => {
           [1, 2, 3, 4, 5],
           isCsv ? csvScanEndMin : 13 * 60,
           isCsv ? csvScanStartMin : parseInt(sessionStart),
-          undefined, // csv sudah m5 → resolusi entry/tp/sl memakai m5 native
+          isCsv ? (csvM5Bars ?? undefined) : undefined, // m5 → resolusi entry/tp/sl
           isCsv ? csvCloseMin : undefined,
         );
         trades = toBTTradesPB50(r.trades);
@@ -321,7 +335,7 @@ const Backtester = () => {
         symbol: symbol.trim().toUpperCase(),
         totalDays,
         trades,
-        bars: values,
+        bars: dataSource === "csv" && csvM5Bars?.length ? csvM5Bars : values,
         ...metrics,
       });
       toast.success(`backtest complete: ${trades.length} trades`);
@@ -510,21 +524,39 @@ const Backtester = () => {
 
             {dataSource === "csv" && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 border-t border-border pt-3">
-                <div className="space-y-1.5 md:col-span-2">
-                  <Label className="text-xs lowercase">ohlc csv file (timeframe m5)</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs lowercase">csv m15 (scan momentum candle)</Label>
                   <Input
                     type="file"
                     accept=".csv,text/csv"
                     onChange={(e) => {
                       const f = e.target.files?.[0];
-                      if (f) handleCsvFile(f);
+                      if (f) handleCsvFile(f, "m15");
                     }}
                     className="text-xs file:text-xs file:mr-3 file:border-0 file:bg-secondary file:text-secondary-foreground file:rounded file:px-2 file:py-1"
                   />
                   <p className="text-[11px] text-muted-foreground lowercase">
                     {csvBars?.length
-                      ? `${csvName} · ${csvBars.length} bars m5 · ${csvBars[0].datetime.slice(0, 10)} → ${csvBars[csvBars.length - 1].datetime.slice(0, 10)}`
-                      : "format: time,open,high,low,close,volume (ninjatrader export) · scan momentum m15 (agregasi), entry/tp/sl m5"}
+                      ? `${csvName} · ${csvBars.length} bars m15 · ${csvBars[0].datetime.slice(0, 10)} → ${csvBars[csvBars.length - 1].datetime.slice(0, 10)}`
+                      : "format: time,open,high,low,close,volume (ninjatrader export)"}
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs lowercase">csv m5 (entry / tp / sl)</Label>
+                  <Input
+                    type="file"
+                    accept=".csv,text/csv"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleCsvFile(f, "m5");
+                    }}
+                    className="text-xs file:text-xs file:mr-3 file:border-0 file:bg-secondary file:text-secondary-foreground file:rounded file:px-2 file:py-1"
+                  />
+                  <p className="text-[11px] text-muted-foreground lowercase">
+                    {csvM5Bars?.length
+                      ? `${csvM5Name} · ${csvM5Bars.length} bars m5`
+                      : "opsional tapi disarankan · menentukan tp/sl mana yang kena duluan"}
                   </p>
                 </div>
 
@@ -543,10 +575,9 @@ const Backtester = () => {
                     jam pada csv dianggap wita · re-import file setelah mengubah
                   </p>
                 </div>
-
-
               </div>
             )}
+
 
             <Button onClick={runBacktest} disabled={loading || (dataSource === "csv" && !csvBars?.length)} className="w-full md:w-auto">
               {loading ? (
@@ -648,9 +679,26 @@ const Backtester = () => {
                 </div>
               </Card>
 
-              {/* Trade Log */}
+              {/* Trade Log — calendar view */}
               <Card className="p-4">
-                <h2 className="text-sm font-semibold mb-3 lowercase">trade log ({result.trades.length})</h2>
+                <BacktestCalendar
+                  trades={result.trades.map((t) => ({ date: t.date, pnl: t.pnl }))}
+                  selected={selectedDay}
+                  onDayClick={(d) => setSelectedDay((prev) => (prev === d ? null : d))}
+                />
+              </Card>
+
+              <Card className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-semibold lowercase">
+                    trade log {selectedDay ? `· ${selectedDay}` : `(${result.trades.length})`}
+                  </h2>
+                  {selectedDay && (
+                    <Button size="sm" variant="ghost" className="h-7 text-xs lowercase" onClick={() => setSelectedDay(null)}>
+                      tampilkan semua
+                    </Button>
+                  )}
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead className="text-muted-foreground border-b border-border">
@@ -672,12 +720,14 @@ const Backtester = () => {
                     <tbody>
                       {[...result.trades]
                         .map((t, i) => ({ t, seq: i + 1 }))
+                        .filter(({ t }) => !selectedDay || t.date === selectedDay)
                         .sort((a, b) => {
                           const d = b.t.date.localeCompare(a.t.date);
                           if (d !== 0) return d;
                           return (b.t.time ?? "").localeCompare(a.t.time ?? "");
                         })
                         .map(({ t, seq }) => (
+
                         <tr key={seq} className="border-b border-border/40">
                           <td className="py-1.5 px-2 text-muted-foreground">{seq}</td>
                           <td className="py-1.5 px-2">{t.date}</td>
