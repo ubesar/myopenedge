@@ -12,9 +12,8 @@ export type OCCTimeframe = "M5" | "M15" | "M30" | "H1";
 export type MomentumBodyRatio = "0.50" | "0.60" | "0.70" | "0.80";
 export type OCCBodyRatio = "0.40" | "0.50" | "0.60";
 
-
 interface ParameterPanelProps {
-  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio, weekdays: number[], momentumSessionEnd: number, sessionStart: number) => void;
+  onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode, bodyRatio: MomentumBodyRatio, occBodyRatio: OCCBodyRatio, weekdays: number[]) => void;
   loading: boolean;
   isFree?: boolean;
   occTimeframe?: OCCTimeframe;
@@ -62,8 +61,6 @@ const ParameterPanel = ({
   const [bodyRatio, setBodyRatio] = useState<MomentumBodyRatio>("0.70");
   const [occBodyRatio, setOccBodyRatio] = useState<OCCBodyRatio>("0.50");
   const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
-  const [momentumSessionEnd, setMomentumSessionEnd] = useState<string>("780"); // 13:00
-  const [sessionStart, setSessionStart] = useState<string>("570"); // 09:30 ny open
 
   const [selectedTemplateId, setSelectedTemplateId] = useState("custom");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -73,7 +70,7 @@ const ParameterPanel = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!symbol.trim()) return;
-    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio, weekdays, parseInt(momentumSessionEnd), parseInt(sessionStart));
+    onRun(symbol.trim().toUpperCase(), parseInt(ibWindow), parseInt(maxDays), mode, bodyRatio, occBodyRatio, weekdays);
   };
 
   const handleTemplateSelect = (id: string) => {
@@ -172,62 +169,35 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="globex-ib">IB: globex overnight</SelectItem>}
               {!isFree && <SelectItem value="london-ib">IB: london session</SelectItem>}
               {!isFree && <SelectItem value="momentum">momentum candle continuation (mcc)</SelectItem>}
-              {!isFree && <SelectItem value="pullback50">50% pullback strategy</SelectItem>}
-              {!isFree && <SelectItem value="ib2575">IB momentum limit (IB25/75)</SelectItem>}
-              {!isFree && <SelectItem value="mcm15-2am">m15 momentum @ 04:00 ny</SelectItem>}
               <SelectItem value="occ">opening candle continuation</SelectItem>
               {!isFree && <SelectItem value="gapfill">gap fill statistics</SelectItem>}
               {!isFree && <SelectItem value="insidebar">inside bar</SelectItem>}
               {!isFree && <SelectItem value="outsideday">outside day</SelectItem>}
+              {!isFree && <SelectItem value="pullback">pullback 50% (m15)</SelectItem>}
+              {!isFree && <SelectItem value="ib-pullback">IB pullback 25/50/75% (SL = IB extreme)</SelectItem>}
+              {!isFree && <SelectItem value="ib-pullback-stacked">IB pullback 25/50/75% (SL = next level)</SelectItem>}
+              {!isFree && <SelectItem value="momentum-fib-pullback">momentum candle fib pullback (0.2/0/-0.5)</SelectItem>}
             </SelectContent>
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}
 
-          {mode === "pullback50" && (
+          {mode === "momentum" && (
             <>
-              <p className="text-[11px] text-muted-foreground">scan session start (ny)</p>
-              <Select value={sessionStart} onValueChange={(v) => { setSessionStart(v); setSelectedTemplateId("custom"); }}>
+              <p className="text-[11px] text-muted-foreground">opening candle body threshold</p>
+              <Select value={bodyRatio} onValueChange={(v) => { setBodyRatio(v as MomentumBodyRatio); setSelectedTemplateId("custom"); }}>
                 <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="570">09:30 (ny open)</SelectItem>
-                  <SelectItem value="240">04:00</SelectItem>
+                  <SelectItem value="0.50">body ≥ 50% (loose)</SelectItem>
+                  <SelectItem value="0.60">body ≥ 60%</SelectItem>
+                  <SelectItem value="0.70">body ≥ 70% (recommended)</SelectItem>
+                  <SelectItem value="0.80">body ≥ 80% (strict)</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-[10px] text-muted-foreground">strong momentum = large body, small wicks. days with weak opening candles are skipped.</p>
             </>
           )}
-
-          {(mode === "momentum" || mode === "pullback50") && (
-            <>
-              <p className="text-[11px] text-muted-foreground">scan session end (ny)</p>
-              <Select value={momentumSessionEnd} onValueChange={(v) => { setMomentumSessionEnd(v); setSelectedTemplateId("custom"); }}>
-                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="660">11:00</SelectItem>
-                  <SelectItem value="690">11:30</SelectItem>
-                  <SelectItem value="720">12:00</SelectItem>
-                  <SelectItem value="750">12:30</SelectItem>
-                  <SelectItem value="780">13:00 (default)</SelectItem>
-                  <SelectItem value="840">14:00</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-[10px] text-muted-foreground">{mode === "pullback50" ? `m15 momentum candles scanned from ${sessionStart === "240" ? "04:00" : "09:30"} ny up to this time. entry on 50% pullback, sl at far end, tp at opposite end of candle 1. positions closed by 16:00 ny.` : "m15 momentum candles scanned from 09:30 ny up to this time. momentum candle = body > 1.5× avg body sma(15). walk-forward to 16:00 close."}</p>
-            </>
-          )}
-
-          {mode === "ib2575" && (
-            <p className="text-[10px] text-muted-foreground">after the IB window, detects which extreme printed first. low first → wait for an m5 momentum candle closing above IB75, then buy limit @ IB75, SL IB50, TP IB high. high first → wait for an m5 momentum candle closing below IB25, then sell limit @ IB25, SL IB50, TP IB low. momentum scan until 13:00 ny, managed until 16:00 ny.</p>
-          )}
-
-          {mode === "mcm15-2am" && (
-            <p className="text-[10px] text-muted-foreground">scans the m15 candle at 04:00 ny (momentum candle: body &gt; 1.5× avg body sma15). if not a momentum candle, fallback to 04:15. bullish → buy stop @ high, sl @ low. bearish → sell stop @ low, sl @ high. tp1 rr 1:0.5 &amp; tp2 rr 1:1 tracked independently until 16:00 ny close.</p>
-          )}
-
-
-
 
 
           <button
@@ -267,7 +237,7 @@ const ParameterPanel = ({
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for more days</p>}
 
-          {(mode === "ib" || mode === "globex-ib" || mode === "london-ib" || mode === "ib2575") && (
+          {(mode === "ib" || mode === "momentum" || mode === "globex-ib" || mode === "london-ib" || mode === "ib-pullback" || mode === "ib-pullback-stacked") && (
             <>
               <p className="text-[11px] text-muted-foreground">IB window</p>
               <Select value={isFree ? "60" : ibWindow} onValueChange={(v) => { if (!isFree) { setIbWindow(v); setSelectedTemplateId("custom"); } }} disabled={isFree}>
