@@ -344,18 +344,8 @@ const Index = () => {
         outcome: t.outcome,
       }));
     }
-    if (activeMode === "orb" && orbResult) {
-      return (
-        <ORBDashboard
-          result={orbResult}
-          symbol={symbol}
-          dateRange={formatDateRange(analysisMaxDays)}
-          weekdays={formatWeekdays(analysisWeekdays)}
-          targetR={orbTargetR}
-          onTargetChange={setOrbTargetR}
-        />
-      );
-    }
+
+
 
     if (activeMode === "momentum-fib-pullback" && mfpResult) {
       return mfpResult.trades.map((t) => ({
