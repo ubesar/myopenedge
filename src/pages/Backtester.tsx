@@ -322,7 +322,9 @@ const Backtester = () => {
       const days = parseInt(maxDays);
       let values: any[];
       if (dataSource === "csv") {
-        if (!csvBars?.length) throw new Error("import a csv file first");
+        if (!csvBars?.length) throw new Error("import file csv m15 dulu");
+        if (!csvM5Bars?.length) throw new Error("import file csv m5 / m1 dulu");
+        if (syncReport && !syncReport.ok) throw new Error("data m15 dan intrabar belum sinkron — cek panel sinkronisasi");
         values = csvBars;
       } else {
         const usePreMarket = strategy === "pb50" && parseInt(sessionStart) < 9 * 60 + 30;
