@@ -85,10 +85,12 @@ export default function TradeChartDialog({
     }));
 
   const m15 = aggregateBars(m5, 15);
+  const flags = computeMomentumFlags(m15);
 
-  // scales — widen the canvas so a full session stays readable
-  const W = Math.max(780, m15.length * 11 + 110);
-  const H = 380;
+  // scales — the whole session fits on screen (no horizontal scroll)
+  const W = Math.max(900, Math.min(1800, m15.length * 14 + 110));
+  const H = 460;
+
 
   const PL = 50, PR = 60, PT = 20, PB = 30;
   const cw = W - PL - PR;
