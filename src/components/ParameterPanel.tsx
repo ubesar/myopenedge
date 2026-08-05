@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import type { AnalysisMode } from "@/components/ControlPanel";
 import type { AnalysisTemplate, TemplateParams } from "@/hooks/useTemplates";
+import { DEFAULT_QUANT_SETTINGS, type QuantSettings } from "@/lib/quant-metrics";
 
 export type OCCTimeframe = "M5" | "M15" | "M30" | "H1";
 export type MomentumBodyRatio = "0.50" | "0.60" | "0.70" | "0.80";
@@ -23,6 +24,10 @@ interface ParameterPanelProps {
   onDeleteTemplate?: (id: string) => void;
   onLoadTemplate?: (params: TemplateParams) => void;
   templateLoading?: boolean;
+  orMinutes?: number;
+  onOrMinutesChange?: (m: number) => void;
+  quantSettings?: QuantSettings;
+  onQuantSettingsChange?: (s: QuantSettings) => void;
 }
 
 const IB_WINDOWS = [
@@ -53,6 +58,8 @@ const WEEKDAYS = [
 const ParameterPanel = ({
   onRun, loading, isFree = false, occTimeframe = "M15", onOccTimeframeChange,
   templates = [], onSaveTemplate, onDeleteTemplate, onLoadTemplate, templateLoading = false,
+  orMinutes = 15, onOrMinutesChange,
+  quantSettings = DEFAULT_QUANT_SETTINGS, onQuantSettingsChange,
 }: ParameterPanelProps) => {
   const [symbol, setSymbol] = useState("QQQ");
   const [ibWindow, setIbWindow] = useState(isFree ? "60" : "30");
@@ -62,6 +69,7 @@ const ParameterPanel = ({
   const [occBodyRatio, setOccBodyRatio] = useState<OCCBodyRatio>("0.50");
   const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
 
+  const [showQuant, setShowQuant] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState("custom");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [templateName, setTemplateName] = useState("");
@@ -177,6 +185,7 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="ib-pullback">IB pullback 25/50/75% (SL = IB extreme)</SelectItem>}
               {!isFree && <SelectItem value="ib-pullback-stacked">IB pullback 25/50/75% (SL = next level)</SelectItem>}
               {!isFree && <SelectItem value="momentum-fib-pullback">momentum candle fib pullback (0.2/0/-0.5)</SelectItem>}
+              {!isFree && <SelectItem value="orb">ORB: opening range breakout + retest</SelectItem>}
             </SelectContent>
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}
@@ -256,6 +265,23 @@ const ParameterPanel = ({
               {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for more windows</p>}
             </>
           )}
+          {mode === "orb" && (
+            <>
+              <p className="text-[11px] text-muted-foreground">opening range duration</p>
+              <Select value={String(orMinutes)} onValueChange={(v) => { onOrMinutesChange?.(parseInt(v)); setSelectedTemplateId("custom"); }}>
+                <SelectTrigger className="bg-input border-border text-[13px] text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5 min opening range</SelectItem>
+                  <SelectItem value="15">15 min opening range</SelectItem>
+                  <SelectItem value="30">30 min opening range</SelectItem>
+                  <SelectItem value="60">60 min opening range</SelectItem>
+                </SelectContent>
+              </Select>
+            </>
+          )}
+
           <p className="text-[11px] text-muted-foreground mt-2">weekdays to use {isTemplateLocked && <span className="text-[10px] text-primary/70">🔒 locked by template</span>}</p>
           <div className="flex flex-wrap gap-2">
             <label className={`flex items-center gap-1.5 ${isTemplateLocked ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}>
@@ -287,6 +313,42 @@ const ParameterPanel = ({
               </label>
             ))}
           </div>
+        </div>
+
+        {/* Quant settings */}
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => setShowQuant((v) => !v)}
+            className="w-full flex items-center justify-between text-left"
+          >
+            <span className="section-label">quant settings</span>
+            <span className="text-[11px] text-muted-foreground">{showQuant ? "hide" : "show"}</span>
+          </button>
+          {showQuant && (
+            <div className="space-y-2">
+              {([
+                { key: "commissionPerSide", label: "commission / side ($ per unit)", step: "0.001" },
+                { key: "slippageTicks", label: "slippage (ticks / side)", step: "0.5" },
+                { key: "tickSize", label: "tick size (points)", step: "0.01" },
+                { key: "tickValue", label: "tick value ($)", step: "0.01" },
+                { key: "accountSize", label: "account size ($)", step: "500" },
+                { key: "riskPct", label: "risk per trade (%)", step: "0.25" },
+              ] as { key: keyof QuantSettings; label: string; step: string }[]).map((f) => (
+                <div key={f.key}>
+                  <p className="text-[11px] text-muted-foreground">{f.label}</p>
+                  <Input
+                    type="number"
+                    step={f.step}
+                    value={String(quantSettings[f.key])}
+                    onChange={(e) => onQuantSettingsChange?.({ ...quantSettings, [f.key]: parseFloat(e.target.value) || 0 })}
+                    className="bg-input border-border text-[13px] text-foreground h-8"
+                  />
+                </div>
+              ))}
+              <p className="text-[10px] text-muted-foreground">dipakai untuk menghitung EV setelah cost, breakeven win rate & kelly sizing di quant panel.</p>
+            </div>
+          )}
         </div>
 
         {/* Run button */}
