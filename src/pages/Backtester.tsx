@@ -256,25 +256,60 @@ const Backtester = () => {
   const [chartTrade, setChartTrade] = useState<TradeForChart | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
-  const handleCsvFile = async (file: File) => {
+  const [syncReport, setSyncReport] = useState<SyncReport | null>(null);
+  const [aiReview, setAiReview] = useState<string>("");
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const handleCsvFile = async (file: File, kind: "m15" | "intra") => {
     try {
       const text = await file.text();
       const bars = parseCsvBars(text, parseFloat(csvOffset) || 0);
-      setCsvM5Bars(bars);
-      setCsvM5Name(file.name);
-      setCsvBars(bars);
-      setCsvName(file.name);
+      if (kind === "m15") {
+        setCsvBars(bars);
+        setCsvName(file.name);
+      } else {
+        setCsvM5Bars(bars);
+        setCsvM5Name(file.name);
+      }
+      setAiReview("");
       const guess = file.name.replace(/\.csv$/i, "").split(/[_\-\s]/).find((p) => /^[A-Za-z]{1,6}$/.test(p) && p.toLowerCase() !== "export");
       if (guess) setSymbol(guess.toUpperCase());
-      toast.success(`${bars.length} bars m5 loaded from ${file.name}`);
+      toast.success(`${bars.length} bars loaded from ${file.name}`);
     } catch (e: any) {
-      setCsvBars(null);
-      setCsvName("");
-      setCsvM5Bars(null);
-      setCsvM5Name("");
+      if (kind === "m15") { setCsvBars(null); setCsvName(""); }
+      else { setCsvM5Bars(null); setCsvM5Name(""); }
       toast.error(e.message || "failed to parse csv");
     }
   };
+
+  useEffect(() => {
+    if (csvBars?.length && csvM5Bars?.length) setSyncReport(checkCsvSync(csvBars, csvM5Bars));
+    else setSyncReport(null);
+  }, [csvBars, csvM5Bars]);
+
+  const runAiSyncReview = async () => {
+    if (!syncReport) return;
+    setAiLoading(true);
+    setAiReview("");
+    try {
+      const { data, error } = await supabase.functions.invoke("csv-sync-review", {
+        body: {
+          report: syncReport,
+          scanFile: csvName,
+          intraFile: csvM5Name,
+          scanRange: [csvBars![0].datetime, csvBars![csvBars!.length - 1].datetime],
+          intraRange: [csvM5Bars![0].datetime, csvM5Bars![csvM5Bars!.length - 1].datetime],
+        },
+      });
+      if (error) throw error;
+      setAiReview(data?.review || "tidak ada respons dari ai");
+    } catch (e: any) {
+      toast.error(e.message || "ai review gagal");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
 
 
 
