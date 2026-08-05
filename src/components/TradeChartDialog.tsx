@@ -144,11 +144,21 @@ export default function TradeChartDialog({
                 </g>
               ))}
 
-              {/* candles */}
+              {/* candles — momentum coloring (super = light green / purple) */}
               {m15.map((b, i) => {
                 const x = xFor(i);
                 const up = b.close >= b.open;
-                const color = up ? "#10b981" : "#ef4444";
+                const f = flags[i];
+                const color =
+                  f?.level === "super"
+                    ? up
+                      ? "#26de81"
+                      : "#b026ff"
+                    : f?.level === "above"
+                    ? up
+                      ? "#0f7a4d"
+                      : "#a12222"
+                    : "#8a8a8a";
                 const yO = yFor(b.open);
                 const yC = yFor(b.close);
                 const yH = yFor(b.high);
@@ -162,6 +172,7 @@ export default function TradeChartDialog({
                   </g>
                 );
               })}
+
 
               {/* time labels — every ~6 bars */}
               {m15.map((b, i) => {
