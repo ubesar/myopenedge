@@ -119,7 +119,7 @@ export default function TradeChartDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-[95vw]">
         <DialogHeader>
           <DialogTitle className="lowercase text-sm">
             {symbol} · {trade.date} · m15 · {trade.direction === "bullish" ? "long" : "short"} @ {trade.time ?? "-"} ·{" "}
