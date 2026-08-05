@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { analyzePullback50, type Pullback50Trade } from "@/lib/pullback50-analys
 import { analyzeIB2575, type IB2575Trade } from "@/lib/ib2575-analysis";
 import TradeChartDialog, { type TradeForChart } from "@/components/TradeChartDialog";
 import { parseCsvBars, type CsvBar } from "@/lib/csv-bars";
+import { checkCsvSync, type SyncReport } from "@/lib/csv-sync";
 import BacktestCalendar from "@/components/BacktestCalendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -256,25 +257,60 @@ const Backtester = () => {
   const [chartTrade, setChartTrade] = useState<TradeForChart | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
-  const handleCsvFile = async (file: File) => {
+  const [syncReport, setSyncReport] = useState<SyncReport | null>(null);
+  const [aiReview, setAiReview] = useState<string>("");
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const handleCsvFile = async (file: File, kind: "m15" | "intra") => {
     try {
       const text = await file.text();
       const bars = parseCsvBars(text, parseFloat(csvOffset) || 0);
-      setCsvM5Bars(bars);
-      setCsvM5Name(file.name);
-      setCsvBars(bars);
-      setCsvName(file.name);
+      if (kind === "m15") {
+        setCsvBars(bars);
+        setCsvName(file.name);
+      } else {
+        setCsvM5Bars(bars);
+        setCsvM5Name(file.name);
+      }
+      setAiReview("");
       const guess = file.name.replace(/\.csv$/i, "").split(/[_\-\s]/).find((p) => /^[A-Za-z]{1,6}$/.test(p) && p.toLowerCase() !== "export");
       if (guess) setSymbol(guess.toUpperCase());
-      toast.success(`${bars.length} bars m5 loaded from ${file.name}`);
+      toast.success(`${bars.length} bars loaded from ${file.name}`);
     } catch (e: any) {
-      setCsvBars(null);
-      setCsvName("");
-      setCsvM5Bars(null);
-      setCsvM5Name("");
+      if (kind === "m15") { setCsvBars(null); setCsvName(""); }
+      else { setCsvM5Bars(null); setCsvM5Name(""); }
       toast.error(e.message || "failed to parse csv");
     }
   };
+
+  useEffect(() => {
+    if (csvBars?.length && csvM5Bars?.length) setSyncReport(checkCsvSync(csvBars, csvM5Bars));
+    else setSyncReport(null);
+  }, [csvBars, csvM5Bars]);
+
+  const runAiSyncReview = async () => {
+    if (!syncReport) return;
+    setAiLoading(true);
+    setAiReview("");
+    try {
+      const { data, error } = await supabase.functions.invoke("csv-sync-review", {
+        body: {
+          report: syncReport,
+          scanFile: csvName,
+          intraFile: csvM5Name,
+          scanRange: [csvBars![0].datetime, csvBars![csvBars!.length - 1].datetime],
+          intraRange: [csvM5Bars![0].datetime, csvM5Bars![csvM5Bars!.length - 1].datetime],
+        },
+      });
+      if (error) throw error;
+      setAiReview(data?.review || "tidak ada respons dari ai");
+    } catch (e: any) {
+      toast.error(e.message || "ai review gagal");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
 
 
 
@@ -286,7 +322,9 @@ const Backtester = () => {
       const days = parseInt(maxDays);
       let values: any[];
       if (dataSource === "csv") {
-        if (!csvBars?.length) throw new Error("import a csv file first");
+        if (!csvBars?.length) throw new Error("import file csv m15 dulu");
+        if (!csvM5Bars?.length) throw new Error("import file csv m5 / m1 dulu");
+        if (syncReport && !syncReport.ok) throw new Error("data m15 dan intrabar belum sinkron — cek panel sinkronisasi");
         values = csvBars;
       } else {
         const usePreMarket = strategy === "pb50" && parseInt(sessionStart) < 9 * 60 + 30;
@@ -519,43 +557,95 @@ const Backtester = () => {
             </div>
 
             {dataSource === "csv" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-border pt-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs lowercase">csv m5 (scan m15 + entry / tp / sl)</Label>
-                  <Input
-                    type="file"
-                    accept=".csv,text/csv"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) handleCsvFile(f);
-                    }}
-                    className="text-xs file:text-xs file:mr-3 file:border-0 file:bg-secondary file:text-secondary-foreground file:rounded file:px-2 file:py-1"
-                  />
-                  <p className="text-[11px] text-muted-foreground lowercase">
-                    {csvM5Bars?.length
-                      ? `${csvM5Name} · ${csvM5Bars.length} bars m5 · ${csvM5Bars[0].datetime.slice(0, 10)} → ${csvM5Bars[csvM5Bars.length - 1].datetime.slice(0, 10)}`
-                      : "format: time,open,high,low,close,volume (ninjatrader export) · m15 dibentuk otomatis pada kelipatan 15 menit"}
-                  </p>
+              <div className="space-y-3 border-t border-border pt-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">csv m15 (scan momentum candle)</Label>
+                    <Input
+                      type="file"
+                      accept=".csv,text/csv"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleCsvFile(f, "m15");
+                      }}
+                      className="text-xs file:text-xs file:mr-3 file:border-0 file:bg-secondary file:text-secondary-foreground file:rounded file:px-2 file:py-1"
+                    />
+                    <p className="text-[11px] text-muted-foreground lowercase">
+                      {csvBars?.length
+                        ? `${csvName} · ${csvBars.length} bars · ${csvBars[0].datetime.slice(0, 10)} → ${csvBars[csvBars.length - 1].datetime.slice(0, 10)}`
+                        : "format: time,open,high,low,close,volume (ninjatrader export)"}
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">csv m5 / m1 (entry · sl / tp hit first)</Label>
+                    <Input
+                      type="file"
+                      accept=".csv,text/csv"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleCsvFile(f, "intra");
+                      }}
+                      className="text-xs file:text-xs file:mr-3 file:border-0 file:bg-secondary file:text-secondary-foreground file:rounded file:px-2 file:py-1"
+                    />
+                    <p className="text-[11px] text-muted-foreground lowercase">
+                      {csvM5Bars?.length
+                        ? `${csvM5Name} · ${csvM5Bars.length} bars · ${csvM5Bars[0].datetime.slice(0, 10)} → ${csvM5Bars[csvM5Bars.length - 1].datetime.slice(0, 10)}`
+                        : "wajib timeframe lebih kecil dari m15"}
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">timezone data csv</Label>
+                    <Select value={csvOffset} onValueChange={setCsvOffset}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">wita (waktu asli — tanpa shift)</SelectItem>
+                        {[-13, -12, -11, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6].map((h) => (
+                          <SelectItem key={h} value={String(h)}>shift {h > 0 ? `+${h}` : h} jam</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground lowercase">
+                      jam pada csv dianggap wita · re-import file setelah mengubah
+                    </p>
+                  </div>
                 </div>
 
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs lowercase">timezone data csv</Label>
-                  <Select value={csvOffset} onValueChange={setCsvOffset}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">wita (waktu asli — tanpa shift)</SelectItem>
-                      {[-13, -12, -11, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6].map((h) => (
-                        <SelectItem key={h} value={String(h)}>shift {h > 0 ? `+${h}` : h} jam</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[11px] text-muted-foreground lowercase">
-                    jam pada csv dianggap wita · re-import file setelah mengubah
-                  </p>
-                </div>
+                {syncReport && (
+                  <div className={`rounded-md border p-3 space-y-2 ${syncReport.ok ? "border-border" : "border-destructive/60"}`}>
+                    <div className="flex flex-wrap items-center gap-2 justify-between">
+                      <p className="text-xs lowercase font-medium">
+                        sinkronisasi data · m{syncReport.scanTf} ↔ m{syncReport.intraTf} ·{" "}
+                        {syncReport.overlapDays} hari beririsan ·{" "}
+                        {syncReport.totalBuckets > 0
+                          ? `${((syncReport.coveredBuckets / syncReport.totalBuckets) * 100).toFixed(1)}% candle m15 tercover`
+                          : "tidak ada candle tercover"}
+                      </p>
+                      <Button size="sm" variant="outline" onClick={runAiSyncReview} disabled={aiLoading} className="lowercase text-xs">
+                        {aiLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                        analisa ai
+                      </Button>
+                    </div>
+                    {syncReport.issues.length === 0 ? (
+                      <p className="text-[11px] text-emerald-500 lowercase">semua candle m15 tersinkron dengan data intrabar</p>
+                    ) : (
+                      <ul className="space-y-0.5">
+                        {syncReport.issues.map((i, idx) => (
+                          <li key={idx} className={`text-[11px] lowercase ${i.level === "error" ? "text-destructive" : "text-amber-500"}`}>
+                            • {i.message}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {aiReview && (
+                      <p className="text-[11px] text-muted-foreground whitespace-pre-wrap border-t border-border pt-2">{aiReview}</p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
+
 
 
             <Button onClick={runBacktest} disabled={loading || (dataSource === "csv" && !csvBars?.length)} className="w-full md:w-auto">
