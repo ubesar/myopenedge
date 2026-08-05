@@ -256,31 +256,26 @@ const Backtester = () => {
   const [chartTrade, setChartTrade] = useState<TradeForChart | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
-  const handleCsvFile = async (file: File, tf: "m15" | "m5") => {
+  const handleCsvFile = async (file: File) => {
     try {
       const text = await file.text();
       const bars = parseCsvBars(text, parseFloat(csvOffset) || 0);
-      if (tf === "m15") {
-        setCsvBars(bars);
-        setCsvName(file.name);
-        const guess = file.name.replace(/\.csv$/i, "").split(/[_\-\s]/).find((p) => /^[A-Za-z]{1,6}$/.test(p) && p.toLowerCase() !== "export");
-        if (guess) setSymbol(guess.toUpperCase());
-      } else {
-        setCsvM5Bars(bars);
-        setCsvM5Name(file.name);
-      }
-      toast.success(`${bars.length} bars ${tf} loaded from ${file.name}`);
+      setCsvM5Bars(bars);
+      setCsvM5Name(file.name);
+      setCsvBars(bars);
+      setCsvName(file.name);
+      const guess = file.name.replace(/\.csv$/i, "").split(/[_\-\s]/).find((p) => /^[A-Za-z]{1,6}$/.test(p) && p.toLowerCase() !== "export");
+      if (guess) setSymbol(guess.toUpperCase());
+      toast.success(`${bars.length} bars m5 loaded from ${file.name}`);
     } catch (e: any) {
-      if (tf === "m15") {
-        setCsvBars(null);
-        setCsvName("");
-      } else {
-        setCsvM5Bars(null);
-        setCsvM5Name("");
-      }
+      setCsvBars(null);
+      setCsvName("");
+      setCsvM5Bars(null);
+      setCsvM5Name("");
       toast.error(e.message || "failed to parse csv");
     }
   };
+
 
 
   const runBacktest = async () => {
@@ -524,42 +519,25 @@ const Backtester = () => {
             </div>
 
             {dataSource === "csv" && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 border-t border-border pt-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-border pt-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs lowercase">csv m15 (scan momentum candle)</Label>
+                  <Label className="text-xs lowercase">csv m5 (scan m15 + entry / tp / sl)</Label>
                   <Input
                     type="file"
                     accept=".csv,text/csv"
                     onChange={(e) => {
                       const f = e.target.files?.[0];
-                      if (f) handleCsvFile(f, "m15");
-                    }}
-                    className="text-xs file:text-xs file:mr-3 file:border-0 file:bg-secondary file:text-secondary-foreground file:rounded file:px-2 file:py-1"
-                  />
-                  <p className="text-[11px] text-muted-foreground lowercase">
-                    {csvBars?.length
-                      ? `${csvName} · ${csvBars.length} bars m15 · ${csvBars[0].datetime.slice(0, 10)} → ${csvBars[csvBars.length - 1].datetime.slice(0, 10)}`
-                      : "format: time,open,high,low,close,volume (ninjatrader export)"}
-                  </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs lowercase">csv m5 (entry / tp / sl)</Label>
-                  <Input
-                    type="file"
-                    accept=".csv,text/csv"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) handleCsvFile(f, "m5");
+                      if (f) handleCsvFile(f);
                     }}
                     className="text-xs file:text-xs file:mr-3 file:border-0 file:bg-secondary file:text-secondary-foreground file:rounded file:px-2 file:py-1"
                   />
                   <p className="text-[11px] text-muted-foreground lowercase">
                     {csvM5Bars?.length
-                      ? `${csvM5Name} · ${csvM5Bars.length} bars m5`
-                      : "opsional tapi disarankan · menentukan tp/sl mana yang kena duluan"}
+                      ? `${csvM5Name} · ${csvM5Bars.length} bars m5 · ${csvM5Bars[0].datetime.slice(0, 10)} → ${csvM5Bars[csvM5Bars.length - 1].datetime.slice(0, 10)}`
+                      : "format: time,open,high,low,close,volume (ninjatrader export) · m15 dibentuk otomatis pada kelipatan 15 menit"}
                   </p>
                 </div>
+
 
                 <div className="space-y-1.5">
                   <Label className="text-xs lowercase">timezone data csv</Label>
