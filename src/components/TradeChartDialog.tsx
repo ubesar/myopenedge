@@ -1,5 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { aggregateBars, type CandleBar } from "@/lib/m15-aggregation";
+import { computeMomentumFlags } from "@/lib/momentum-candle";
+
 
 interface RawBar {
   datetime: string;
