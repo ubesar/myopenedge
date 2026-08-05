@@ -106,7 +106,7 @@ const QuantPanel = ({ trades, settings = DEFAULT_QUANT_SETTINGS, label }: QuantP
           )}
           <Stat label="avg win / avg loss" value={`${fmt(m.avgWinR)}R / ${fmt(m.avgLossR)}R`} tone="muted" />
           <p className="text-[10px] text-muted-foreground pt-1 leading-relaxed">
-            f = W − (1−W)/R, memakai payoff bersih setelah cost. akun {money(DEFAULT_QUANT_SETTINGS.accountSize === m.riskDollar ? 0 : (m.riskDollar * 100) / (settings.riskPct || 1))}.
+            f = W − (1−W)/R, memakai payoff bersih setelah cost. akun {money(settings.accountSize)} · risk {settings.riskPct}%/trade.
           </p>
         </Card>
 
