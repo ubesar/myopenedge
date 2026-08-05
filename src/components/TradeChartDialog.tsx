@@ -1,5 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { aggregateBars, type CandleBar } from "@/lib/m15-aggregation";
+import { computeMomentumFlags } from "@/lib/momentum-candle";
+
 
 interface RawBar {
   datetime: string;
@@ -83,10 +85,12 @@ export default function TradeChartDialog({
     }));
 
   const m15 = aggregateBars(m5, 15);
+  const flags = computeMomentumFlags(m15);
 
-  // scales — widen the canvas so a full session stays readable
-  const W = Math.max(780, m15.length * 11 + 110);
-  const H = 380;
+  // scales — the whole session fits on screen (no horizontal scroll)
+  const W = Math.max(900, Math.min(1800, m15.length * 14 + 110));
+  const H = 460;
+
 
   const PL = 50, PR = 60, PT = 20, PB = 30;
   const cw = W - PL - PR;
@@ -115,7 +119,7 @@ export default function TradeChartDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-[95vw]">
         <DialogHeader>
           <DialogTitle className="lowercase text-sm">
             {symbol} · {trade.date} · m15 · {trade.direction === "bullish" ? "long" : "short"} @ {trade.time ?? "-"} ·{" "}
@@ -140,11 +144,21 @@ export default function TradeChartDialog({
                 </g>
               ))}
 
-              {/* candles */}
+              {/* candles — momentum coloring (super = light green / purple) */}
               {m15.map((b, i) => {
                 const x = xFor(i);
                 const up = b.close >= b.open;
-                const color = up ? "#10b981" : "#ef4444";
+                const f = flags[i];
+                const color =
+                  f?.level === "super"
+                    ? up
+                      ? "#26de81"
+                      : "#b026ff"
+                    : f?.level === "above"
+                    ? up
+                      ? "#0f7a4d"
+                      : "#a12222"
+                    : "#8a8a8a";
                 const yO = yFor(b.open);
                 const yC = yFor(b.close);
                 const yH = yFor(b.high);
@@ -158,6 +172,7 @@ export default function TradeChartDialog({
                   </g>
                 );
               })}
+
 
               {/* time labels — every ~6 bars */}
               {m15.map((b, i) => {
