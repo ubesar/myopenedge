@@ -30,6 +30,10 @@ import { analyzeIBPullback, type IBPullbackResult } from "@/lib/ib-pullback-anal
 import { analyzeMomentumFibPullback, type MFPResult } from "@/lib/momentum-fib-pullback-analysis";
 import IBPullbackDashboard from "@/components/IBPullbackDashboard";
 import MomentumFibPullbackDashboard from "@/components/MomentumFibPullbackDashboard";
+import ORBDashboard from "@/components/ORBDashboard";
+import QuantPanel from "@/components/QuantPanel";
+import { analyzeORB, orbQuantTrades, type ORBResult } from "@/lib/orb-analysis";
+import { DEFAULT_QUANT_SETTINGS, type QuantSettings, type QuantTrade } from "@/lib/quant-metrics";
 import PullbackReport from "@/components/PullbackReport";
 import InsideBarReport from "@/components/InsideBarReport";
 import OutsideDayReport from "@/components/OutsideDayReport";
@@ -67,6 +71,10 @@ const Index = () => {
   const [pullbackResult, setPullbackResult] = useState<PullbackResult | null>(null);
   const [ibPullbackResult, setIbPullbackResult] = useState<IBPullbackResult | null>(null);
   const [mfpResult, setMfpResult] = useState<MFPResult | null>(null);
+  const [orbResult, setOrbResult] = useState<ORBResult | null>(null);
+  const [orMinutes, setOrMinutes] = useState<number>(15);
+  const [orbTargetR, setOrbTargetR] = useState<number>(1);
+  const [quantSettings, setQuantSettings] = useState<QuantSettings>(DEFAULT_QUANT_SETTINGS);
   const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
   const [occMaxDays, setOccMaxDays] = useState<number>(0);
   const [occWeekdays, setOccWeekdays] = useState<number[]>([1,2,3,4,5]);
@@ -177,7 +185,7 @@ const Index = () => {
     }
 
     setLoading(true);
-    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null); setPullbackResult(null); setIbPullbackResult(null); setMfpResult(null);
+    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null); setPullbackResult(null); setIbPullbackResult(null); setMfpResult(null); setOrbResult(null);
     setSymbol(ticker); setActiveMode(effectiveMode); setAnalysisMaxDays(effectiveMaxDays); setAnalysisWeekdays(weekdays);
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
@@ -298,6 +306,11 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setIbPullbackResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindowMinutes: a.ibWindowMinutes, overall: a.overall, stopMode });
+        } else if (effectiveMode === "orb") {
+          const a = analyzeORB(values as any, orMinutes, effectiveMaxDays, weekdays);
+          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setOrbResult(a);
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, orMinutes: a.orMinutes, breakoutRate: a.breakoutRate, retestRate: a.retestRate });
         } else if (effectiveMode === "momentum-fib-pullback") {
           const a = analyzeMomentumFibPullback(values as any, effectiveMaxDays, weekdays);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
@@ -313,12 +326,64 @@ const Index = () => {
     }
   };
 
-  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullbackResult || ibPullbackResult || mfpResult;
+  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullbackResult || ibPullbackResult || mfpResult || orbResult;
   const ibPullbackStopMode: "ib-extreme" | "next-level" = activeMode === "ib-pullback-stacked" ? "next-level" : "ib-extreme";
 
   const reportTitle = hasResults
-    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : activeMode === "pullback" ? "pullback 50% strategy report" : activeMode === "ib-pullback" ? "IB pullback 25/50/75% strategy report (SL = IB extreme)" : activeMode === "ib-pullback-stacked" ? "IB pullback 25/50/75% strategy report (SL = next level)" : activeMode === "momentum-fib-pullback" ? "momentum candle fib pullback strategy report" : "gap fill statistics report"}`
+    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : activeMode === "pullback" ? "pullback 50% strategy report" : activeMode === "ib-pullback" ? "IB pullback 25/50/75% strategy report (SL = IB extreme)" : activeMode === "ib-pullback-stacked" ? "IB pullback 25/50/75% strategy report (SL = next level)" : activeMode === "momentum-fib-pullback" ? "momentum candle fib pullback strategy report" : activeMode === "orb" ? "opening range breakout + retest report" : "gap fill statistics report"}`
     : "";
+
+  const quantTrades: QuantTrade[] = useMemo(() => {
+    if (activeMode === "pullback" && pullbackResult) {
+      return pullbackResult.trades.map((t) => ({
+        date: t.date,
+        side: (t.direction === "bullish" ? "long" : "short") as "long" | "short",
+        entry: t.entry,
+        exit: t.outcome === "win" ? t.target : t.outcome === "loss" ? t.stop : undefined,
+        risk: Math.abs(t.entry - t.stop),
+        outcome: t.outcome,
+      }));
+    }
+    if (activeMode === "orb" && orbResult) {
+      return (
+        <ORBDashboard
+          result={orbResult}
+          symbol={symbol}
+          dateRange={formatDateRange(analysisMaxDays)}
+          weekdays={formatWeekdays(analysisWeekdays)}
+          targetR={orbTargetR}
+          onTargetChange={setOrbTargetR}
+        />
+      );
+    }
+
+    if (activeMode === "momentum-fib-pullback" && mfpResult) {
+      return mfpResult.trades.map((t) => ({
+        date: t.date,
+        side: t.side,
+        entry: t.entry,
+        exit: t.outcome === "win" ? t.tp : t.outcome === "loss" ? t.sl : undefined,
+        risk: t.risk,
+        outcome: t.outcome,
+      }));
+    }
+    if ((activeMode === "ib-pullback" || activeMode === "ib-pullback-stacked") && ibPullbackResult) {
+      return ibPullbackResult.trades
+        .filter((t) => t.outcome === "win" || t.outcome === "loss" || t.outcome === "open")
+        .map((t) => ({
+          date: t.date,
+          side: t.side,
+          entry: t.entry,
+          exit: t.outcome === "win" ? t.target : t.outcome === "loss" ? t.stop : undefined,
+          risk: Math.abs(t.entry - t.stop),
+          outcome: t.outcome as "win" | "loss" | "open",
+        }));
+    }
+    if (activeMode === "orb" && orbResult) {
+      return orbQuantTrades(orbResult, orbTargetR);
+    }
+    return [];
+  }, [activeMode, pullbackResult, mfpResult, ibPullbackResult, orbResult, orbTargetR]);
 
   const renderCharts = () => {
     if (activeMode === "ib" && result) {
@@ -672,6 +737,19 @@ const Index = () => {
       );
     }
 
+    if (activeMode === "orb" && orbResult) {
+      return (
+        <ORBDashboard
+          result={orbResult}
+          symbol={symbol}
+          dateRange={formatDateRange(analysisMaxDays)}
+          weekdays={formatWeekdays(analysisWeekdays)}
+          targetR={orbTargetR}
+          onTargetChange={setOrbTargetR}
+        />
+      );
+    }
+
     if (activeMode === "momentum-fib-pullback" && mfpResult) {
       return (
         <MomentumFibPullbackDashboard
@@ -731,6 +809,10 @@ const Index = () => {
                 onSaveTemplate={saveTemplate}
                 onDeleteTemplate={deleteTemplate}
                 templateLoading={templateLoading}
+                orMinutes={orMinutes}
+                onOrMinutesChange={setOrMinutes}
+                quantSettings={quantSettings}
+                onQuantSettingsChange={setQuantSettings}
               />
             </div>
           </>
@@ -746,6 +828,10 @@ const Index = () => {
           onSaveTemplate={saveTemplate}
           onDeleteTemplate={deleteTemplate}
           templateLoading={templateLoading}
+          orMinutes={orMinutes}
+          onOrMinutesChange={setOrMinutes}
+          quantSettings={quantSettings}
+          onQuantSettingsChange={setQuantSettings}
         />
       )}
 
@@ -789,7 +875,14 @@ const Index = () => {
           </div>
         )}
 
-        {hasResults && !loading && renderCharts()}
+        {hasResults && !loading && (
+          <div className="space-y-4">
+            {renderCharts()}
+            {quantTrades.length > 0 && (
+              <QuantPanel trades={quantTrades} settings={quantSettings} label={activeMode === "orb" ? `orb @ ${orbTargetR}R` : activeMode} />
+            )}
+          </div>
+        )}
       </main>
 
       {/* Column 4: Right Sidebar — hidden on mobile */}
