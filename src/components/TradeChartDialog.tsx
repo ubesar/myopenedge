@@ -114,9 +114,13 @@ export default function TradeChartDialog({
   const cw = W - PL - PR;
   const ch = H - PT - PB;
 
+  const ib = trade.ib;
+
   const highs = m15.map((b) => b.high);
   const lows = m15.map((b) => b.low);
-  const levels = [trade.entry, trade.stop, trade.target];
+  const levels = ib
+    ? [trade.entry, trade.stop, trade.target, ib.high, ib.low]
+    : [trade.entry, trade.stop, trade.target];
   const yMax = Math.max(...highs, ...levels);
   const yMin = Math.min(...lows, ...levels);
   const pad = (yMax - yMin) * 0.08 || 1;
@@ -129,11 +133,17 @@ export default function TradeChartDialog({
 
   const signalIdx = trade.time ? m15.findIndex((b) => b.time === trade.time) : -1;
 
+  // shaded initial balance zone (session start → session start + ib window)
+  const ibEndMin = ib ? sessionStartMin + ib.windowMinutes : 0;
+  const ibEndIdx = ib ? m15.findIndex((b) => toMinutes(b.time) >= ibEndMin) : -1;
+  const ibX1 = ib ? (ibEndIdx > 0 ? xFor(ibEndIdx) : xFor(m15.length - 1)) : 0;
+
   const gridTicks = 5;
   const gridVals: number[] = [];
   for (let i = 0; i <= gridTicks; i++) gridVals.push(y0 + ((y1 - y0) * i) / gridTicks);
 
   const levelColor = { entry: "#3b82f6", sl: "#ef4444", tp: "#10b981" };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
