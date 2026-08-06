@@ -191,7 +191,7 @@ export function analyzeIB2575(
     const target = direction === "bullish" ? ibHigh : ibLow;
     const stop = ib50;
 
-    // Confirmation: m5 momentum candle closing beyond the entry level, before 13:00.
+    // Confirmation: m5 momentum candle that CROSSES the level and closes beyond it, before 13:00.
     let confirmIdx = -1;
     for (let i = firstPostIB; i < m5.length; i++) {
       const t = minOf(m5[i].time);
@@ -199,11 +199,16 @@ export function analyzeIB2575(
       const f = flags[i];
       if (!f?.isSuper || !f.direction) continue;
       if (f.direction !== direction) continue;
-      const closedBeyond = direction === "bullish" ? m5[i].close > ib75 : m5[i].close < ib25;
-      if (!closedBeyond) continue;
+      const c = m5[i];
+      const crossed =
+        direction === "bullish"
+          ? c.close > ib75 && Math.min(c.open, c.low) <= ib75
+          : c.close < ib25 && Math.max(c.open, c.high) >= ib25;
+      if (!crossed) continue;
       confirmIdx = i;
       break;
     }
+
     if (confirmIdx === -1) continue;
 
     const { triggered, entryTime, outcome } = walk(m5, confirmIdx + 1, direction, entry, stop, target);
