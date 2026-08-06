@@ -320,15 +320,8 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
 
           const colorByTs = new Map<number, string>();
           sorted.forEach((bar, i) => {
-            const f = flags[i];
-            if (!f.direction) return;
-            let color: string | null = null;
-            if (f.level === "super") {
-              color = f.direction === "bullish" ? "rgb(157,255,0)" : "rgb(210,1,252)";
-            } else if (f.level === "above") {
-              color = f.direction === "bullish" ? "rgb(3,129,108)" : "rgb(243,63,63)";
-            }
-            if (color) colorByTs.set(toTs(bar.datetime), color);
+            const up = parseFloat(bar.close) >= parseFloat(bar.open);
+            colorByTs.set(toTs(bar.datetime), momentumColor(flags[i], up));
           });
 
           const recolored = candles.map((c) => {
@@ -338,6 +331,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
             return c;
           });
           seriesRef.current!.setData(recolored);
+
         }
 
 
