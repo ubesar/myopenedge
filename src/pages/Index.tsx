@@ -714,6 +714,8 @@ const Index = () => {
                       <th className="px-3 py-2 font-medium text-right">sl</th>
                       <th className="px-3 py-2 font-medium text-right">tp</th>
                       <th className="px-3 py-2 font-medium text-center">outcome</th>
+                      <th className="px-3 py-2 font-medium text-center">chart</th>
+
                     </tr>
                   </thead>
                   <tbody>
