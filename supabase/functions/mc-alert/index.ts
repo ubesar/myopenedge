@@ -2,7 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const TELEGRAM_GATEWAY = "https://connector-gateway.lovable.dev/telegram";
-const BODY_RATIO = 0.60;
+const SUPER_BODY_MULT = 1.5;   // body > 1.5x avg body
+const BODY_SMA_PERIOD = 15;    // SMA(15) of |close - open|
 const SYMBOL = "QQQ";
 
 serve(async () => {
@@ -85,13 +86,20 @@ serve(async () => {
       return new Response(JSON.stringify({ status: "no_bars", count: candles.length }));
     }
 
-    // Check the last candle for MC pattern (single candle, body ratio ≥60%)
+    // Momentum Candle = body > 1.5x the SMA(15) of body size (Big Body Candle logic)
     const lastCandle = candles[candles.length - 1];
 
     const body = Math.abs(lastCandle.close - lastCandle.open);
     const range = lastCandle.high - lastCandle.low;
 
-    const isMC = range > 0 && body / range >= BODY_RATIO;
+    const window = candles.slice(-BODY_SMA_PERIOD);
+    const avgBody = window.reduce((acc, c) => acc + Math.abs(c.close - c.open), 0) / window.length;
+
+    const isMC =
+      window.length >= 5 &&
+      avgBody > 0 &&
+      lastCandle.close !== lastCandle.open &&
+      body > avgBody * SUPER_BODY_MULT;
 
     if (!isMC) {
       return new Response(JSON.stringify({ status: "no_mc", lastBar: lastCandle.time }));
@@ -114,14 +122,14 @@ serve(async () => {
     // Send Telegram alert
     const emoji = signalType === "bullish" ? "🟢" : "🔴";
     const direction = signalType === "bullish" ? "BULLISH" : "BEARISH";
-    const bodyRatioPct = (body / range * 100).toFixed(0);
+    const bodyVsAvg = (body / avgBody).toFixed(2);
     const message = [
       `${emoji} <b>MC Alert — ${SYMBOL} 15m</b>`,
       ``,
       `<b>Signal:</b> ${direction} Momentum Candle`,
       `<b>Time:</b> ${lastCandle.time} ET`,
       `<b>OHLC:</b> O:${lastCandle.open.toFixed(2)} H:${lastCandle.high.toFixed(2)} L:${lastCandle.low.toFixed(2)} C:${lastCandle.close.toFixed(2)}`,
-      `<b>Body Ratio:</b> ${bodyRatioPct}%`,
+      `<b>Body:</b> ${body.toFixed(2)} (${bodyVsAvg}x avg15)`,
       ``,
       `📊 <i>MyOpenEdge — Momentum Candle Monitor</i>`,
     ].join("\n");

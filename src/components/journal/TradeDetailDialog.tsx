@@ -1,17 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ImagePlus, Trash2, Loader2, X } from "lucide-react";
-import { supabase as _supaClient } from "@/integrations/supabase/client";
-// @ts-ignore - some tables not in generated types
-const supabase: any = _supaClient as any;
-
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { extractTradeScreenshotPath, resolveTradeScreenshotUrl } from "@/lib/trade-screenshot-url";
 
 interface Trade {
   id: string;
+  pnl_gross: number;
   pnl_net: number;
+  fees: number | null;
   side: string;
   close_time: string;
   open_time: string;
@@ -21,6 +20,8 @@ interface Trade {
   r_multiple?: number | null;
   notes?: string | null;
 }
+
+const netPnl = (t: Trade) => t.pnl_gross - (t.fees || 0);
 
 interface Attachment {
   id: string;
@@ -150,8 +151,8 @@ const TradeDetailDialog = ({ open, onOpenChange, trade }: TradeDetailDialogProps
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-foreground text-[14px]">
               Trade Detail — {trade.symbol}
-              <span className={`text-[12px] font-bold ${trade.pnl_net >= 0 ? "text-green-400" : "text-red-400"}`}>
-                {fmtPnl(trade.pnl_net)}
+              <span className={`text-[12px] font-bold ${netPnl(trade) >= 0 ? "text-green-400" : "text-red-400"}`}>
+                Net {fmtPnl(netPnl(trade))}
               </span>
             </DialogTitle>
           </DialogHeader>
@@ -159,6 +160,9 @@ const TradeDetailDialog = ({ open, onOpenChange, trade }: TradeDetailDialogProps
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-3 text-[12px]">
               {[
+                { label: "Gross P&L", value: fmtPnl(trade.pnl_gross) },
+                { label: "Fees", value: fmtPnl(trade.fees || 0) },
+                { label: "Net P&L", value: fmtPnl(netPnl(trade)) },
                 { label: "Side", value: trade.side },
                 { label: "Qty", value: trade.qty || 1 },
                 { label: "Open", value: new Date(trade.open_time).toLocaleString() },
@@ -168,7 +172,7 @@ const TradeDetailDialog = ({ open, onOpenChange, trade }: TradeDetailDialogProps
               ].map((item) => (
                 <div key={item.label} className="rounded-lg border border-border bg-background p-2.5">
                   <p className="text-[10px] text-muted-foreground">{item.label}</p>
-                  <p className="font-medium text-foreground mt-0.5">{item.value}</p>
+                  <p className={`font-medium mt-0.5 ${item.label === "Net P&L" ? (netPnl(trade) >= 0 ? "text-green-400" : "text-red-400") : "text-foreground"}`}>{item.value}</p>
                 </div>
               ))}
             </div>
