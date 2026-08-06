@@ -765,8 +765,10 @@ const Backtester = () => {
         trade={chartTrade}
         bars={result?.bars ?? []}
         symbol={result?.symbol ?? ""}
-        sessionStartMin={dataSource === "csv" ? 6 * 60 : undefined}
+        sessionStartMin={dataSource === "csv" ? 6 * 60 : chartTrade?.ib ? 9 * 60 + 30 : undefined}
         sessionEndMin={dataSource === "csv" ? csvCloseMin : undefined}
+        tfMinutes={chartTrade?.ib ? 5 : 15}
+
       />
 
     </div>
