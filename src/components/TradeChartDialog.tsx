@@ -11,6 +11,16 @@ interface RawBar {
   close: string;
 }
 
+export interface IBLevelsForChart {
+  high: number;
+  low: number;
+  q25: number;
+  q50: number;
+  q75: number;
+  /** IB window length in minutes (shaded zone starts at session start) */
+  windowMinutes: number;
+}
+
 export interface TradeForChart {
   date: string;
   time?: string;
@@ -19,6 +29,8 @@ export interface TradeForChart {
   stop: number;
   target: number;
   outcome: "win" | "loss";
+  /** when present the chart renders the initial balance zone + quarter levels */
+  ib?: IBLevelsForChart;
 }
 
 interface Props {
@@ -30,10 +42,13 @@ interface Props {
   /** session window in minutes from midnight; end may exceed 1440 (next-day wrap) */
   sessionStartMin?: number;
   sessionEndMin?: number;
+  /** chart timeframe in minutes (default 15) */
+  tfMinutes?: number;
 }
 
 const DEFAULT_START = 9 * 60 + 30;
 const DEFAULT_END = 16 * 60;
+
 
 function toMinutes(hhmm: string) {
   const [h, m] = hhmm.split(":").map(Number);
@@ -58,7 +73,9 @@ export default function TradeChartDialog({
   symbol,
   sessionStartMin = DEFAULT_START,
   sessionEndMin = DEFAULT_END,
+  tfMinutes = 15,
 }: Props) {
+
   if (!trade) return null;
 
   const wrapCutoff = sessionEndMin > 24 * 60 ? sessionEndMin - 24 * 60 : 0;
@@ -84,8 +101,9 @@ export default function TradeChartDialog({
       close: parseFloat(x.bar.close),
     }));
 
-  const m15 = aggregateBars(m5, 15);
+  const m15 = aggregateBars(m5, tfMinutes);
   const flags = computeMomentumFlags(m15);
+
 
   // scales — the whole session fits on screen (no horizontal scroll)
   const W = Math.max(900, Math.min(1800, m15.length * 14 + 110));
@@ -96,9 +114,13 @@ export default function TradeChartDialog({
   const cw = W - PL - PR;
   const ch = H - PT - PB;
 
+  const ib = trade.ib;
+
   const highs = m15.map((b) => b.high);
   const lows = m15.map((b) => b.low);
-  const levels = [trade.entry, trade.stop, trade.target];
+  const levels = ib
+    ? [trade.entry, trade.stop, trade.target, ib.high, ib.low]
+    : [trade.entry, trade.stop, trade.target];
   const yMax = Math.max(...highs, ...levels);
   const yMin = Math.min(...lows, ...levels);
   const pad = (yMax - yMin) * 0.08 || 1;
@@ -111,18 +133,24 @@ export default function TradeChartDialog({
 
   const signalIdx = trade.time ? m15.findIndex((b) => b.time === trade.time) : -1;
 
+  // shaded initial balance zone (session start → session start + ib window)
+  const ibEndMin = ib ? sessionStartMin + ib.windowMinutes : 0;
+  const ibEndIdx = ib ? m15.findIndex((b) => toMinutes(b.time) >= ibEndMin) : -1;
+  const ibX1 = ib ? (ibEndIdx > 0 ? xFor(ibEndIdx) : xFor(m15.length - 1)) : 0;
+
   const gridTicks = 5;
   const gridVals: number[] = [];
   for (let i = 0; i <= gridTicks; i++) gridVals.push(y0 + ((y1 - y0) * i) / gridTicks);
 
   const levelColor = { entry: "#3b82f6", sl: "#ef4444", tp: "#10b981" };
 
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw]">
         <DialogHeader>
           <DialogTitle className="lowercase text-sm">
-            {symbol} · {trade.date} · m15 · {trade.direction === "bullish" ? "long" : "short"} @ {trade.time ?? "-"} ·{" "}
+            {symbol} · {trade.date} · m{tfMinutes} · {trade.direction === "bullish" ? "long" : "short"} @ {trade.time ?? "-"} ·{" "}
             <span className={trade.outcome === "win" ? "text-emerald-500" : "text-red-500"}>
               {trade.outcome.toUpperCase()}
             </span>
@@ -143,6 +171,30 @@ export default function TradeChartDialog({
                   </text>
                 </g>
               ))}
+
+              {/* initial balance zone + quarter levels */}
+              {ib && (
+                <g>
+                  <rect x={PL} y={PT} width={Math.max(0, ibX1 - PL)} height={ch} fill="#1d3a8a" fillOpacity={0.35} />
+                  <line x1={PL} x2={W - PR} y1={yFor(ib.high)} y2={yFor(ib.high)} stroke="#22c55e" strokeWidth={1.6} />
+                  <line x1={PL} x2={W - PR} y1={yFor(ib.low)} y2={yFor(ib.low)} stroke="#ef4444" strokeWidth={1.6} />
+                  <line x1={PL} x2={W - PR} y1={yFor(ib.q75)} y2={yFor(ib.q75)} stroke="#3b82f6" strokeWidth={1} strokeDasharray="6 4" />
+                  <line x1={PL} x2={W - PR} y1={yFor(ib.q50)} y2={yFor(ib.q50)} stroke="#9ca3af" strokeWidth={1} strokeDasharray="6 4" />
+                  <line x1={PL} x2={W - PR} y1={yFor(ib.q25)} y2={yFor(ib.q25)} stroke="#3b82f6" strokeWidth={1} strokeDasharray="6 4" />
+                  {[
+                    { v: ib.high, l: "ib high", c: "#22c55e" },
+                    { v: ib.q75, l: "ib75", c: "#3b82f6" },
+                    { v: ib.q50, l: "ib50", c: "#9ca3af" },
+                    { v: ib.q25, l: "ib25", c: "#3b82f6" },
+                    { v: ib.low, l: "ib low", c: "#ef4444" },
+                  ].map((lv) => (
+                    <text key={lv.l} x={W - PR + 4} y={yFor(lv.v) + 3} fontSize={10} fill={lv.c}>
+                      {lv.l}
+                    </text>
+                  ))}
+                </g>
+              )}
+
 
               {/* candles — momentum coloring (super = chartreuse / magenta) */}
               {m15.map((b, i) => {
@@ -175,12 +227,14 @@ export default function TradeChartDialog({
                 );
               })}
 
-              {/* levels */}
-              {[
+              {/* levels — hidden for IB setups (entry/sl/tp are the IB levels themselves) */}
+              {(ib ? [] : [
+
                 { label: "TP", value: trade.target, color: levelColor.tp },
                 { label: "Entry", value: trade.entry, color: levelColor.entry },
                 { label: "SL", value: trade.stop, color: levelColor.sl },
-              ].map((lv) => (
+              ]).map((lv) => (
+
                 <g key={lv.label}>
                   <line x1={PL} x2={W - PR} y1={yFor(lv.value)} y2={yFor(lv.value)} stroke={lv.color} strokeWidth={1.2} strokeDasharray="5 4" />
                   <text x={W - PR + 4} y={yFor(lv.value) + 3} fontSize={10} fill={lv.color}>

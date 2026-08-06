@@ -33,7 +33,9 @@ interface BTTrade {
   rMultiple: number;   // +TP/SL or -1
   pnl: number;         // dollars (fixed $100 risk)
   qty: number;
+  ib?: { high: number; low: number; q25: number; q50: number; q75: number; windowMinutes: number };
 }
+
 
 interface BTResult {
   strategy: StrategyKey;
@@ -154,7 +156,7 @@ function toBTTradesPB50(trades: Pullback50Trade[]): BTTrade[] {
   return out;
 }
 
-function toBTTradesIB2575(trades: IB2575Trade[]): BTTrade[] {
+function toBTTradesIB2575(trades: IB2575Trade[], ibWindow: number): BTTrade[] {
   return trades
     .filter((t) => t.outcome === "win" || t.outcome === "loss")
     .map((t) => {
@@ -165,6 +167,7 @@ function toBTTradesIB2575(trades: IB2575Trade[]): BTTrade[] {
       const pnl = rMultiple * RISK_USD;
       return {
         date: t.date,
+        time: t.entryTime ?? t.confirmTime ?? undefined,
         direction: t.direction,
         entry: t.entry,
         stop: t.stop,
@@ -173,9 +176,11 @@ function toBTTradesIB2575(trades: IB2575Trade[]): BTTrade[] {
         rMultiple,
         pnl,
         qty,
+        ib: { high: t.ibHigh, low: t.ibLow, q25: t.ib25, q50: t.ib50, q75: t.ib75, windowMinutes: ibWindow },
       };
     });
 }
+
 
 function computeMetrics(trades: BTTrade[]): Omit<BTResult, "strategy" | "symbol" | "totalDays" | "trades" | "bars"> {
   const wins = trades.filter((t) => t.outcome === "win");
@@ -317,7 +322,7 @@ const Backtester = () => {
 
       } else {
         const r = analyzeIB2575(values, parseInt(ibWindow), days, [1, 2, 3, 4, 5]);
-        trades = toBTTradesIB2575(r.trades);
+        trades = toBTTradesIB2575(r.trades, parseInt(ibWindow));
         totalDays = r.totalDays;
       }
 
@@ -734,7 +739,9 @@ const Backtester = () => {
                                   stop: t.stop,
                                   target: t.target,
                                   outcome: t.outcome,
+                                  ib: t.ib,
                                 });
+
                               }}
                               title="view 15m chart"
                             >
@@ -758,8 +765,10 @@ const Backtester = () => {
         trade={chartTrade}
         bars={result?.bars ?? []}
         symbol={result?.symbol ?? ""}
-        sessionStartMin={dataSource === "csv" ? 6 * 60 : undefined}
+        sessionStartMin={dataSource === "csv" ? 6 * 60 : chartTrade?.ib ? 9 * 60 + 30 : undefined}
         sessionEndMin={dataSource === "csv" ? csvCloseMin : undefined}
+        tfMinutes={chartTrade?.ib ? 5 : 15}
+
       />
 
     </div>

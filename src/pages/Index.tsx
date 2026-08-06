@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { Bookmark, Loader2, SlidersHorizontal, PanelRightOpen } from "lucide-react";
+import { Bookmark, Loader2, SlidersHorizontal, PanelRightOpen, BarChart3 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { type AnalysisMode } from "@/components/ControlPanel";
 import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
@@ -29,6 +29,8 @@ import { analyzeLondonIB, type LondonIBResult } from "@/lib/london-ib-analysis";
 import { analyzePullback50, type Pullback50Result } from "@/lib/pullback50-analysis";
 import { analyzeIB2575, type IB2575Result } from "@/lib/ib2575-analysis";
 import { analyzeMCM152am, type MCM152amResult } from "@/lib/mcm15-2am-analysis";
+import TradeChartDialog, { type TradeForChart } from "@/components/TradeChartDialog";
+
 import InsideBarReport from "@/components/InsideBarReport";
 import OutsideDayReport from "@/components/OutsideDayReport";
 import GlobexIBDashboard from "@/components/GlobexIBDashboard";
@@ -66,6 +68,9 @@ const Index = () => {
   const [ib2575Result, setIb2575Result] = useState<IB2575Result | null>(null);
   const [mcm152amResult, setMcm152amResult] = useState<MCM152amResult | null>(null);
   const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
+  const [ib2575RawBars, setIb2575RawBars] = useState<any[] | null>(null);
+  const [ibChartTrade, setIbChartTrade] = useState<TradeForChart | null>(null);
+
   const [occMaxDays, setOccMaxDays] = useState<number>(0);
   const [occWeekdays, setOccWeekdays] = useState<number[]>([1,2,3,4,5]);
   const [symbol, setSymbol] = useState("");
@@ -305,7 +310,9 @@ const Index = () => {
         } else if (effectiveMode === "ib2575") {
           const a = analyzeIB2575(values as any, effectiveIbWindow, effectiveMaxDays, weekdays);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setIb2575RawBars(values as any);
           setIb2575Result(a);
+
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, ibWindow: effectiveIbWindow, winRate: a.stats.winRate, triggeredTrades: a.triggeredTrades });
         }
       }
@@ -707,6 +714,8 @@ const Index = () => {
                       <th className="px-3 py-2 font-medium text-right">sl</th>
                       <th className="px-3 py-2 font-medium text-right">tp</th>
                       <th className="px-3 py-2 font-medium text-center">outcome</th>
+                      <th className="px-3 py-2 font-medium text-center">chart</th>
+
                     </tr>
                   </thead>
                   <tbody>
@@ -732,7 +741,28 @@ const Index = () => {
                           <td className="px-3 py-1.5 text-center">
                             <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${outCls}`}>{outLabel}</span>
                           </td>
+                          <td className="px-3 py-1.5 text-center">
+                            <button
+                              type="button"
+                              title="view chart"
+                              className="text-muted-foreground hover:text-foreground disabled:opacity-30"
+                              disabled={!t.triggered || !ib2575RawBars}
+                              onClick={() => setIbChartTrade({
+                                date: t.date,
+                                time: t.entryTime ?? t.confirmTime ?? undefined,
+                                direction: t.direction,
+                                entry: t.entry,
+                                stop: t.stop,
+                                target: t.target,
+                                outcome: t.outcome === "win" ? "win" : "loss",
+                                ib: { high: t.ibHigh, low: t.ibLow, q25: t.ib25, q50: t.ib50, q75: t.ib75, windowMinutes: ib2575Result.ibWindowMinutes },
+                              })}
+                            >
+                              <BarChart3 className="h-3.5 w-3.5 inline" />
+                            </button>
+                          </td>
                         </tr>
+
                       );
                     })}
                   </tbody>
@@ -1083,6 +1113,18 @@ const Index = () => {
       {!isMobile && (
         <RightSidebar templates={templates} activeMode={activeMode} />
       )}
+
+      <TradeChartDialog
+        open={!!ibChartTrade}
+        onOpenChange={(v) => !v && setIbChartTrade(null)}
+        trade={ibChartTrade}
+        bars={ib2575RawBars ?? []}
+        symbol={symbol}
+        sessionStartMin={9 * 60 + 30}
+        sessionEndMin={16 * 60}
+        tfMinutes={5}
+      />
+
     </div>
   );
 };
