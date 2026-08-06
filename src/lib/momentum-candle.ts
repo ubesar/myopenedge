@@ -118,3 +118,20 @@ export function computeMomentumFlagsByDay(
 export function isMomentumCandle(flag: MomentumFlag | undefined): boolean {
   return !!flag?.isSuper;
 }
+
+/** Shared momentum candle palette (matches the "Momentum Candle" indicator). */
+export const MOMENTUM_COLORS = {
+  superBull: "rgb(157,255,0)",
+  superBear: "rgb(210,1,252)",
+  aboveBull: "rgb(3,129,108)",
+  aboveBear: "rgb(243,63,63)",
+  belowBull: "rgb(27,94,32)",
+  belowBear: "rgb(176,58,58)",
+} as const;
+
+/** Color for a candle given its momentum flag and direction. */
+export function momentumColor(flag: MomentumFlag | undefined, isUp: boolean): string {
+  if (flag?.level === "super") return isUp ? MOMENTUM_COLORS.superBull : MOMENTUM_COLORS.superBear;
+  if (flag?.level === "above") return isUp ? MOMENTUM_COLORS.aboveBull : MOMENTUM_COLORS.aboveBear;
+  return isUp ? MOMENTUM_COLORS.belowBull : MOMENTUM_COLORS.belowBear;
+}
