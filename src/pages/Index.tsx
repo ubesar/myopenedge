@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { Bookmark, Loader2, SlidersHorizontal, PanelRightOpen } from "lucide-react";
+import { Bookmark, Loader2, SlidersHorizontal, PanelRightOpen, BarChart3 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { type AnalysisMode } from "@/components/ControlPanel";
 import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
