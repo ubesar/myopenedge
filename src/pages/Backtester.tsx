@@ -322,7 +322,7 @@ const Backtester = () => {
 
       } else {
         const r = analyzeIB2575(values, parseInt(ibWindow), days, [1, 2, 3, 4, 5]);
-        trades = toBTTradesIB2575(r.trades);
+        trades = toBTTradesIB2575(r.trades, parseInt(ibWindow));
         totalDays = r.totalDays;
       }
 
