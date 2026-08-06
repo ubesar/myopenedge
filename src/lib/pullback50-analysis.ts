@@ -275,7 +275,9 @@ export function analyzePullback50(
       });
 
       signalsToday++;
-      gateUntil = r.resolvedIdx;
+      // If the bar that resolved TP/SL is itself a momentum candle, it becomes
+      // the new candle 1 for the next setup instead of being skipped.
+      gateUntil = flags[r.resolvedIdx]?.isSuper ? r.resolvedIdx - 1 : r.resolvedIdx;
     }
 
     if (signalsToday > 0) daysWithSignal++;
