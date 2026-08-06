@@ -73,7 +73,9 @@ export default function TradeChartDialog({
   symbol,
   sessionStartMin = DEFAULT_START,
   sessionEndMin = DEFAULT_END,
+  tfMinutes = 15,
 }: Props) {
+
   if (!trade) return null;
 
   const wrapCutoff = sessionEndMin > 24 * 60 ? sessionEndMin - 24 * 60 : 0;
