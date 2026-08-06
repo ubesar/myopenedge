@@ -310,7 +310,9 @@ const Index = () => {
         } else if (effectiveMode === "ib2575") {
           const a = analyzeIB2575(values as any, effectiveIbWindow, effectiveMaxDays, weekdays);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setIb2575RawBars(values as any);
           setIb2575Result(a);
+
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, ibWindow: effectiveIbWindow, winRate: a.stats.winRate, triggeredTrades: a.triggeredTrades });
         }
       }
