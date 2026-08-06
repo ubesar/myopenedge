@@ -1113,6 +1113,18 @@ const Index = () => {
       {!isMobile && (
         <RightSidebar templates={templates} activeMode={activeMode} />
       )}
+
+      <TradeChartDialog
+        open={!!ibChartTrade}
+        onOpenChange={(v) => !v && setIbChartTrade(null)}
+        trade={ibChartTrade}
+        bars={ib2575RawBars ?? []}
+        symbol={symbol}
+        sessionStartMin={9 * 60 + 30}
+        sessionEndMin={16 * 60}
+        tfMinutes={5}
+      />
+
     </div>
   );
 };
