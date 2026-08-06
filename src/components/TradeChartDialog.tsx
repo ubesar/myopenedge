@@ -150,7 +150,7 @@ export default function TradeChartDialog({
       <DialogContent className="max-w-[95vw]">
         <DialogHeader>
           <DialogTitle className="lowercase text-sm">
-            {symbol} · {trade.date} · m15 · {trade.direction === "bullish" ? "long" : "short"} @ {trade.time ?? "-"} ·{" "}
+            {symbol} · {trade.date} · m{tfMinutes} · {trade.direction === "bullish" ? "long" : "short"} @ {trade.time ?? "-"} ·{" "}
             <span className={trade.outcome === "win" ? "text-emerald-500" : "text-red-500"}>
               {trade.outcome.toUpperCase()}
             </span>
