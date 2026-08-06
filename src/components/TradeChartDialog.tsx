@@ -172,6 +172,30 @@ export default function TradeChartDialog({
                 </g>
               ))}
 
+              {/* initial balance zone + quarter levels */}
+              {ib && (
+                <g>
+                  <rect x={PL} y={PT} width={Math.max(0, ibX1 - PL)} height={ch} fill="#1d3a8a" fillOpacity={0.35} />
+                  <line x1={PL} x2={W - PR} y1={yFor(ib.high)} y2={yFor(ib.high)} stroke="#22c55e" strokeWidth={1.6} />
+                  <line x1={PL} x2={W - PR} y1={yFor(ib.low)} y2={yFor(ib.low)} stroke="#ef4444" strokeWidth={1.6} />
+                  <line x1={PL} x2={W - PR} y1={yFor(ib.q75)} y2={yFor(ib.q75)} stroke="#3b82f6" strokeWidth={1} strokeDasharray="6 4" />
+                  <line x1={PL} x2={W - PR} y1={yFor(ib.q50)} y2={yFor(ib.q50)} stroke="#9ca3af" strokeWidth={1} strokeDasharray="6 4" />
+                  <line x1={PL} x2={W - PR} y1={yFor(ib.q25)} y2={yFor(ib.q25)} stroke="#3b82f6" strokeWidth={1} strokeDasharray="6 4" />
+                  {[
+                    { v: ib.high, l: "ib high", c: "#22c55e" },
+                    { v: ib.q75, l: "ib75", c: "#3b82f6" },
+                    { v: ib.q50, l: "ib50", c: "#9ca3af" },
+                    { v: ib.q25, l: "ib25", c: "#3b82f6" },
+                    { v: ib.low, l: "ib low", c: "#ef4444" },
+                  ].map((lv) => (
+                    <text key={lv.l} x={W - PR + 4} y={yFor(lv.v) + 3} fontSize={10} fill={lv.c}>
+                      {lv.l}
+                    </text>
+                  ))}
+                </g>
+              )}
+
+
               {/* candles — momentum coloring (super = chartreuse / magenta) */}
               {m15.map((b, i) => {
                 const x = xFor(i);
