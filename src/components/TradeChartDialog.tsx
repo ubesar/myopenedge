@@ -227,8 +227,9 @@ export default function TradeChartDialog({
                 );
               })}
 
-              {/* levels */}
-              {[
+              {/* levels — hidden for IB setups (entry/sl/tp are the IB levels themselves) */}
+              {(ib ? [] : [
+
                 { label: "TP", value: trade.target, color: levelColor.tp },
                 { label: "Entry", value: trade.entry, color: levelColor.entry },
                 { label: "SL", value: trade.stop, color: levelColor.sl },
