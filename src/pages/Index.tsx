@@ -29,6 +29,8 @@ import { analyzeLondonIB, type LondonIBResult } from "@/lib/london-ib-analysis";
 import { analyzePullback50, type Pullback50Result } from "@/lib/pullback50-analysis";
 import { analyzeIB2575, type IB2575Result } from "@/lib/ib2575-analysis";
 import { analyzeMCM152am, type MCM152amResult } from "@/lib/mcm15-2am-analysis";
+import TradeChartDialog, { type TradeForChart } from "@/components/TradeChartDialog";
+
 import InsideBarReport from "@/components/InsideBarReport";
 import OutsideDayReport from "@/components/OutsideDayReport";
 import GlobexIBDashboard from "@/components/GlobexIBDashboard";
