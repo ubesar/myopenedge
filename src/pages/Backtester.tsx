@@ -33,7 +33,9 @@ interface BTTrade {
   rMultiple: number;   // +TP/SL or -1
   pnl: number;         // dollars (fixed $100 risk)
   qty: number;
+  ib?: { high: number; low: number; q25: number; q50: number; q75: number; windowMinutes: number };
 }
+
 
 interface BTResult {
   strategy: StrategyKey;
