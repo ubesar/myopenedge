@@ -156,7 +156,7 @@ function toBTTradesPB50(trades: Pullback50Trade[]): BTTrade[] {
   return out;
 }
 
-function toBTTradesIB2575(trades: IB2575Trade[]): BTTrade[] {
+function toBTTradesIB2575(trades: IB2575Trade[], ibWindow: number): BTTrade[] {
   return trades
     .filter((t) => t.outcome === "win" || t.outcome === "loss")
     .map((t) => {
@@ -167,6 +167,7 @@ function toBTTradesIB2575(trades: IB2575Trade[]): BTTrade[] {
       const pnl = rMultiple * RISK_USD;
       return {
         date: t.date,
+        time: t.entryTime ?? t.confirmTime ?? undefined,
         direction: t.direction,
         entry: t.entry,
         stop: t.stop,
@@ -175,9 +176,11 @@ function toBTTradesIB2575(trades: IB2575Trade[]): BTTrade[] {
         rMultiple,
         pnl,
         qty,
+        ib: { high: t.ibHigh, low: t.ibLow, q25: t.ib25, q50: t.ib50, q75: t.ib75, windowMinutes: ibWindow },
       };
     });
 }
+
 
 function computeMetrics(trades: BTTrade[]): Omit<BTResult, "strategy" | "symbol" | "totalDays" | "trades" | "bars"> {
   const wins = trades.filter((t) => t.outcome === "win");
