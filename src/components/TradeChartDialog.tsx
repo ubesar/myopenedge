@@ -11,6 +11,16 @@ interface RawBar {
   close: string;
 }
 
+export interface IBLevelsForChart {
+  high: number;
+  low: number;
+  q25: number;
+  q50: number;
+  q75: number;
+  /** IB window length in minutes (shaded zone starts at session start) */
+  windowMinutes: number;
+}
+
 export interface TradeForChart {
   date: string;
   time?: string;
@@ -19,6 +29,8 @@ export interface TradeForChart {
   stop: number;
   target: number;
   outcome: "win" | "loss";
+  /** when present the chart renders the initial balance zone + quarter levels */
+  ib?: IBLevelsForChart;
 }
 
 interface Props {
@@ -30,10 +42,13 @@ interface Props {
   /** session window in minutes from midnight; end may exceed 1440 (next-day wrap) */
   sessionStartMin?: number;
   sessionEndMin?: number;
+  /** chart timeframe in minutes (default 15) */
+  tfMinutes?: number;
 }
 
 const DEFAULT_START = 9 * 60 + 30;
 const DEFAULT_END = 16 * 60;
+
 
 function toMinutes(hhmm: string) {
   const [h, m] = hhmm.split(":").map(Number);
