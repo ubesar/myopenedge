@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { computeMomentumFlags, computeMomentumFlagsByDay } from "@/lib/momentum-candle";
+import { computeMomentumFlags, computeMomentumFlagsByDay, momentumColor } from "@/lib/momentum-candle";
 import {
   createChart,
   ColorType,
