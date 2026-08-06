@@ -739,7 +739,9 @@ const Backtester = () => {
                                   stop: t.stop,
                                   target: t.target,
                                   outcome: t.outcome,
+                                  ib: t.ib,
                                 });
+
                               }}
                               title="view 15m chart"
                             >
