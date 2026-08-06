@@ -66,6 +66,9 @@ const Index = () => {
   const [ib2575Result, setIb2575Result] = useState<IB2575Result | null>(null);
   const [mcm152amResult, setMcm152amResult] = useState<MCM152amResult | null>(null);
   const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
+  const [ib2575RawBars, setIb2575RawBars] = useState<any[] | null>(null);
+  const [ibChartTrade, setIbChartTrade] = useState<TradeForChart | null>(null);
+
   const [occMaxDays, setOccMaxDays] = useState<number>(0);
   const [occWeekdays, setOccWeekdays] = useState<number[]>([1,2,3,4,5]);
   const [symbol, setSymbol] = useState("");
