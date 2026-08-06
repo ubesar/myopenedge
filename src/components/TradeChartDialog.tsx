@@ -144,21 +144,12 @@ export default function TradeChartDialog({
                 </g>
               ))}
 
-              {/* candles — momentum coloring (super = light green / purple) */}
+              {/* candles — momentum coloring (super = chartreuse / magenta) */}
               {m15.map((b, i) => {
                 const x = xFor(i);
                 const up = b.close >= b.open;
-                const f = flags[i];
-                const color =
-                  f?.level === "super"
-                    ? up
-                      ? "#26de81"
-                      : "#b026ff"
-                    : f?.level === "above"
-                    ? up
-                      ? "#0f7a4d"
-                      : "#a12222"
-                    : "#8a8a8a";
+                const color = momentumColor(flags[i], up);
+
                 const yO = yFor(b.open);
                 const yC = yFor(b.close);
                 const yH = yFor(b.high);
