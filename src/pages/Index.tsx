@@ -741,7 +741,28 @@ const Index = () => {
                           <td className="px-3 py-1.5 text-center">
                             <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${outCls}`}>{outLabel}</span>
                           </td>
+                          <td className="px-3 py-1.5 text-center">
+                            <button
+                              type="button"
+                              title="view chart"
+                              className="text-muted-foreground hover:text-foreground disabled:opacity-30"
+                              disabled={!t.triggered || !ib2575RawBars}
+                              onClick={() => setIbChartTrade({
+                                date: t.date,
+                                time: t.entryTime ?? t.confirmTime ?? undefined,
+                                direction: t.direction,
+                                entry: t.entry,
+                                stop: t.stop,
+                                target: t.target,
+                                outcome: t.outcome === "win" ? "win" : "loss",
+                                ib: { high: t.ibHigh, low: t.ibLow, q25: t.ib25, q50: t.ib50, q75: t.ib75, windowMinutes: ib2575Result.ibWindowMinutes },
+                              })}
+                            >
+                              <BarChart3 className="h-3.5 w-3.5 inline" />
+                            </button>
+                          </td>
                         </tr>
+
                       );
                     })}
                   </tbody>
