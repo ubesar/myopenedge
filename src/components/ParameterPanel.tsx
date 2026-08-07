@@ -174,6 +174,7 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="momentum">momentum candle continuation (mcc)</SelectItem>}
               {!isFree && <SelectItem value="pullback50">50% pullback strategy</SelectItem>}
               {!isFree && <SelectItem value="ib2575">IB momentum limit (IB25/75)</SelectItem>}
+              {!isFree && <SelectItem value="orb-m15">ny open orb m15 probabilities</SelectItem>}
               {!isFree && <SelectItem value="mcm15-2am">m15 momentum @ 04:00 ny</SelectItem>}
               <SelectItem value="occ">opening candle continuation</SelectItem>
               {!isFree && <SelectItem value="gapfill">gap fill statistics</SelectItem>}

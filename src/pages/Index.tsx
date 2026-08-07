@@ -34,6 +34,8 @@ import TradeChartDialog, { type TradeForChart } from "@/components/TradeChartDia
 import InsideBarReport from "@/components/InsideBarReport";
 import OutsideDayReport from "@/components/OutsideDayReport";
 import GlobexIBDashboard from "@/components/GlobexIBDashboard";
+import ORBM15Dashboard from "@/components/ORBM15Dashboard";
+import { analyzeORBM15, type ORBM15Result } from "@/lib/orbm15-analysis";
 import LondonIBDashboard from "@/components/LondonIBDashboard";
 import { useSubscription } from "@/hooks/useSubscription";
 import { z } from "zod";
@@ -66,6 +68,7 @@ const Index = () => {
   const [londonIBResult, setLondonIBResult] = useState<LondonIBResult | null>(null);
   const [pullback50Result, setPullback50Result] = useState<Pullback50Result | null>(null);
   const [ib2575Result, setIb2575Result] = useState<IB2575Result | null>(null);
+  const [orbm15Result, setOrbm15Result] = useState<ORBM15Result | null>(null);
   const [mcm152amResult, setMcm152amResult] = useState<MCM152amResult | null>(null);
   const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
   const [ib2575RawBars, setIb2575RawBars] = useState<any[] | null>(null);
@@ -307,6 +310,11 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setPullback50Result(a);
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, sessionEndMinutes: a.sessionEndMinutes, winRate: a.stats.winRate });
+        } else if (effectiveMode === "orb-m15") {
+          const a = analyzeORBM15(values as any, effectiveMaxDays, weekdays);
+          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setOrbm15Result(a);
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, highFirst: a.highFirst, lowFirst: a.lowFirst, winRate: a.winRate });
         } else if (effectiveMode === "ib2575") {
           const a = analyzeIB2575(values as any, effectiveIbWindow, effectiveMaxDays, weekdays);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
@@ -324,10 +332,10 @@ const Index = () => {
     }
   };
 
-  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullback50Result || ib2575Result || mcm152amResult;
+  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullback50Result || ib2575Result || orbm15Result || mcm152amResult;
 
   const reportTitle = hasResults
-    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "pullback50" ? "50% pullback strategy report" : activeMode === "ib2575" ? "IB momentum limit report" : activeMode === "mcm15-2am" ? "m15 momentum @ 04:00 ny report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
+    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "pullback50" ? "50% pullback strategy report" : activeMode === "ib2575" ? "IB momentum limit report" : activeMode === "orb-m15" ? "ny open orb m15 probabilities report" : activeMode === "mcm15-2am" ? "m15 momentum @ 04:00 ny report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
     : "";
 
   const renderCharts = () => {
@@ -955,6 +963,17 @@ const Index = () => {
             }}
           />
         </div>
+      );
+    }
+
+    if (activeMode === "orb-m15" && orbm15Result) {
+      return (
+        <ORBM15Dashboard
+          result={orbm15Result}
+          symbol={symbol}
+          dateRange={formatDateRange(analysisMaxDays)}
+          weekdays={formatWeekdays(analysisWeekdays)}
+        />
       );
     }
 

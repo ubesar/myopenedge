@@ -15,12 +15,13 @@ import {
 } from "recharts";
 import { analyzePullback50, type Pullback50Trade } from "@/lib/pullback50-analysis";
 import { analyzeIB2575, type IB2575Trade } from "@/lib/ib2575-analysis";
+import { analyzeORBM15, type ORBM15Trade } from "@/lib/orbm15-analysis";
 import TradeChartDialog, { type TradeForChart } from "@/components/TradeChartDialog";
 import { parseCsvBars, type CsvBar } from "@/lib/csv-bars";
 import BacktestCalendar from "@/components/BacktestCalendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-type StrategyKey = "pb50" | "ib2575";
+type StrategyKey = "pb50" | "ib2575" | "orbm15";
 
 interface BTTrade {
   date: string;
@@ -182,6 +183,28 @@ function toBTTradesIB2575(trades: IB2575Trade[], ibWindow: number): BTTrade[] {
 }
 
 
+function toBTTradesORBM15(trades: ORBM15Trade[]): BTTrade[] {
+  return trades
+    .filter((t) => t.outcome === "win" || t.outcome === "loss")
+    .map((t) => {
+      const slDist = Math.abs(t.entry - t.stop);
+      const qty = slDist > 0 ? RISK_USD / slDist : 0;
+      const rMultiple = t.outcome === "win" ? 1 : -1;
+      return {
+        date: t.date,
+        time: t.time,
+        direction: t.direction,
+        entry: t.entry,
+        stop: t.stop,
+        target: t.target,
+        outcome: t.outcome as "win" | "loss",
+        rMultiple,
+        pnl: rMultiple * RISK_USD,
+        qty,
+      };
+    });
+}
+
 function computeMetrics(trades: BTTrade[]): Omit<BTResult, "strategy" | "symbol" | "totalDays" | "trades" | "bars"> {
   const wins = trades.filter((t) => t.outcome === "win");
   const losses = trades.filter((t) => t.outcome === "loss");
@@ -320,6 +343,10 @@ const Backtester = () => {
         trades = toBTTradesPB50(r.trades);
         totalDays = r.totalDays;
 
+      } else if (strategy === "orbm15") {
+        const r = analyzeORBM15(values, days, [1, 2, 3, 4, 5]);
+        trades = toBTTradesORBM15(r.trades);
+        totalDays = r.totalDays;
       } else {
         const r = analyzeIB2575(values, parseInt(ibWindow), days, [1, 2, 3, 4, 5]);
         trades = toBTTradesIB2575(r.trades, parseInt(ibWindow));
@@ -442,6 +469,7 @@ const Backtester = () => {
                   <SelectContent>
                     <SelectItem value="pb50">50% pullback strategy</SelectItem>
                     <SelectItem value="ib2575">ib momentum limit (ib25/75)</SelectItem>
+                    <SelectItem value="orbm15">ny open orb m15 (fade first extreme)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
