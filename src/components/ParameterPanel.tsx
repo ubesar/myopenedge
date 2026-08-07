@@ -186,6 +186,7 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="ib-pullback-stacked">IB pullback 25/50/75% (SL = next level)</SelectItem>}
               {!isFree && <SelectItem value="momentum-fib-pullback">momentum candle fib pullback (0.2/0/-0.5)</SelectItem>}
               {!isFree && <SelectItem value="orb">ORB: opening range breakout + retest</SelectItem>}
+              {!isFree && <SelectItem value="ny-orb-m15">NY open ORB m15 probabilities</SelectItem>}
             </SelectContent>
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export type AnalysisMode = "ib" | "momentum" | "occ" | "gapfill" | "insidebar" | "outsideday" | "globex-ib" | "london-ib" | "pullback" | "ib-pullback" | "ib-pullback-stacked" | "momentum-fib-pullback" | "orb";
+export type AnalysisMode = "ib" | "momentum" | "occ" | "gapfill" | "insidebar" | "outsideday" | "globex-ib" | "london-ib" | "pullback" | "ib-pullback" | "ib-pullback-stacked" | "momentum-fib-pullback" | "orb" | "ny-orb-m15";
 
 interface ControlPanelProps {
   onRun: (symbol: string, ibWindow: number, maxDays: number, mode: AnalysisMode) => void;
@@ -66,6 +66,7 @@ const ControlPanel = ({ onRun, loading, isFree = false }: ControlPanelProps) => 
             {!isFree && <SelectItem value="insidebar">Inside Bar</SelectItem>}
             {!isFree && <SelectItem value="outsideday">Outside Day</SelectItem>}
             {!isFree && <SelectItem value="pullback">Pullback 50%</SelectItem>}
+            {!isFree && <SelectItem value="ny-orb-m15">NY Open ORB m15 Probabilities</SelectItem>}
           </SelectContent>
         </Select>
         {isFree && <p className="text-[10px] text-muted-foreground">🔒 Upgrade to Pro for more analysis types</p>}
