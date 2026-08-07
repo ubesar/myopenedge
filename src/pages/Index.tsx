@@ -31,8 +31,10 @@ import { analyzeMomentumFibPullback, type MFPResult } from "@/lib/momentum-fib-p
 import IBPullbackDashboard from "@/components/IBPullbackDashboard";
 import MomentumFibPullbackDashboard from "@/components/MomentumFibPullbackDashboard";
 import ORBDashboard from "@/components/ORBDashboard";
+import NYOrbM15Dashboard from "@/components/NYOrbM15Dashboard";
 import QuantPanel from "@/components/QuantPanel";
 import { analyzeORB, orbQuantTrades, type ORBResult } from "@/lib/orb-analysis";
+import { analyzeNYOrbM15, nyOrbQuantTrades, type NYOrbResult } from "@/lib/ny-orb-m15";
 import { DEFAULT_QUANT_SETTINGS, type QuantSettings, type QuantTrade } from "@/lib/quant-metrics";
 import PullbackReport from "@/components/PullbackReport";
 import InsideBarReport from "@/components/InsideBarReport";
@@ -72,6 +74,7 @@ const Index = () => {
   const [ibPullbackResult, setIbPullbackResult] = useState<IBPullbackResult | null>(null);
   const [mfpResult, setMfpResult] = useState<MFPResult | null>(null);
   const [orbResult, setOrbResult] = useState<ORBResult | null>(null);
+  const [nyOrbResult, setNyOrbResult] = useState<NYOrbResult | null>(null);
   const [orMinutes, setOrMinutes] = useState<number>(15);
   const [orbTargetR, setOrbTargetR] = useState<number>(1);
   const [quantSettings, setQuantSettings] = useState<QuantSettings>(DEFAULT_QUANT_SETTINGS);
@@ -311,6 +314,11 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setOrbResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, orMinutes: a.orMinutes, breakoutRate: a.breakoutRate, retestRate: a.retestRate });
+        } else if (effectiveMode === "ny-orb-m15") {
+          const a = analyzeNYOrbM15(values as any, effectiveMaxDays, weekdays, 0.6, ticker);
+          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setNyOrbResult(a);
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, highFirst: a.highFirstStats, lowFirst: a.lowFirstStats });
         } else if (effectiveMode === "momentum-fib-pullback") {
           const a = analyzeMomentumFibPullback(values as any, effectiveMaxDays, weekdays);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
@@ -326,11 +334,11 @@ const Index = () => {
     }
   };
 
-  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullbackResult || ibPullbackResult || mfpResult || orbResult;
+  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullbackResult || ibPullbackResult || mfpResult || orbResult || nyOrbResult;
   const ibPullbackStopMode: "ib-extreme" | "next-level" = activeMode === "ib-pullback-stacked" ? "next-level" : "ib-extreme";
 
   const reportTitle = hasResults
-    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : activeMode === "pullback" ? "pullback 50% strategy report" : activeMode === "ib-pullback" ? "IB pullback 25/50/75% strategy report (SL = IB extreme)" : activeMode === "ib-pullback-stacked" ? "IB pullback 25/50/75% strategy report (SL = next level)" : activeMode === "momentum-fib-pullback" ? "momentum candle fib pullback strategy report" : activeMode === "orb" ? "opening range breakout + retest report" : "gap fill statistics report"}`
+    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : activeMode === "pullback" ? "pullback 50% strategy report" : activeMode === "ib-pullback" ? "IB pullback 25/50/75% strategy report (SL = IB extreme)" : activeMode === "ib-pullback-stacked" ? "IB pullback 25/50/75% strategy report (SL = next level)" : activeMode === "momentum-fib-pullback" ? "momentum candle fib pullback strategy report" : activeMode === "ny-orb-m15" ? "ny open ORB m15 probabilities report" : activeMode === "orb" ? "opening range breakout + retest report" : "gap fill statistics report"}`
     : "";
 
   const quantTrades: QuantTrade[] = useMemo(() => {
@@ -346,6 +354,17 @@ const Index = () => {
     }
 
 
+
+    if (activeMode === "ny-orb-m15" && nyOrbResult) {
+      return (
+        <NYOrbM15Dashboard
+          result={nyOrbResult}
+          symbol={symbol}
+          dateRange={formatDateRange(analysisMaxDays)}
+          weekdays={formatWeekdays(analysisWeekdays)}
+        />
+      );
+    }
 
     if (activeMode === "momentum-fib-pullback" && mfpResult) {
       return mfpResult.trades.map((t) => ({
@@ -369,11 +388,14 @@ const Index = () => {
           outcome: t.outcome as "win" | "loss" | "open",
         }));
     }
+    if (activeMode === "ny-orb-m15" && nyOrbResult) {
+      return nyOrbQuantTrades(nyOrbResult) as any;
+    }
     if (activeMode === "orb" && orbResult) {
       return orbQuantTrades(orbResult, orbTargetR);
     }
     return [];
-  }, [activeMode, pullbackResult, mfpResult, ibPullbackResult, orbResult, orbTargetR]);
+  }, [activeMode, pullbackResult, mfpResult, ibPullbackResult, orbResult, orbTargetR, nyOrbResult]);
 
   const renderCharts = () => {
     if (activeMode === "ib" && result) {
@@ -736,6 +758,17 @@ const Index = () => {
           weekdays={formatWeekdays(analysisWeekdays)}
           targetR={orbTargetR}
           onTargetChange={setOrbTargetR}
+        />
+      );
+    }
+
+    if (activeMode === "ny-orb-m15" && nyOrbResult) {
+      return (
+        <NYOrbM15Dashboard
+          result={nyOrbResult}
+          symbol={symbol}
+          dateRange={formatDateRange(analysisMaxDays)}
+          weekdays={formatWeekdays(analysisWeekdays)}
         />
       );
     }
