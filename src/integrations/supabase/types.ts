@@ -44,6 +44,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ny_session_bias: {
+        Row: {
+          created_at: string
+          first_breakout: string | null
+          formed_first: string | null
+          id: string
+          orb_high_price: number | null
+          orb_low_price: number | null
+          session_date: string
+          symbol: string
+        }
+        Insert: {
+          created_at?: string
+          first_breakout?: string | null
+          formed_first?: string | null
+          id?: string
+          orb_high_price?: number | null
+          orb_low_price?: number | null
+          session_date: string
+          symbol?: string
+        }
+        Update: {
+          created_at?: string
+          first_breakout?: string | null
+          formed_first?: string | null
+          id?: string
+          orb_high_price?: number | null
+          orb_low_price?: number | null
+          session_date?: string
+          symbol?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           amount: number
