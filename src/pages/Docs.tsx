@@ -331,7 +331,7 @@ export default function Docs() {
               <InfoBox title="3-Step Validation Logic">
                 <ol className="list-decimal pl-4 space-y-1">
                   <li><strong>Direction</strong> — opening candle closes green (close &gt; open) or red (close &lt; open).</li>
-                  <li><strong>Momentum filter</strong> — body size <code>|close − open|</code> must be greater than <code>1.5 × SMA(15)</code> of body size (big body / super momentum candle). Body ≤ avg = normal, avg &lt; body ≤ 1.5 × avg = above average, body &gt; 1.5 × avg = momentum candle.</li>
+                  <li><strong>Momentum filter</strong> — body size <code>|close − open|</code> must be ≥ threshold of the total range <code>high − low</code> (default 70%).</li>
                   <li><strong>Session tracking</strong> — if both pass, check whether the full session close (16:00 ET) lands on the same side as the opening direction.</li>
                 </ol>
               </InfoBox>

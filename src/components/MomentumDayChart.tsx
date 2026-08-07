@@ -46,6 +46,23 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
     for (const t of sig.times) highlightSet.add(t);
   }
 
+  // Pine "Momentum Candle" — body > sma(body, 15) * 1.5 → Super Body Candle.
+  // We color main chart bars: Super Bull = neon green, Super Bear = magenta/pink.
+  const AVG_PERIOD = 15;
+  const SUPER_MULT = 1.5;
+  const superTier = new Map<string, "superBull" | "superBear">();
+  const bodies = displayBars.map(b => Math.abs(b.close - b.open));
+  for (let i = 0; i < displayBars.length; i++) {
+    if (i + 1 < AVG_PERIOD) continue;
+    const slice = bodies.slice(i + 1 - AVG_PERIOD, i + 1);
+    const avg = slice.reduce((a, b) => a + b, 0) / slice.length;
+    const b = displayBars[i];
+    const body = bodies[i];
+    if (body > avg * SUPER_MULT && b.close !== b.open) {
+      superTier.set(b.time, b.close > b.open ? "superBull" : "superBear");
+    }
+  }
+
   const momentumBadge = momentum === "bullish" ?
   { text: "🟢 Bullish Momentum", cls: "bg-emerald-500/15 text-emerald-400" } :
   momentum === "bearish" ?
@@ -169,7 +186,10 @@ const MomentumDayChart = ({ date, bars, symbol, momentum, signals, availableDate
                 if (!payload) return <rect />;
                 const { open, close, high, low, time } = payload;
                 const isUp = close >= open;
-                const color = isUp ? "#22c55e" : "#ef4444";
+                const tier = superTier.get(time);
+                const color = tier === "superBull" ? "#39ff14"
+                  : tier === "superBear" ? "#ff2bd6"
+                  : isUp ? "#22c55e" : "#ef4444";
                 const yAxisHeight = props.background?.height || 360;
                 const range = domainMax - domainMin;
                 const toY = (val: number) => {

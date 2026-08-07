@@ -3,9 +3,7 @@ import { TrendingUp, TrendingDown, BarChart3 } from "lucide-react";
 
 interface Trade {
   id: string;
-  pnl_gross: number;
   pnl_net: number;
-  fees: number | null;
   side: string;
   close_time: string;
   open_time: string;
@@ -16,45 +14,37 @@ interface JournalStatsCardsProps {
   trades: Trade[];
 }
 
-const netPnl = (t: Trade) => t.pnl_gross - (t.fees || 0);
-
 const JournalStatsCards = ({ trades }: JournalStatsCardsProps) => {
   const stats = useMemo(() => {
     if (!trades.length) return null;
 
-    const wins = trades.filter((t) => netPnl(t) > 0);
-    const losses = trades.filter((t) => netPnl(t) < 0);
+    const wins = trades.filter((t) => t.pnl_net > 0);
+    const losses = trades.filter((t) => t.pnl_net < 0);
     const winRate = (wins.length / trades.length) * 100;
 
-    // Day win % (after fees)
+    // Day win %
     const dayMap = new Map<string, number>();
     trades.forEach((t) => {
       const day = t.close_time.slice(0, 10);
-      dayMap.set(day, (dayMap.get(day) || 0) + netPnl(t));
+      dayMap.set(day, (dayMap.get(day) || 0) + t.pnl_net);
     });
     const dayWins = Array.from(dayMap.values()).filter((v) => v > 0).length;
     const dayWinPct = dayMap.size > 0 ? (dayWins / dayMap.size) * 100 : 0;
 
     // Avg win / loss
-    const avgWin = wins.length > 0 ? wins.reduce((s, t) => s + netPnl(t), 0) / wins.length : 0;
-    const avgLoss = losses.length > 0 ? Math.abs(losses.reduce((s, t) => s + netPnl(t), 0) / losses.length) : 0;
+    const avgWin = wins.length > 0 ? wins.reduce((s, t) => s + t.pnl_net, 0) / wins.length : 0;
+    const avgLoss = losses.length > 0 ? Math.abs(losses.reduce((s, t) => s + t.pnl_net, 0) / losses.length) : 0;
 
-    // Long vs short (after fees)
-    const longPnl = trades
-      .filter((t) => t.side?.toLowerCase() === "long" || t.side?.toLowerCase() === "buy")
-      .reduce((s, t) => s + netPnl(t), 0);
-    const shortPnl = trades
-      .filter((t) => t.side?.toLowerCase() === "short" || t.side?.toLowerCase() === "sell")
-      .reduce((s, t) => s + netPnl(t), 0);
+    // Long vs short
+    const longPnl = trades.filter((t) => t.side?.toLowerCase() === "long" || t.side?.toLowerCase() === "buy").reduce((s, t) => s + t.pnl_net, 0);
+    const shortPnl = trades.filter((t) => t.side?.toLowerCase() === "short" || t.side?.toLowerCase() === "sell").reduce((s, t) => s + t.pnl_net, 0);
 
-    // Totals
-    const grossPnl = trades.reduce((s, t) => s + t.pnl_gross, 0);
-    const totalFees = trades.reduce((s, t) => s + (t.fees || 0), 0);
-    const totalPnl = grossPnl - totalFees;
+    // Total PNL
+    const totalPnl = trades.reduce((s, t) => s + t.pnl_net, 0);
 
     // Profit factor
-    const grossProfit = wins.reduce((s, t) => s + netPnl(t), 0);
-    const grossLoss = Math.abs(losses.reduce((s, t) => s + netPnl(t), 0));
+    const grossProfit = wins.reduce((s, t) => s + t.pnl_net, 0);
+    const grossLoss = Math.abs(losses.reduce((s, t) => s + t.pnl_net, 0));
     const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
 
     return {
@@ -68,8 +58,6 @@ const JournalStatsCards = ({ trades }: JournalStatsCardsProps) => {
       avgLoss,
       longPnl,
       shortPnl,
-      grossPnl,
-      totalFees,
       totalPnl,
       totalTrades: trades.length,
       profitFactor,
@@ -115,9 +103,9 @@ const JournalStatsCards = ({ trades }: JournalStatsCardsProps) => {
       color: stats.totalPnl >= 0 ? "text-green-400" : "text-red-400",
     },
     {
-      label: "Total PnL",
+      label: "PNL",
       value: `${stats.totalPnl >= 0 ? "+" : ""}${fmt(stats.totalPnl)}`,
-      sub: `gross ${fmt(stats.grossPnl)} · fees ${fmt(stats.totalFees)}`,
+      sub: `${stats.totalTrades} trades`,
       color: stats.totalPnl >= 0 ? "text-green-400" : "text-red-400",
     },
   ];

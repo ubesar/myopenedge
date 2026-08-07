@@ -7,9 +7,7 @@ import {
 
 interface Trade {
   id: string;
-  pnl_gross: number;
   pnl_net: number;
-  fees: number | null;
   side: string;
   close_time: string;
   open_time: string;
@@ -20,8 +18,6 @@ interface JournalChartsProps {
   trades: Trade[];
 }
 
-const netPnl = (t: Trade) => t.pnl_gross - (t.fees || 0);
-
 const JournalCharts = ({ trades }: JournalChartsProps) => {
   const { cumulativeData, drawdownData, pnlBarData, radarData, score } = useMemo(() => {
     if (!trades.length) return { cumulativeData: [], drawdownData: [], pnlBarData: [], radarData: [] };
@@ -29,11 +25,11 @@ const JournalCharts = ({ trades }: JournalChartsProps) => {
     // Sort by close_time
     const sorted = [...trades].sort((a, b) => new Date(a.close_time).getTime() - new Date(b.close_time).getTime());
 
-    // Daily cumulative PNL (after fees)
+    // Daily cumulative PNL
     const dayPnl = new Map<string, number>();
     sorted.forEach((t) => {
       const day = t.close_time.slice(0, 10);
-      dayPnl.set(day, (dayPnl.get(day) || 0) + netPnl(t));
+      dayPnl.set(day, (dayPnl.get(day) || 0) + t.pnl_net);
     });
 
     let cumSum = 0;
@@ -57,14 +53,14 @@ const JournalCharts = ({ trades }: JournalChartsProps) => {
     }));
 
     // Radar: Win%, Profit Factor, Win/Loss ratio
-    const wins = sorted.filter((t) => netPnl(t) > 0);
-    const losses = sorted.filter((t) => netPnl(t) < 0);
+    const wins = sorted.filter((t) => t.pnl_net > 0);
+    const losses = sorted.filter((t) => t.pnl_net < 0);
     const winRate = (wins.length / sorted.length) * 100;
-    const grossProfit = wins.reduce((s, t) => s + netPnl(t), 0);
-    const grossLoss = Math.abs(losses.reduce((s, t) => s + netPnl(t), 0));
+    const grossProfit = wins.reduce((s, t) => s + t.pnl_net, 0);
+    const grossLoss = Math.abs(losses.reduce((s, t) => s + t.pnl_net, 0));
     const profitFactor = grossLoss > 0 ? Math.min((grossProfit / grossLoss) * 20, 100) : grossProfit > 0 ? 100 : 0;
-    const avgWin = wins.length > 0 ? wins.reduce((s, t) => s + netPnl(t), 0) / wins.length : 0;
-    const avgLoss = losses.length > 0 ? Math.abs(losses.reduce((s, t) => s + netPnl(t), 0) / losses.length) : 0;
+    const avgWin = wins.length > 0 ? wins.reduce((s, t) => s + t.pnl_net, 0) / wins.length : 0;
+    const avgLoss = losses.length > 0 ? Math.abs(losses.reduce((s, t) => s + t.pnl_net, 0) / losses.length) : 0;
     const winLossRatio = avgLoss > 0 ? Math.min((avgWin / avgLoss) * 25, 100) : avgWin > 0 ? 100 : 0;
 
     const radarData = [
