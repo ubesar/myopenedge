@@ -219,7 +219,10 @@ export function analyzeNYOrbM15(
       })),
     };
 
-    day.trade = findTrade(date, toM15(session), bodyRatio, orbHigh, orbLow, orbSize);
+    // ORB = m15 pertama (09:30–09:45). Momentum candle C1 hanya dicari
+    // dari candle m15 setelah ORB selesai (>= 09:45).
+    const postOrbM15 = toM15(session).filter((b) => minutesOf(b.d) >= ORB_END);
+    day.trade = findTrade(date, postOrbM15, bodyRatio, orbHigh, orbLow, orbSize);
     days.push(day);
   }
 
