@@ -171,7 +171,8 @@ const NYOrbM15Dashboard = ({ result, symbol, dateRange, weekdays }: Props) => {
     { label: "candle timeframe", value: "5min (09:30 / 09:35 / 09:40)" },
     { label: "ORB size", value: "any size" },
     { label: "ORB breakout measure", value: "by wick" },
-    { label: "target", value: "1 × extension" },
+    { label: "target", value: "0.5 × extension ORB" },
+    { label: "risk per trade", value: "$100 fixed" },
     { label: "weekdays to use", value: weekdays },
     { label: "date range", value: dateRange },
     { label: "data source", value: source },
@@ -235,6 +236,7 @@ const NYOrbM15Dashboard = ({ result, symbol, dateRange, weekdays }: Props) => {
           { l: "1x extension hit", v: pct(result.extensionHitPct, 1) },
           { l: "entry win rate", v: pct(result.tradeStats.winRate, 1) },
           { l: "expectancy", v: `${result.tradeStats.expectancyR.toFixed(2)}R` },
+          { l: "net p&l ($100 risk)", v: `$${result.tradeStats.totalPnlUsd.toFixed(0)}` },
         ].map((s) => (
           <div key={s.l} className="rounded-xl border border-border bg-card p-3">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.l}</p>
@@ -268,7 +270,7 @@ const NYOrbM15Dashboard = ({ result, symbol, dateRange, weekdays }: Props) => {
 
       {/* entry engine rules */}
       <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
-        <strong className="text-foreground">entry rules (target 1 × extension)</strong> — C1: candle m15 pertama yang momentum. C2: setelah C1 close, tunggu pullback lalu pasang stop order di high C1 (long) / low C1 (short). SL mengikuti low/high C2 selama order belum trigger; jika C2 break sisi berlawanan C1 → order dibatalkan; setelah trigger SL tidak bergeser lagi. target = 1 × extension range C1.
+        <strong className="text-foreground">entry rules (target 0.5 × extension ORB, risk fix $100)</strong> — C1: candle m15 pertama yang momentum. C2: setelah C1 close, tunggu pullback lalu pasang stop order di high C1 (long) / low C1 (short). SL mengikuti low/high C2 selama order belum trigger; jika C2 break sisi berlawanan C1 → order dibatalkan; setelah trigger SL tidak bergeser lagi. target = 0.5 × extension ORB (RR bervariasi tergantung jarak SL), risk fix $100 per trade.
       </div>
 
       {/* trade history */}

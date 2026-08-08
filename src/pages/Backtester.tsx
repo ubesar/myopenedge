@@ -105,7 +105,7 @@ const Backtester = () => {
           <div>
             <h1 className="text-[17px] font-semibold text-foreground lowercase">ny open orb m15 probabilities</h1>
             <p className="text-[12px] text-muted-foreground mt-0.5">
-              opening range 09:30–09:45 ET dari 3 candle m5 · breakout by wick · target 1 × extension
+              opening range 09:30–09:45 ET dari 3 candle m5 · breakout by wick · target 0.5 × extension orb · risk fix $100
             </p>
           </div>
 

@@ -36,8 +36,11 @@ export interface NYOrbTrade {
   risk: number;
   outcome: "win" | "loss" | "open" | "cancelled" | "no-trigger";
   rMultiple: number;
+  pnlUsd: number;
   exitTime?: string;
 }
+
+export const FIXED_RISK_USD = 100;
 
 export interface FormedFirstStats {
   formedFirst: FormedFirst;
@@ -63,6 +66,7 @@ export interface NYOrbResult {
     open: number;
     winRate: number;
     expectancyR: number;
+    totalPnlUsd: number;
   };
   today?: NYOrbDay;
   days: NYOrbDay[];
@@ -215,7 +219,7 @@ export function analyzeNYOrbM15(
       })),
     };
 
-    day.trade = findTrade(date, toM15(session), bodyRatio);
+    day.trade = findTrade(date, toM15(session), bodyRatio, orbHigh, orbLow, orbSize);
     days.push(day);
   }
 
@@ -263,6 +267,7 @@ export function analyzeNYOrbM15(
       open,
       winRate: wins + losses > 0 ? (wins / (wins + losses)) * 100 : 0,
       expectancyR: trades.length ? sumR / trades.length : 0,
+      totalPnlUsd: sumR * FIXED_RISK_USD,
     },
     today: days[days.length - 1],
     days,
@@ -270,7 +275,14 @@ export function analyzeNYOrbM15(
 }
 
 /** C1 momentum candle → C2 pullback → stop order at C1 extreme, target 1 × extension. */
-function findTrade(date: string, m15: Bar[], bodyRatio: number): NYOrbTrade | undefined {
+function findTrade(
+  date: string,
+  m15: Bar[],
+  bodyRatio: number,
+  orbHigh: number,
+  orbLow: number,
+  orbSize: number,
+): NYOrbTrade | undefined {
   for (let i = 0; i < m15.length - 1; i++) {
     const c1 = m15[i];
     const range = c1.high - c1.low;
@@ -283,7 +295,9 @@ function findTrade(date: string, m15: Bar[], bodyRatio: number): NYOrbTrade | un
     const isLong = side === "long";
 
     const entry = isLong ? c1.high : c1.low;
-    const target = isLong ? c1.high + range : c1.low - range;
+    // target fix di 0.5 extension ORB
+    const target = isLong ? orbHigh + orbSize * 0.5 : orbLow - orbSize * 0.5;
+    if (isLong ? target <= entry : target >= entry) continue;
 
     // C2 must pull back before triggering the stop order
     const pulledBack = isLong ? c2.low < c1.high : c2.high > c1.low;
@@ -297,14 +311,14 @@ function findTrade(date: string, m15: Bar[], bodyRatio: number): NYOrbTrade | un
       return {
         date, side, c1Time: hhmm(c1.d), c2Time: hhmm(c2.d),
         entry, stop: isLong ? c2.low : c2.high, target, risk: 0,
-        outcome: "cancelled", rMultiple: 0,
+        outcome: "cancelled", rMultiple: 0, pnlUsd: 0,
       };
     }
     if (!triggered) {
       return {
         date, side, c1Time: hhmm(c1.d), c2Time: hhmm(c2.d),
         entry, stop: isLong ? c2.low : c2.high, target, risk: 0,
-        outcome: "no-trigger", rMultiple: 0,
+        outcome: "no-trigger", rMultiple: 0, pnlUsd: 0,
       };
     }
 
@@ -331,7 +345,7 @@ function findTrade(date: string, m15: Bar[], bodyRatio: number): NYOrbTrade | un
       exitTime = hhmm(last.d);
     }
 
-    return { date, side, c1Time: hhmm(c1.d), c2Time: hhmm(c2.d), entry, stop, target, risk, outcome, rMultiple, exitTime };
+    return { date, side, c1Time: hhmm(c1.d), c2Time: hhmm(c2.d), entry, stop, target, risk, outcome, rMultiple, pnlUsd: rMultiple * FIXED_RISK_USD, exitTime };
   }
   return undefined;
 }
