@@ -295,8 +295,8 @@ function findTrade(
     const isLong = side === "long";
 
     const entry = isLong ? c1.high : c1.low;
-    // target fix di 0.5 extension ORB
-    const target = isLong ? orbHigh + orbSize * 0.5 : orbLow - orbSize * 0.5;
+    // target fix di 0.5 extension range C1 (fib 1.5 dari C1)
+    const target = isLong ? c1.high + range * 0.5 : c1.low - range * 0.5;
     if (isLong ? target <= entry : target >= entry) continue;
 
     // C2 must pull back before triggering the stop order
