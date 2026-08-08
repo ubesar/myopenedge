@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase as _supaClient } from "@/integrations/supabase/client";
-// @ts-ignore - some tables not in generated types
-const supabase: any = _supaClient as any;
-
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
