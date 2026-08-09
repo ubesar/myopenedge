@@ -185,7 +185,7 @@ const ParameterPanel = ({
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}
 
-          {mode === "pullback50" && (
+          {(mode === "pullback50" || mode === "orbpullback") && (
             <>
               <p className="text-[11px] text-muted-foreground">scan session start (ny)</p>
               <Select value={sessionStart} onValueChange={(v) => { setSessionStart(v); setSelectedTemplateId("custom"); }}>
