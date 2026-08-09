@@ -325,7 +325,7 @@ const Backtester = () => {
         if (!csvBars?.length) throw new Error("import a csv file first");
         values = csvBars;
       } else {
-        const usePreMarket = strategy === "pb50" && parseInt(sessionStart) < 9 * 60 + 30;
+        const usePreMarket = strategy !== "ib2575" && parseInt(sessionStart) < 9 * 60 + 30;
         const json = usePreMarket
           ? await fetchMassiveData(symbol.trim().toUpperCase(), days)
           : await fetchMarketData(symbol.trim().toUpperCase(), days);
@@ -336,6 +336,7 @@ const Backtester = () => {
 
       let trades: BTTrade[] = [];
       let totalDays = 0;
+      let orb: ORBPullbackResult | undefined;
 
       if (strategy === "pb50") {
         const isCsv = dataSource === "csv";
@@ -350,6 +351,23 @@ const Backtester = () => {
         );
         trades = toBTTradesPB50(r.trades);
         totalDays = r.totalDays;
+
+      } else if (strategy === "orbpb") {
+        const isCsv = dataSource === "csv";
+        const r = analyzeORBPullback(values, {
+          maxDays: days,
+          weekdays: [1, 2, 3, 4, 5],
+          sessionStartMinutes: isCsv ? csvScanStartMin : parseInt(sessionStart),
+          sessionEndMinutes: isCsv ? csvScanEndMin : parseInt(sessionEnd),
+          sessionCloseMinutes: isCsv ? csvCloseMin : undefined,
+          pullbackThreshold: parseFloat(pbThreshold),
+          tpMultiplier: parseFloat(tpMult),
+          dynamicSl,
+          intraBars: isCsv ? (csvM5Bars ?? undefined) : undefined,
+        });
+        trades = toBTTradesORB(r.trades);
+        totalDays = r.totalDays;
+        orb = r;
 
       } else {
         const r = analyzeIB2575(values, parseInt(ibWindow), days, [1, 2, 3, 4, 5]);
@@ -369,7 +387,9 @@ const Backtester = () => {
         trades,
         bars: dataSource === "csv" && csvM5Bars?.length ? csvM5Bars : values,
         ...metrics,
+        orb,
       });
+
       toast.success(`backtest complete: ${trades.length} trades`);
     } catch (e: any) {
       toast.error(e.message || "backtest failed");
