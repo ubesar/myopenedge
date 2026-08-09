@@ -272,6 +272,11 @@ const Backtester = () => {
   const [csvM5Bars, setCsvM5Bars] = useState<CsvBar[] | null>(null); // m5 — entry/tp/sl
   const [csvM5Name, setCsvM5Name] = useState("");
   const [csvOffset, setCsvOffset] = useState("0");
+  const [pbThreshold, setPbThreshold] = useState("0.5");
+  const [tpMult, setTpMult] = useState("0.5");
+  const [dynamicSl, setDynamicSl] = useState(true);
+  const [sessionEnd, setSessionEnd] = useState("780"); // 13:00 ny
+
 
   const toMin = (v: string) => {
     const [h, m] = v.split(":").map(Number);
