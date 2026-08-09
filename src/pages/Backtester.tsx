@@ -57,7 +57,9 @@ interface BTResult {
   expectancy: number;
   bestDay: number;
   worstDay: number;
+  orb?: ORBPullbackResult;
 }
+
 
 const RISK_USD = 100;
 const MAX_BATCH_DAYS = 60;
