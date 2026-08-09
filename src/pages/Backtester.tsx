@@ -15,12 +15,14 @@ import {
 } from "recharts";
 import { analyzePullback50, type Pullback50Trade } from "@/lib/pullback50-analysis";
 import { analyzeIB2575, type IB2575Trade } from "@/lib/ib2575-analysis";
+import { analyzeORBPullback, type ORBPullbackTrade, type ORBPullbackResult } from "@/lib/orb-pullback-analysis";
 import TradeChartDialog, { type TradeForChart } from "@/components/TradeChartDialog";
 import { parseCsvBars, type CsvBar } from "@/lib/csv-bars";
 import BacktestCalendar from "@/components/BacktestCalendar";
+import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-type StrategyKey = "pb50" | "ib2575";
+type StrategyKey = "pb50" | "ib2575" | "orbpb";
 
 interface BTTrade {
   date: string;
@@ -35,6 +37,7 @@ interface BTTrade {
   qty: number;
   ib?: { high: number; low: number; q25: number; q50: number; q75: number; windowMinutes: number };
 }
+
 
 
 interface BTResult {
