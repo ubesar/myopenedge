@@ -576,6 +576,65 @@ const Backtester = () => {
 
             </div>
 
+            {strategy === "orbpb" && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 border-t border-border pt-3">
+                {dataSource !== "csv" && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">scan session end (ny)</Label>
+                    <Select value={sessionEnd} onValueChange={setSessionEnd}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="600">10:00</SelectItem>
+                        <SelectItem value="660">11:00</SelectItem>
+                        <SelectItem value="720">12:00</SelectItem>
+                        <SelectItem value="780">13:00</SelectItem>
+                        <SelectItem value="840">14:00</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  <Label className="text-xs lowercase">pullback threshold (max retrace candle 1)</Label>
+                  <Select value={pbThreshold} onValueChange={setPbThreshold}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0.3">30%</SelectItem>
+                      <SelectItem value="0.4">40%</SelectItem>
+                      <SelectItem value="0.5">50% (default)</SelectItem>
+                      <SelectItem value="0.618">61.8%</SelectItem>
+                      <SelectItem value="0.75">75%</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs lowercase">tp (× extension candle 1)</Label>
+                  <Select value={tpMult} onValueChange={setTpMult}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0.25">0.25×</SelectItem>
+                      <SelectItem value="0.5">0.5× (default)</SelectItem>
+                      <SelectItem value="0.75">0.75×</SelectItem>
+                      <SelectItem value="1">1.0×</SelectItem>
+                      <SelectItem value="1.5">1.5×</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs lowercase">dynamic sl (low candle 2)</Label>
+                  <div className="flex items-center gap-2 h-10">
+                    <Switch checked={dynamicSl} onCheckedChange={setDynamicSl} />
+                    <span className="text-xs text-muted-foreground lowercase">
+                      {dynamicSl ? "sl mengikuti extreme pullback" : "sl di ujung candle 1"}
+                    </span>
+                  </div>
+                </div>
+                <p className="md:col-span-4 text-[11px] text-muted-foreground lowercase">
+                  candle 1 = momentum m15 · candle 2 pullback ke body candle 1 (batal jika retrace &gt; {(parseFloat(pbThreshold) * 100).toFixed(0)}%) · entry buy/sell stop di high/low candle 1 · tp {tpMult}× range candle 1 · risk ${RISK_USD}/trade
+                </p>
+              </div>
+            )}
+
+
             {dataSource === "csv" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-border pt-3">
                 <div className="space-y-1.5">
