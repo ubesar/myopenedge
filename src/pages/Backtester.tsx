@@ -700,7 +700,43 @@ const Backtester = () => {
                 <StatCard label="avg loss" value={`-$${result.avgLoss.toFixed(0)}`} accent="neg" />
                 <StatCard label="best day" value={`$${result.bestDay.toFixed(0)}`} accent="pos" />
                 <StatCard label="worst day" value={`$${result.worstDay.toFixed(0)}`} accent="neg" />
+                {result.orb && (
+                  <>
+                    <StatCard label="avg rrr" value={`1:${result.orb.avgRR.toFixed(2)}`} />
+                    <StatCard label="setups" value={String(result.orb.setups)} />
+                    <StatCard label="invalidated" value={String(result.orb.invalidated)} accent="neg" />
+                    <StatCard label="no trigger" value={String(result.orb.noTrigger)} />
+                  </>
+                )}
               </div>
+
+              {result.orb && (
+                <Card className="p-4">
+                  <h2 className="text-sm font-semibold mb-3 lowercase">setup distribution</h2>
+                  <div className="h-56">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={[
+                          { label: "triggered win", count: result.orb.wins },
+                          { label: "triggered loss", count: result.orb.losses },
+                          { label: `invalidated (>${(result.orb.pullbackThreshold * 100).toFixed(0)}%)`, count: result.orb.invalidated },
+                          { label: "no trigger", count: result.orb.noTrigger },
+                        ]}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                        <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 12 }} />
+                        <Bar dataKey="count" fill="hsl(var(--primary))" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <p className="mt-2 text-[11px] text-muted-foreground lowercase">
+                    trigger rate {result.orb.setups ? ((result.orb.triggered / result.orb.setups) * 100).toFixed(0) : 0}% · long {result.orb.bullish.winRate.toFixed(0)}% wr ({result.orb.bullish.total}) · short {result.orb.bearish.winRate.toFixed(0)}% wr ({result.orb.bearish.total})
+                  </p>
+                </Card>
+              )}
+
 
               {/* Equity Curve */}
               <Card className="p-4">
