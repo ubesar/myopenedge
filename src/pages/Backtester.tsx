@@ -492,7 +492,9 @@ const Backtester = () => {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pb50">50% pullback strategy</SelectItem>
+                    <SelectItem value="orbpb">orb m15 pullback (buy stop + dynamic sl)</SelectItem>
                     <SelectItem value="ib2575">ib momentum limit (ib25/75)</SelectItem>
+
                   </SelectContent>
                 </Select>
               </div>
