@@ -323,7 +323,18 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setPullback50Result(a);
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, sessionEndMinutes: a.sessionEndMinutes, winRate: a.stats.winRate });
+        } else if (effectiveMode === "orbpullback") {
+          const a = analyzeORBPullback(values as any, {
+            maxDays: effectiveMaxDays,
+            weekdays,
+            sessionStartMinutes: sessionStart,
+            sessionEndMinutes: momentumSessionEnd,
+          });
+          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setOrbPbResult(a);
+          addRun(effectiveMode, ticker, { setups: a.setups, winRate: a.winRate, avgRR: a.avgRR });
         } else if (effectiveMode === "ib2575") {
+
           const a = analyzeIB2575(values as any, effectiveIbWindow, effectiveMaxDays, weekdays);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setIb2575RawBars(values as any);
