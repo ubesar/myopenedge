@@ -15,12 +15,14 @@ import {
 } from "recharts";
 import { analyzePullback50, type Pullback50Trade } from "@/lib/pullback50-analysis";
 import { analyzeIB2575, type IB2575Trade } from "@/lib/ib2575-analysis";
+import { analyzeORBPullback, type ORBPullbackTrade, type ORBPullbackResult } from "@/lib/orb-pullback-analysis";
 import TradeChartDialog, { type TradeForChart } from "@/components/TradeChartDialog";
 import { parseCsvBars, type CsvBar } from "@/lib/csv-bars";
 import BacktestCalendar from "@/components/BacktestCalendar";
+import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-type StrategyKey = "pb50" | "ib2575";
+type StrategyKey = "pb50" | "ib2575" | "orbpb";
 
 interface BTTrade {
   date: string;
@@ -35,6 +37,7 @@ interface BTTrade {
   qty: number;
   ib?: { high: number; low: number; q25: number; q50: number; q75: number; windowMinutes: number };
 }
+
 
 
 interface BTResult {
@@ -54,7 +57,9 @@ interface BTResult {
   expectancy: number;
   bestDay: number;
   worstDay: number;
+  orb?: ORBPullbackResult;
 }
+
 
 const RISK_USD = 100;
 const MAX_BATCH_DAYS = 60;
@@ -180,6 +185,27 @@ function toBTTradesIB2575(trades: IB2575Trade[], ibWindow: number): BTTrade[] {
       };
     });
 }
+function toBTTradesORB(trades: ORBPullbackTrade[]): BTTrade[] {
+  return trades
+    .filter((t) => t.status === "win" || t.status === "loss")
+    .map((t) => {
+      const slDist = Math.abs(t.entry - t.stop);
+      const rMultiple = t.status === "win" ? t.realizedRR : -1;
+      return {
+        date: t.date,
+        time: t.triggerTime ?? t.signalTime,
+        direction: t.direction,
+        entry: t.entry,
+        stop: t.stop,
+        target: t.target,
+        outcome: t.status as "win" | "loss",
+        rMultiple,
+        pnl: rMultiple * RISK_USD,
+        qty: slDist > 0 ? RISK_USD / slDist : 0,
+      };
+    });
+}
+
 
 
 function computeMetrics(trades: BTTrade[]): Omit<BTResult, "strategy" | "symbol" | "totalDays" | "trades" | "bars"> {
@@ -246,6 +272,11 @@ const Backtester = () => {
   const [csvM5Bars, setCsvM5Bars] = useState<CsvBar[] | null>(null); // m5 — entry/tp/sl
   const [csvM5Name, setCsvM5Name] = useState("");
   const [csvOffset, setCsvOffset] = useState("0");
+  const [pbThreshold, setPbThreshold] = useState("0.5");
+  const [tpMult, setTpMult] = useState("0.5");
+  const [dynamicSl, setDynamicSl] = useState(true);
+  const [sessionEnd, setSessionEnd] = useState("780"); // 13:00 ny
+
 
   const toMin = (v: string) => {
     const [h, m] = v.split(":").map(Number);
@@ -294,7 +325,7 @@ const Backtester = () => {
         if (!csvBars?.length) throw new Error("import a csv file first");
         values = csvBars;
       } else {
-        const usePreMarket = strategy === "pb50" && parseInt(sessionStart) < 9 * 60 + 30;
+        const usePreMarket = strategy !== "ib2575" && parseInt(sessionStart) < 9 * 60 + 30;
         const json = usePreMarket
           ? await fetchMassiveData(symbol.trim().toUpperCase(), days)
           : await fetchMarketData(symbol.trim().toUpperCase(), days);
@@ -305,6 +336,7 @@ const Backtester = () => {
 
       let trades: BTTrade[] = [];
       let totalDays = 0;
+      let orb: ORBPullbackResult | undefined;
 
       if (strategy === "pb50") {
         const isCsv = dataSource === "csv";
@@ -319,6 +351,23 @@ const Backtester = () => {
         );
         trades = toBTTradesPB50(r.trades);
         totalDays = r.totalDays;
+
+      } else if (strategy === "orbpb") {
+        const isCsv = dataSource === "csv";
+        const r = analyzeORBPullback(values, {
+          maxDays: days,
+          weekdays: [1, 2, 3, 4, 5],
+          sessionStartMinutes: isCsv ? csvScanStartMin : parseInt(sessionStart),
+          sessionEndMinutes: isCsv ? csvScanEndMin : parseInt(sessionEnd),
+          sessionCloseMinutes: isCsv ? csvCloseMin : undefined,
+          pullbackThreshold: parseFloat(pbThreshold),
+          tpMultiplier: parseFloat(tpMult),
+          dynamicSl,
+          intraBars: isCsv ? (csvM5Bars ?? undefined) : undefined,
+        });
+        trades = toBTTradesORB(r.trades);
+        totalDays = r.totalDays;
+        orb = r;
 
       } else {
         const r = analyzeIB2575(values, parseInt(ibWindow), days, [1, 2, 3, 4, 5]);
@@ -338,7 +387,9 @@ const Backtester = () => {
         trades,
         bars: dataSource === "csv" && csvM5Bars?.length ? csvM5Bars : values,
         ...metrics,
+        orb,
       });
+
       toast.success(`backtest complete: ${trades.length} trades`);
     } catch (e: any) {
       toast.error(e.message || "backtest failed");
@@ -441,7 +492,9 @@ const Backtester = () => {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pb50">50% pullback strategy</SelectItem>
+                    <SelectItem value="orbpb">orb m15 pullback (buy stop + dynamic sl)</SelectItem>
                     <SelectItem value="ib2575">ib momentum limit (ib25/75)</SelectItem>
+
                   </SelectContent>
                 </Select>
               </div>
@@ -523,6 +576,65 @@ const Backtester = () => {
 
             </div>
 
+            {strategy === "orbpb" && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 border-t border-border pt-3">
+                {dataSource !== "csv" && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">scan session end (ny)</Label>
+                    <Select value={sessionEnd} onValueChange={setSessionEnd}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="600">10:00</SelectItem>
+                        <SelectItem value="660">11:00</SelectItem>
+                        <SelectItem value="720">12:00</SelectItem>
+                        <SelectItem value="780">13:00</SelectItem>
+                        <SelectItem value="840">14:00</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  <Label className="text-xs lowercase">pullback threshold (max retrace candle 1)</Label>
+                  <Select value={pbThreshold} onValueChange={setPbThreshold}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0.3">30%</SelectItem>
+                      <SelectItem value="0.4">40%</SelectItem>
+                      <SelectItem value="0.5">50% (default)</SelectItem>
+                      <SelectItem value="0.618">61.8%</SelectItem>
+                      <SelectItem value="0.75">75%</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs lowercase">tp (× extension candle 1)</Label>
+                  <Select value={tpMult} onValueChange={setTpMult}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0.25">0.25×</SelectItem>
+                      <SelectItem value="0.5">0.5× (default)</SelectItem>
+                      <SelectItem value="0.75">0.75×</SelectItem>
+                      <SelectItem value="1">1.0×</SelectItem>
+                      <SelectItem value="1.5">1.5×</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs lowercase">dynamic sl (low candle 2)</Label>
+                  <div className="flex items-center gap-2 h-10">
+                    <Switch checked={dynamicSl} onCheckedChange={setDynamicSl} />
+                    <span className="text-xs text-muted-foreground lowercase">
+                      {dynamicSl ? "sl mengikuti extreme pullback" : "sl di ujung candle 1"}
+                    </span>
+                  </div>
+                </div>
+                <p className="md:col-span-4 text-[11px] text-muted-foreground lowercase">
+                  candle 1 = momentum m15 · candle 2 pullback ke body candle 1 (batal jika retrace &gt; {(parseFloat(pbThreshold) * 100).toFixed(0)}%) · entry buy/sell stop di high/low candle 1 · tp {tpMult}× range candle 1 · risk ${RISK_USD}/trade
+                </p>
+              </div>
+            )}
+
+
             {dataSource === "csv" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-border pt-3">
                 <div className="space-y-1.5">
@@ -588,7 +700,43 @@ const Backtester = () => {
                 <StatCard label="avg loss" value={`-$${result.avgLoss.toFixed(0)}`} accent="neg" />
                 <StatCard label="best day" value={`$${result.bestDay.toFixed(0)}`} accent="pos" />
                 <StatCard label="worst day" value={`$${result.worstDay.toFixed(0)}`} accent="neg" />
+                {result.orb && (
+                  <>
+                    <StatCard label="avg rrr" value={`1:${result.orb.avgRR.toFixed(2)}`} />
+                    <StatCard label="setups" value={String(result.orb.setups)} />
+                    <StatCard label="invalidated" value={String(result.orb.invalidated)} accent="neg" />
+                    <StatCard label="no trigger" value={String(result.orb.noTrigger)} />
+                  </>
+                )}
               </div>
+
+              {result.orb && (
+                <Card className="p-4">
+                  <h2 className="text-sm font-semibold mb-3 lowercase">setup distribution</h2>
+                  <div className="h-56">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={[
+                          { label: "triggered win", count: result.orb.wins },
+                          { label: "triggered loss", count: result.orb.losses },
+                          { label: `invalidated (>${(result.orb.pullbackThreshold * 100).toFixed(0)}%)`, count: result.orb.invalidated },
+                          { label: "no trigger", count: result.orb.noTrigger },
+                        ]}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                        <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 12 }} />
+                        <Bar dataKey="count" fill="hsl(var(--primary))" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <p className="mt-2 text-[11px] text-muted-foreground lowercase">
+                    trigger rate {result.orb.setups ? ((result.orb.triggered / result.orb.setups) * 100).toFixed(0) : 0}% · long {result.orb.bullish.winRate.toFixed(0)}% wr ({result.orb.bullish.total}) · short {result.orb.bearish.winRate.toFixed(0)}% wr ({result.orb.bearish.total})
+                  </p>
+                </Card>
+              )}
+
 
               {/* Equity Curve */}
               <Card className="p-4">

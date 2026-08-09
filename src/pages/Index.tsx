@@ -27,6 +27,8 @@ import { analyzeOutsideDay, type OutsideDayResult } from "@/lib/outsideday-analy
 import { analyzeGlobexIB, type GlobexIBResult } from "@/lib/globex-ib-analysis";
 import { analyzeLondonIB, type LondonIBResult } from "@/lib/london-ib-analysis";
 import { analyzePullback50, type Pullback50Result } from "@/lib/pullback50-analysis";
+import { analyzeORBPullback, type ORBPullbackResult } from "@/lib/orb-pullback-analysis";
+
 import { analyzeIB2575, type IB2575Result } from "@/lib/ib2575-analysis";
 import { analyzeMCM152am, type MCM152amResult } from "@/lib/mcm15-2am-analysis";
 import TradeChartDialog, { type TradeForChart } from "@/components/TradeChartDialog";
@@ -65,6 +67,8 @@ const Index = () => {
   const [globexIBResult, setGlobexIBResult] = useState<GlobexIBResult | null>(null);
   const [londonIBResult, setLondonIBResult] = useState<LondonIBResult | null>(null);
   const [pullback50Result, setPullback50Result] = useState<Pullback50Result | null>(null);
+  const [orbPbResult, setOrbPbResult] = useState<ORBPullbackResult | null>(null);
+
   const [ib2575Result, setIb2575Result] = useState<IB2575Result | null>(null);
   const [mcm152amResult, setMcm152amResult] = useState<MCM152amResult | null>(null);
   const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
@@ -180,13 +184,14 @@ const Index = () => {
     }
 
     setLoading(true);
-    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null); setPullback50Result(null); setIb2575Result(null); setMcm152amResult(null);
+    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null); setPullback50Result(null); setOrbPbResult(null); setIb2575Result(null); setMcm152amResult(null);
     setSymbol(ticker); setActiveMode(effectiveMode); setAnalysisMaxDays(effectiveMaxDays); setAnalysisWeekdays(weekdays);
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
     try {
-      const pb50PreMarket = effectiveMode === "pullback50" && sessionStart < 9 * 60 + 30;
+      const pb50PreMarket = (effectiveMode === "pullback50" || effectiveMode === "orbpullback") && sessionStart < 9 * 60 + 30;
       if (effectiveMode === "globex-ib" || effectiveMode === "london-ib" || effectiveMode === "mcm15-2am" || pb50PreMarket) {
+
         // All three use Massive API via massive-bars edge function
         // Split into 90-day client-side batches to avoid CPU timeout
         const MASSIVE_BATCH_DAYS = 90;
@@ -250,11 +255,22 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough London session data."); return; }
           setLondonIBResult(a);
           addRun(effectiveMode, ticker, { totalDays: a.totalDays, ibWindow: effectiveIbWindow, highFirst: a.highFirst, lowFirst: a.lowFirst });
+        } else if (pb50PreMarket && effectiveMode === "orbpullback") {
+          const a = analyzeORBPullback(deduped as any, {
+            maxDays: effectiveMaxDays,
+            weekdays,
+            sessionStartMinutes: sessionStart,
+            sessionEndMinutes: momentumSessionEnd,
+          });
+          if (a.totalDays === 0) { toast.error("Not enough pre-market data."); return; }
+          setOrbPbResult(a);
+          addRun(effectiveMode, ticker, { setups: a.setups, winRate: a.winRate, avgRR: a.avgRR });
         } else if (pb50PreMarket) {
           const a = analyzePullback50(deduped as any, effectiveMaxDays, weekdays, momentumSessionEnd, sessionStart);
           if (a.totalDays === 0) { toast.error("Not enough pre-market data."); return; }
           setPullback50Result(a);
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, sessionEndMinutes: a.sessionEndMinutes, winRate: a.stats.winRate });
+
         } else {
           // mcm15-2am
           const a = analyzeMCM152am(deduped as any, effectiveMaxDays, weekdays);
@@ -307,7 +323,18 @@ const Index = () => {
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setPullback50Result(a);
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, sessionEndMinutes: a.sessionEndMinutes, winRate: a.stats.winRate });
+        } else if (effectiveMode === "orbpullback") {
+          const a = analyzeORBPullback(values as any, {
+            maxDays: effectiveMaxDays,
+            weekdays,
+            sessionStartMinutes: sessionStart,
+            sessionEndMinutes: momentumSessionEnd,
+          });
+          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setOrbPbResult(a);
+          addRun(effectiveMode, ticker, { setups: a.setups, winRate: a.winRate, avgRR: a.avgRR });
         } else if (effectiveMode === "ib2575") {
+
           const a = analyzeIB2575(values as any, effectiveIbWindow, effectiveMaxDays, weekdays);
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setIb2575RawBars(values as any);
@@ -324,10 +351,11 @@ const Index = () => {
     }
   };
 
-  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullback50Result || ib2575Result || mcm152amResult;
+  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullback50Result || orbPbResult || ib2575Result || mcm152amResult;
 
   const reportTitle = hasResults
-    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "pullback50" ? "50% pullback strategy report" : activeMode === "ib2575" ? "IB momentum limit report" : activeMode === "mcm15-2am" ? "m15 momentum @ 04:00 ny report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
+    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "pullback50" ? "50% pullback strategy report" : activeMode === "orbpullback" ? "orb m15 pullback (buy stop + dynamic sl) report" : activeMode === "ib2575" ? "IB momentum limit report" : activeMode === "mcm15-2am" ? "m15 momentum @ 04:00 ny report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
+
     : "";
 
   const renderCharts = () => {
@@ -655,7 +683,126 @@ const Index = () => {
     }
 
 
+    if (activeMode === "orbpullback" && orbPbResult) {
+      const lbl = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+      const r = orbPbResult;
+      const triggerRate = r.setups > 0 ? (r.triggered / r.setups) * 100 : 0;
+      return (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
+            <strong className="text-foreground">orb m15 pullback (buy stop + dynamic sl)</strong> — candle 1 = m15 momentum candle ({lbl(r.sessionStartMinutes)} – {lbl(r.sessionEndMinutes)} ny, body &gt; {r.bodyThreshold}× avg body sma15). candle 2 pullback ke body candle 1 (batal jika retrace &gt; {(r.pullbackThreshold * 100).toFixed(0)}%). entry stop order di high/low candle 1, sl {r.dynamicSl ? "di extreme pullback candle 2 (dynamic)" : "di ujung candle 1"}, tp {r.tpMultiplier}× range candle 1.
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">setups</p>
+              <p className="text-[18px] font-semibold text-foreground">{r.setups}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">trigger rate</p>
+              <p className="text-[18px] font-semibold text-foreground">{triggerRate.toFixed(0)}%</p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">win rate</p>
+              <p className="text-[18px] font-semibold text-foreground">{r.winRate.toFixed(1)}%</p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">avg rrr</p>
+              <p className="text-[18px] font-semibold text-foreground">1:{r.avgRR.toFixed(2)}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">wins / losses</p>
+              <p className="text-[14px] font-semibold text-foreground">{r.wins} / {r.losses}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">invalidated</p>
+              <p className="text-[14px] font-semibold text-foreground">{r.invalidated}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">no trigger</p>
+              <p className="text-[14px] font-semibold text-foreground">{r.noTrigger}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">long / short wr</p>
+              <p className="text-[14px] font-semibold text-foreground">{r.bullish.winRate.toFixed(0)}% / {r.bearish.winRate.toFixed(0)}%</p>
+            </div>
+          </div>
+
+          {r.trades.length > 0 && (
+            <div className="rounded-lg border border-border bg-card overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+                <p className="text-[12px] font-semibold text-foreground">setup history</p>
+                <p className="text-[10px] text-muted-foreground">{r.trades.length} setups</p>
+              </div>
+              <div className="max-h-[420px] overflow-auto">
+                <table className="w-full text-[11px]">
+                  <thead className="sticky top-0 bg-card border-b border-border">
+                    <tr className="text-left text-muted-foreground">
+                      <th className="px-3 py-2 font-medium">date</th>
+                      <th className="px-3 py-2 font-medium">c1</th>
+                      <th className="px-3 py-2 font-medium">trigger</th>
+                      <th className="px-3 py-2 font-medium">dir</th>
+                      <th className="px-3 py-2 font-medium text-right">entry</th>
+                      <th className="px-3 py-2 font-medium text-right">sl</th>
+                      <th className="px-3 py-2 font-medium text-right">tp</th>
+                      <th className="px-3 py-2 font-medium text-right">pullback</th>
+                      <th className="px-3 py-2 font-medium text-right">rr</th>
+                      <th className="px-3 py-2 font-medium text-center">status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...r.trades].reverse().map((t, idx) => {
+                      const dirColor = t.direction === "bullish" ? "text-emerald-500" : "text-rose-500";
+                      const outColor =
+                        t.status === "win" ? "text-emerald-500 bg-emerald-500/10"
+                        : t.status === "loss" ? "text-rose-500 bg-rose-500/10"
+                        : "text-muted-foreground bg-muted/40";
+                      return (
+                        <tr key={idx} className="border-b border-border/40 hover:bg-muted/30">
+                          <td className="px-3 py-1.5 text-foreground/80">{t.date}</td>
+                          <td className="px-3 py-1.5 text-foreground/80">{t.signalTime}</td>
+                          <td className="px-3 py-1.5 text-foreground/60">{t.triggerTime ?? "—"}</td>
+                          <td className={`px-3 py-1.5 font-medium ${dirColor}`}>{t.direction === "bullish" ? "buy" : "sell"}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/90 tabular-nums">{t.entry.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.stop.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.target.toFixed(2)}</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{(t.pullbackPct * 100).toFixed(0)}%</td>
+                          <td className="px-3 py-1.5 text-right text-foreground/70 tabular-nums">{t.realizedRR ? `1:${t.realizedRR.toFixed(2)}` : "—"}</td>
+                          <td className="px-3 py-1.5 text-center">
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${outColor}`}>{t.status.replace("_", " ")}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <AITradingInsight
+            mode="momentum"
+            symbol={symbol}
+            analysisData={{
+              method: "ORB M15 Pullback (buy stop + dynamic SL)",
+              totalDays: r.totalDays,
+              setups: r.setups,
+              triggered: r.triggered,
+              invalidated: r.invalidated,
+              noTrigger: r.noTrigger,
+              winRate: r.winRate,
+              avgRR: r.avgRR,
+              pullbackThreshold: r.pullbackThreshold,
+              tpMultiplier: r.tpMultiplier,
+              dynamicSl: r.dynamicSl,
+            }}
+          />
+        </div>
+      );
+    }
+
     if (activeMode === "ib2575" && ib2575Result) {
+
       const s = ib2575Result.stats;
       const subtitle = `${symbol} · IB ${ib2575Result.ibWindowMinutes}min · momentum limit · ${formatDateRange(analysisMaxDays)}`;
       const signalPct = ib2575Result.totalDays > 0 ? (ib2575Result.daysWithSignal / ib2575Result.totalDays) * 100 : 0;
