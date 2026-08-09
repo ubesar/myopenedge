@@ -67,6 +67,8 @@ const Index = () => {
   const [globexIBResult, setGlobexIBResult] = useState<GlobexIBResult | null>(null);
   const [londonIBResult, setLondonIBResult] = useState<LondonIBResult | null>(null);
   const [pullback50Result, setPullback50Result] = useState<Pullback50Result | null>(null);
+  const [orbPbResult, setOrbPbResult] = useState<ORBPullbackResult | null>(null);
+
   const [ib2575Result, setIb2575Result] = useState<IB2575Result | null>(null);
   const [mcm152amResult, setMcm152amResult] = useState<MCM152amResult | null>(null);
   const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
