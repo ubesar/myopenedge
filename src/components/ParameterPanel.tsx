@@ -220,8 +220,7 @@ const ParameterPanel = ({
             </>
           )}
 
-            </>
-          )}
+
 
           {mode === "ib2575" && (
             <p className="text-[10px] text-muted-foreground">after the IB window, detects which extreme printed first. low first → wait for an m5 momentum candle closing above IB75, then buy limit @ IB75, SL IB50, TP IB high. high first → wait for an m5 momentum candle closing below IB25, then sell limit @ IB25, SL IB50, TP IB low. momentum scan until 13:00 ny, managed until 16:00 ny.</p>
