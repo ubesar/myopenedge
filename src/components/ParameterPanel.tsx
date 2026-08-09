@@ -200,7 +200,7 @@ const ParameterPanel = ({
             </>
           )}
 
-          {(mode === "momentum" || mode === "pullback50") && (
+          {(mode === "momentum" || mode === "pullback50" || mode === "orbpullback") && (
             <>
               <p className="text-[11px] text-muted-foreground">scan session end (ny)</p>
               <Select value={momentumSessionEnd} onValueChange={(v) => { setMomentumSessionEnd(v); setSelectedTemplateId("custom"); }}>
@@ -216,7 +216,10 @@ const ParameterPanel = ({
                   <SelectItem value="840">14:00</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-[10px] text-muted-foreground">{mode === "pullback50" ? `m15 momentum candles scanned from ${sessionStart === "240" ? "04:00" : "09:30"} ny up to this time. entry on 50% pullback, sl at far end, tp at opposite end of candle 1. positions closed by 16:00 ny.` : "m15 momentum candles scanned from 09:30 ny up to this time. momentum candle = body > 1.5× avg body sma(15). walk-forward to 16:00 close."}</p>
+              <p className="text-[10px] text-muted-foreground">{mode === "orbpullback" ? `candle 1 = m15 momentum candle (${sessionStart === "240" ? "04:00" : "09:30"} ny up to this time). candle 2 pullback ke body candle 1 (batal jika retrace > 50%). entry buy/sell stop di high/low candle 1, sl dynamic di extreme candle 2, tp 0.5× range candle 1. atur threshold & tp di /backtester.` : mode === "pullback50" ? `m15 momentum candles scanned from ${sessionStart === "240" ? "04:00" : "09:30"} ny up to this time. entry on 50% pullback, sl at far end, tp at opposite end of candle 1. positions closed by 16:00 ny.` : "m15 momentum candles scanned from 09:30 ny up to this time. momentum candle = body > 1.5× avg body sma(15). walk-forward to 16:00 close."}</p>
+            </>
+          )}
+
             </>
           )}
 
