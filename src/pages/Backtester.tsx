@@ -185,6 +185,27 @@ function toBTTradesIB2575(trades: IB2575Trade[], ibWindow: number): BTTrade[] {
       };
     });
 }
+function toBTTradesORB(trades: ORBPullbackTrade[]): BTTrade[] {
+  return trades
+    .filter((t) => t.status === "win" || t.status === "loss")
+    .map((t) => {
+      const slDist = Math.abs(t.entry - t.stop);
+      const rMultiple = t.status === "win" ? t.realizedRR : -1;
+      return {
+        date: t.date,
+        time: t.triggerTime ?? t.signalTime,
+        direction: t.direction,
+        entry: t.entry,
+        stop: t.stop,
+        target: t.target,
+        outcome: t.status as "win" | "loss",
+        rMultiple,
+        pnl: rMultiple * RISK_USD,
+        qty: slDist > 0 ? RISK_USD / slDist : 0,
+      };
+    });
+}
+
 
 
 function computeMetrics(trades: BTTrade[]): Omit<BTResult, "strategy" | "symbol" | "totalDays" | "trades" | "bars"> {
