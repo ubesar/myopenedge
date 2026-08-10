@@ -31,7 +31,13 @@ export interface TradeForChart {
   outcome: "win" | "loss";
   /** when present the chart renders the initial balance zone + quarter levels */
   ib?: IBLevelsForChart;
+  /** optional 50% reference level (orb c1 midpoint) */
+  midpoint?: number;
+  /** optional exit marker */
+  exitTime?: string;
+  exitPrice?: number;
 }
+
 
 interface Props {
   open: boolean;
