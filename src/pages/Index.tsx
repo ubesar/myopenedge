@@ -806,16 +806,23 @@ const Index = () => {
             setup batal jika harga menembus midpoint c1 sebelum entry, sisanya ditutup di close sesi.
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            <StatCard label="days" value={String(orbResult.totalDays)} />
-            <StatCard label="triggered" value={String(orbResult.triggeredDays)} />
-            <StatCard label="cancelled" value={String(orbResult.cancelledDays)} />
-            <StatCard label="no trigger" value={String(orbResult.noTriggerDays)} />
-            <StatCard label="win rate" value={`${orbResult.winRate.toFixed(1)}%`} accent={orbResult.winRate >= 50 ? "pos" : "neg"} />
-            <StatCard label="expectancy" value={`${orbResult.expectancyR.toFixed(2)}R`} accent={orbResult.expectancyR >= 0 ? "pos" : "neg"} />
-            <StatCard label="profit factor" value={isFinite(orbResult.profitFactor) ? orbResult.profitFactor.toFixed(2) : "∞"} />
-            <StatCard label="max dd" value={`-$${orbResult.maxDrawdown.toFixed(0)}`} accent="neg" />
-            <StatCard label="long / short" value={`${orbResult.longTrades} / ${orbResult.shortTrades}`} />
-            <StatCard label="net pnl" value={`$${orbResult.netPnl.toFixed(0)}`} accent={orbResult.netPnl >= 0 ? "pos" : "neg"} />
+            {[
+              { l: "days", v: String(orbResult.totalDays), c: "" },
+              { l: "triggered", v: String(orbResult.triggeredDays), c: "" },
+              { l: "cancelled", v: String(orbResult.cancelledDays), c: "" },
+              { l: "no trigger", v: String(orbResult.noTriggerDays), c: "" },
+              { l: "win rate", v: `${orbResult.winRate.toFixed(1)}%`, c: orbResult.winRate >= 50 ? "text-emerald-500" : "text-rose-500" },
+              { l: "expectancy", v: `${orbResult.expectancyR.toFixed(2)}R`, c: orbResult.expectancyR >= 0 ? "text-emerald-500" : "text-rose-500" },
+              { l: "profit factor", v: isFinite(orbResult.profitFactor) ? orbResult.profitFactor.toFixed(2) : "∞", c: "" },
+              { l: "max dd", v: `-$${orbResult.maxDrawdown.toFixed(0)}`, c: "text-rose-500" },
+              { l: "long / short", v: `${orbResult.longTrades} / ${orbResult.shortTrades}`, c: "" },
+              { l: "net pnl", v: `$${orbResult.netPnl.toFixed(0)}`, c: orbResult.netPnl >= 0 ? "text-emerald-500" : "text-rose-500" },
+            ].map((s) => (
+              <div key={s.l} className="rounded-xl border border-border bg-card px-3 py-2">
+                <p className="text-[10px] text-muted-foreground lowercase">{s.l}</p>
+                <p className={`text-sm font-semibold ${s.c}`}>{s.v}</p>
+              </div>
+            ))}
           </div>
 
           <div className="rounded-xl border border-border bg-card overflow-x-auto">
@@ -835,50 +842,49 @@ const Index = () => {
                 </tr>
               </thead>
               <tbody>
-                {[...orbResult.trades].reverse().map((t, i) => (
+                {[...orbResult.triggered].reverse().map((t, i) => (
                   <tr key={`${t.date}-${i}`} className="border-b border-border/40">
                     <td className="py-1.5 px-2">{t.date}</td>
                     <td className="py-1.5 px-2">{t.entryTime}</td>
-                    <td className={`py-1.5 px-2 uppercase text-[10px] ${t.direction === "bullish" ? "text-emerald-500" : "text-rose-500"}`}>
-                      {t.direction === "bullish" ? "long" : "short"}
+                    <td className={`py-1.5 px-2 uppercase text-[10px] ${t.direction === "long" ? "text-emerald-500" : "text-rose-500"}`}>
+                      {t.direction}
                     </td>
-                    <td className="py-1.5 px-2 text-right">{t.entry.toFixed(2)}</td>
-                    <td className="py-1.5 px-2 text-right">{t.stop.toFixed(2)}</td>
+                    <td className="py-1.5 px-2 text-right">{t.entryPrice?.toFixed(2)}</td>
+                    <td className="py-1.5 px-2 text-right">{t.stopLoss.toFixed(2)}</td>
                     <td className="py-1.5 px-2 text-right">{t.target.toFixed(2)}</td>
                     <td className="py-1.5 px-2 text-right">{t.rMultiple.toFixed(2)}</td>
-                    <td className={`py-1.5 px-2 text-right font-medium ${t.pnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-                      {t.pnl >= 0 ? "+" : ""}${t.pnl.toFixed(0)}
+                    <td className={`py-1.5 px-2 text-right font-medium ${t.pnlUsd >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                      {t.pnlUsd >= 0 ? "+" : ""}${t.pnlUsd.toFixed(0)}
                     </td>
-                    <td className="py-1.5 px-2 lowercase">{t.reason}</td>
+                    <td className="py-1.5 px-2 lowercase">{t.outcome}</td>
                     <td className="py-1.5 px-2 text-center">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-6 p-0"
+                      <button
+                        className="h-6 w-6 inline-flex items-center justify-center rounded hover:bg-muted"
                         onClick={() =>
                           setOrbChartTrade({
                             date: t.date,
-                            time: t.entryTime,
-                            direction: t.direction,
-                            entry: t.entry,
-                            stop: t.stop,
+                            time: t.entryTime ?? undefined,
+                            direction: t.direction === "long" ? "bullish" : "bearish",
+                            entry: t.entryPrice ?? 0,
+                            stop: t.stopLoss,
                             target: t.target,
-                            outcome: t.pnl >= 0 ? "win" : "loss",
+                            outcome: t.pnlUsd >= 0 ? "win" : "loss",
                             midpoint: t.midpoint,
-                            exitTime: t.exitTime,
-                            exitPrice: t.exitPrice,
+                            exitTime: t.exitTime ?? undefined,
+                            exitPrice: t.exitPrice ?? undefined,
                           })
                         }
                         title="view chart"
                       >
                         <BarChart3 className="h-3.5 w-3.5" />
-                      </Button>
+                      </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+
         </div>
       );
     }
