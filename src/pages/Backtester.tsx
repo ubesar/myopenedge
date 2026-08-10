@@ -194,8 +194,29 @@ function toBTTradesIB2575(trades: IB2575Trade[], ibWindow: number): BTTrade[] {
     });
 }
 
+function toBTTradesORB(trades: OrbTrade[]): BTTrade[] {
+  return trades
+    .filter((t) => t.entryPrice != null && t.exitPrice != null)
+    .map((t) => ({
+      date: t.date,
+      time: t.entryTime ?? undefined,
+      direction: t.direction === "long" ? ("bullish" as const) : ("bearish" as const),
+      entry: t.entryPrice as number,
+      stop: t.stopLoss,
+      target: t.target,
+      outcome: (t.pnlUsd >= 0 ? "win" : "loss") as "win" | "loss",
+      rMultiple: t.rMultiple,
+      pnl: t.pnlUsd,
+      qty: t.shares,
+      midpoint: t.midpoint,
+      exitTime: t.exitTime ?? undefined,
+      exitPrice: t.exitPrice ?? undefined,
+      reason: t.outcome,
+    }));
+}
 
-function computeMetrics(trades: BTTrade[]): Omit<BTResult, "strategy" | "symbol" | "totalDays" | "trades" | "bars"> {
+function computeMetrics(trades: BTTrade[]): Omit<BTResult, "strategy" | "symbol" | "totalDays" | "trades" | "bars" | "orbTrades" | "orbStats" | "orbSegments"> {
+
   const wins = trades.filter((t) => t.outcome === "win");
   const losses = trades.filter((t) => t.outcome === "loss");
   const totalPnl = trades.reduce((s, t) => s + t.pnl, 0);
