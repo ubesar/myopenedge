@@ -20,7 +20,9 @@ import { parseCsvBars, type CsvBar } from "@/lib/csv-bars";
 import BacktestCalendar from "@/components/BacktestCalendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-type StrategyKey = "pb50" | "ib2575";
+import { runOrbM15Backtest, segmentOrbStats, ORB_SESSIONS, type OrbTrade, type OrbSide, type OrbMarket, type OrbStats } from "@/lib/orb-backtest";
+
+type StrategyKey = "pb50" | "ib2575" | "orbm15";
 
 interface BTTrade {
   date: string;
@@ -34,7 +36,13 @@ interface BTTrade {
   pnl: number;         // dollars (fixed $100 risk)
   qty: number;
   ib?: { high: number; low: number; q25: number; q50: number; q75: number; windowMinutes: number };
+  midpoint?: number;
+  exitTime?: string;
+  exitPrice?: number;
+  /** orb exit reason */
+  reason?: string;
 }
+
 
 
 interface BTResult {
