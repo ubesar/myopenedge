@@ -695,6 +695,65 @@ const Backtester = () => {
                 <StatCard label="worst day" value={`$${result.worstDay.toFixed(0)}`} accent="neg" />
               </div>
 
+              {result.orbStats && (
+                <Card className="p-4 space-y-3">
+                  <div>
+                    <h2 className="text-sm font-semibold lowercase">orb m15 pullback · breakdown</h2>
+                    <p className="text-[11px] text-muted-foreground lowercase">
+                      c1 = 15 menit pertama sesi · buy stop di c1 high (sell stop di c1 low) setelah pullback di c2 ·
+                      sl trailing running low/high c2 · batal jika midpoint c1 ditembus · tp 0.5× range
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    <StatCard label="days evaluated" value={String(result.orbStats.totalDays)} />
+                    <StatCard label="triggered" value={String(result.orbStats.triggeredDays)} />
+                    <StatCard label="cancelled" value={String(result.orbStats.cancelledDays)} />
+                    <StatCard label="no trigger" value={String(result.orbStats.noTriggerDays)} />
+                    <StatCard label="expectancy r" value={`${result.orbStats.expectancyR.toFixed(2)}R`} accent={result.orbStats.expectancyR >= 0 ? "pos" : "neg"} />
+                    <StatCard label="long / short" value={`${result.orbStats.longTrades} / ${result.orbStats.shortTrades}`} />
+                    <StatCard label="long net pnl" value={`$${result.orbStats.longNetPnl.toFixed(0)}`} accent={result.orbStats.longNetPnl >= 0 ? "pos" : "neg"} />
+                    <StatCard label="short net pnl" value={`$${result.orbStats.shortNetPnl.toFixed(0)}`} accent={result.orbStats.shortNetPnl >= 0 ? "pos" : "neg"} />
+                  </div>
+
+                  {!!result.orbSegments?.length && (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead className="text-muted-foreground border-b border-border">
+                          <tr>
+                            <th className="text-left py-2 px-2 lowercase">segment</th>
+                            <th className="text-left py-2 px-2 lowercase">periode</th>
+                            <th className="text-right py-2 px-2 lowercase">trades</th>
+                            <th className="text-right py-2 px-2 lowercase">win rate</th>
+                            <th className="text-right py-2 px-2 lowercase">pf</th>
+                            <th className="text-right py-2 px-2 lowercase">exp r</th>
+                            <th className="text-right py-2 px-2 lowercase">max dd</th>
+                            <th className="text-right py-2 px-2 lowercase">net pnl</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {result.orbSegments.map((s) => (
+                            <tr key={s.label} className="border-b border-border/40">
+                              <td className="py-1.5 px-2 lowercase">{s.label}</td>
+                              <td className="py-1.5 px-2">{s.from} → {s.to}</td>
+                              <td className="py-1.5 px-2 text-right">{s.stats.triggeredDays}</td>
+                              <td className="py-1.5 px-2 text-right">{s.stats.winRate.toFixed(1)}%</td>
+                              <td className="py-1.5 px-2 text-right">{isFinite(s.stats.profitFactor) ? s.stats.profitFactor.toFixed(2) : "∞"}</td>
+                              <td className="py-1.5 px-2 text-right">{s.stats.expectancyR.toFixed(2)}</td>
+                              <td className="py-1.5 px-2 text-right text-red-500">-${s.stats.maxDrawdown.toFixed(0)}</td>
+                              <td className={`py-1.5 px-2 text-right font-medium ${s.stats.netPnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                                {s.stats.netPnl >= 0 ? "+" : ""}${s.stats.netPnl.toFixed(0)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </Card>
+              )}
+
+
+
               {/* Equity Curve */}
               <Card className="p-4">
                 <h2 className="text-sm font-semibold mb-3 lowercase">equity curve</h2>
