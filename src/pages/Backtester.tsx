@@ -345,6 +345,9 @@ const Backtester = () => {
 
       let trades: BTTrade[] = [];
       let totalDays = 0;
+      let orbTrades: OrbTrade[] | undefined;
+      let orbStats: OrbStats | undefined;
+      let orbSegments: { label: string; from: string; to: string; stats: OrbStats }[] | undefined;
 
       if (strategy === "pb50") {
         const isCsv = dataSource === "csv";
@@ -359,6 +362,22 @@ const Backtester = () => {
         );
         trades = toBTTradesPB50(r.trades);
         totalDays = r.totalDays;
+
+      } else if (strategy === "orbm15") {
+        const r = runOrbM15Backtest(
+          symbol.trim().toUpperCase(),
+          values,
+          orbMarket,
+          parseFloat(orbRisk) || 100,
+          parseFloat(orbMinStop) || 0.1,
+          orbSide,
+          days,
+        );
+        trades = toBTTradesORB(r.trades);
+        totalDays = r.totalDays;
+        orbTrades = r.trades;
+        orbStats = r;
+        orbSegments = segmentOrbStats(r.triggered, 3);
 
       } else {
         const r = analyzeIB2575(values, parseInt(ibWindow), days, [1, 2, 3, 4, 5]);
@@ -377,8 +396,12 @@ const Backtester = () => {
         totalDays,
         trades,
         bars: dataSource === "csv" && csvM5Bars?.length ? csvM5Bars : values,
+        orbTrades,
+        orbStats,
+        orbSegments,
         ...metrics,
       });
+
       toast.success(`backtest complete: ${trades.length} trades`);
     } catch (e: any) {
       toast.error(e.message || "backtest failed");
