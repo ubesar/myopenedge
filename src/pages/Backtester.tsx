@@ -51,6 +51,11 @@ interface BTResult {
   totalDays: number;
   trades: BTTrade[];
   bars: any[];
+  /** orb m15 pullback only — full engine output */
+  orbTrades?: OrbTrade[];
+  orbStats?: OrbStats;
+  orbSegments?: { label: string; from: string; to: string; stats: OrbStats }[];
+
   wins: number;
   losses: number;
   winRate: number;
