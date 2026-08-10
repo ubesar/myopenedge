@@ -841,6 +841,20 @@ const Backtester = () => {
                   <DialogHeader>
                     <DialogTitle className="text-sm lowercase">trade log · {selectedDay}</DialogTitle>
                   </DialogHeader>
+                {result.strategy === "orbm15" && (
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs lowercase">filter</Label>
+                    <Select value={logFilter} onValueChange={(v) => setLogFilter(v as any)}>
+                      <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">semua</SelectItem>
+                        <SelectItem value="target">target</SelectItem>
+                        <SelectItem value="stop">stop</SelectItem>
+                        <SelectItem value="close">close</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead className="text-muted-foreground border-b border-border">
@@ -863,6 +877,8 @@ const Backtester = () => {
                       {[...result.trades]
                         .map((t, i) => ({ t, seq: i + 1 }))
                         .filter(({ t }) => !selectedDay || t.date === selectedDay)
+                        .filter(({ t }) => logFilter === "all" || !t.reason || t.reason === logFilter)
+
                         .sort((a, b) => {
                           const d = b.t.date.localeCompare(a.t.date);
                           if (d !== 0) return d;
