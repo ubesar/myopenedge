@@ -20,7 +20,9 @@ import { parseCsvBars, type CsvBar } from "@/lib/csv-bars";
 import BacktestCalendar from "@/components/BacktestCalendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-type StrategyKey = "pb50" | "ib2575";
+import { runOrbM15Backtest, segmentOrbStats, ORB_SESSIONS, type OrbTrade, type OrbSide, type OrbMarket, type OrbStats } from "@/lib/orb-backtest";
+
+type StrategyKey = "pb50" | "ib2575" | "orbm15";
 
 interface BTTrade {
   date: string;
@@ -34,7 +36,13 @@ interface BTTrade {
   pnl: number;         // dollars (fixed $100 risk)
   qty: number;
   ib?: { high: number; low: number; q25: number; q50: number; q75: number; windowMinutes: number };
+  midpoint?: number;
+  exitTime?: string;
+  exitPrice?: number;
+  /** orb exit reason */
+  reason?: string;
 }
+
 
 
 interface BTResult {
@@ -43,6 +51,11 @@ interface BTResult {
   totalDays: number;
   trades: BTTrade[];
   bars: any[];
+  /** orb m15 pullback only — full engine output */
+  orbTrades?: OrbTrade[];
+  orbStats?: OrbStats;
+  orbSegments?: { label: string; from: string; to: string; stats: OrbStats }[];
+
   wins: number;
   losses: number;
   winRate: number;
@@ -181,8 +194,29 @@ function toBTTradesIB2575(trades: IB2575Trade[], ibWindow: number): BTTrade[] {
     });
 }
 
+function toBTTradesORB(trades: OrbTrade[]): BTTrade[] {
+  return trades
+    .filter((t) => t.entryPrice != null && t.exitPrice != null)
+    .map((t) => ({
+      date: t.date,
+      time: t.entryTime ?? undefined,
+      direction: t.direction === "long" ? ("bullish" as const) : ("bearish" as const),
+      entry: t.entryPrice as number,
+      stop: t.stopLoss,
+      target: t.target,
+      outcome: (t.pnlUsd >= 0 ? "win" : "loss") as "win" | "loss",
+      rMultiple: t.rMultiple,
+      pnl: t.pnlUsd,
+      qty: t.shares,
+      midpoint: t.midpoint,
+      exitTime: t.exitTime ?? undefined,
+      exitPrice: t.exitPrice ?? undefined,
+      reason: t.outcome,
+    }));
+}
 
-function computeMetrics(trades: BTTrade[]): Omit<BTResult, "strategy" | "symbol" | "totalDays" | "trades" | "bars"> {
+function computeMetrics(trades: BTTrade[]): Omit<BTResult, "strategy" | "symbol" | "totalDays" | "trades" | "bars" | "orbTrades" | "orbStats" | "orbSegments"> {
+
   const wins = trades.filter((t) => t.outcome === "win");
   const losses = trades.filter((t) => t.outcome === "loss");
   const totalPnl = trades.reduce((s, t) => s + t.pnl, 0);
@@ -234,6 +268,12 @@ const Backtester = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [symbol, setSymbol] = useState("QQQ");
   const [strategy, setStrategy] = useState<StrategyKey>("pb50");
+  const [orbSide, setOrbSide] = useState<OrbSide>("both");
+  const [orbMarket, setOrbMarket] = useState<OrbMarket>("us");
+  const [orbRisk, setOrbRisk] = useState("100");
+  const [orbMinStop, setOrbMinStop] = useState("0.1");
+  const [logFilter, setLogFilter] = useState<"all" | "target" | "stop" | "close">("all");
+
   const [maxDays, setMaxDays] = useState("120");
   const [ibWindow, setIbWindow] = useState("60");
   const [sessionStart, setSessionStart] = useState("570"); // 09:30 ny open
@@ -305,6 +345,9 @@ const Backtester = () => {
 
       let trades: BTTrade[] = [];
       let totalDays = 0;
+      let orbTrades: OrbTrade[] | undefined;
+      let orbStats: OrbStats | undefined;
+      let orbSegments: { label: string; from: string; to: string; stats: OrbStats }[] | undefined;
 
       if (strategy === "pb50") {
         const isCsv = dataSource === "csv";
@@ -319,6 +362,22 @@ const Backtester = () => {
         );
         trades = toBTTradesPB50(r.trades);
         totalDays = r.totalDays;
+
+      } else if (strategy === "orbm15") {
+        const r = runOrbM15Backtest(
+          symbol.trim().toUpperCase(),
+          values,
+          orbMarket,
+          parseFloat(orbRisk) || 100,
+          parseFloat(orbMinStop) || 0.1,
+          orbSide,
+          days,
+        );
+        trades = toBTTradesORB(r.trades);
+        totalDays = r.totalDays;
+        orbTrades = r.trades;
+        orbStats = r;
+        orbSegments = segmentOrbStats(r.triggered, 3);
 
       } else {
         const r = analyzeIB2575(values, parseInt(ibWindow), days, [1, 2, 3, 4, 5]);
@@ -337,8 +396,12 @@ const Backtester = () => {
         totalDays,
         trades,
         bars: dataSource === "csv" && csvM5Bars?.length ? csvM5Bars : values,
+        orbTrades,
+        orbStats,
+        orbSegments,
         ...metrics,
       });
+
       toast.success(`backtest complete: ${trades.length} trades`);
     } catch (e: any) {
       toast.error(e.message || "backtest failed");
@@ -442,6 +505,8 @@ const Backtester = () => {
                   <SelectContent>
                     <SelectItem value="pb50">50% pullback strategy</SelectItem>
                     <SelectItem value="ib2575">ib momentum limit (ib25/75)</SelectItem>
+                    <SelectItem value="orbm15">orb m15 pullback</SelectItem>
+
                   </SelectContent>
                 </Select>
               </div>
@@ -463,7 +528,46 @@ const Backtester = () => {
                   </SelectContent>
                 </Select>
               </div>
-              {strategy === "ib2575" ? (
+              {strategy === "orbm15" ? (
+                <>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">market (sesi)</Label>
+                    <Select value={orbMarket} onValueChange={(v) => setOrbMarket(v as OrbMarket)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="us">us — {ORB_SESSIONS.us.label}</SelectItem>
+                        <SelectItem value="idx">idx — {ORB_SESSIONS.idx.label}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">mode setup</Label>
+                    <Select value={orbSide} onValueChange={(v) => setOrbSide(v as OrbSide)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="both">both (long + short)</SelectItem>
+                        <SelectItem value="long">long only</SelectItem>
+                        <SelectItem value="short">short only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">risk / trade ($)</Label>
+                    <Input value={orbRisk} onChange={(e) => setOrbRisk(e.target.value)} inputMode="decimal" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">min sl (% of range)</Label>
+                    <Select value={orbMinStop} onValueChange={setOrbMinStop}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {["0.05", "0.1", "0.15", "0.2", "0.25", "0.3"].map((v) => (
+                          <SelectItem key={v} value={v}>{(parseFloat(v) * 100).toFixed(0)}%</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              ) : strategy === "ib2575" ? (
                 <div className="space-y-1.5">
                   <Label className="text-xs lowercase">ib window (min)</Label>
                   <Select value={ibWindow} onValueChange={setIbWindow}>
@@ -476,6 +580,7 @@ const Backtester = () => {
                   </Select>
                 </div>
               ) : dataSource === "csv" ? (
+
                 <>
                   <div className="space-y-1.5">
                     <Label className="text-xs lowercase">scan start (06:00 – 24:00)</Label>
@@ -590,6 +695,65 @@ const Backtester = () => {
                 <StatCard label="worst day" value={`$${result.worstDay.toFixed(0)}`} accent="neg" />
               </div>
 
+              {result.orbStats && (
+                <Card className="p-4 space-y-3">
+                  <div>
+                    <h2 className="text-sm font-semibold lowercase">orb m15 pullback · breakdown</h2>
+                    <p className="text-[11px] text-muted-foreground lowercase">
+                      c1 = 15 menit pertama sesi · buy stop di c1 high (sell stop di c1 low) setelah pullback di c2 ·
+                      sl trailing running low/high c2 · batal jika midpoint c1 ditembus · tp 0.5× range
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    <StatCard label="days evaluated" value={String(result.orbStats.totalDays)} />
+                    <StatCard label="triggered" value={String(result.orbStats.triggeredDays)} />
+                    <StatCard label="cancelled" value={String(result.orbStats.cancelledDays)} />
+                    <StatCard label="no trigger" value={String(result.orbStats.noTriggerDays)} />
+                    <StatCard label="expectancy r" value={`${result.orbStats.expectancyR.toFixed(2)}R`} accent={result.orbStats.expectancyR >= 0 ? "pos" : "neg"} />
+                    <StatCard label="long / short" value={`${result.orbStats.longTrades} / ${result.orbStats.shortTrades}`} />
+                    <StatCard label="long net pnl" value={`$${result.orbStats.longNetPnl.toFixed(0)}`} accent={result.orbStats.longNetPnl >= 0 ? "pos" : "neg"} />
+                    <StatCard label="short net pnl" value={`$${result.orbStats.shortNetPnl.toFixed(0)}`} accent={result.orbStats.shortNetPnl >= 0 ? "pos" : "neg"} />
+                  </div>
+
+                  {!!result.orbSegments?.length && (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead className="text-muted-foreground border-b border-border">
+                          <tr>
+                            <th className="text-left py-2 px-2 lowercase">segment</th>
+                            <th className="text-left py-2 px-2 lowercase">periode</th>
+                            <th className="text-right py-2 px-2 lowercase">trades</th>
+                            <th className="text-right py-2 px-2 lowercase">win rate</th>
+                            <th className="text-right py-2 px-2 lowercase">pf</th>
+                            <th className="text-right py-2 px-2 lowercase">exp r</th>
+                            <th className="text-right py-2 px-2 lowercase">max dd</th>
+                            <th className="text-right py-2 px-2 lowercase">net pnl</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {result.orbSegments.map((s) => (
+                            <tr key={s.label} className="border-b border-border/40">
+                              <td className="py-1.5 px-2 lowercase">{s.label}</td>
+                              <td className="py-1.5 px-2">{s.from} → {s.to}</td>
+                              <td className="py-1.5 px-2 text-right">{s.stats.triggeredDays}</td>
+                              <td className="py-1.5 px-2 text-right">{s.stats.winRate.toFixed(1)}%</td>
+                              <td className="py-1.5 px-2 text-right">{isFinite(s.stats.profitFactor) ? s.stats.profitFactor.toFixed(2) : "∞"}</td>
+                              <td className="py-1.5 px-2 text-right">{s.stats.expectancyR.toFixed(2)}</td>
+                              <td className="py-1.5 px-2 text-right text-red-500">-${s.stats.maxDrawdown.toFixed(0)}</td>
+                              <td className={`py-1.5 px-2 text-right font-medium ${s.stats.netPnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                                {s.stats.netPnl >= 0 ? "+" : ""}${s.stats.netPnl.toFixed(0)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </Card>
+              )}
+
+
+
               {/* Equity Curve */}
               <Card className="p-4">
                 <h2 className="text-sm font-semibold mb-3 lowercase">equity curve</h2>
@@ -677,6 +841,20 @@ const Backtester = () => {
                   <DialogHeader>
                     <DialogTitle className="text-sm lowercase">trade log · {selectedDay}</DialogTitle>
                   </DialogHeader>
+                {result.strategy === "orbm15" && (
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs lowercase">filter</Label>
+                    <Select value={logFilter} onValueChange={(v) => setLogFilter(v as any)}>
+                      <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">semua</SelectItem>
+                        <SelectItem value="target">target</SelectItem>
+                        <SelectItem value="stop">stop</SelectItem>
+                        <SelectItem value="close">close</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead className="text-muted-foreground border-b border-border">
@@ -699,6 +877,8 @@ const Backtester = () => {
                       {[...result.trades]
                         .map((t, i) => ({ t, seq: i + 1 }))
                         .filter(({ t }) => !selectedDay || t.date === selectedDay)
+                        .filter(({ t }) => logFilter === "all" || !t.reason || t.reason === logFilter)
+
                         .sort((a, b) => {
                           const d = b.t.date.localeCompare(a.t.date);
                           if (d !== 0) return d;
@@ -722,7 +902,7 @@ const Backtester = () => {
                             {t.pnl >= 0 ? "+" : ""}${t.pnl.toFixed(0)}
                           </td>
                           <td className={`py-1.5 px-2 uppercase text-[10px] ${t.outcome === "win" ? "text-emerald-500" : "text-red-500"}`}>
-                            {t.outcome}
+                            {t.reason ?? t.outcome}
                           </td>
                           <td className="py-1.5 px-2 text-center">
                             <Button
@@ -740,7 +920,11 @@ const Backtester = () => {
                                   target: t.target,
                                   outcome: t.outcome,
                                   ib: t.ib,
+                                  midpoint: t.midpoint,
+                                  exitTime: t.exitTime,
+                                  exitPrice: t.exitPrice,
                                 });
+
 
                               }}
                               title="view 15m chart"
@@ -765,8 +949,17 @@ const Backtester = () => {
         trade={chartTrade}
         bars={result?.bars ?? []}
         symbol={result?.symbol ?? ""}
-        sessionStartMin={dataSource === "csv" ? 6 * 60 : chartTrade?.ib ? 9 * 60 + 30 : undefined}
-        sessionEndMin={dataSource === "csv" ? csvCloseMin : undefined}
+        sessionStartMin={
+          result?.strategy === "orbm15"
+            ? ORB_SESSIONS[orbMarket].start
+            : dataSource === "csv" ? 6 * 60 : chartTrade?.ib ? 9 * 60 + 30 : undefined
+        }
+        sessionEndMin={
+          result?.strategy === "orbm15"
+            ? ORB_SESSIONS[orbMarket].end
+            : dataSource === "csv" ? csvCloseMin : undefined
+        }
+
         tfMinutes={chartTrade?.ib ? 5 : 15}
 
       />

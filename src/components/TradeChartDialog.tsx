@@ -31,7 +31,13 @@ export interface TradeForChart {
   outcome: "win" | "loss";
   /** when present the chart renders the initial balance zone + quarter levels */
   ib?: IBLevelsForChart;
+  /** optional 50% reference level (orb c1 midpoint) */
+  midpoint?: number;
+  /** optional exit marker */
+  exitTime?: string;
+  exitPrice?: number;
 }
+
 
 interface Props {
   open: boolean;
@@ -120,7 +126,8 @@ export default function TradeChartDialog({
   const lows = m15.map((b) => b.low);
   const levels = ib
     ? [trade.entry, trade.stop, trade.target, ib.high, ib.low]
-    : [trade.entry, trade.stop, trade.target];
+    : [trade.entry, trade.stop, trade.target, ...(trade.midpoint != null ? [trade.midpoint] : [])];
+
   const yMax = Math.max(...highs, ...levels);
   const yMin = Math.min(...lows, ...levels);
   const pad = (yMax - yMin) * 0.08 || 1;
@@ -233,7 +240,9 @@ export default function TradeChartDialog({
                 { label: "TP", value: trade.target, color: levelColor.tp },
                 { label: "Entry", value: trade.entry, color: levelColor.entry },
                 { label: "SL", value: trade.stop, color: levelColor.sl },
+                ...(trade.midpoint != null ? [{ label: "50%", value: trade.midpoint, color: "#9ca3af" }] : []),
               ]).map((lv) => (
+
 
                 <g key={lv.label}>
                   <line x1={PL} x2={W - PR} y1={yFor(lv.value)} y2={yFor(lv.value)} stroke={lv.color} strokeWidth={1.2} strokeDasharray="5 4" />
@@ -260,7 +269,22 @@ export default function TradeChartDialog({
                   )}
                 </g>
               )}
+
+              {/* exit marker */}
+              {(() => {
+                if (!trade.exitTime || trade.exitPrice == null) return null;
+                const ei = m15.findIndex((b) => b.time === trade.exitTime);
+                if (ei < 0) return null;
+                const c = trade.outcome === "win" ? levelColor.tp : levelColor.sl;
+                return (
+                  <g>
+                    <circle cx={xFor(ei)} cy={yFor(trade.exitPrice)} r={4} fill={c} />
+                    <text x={xFor(ei) + 6} y={yFor(trade.exitPrice) - 6} fontSize={10} fill={c}>exit</text>
+                  </g>
+                );
+              })()}
             </svg>
+
           </div>
         )}
       </DialogContent>

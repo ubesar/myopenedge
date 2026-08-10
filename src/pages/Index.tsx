@@ -29,6 +29,7 @@ import { analyzeLondonIB, type LondonIBResult } from "@/lib/london-ib-analysis";
 import { analyzePullback50, type Pullback50Result } from "@/lib/pullback50-analysis";
 import { analyzeIB2575, type IB2575Result } from "@/lib/ib2575-analysis";
 import { analyzeMCM152am, type MCM152amResult } from "@/lib/mcm15-2am-analysis";
+import { runOrbM15Backtest, type OrbResult } from "@/lib/orb-backtest";
 import TradeChartDialog, { type TradeForChart } from "@/components/TradeChartDialog";
 
 import InsideBarReport from "@/components/InsideBarReport";
@@ -70,6 +71,9 @@ const Index = () => {
   const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
   const [ib2575RawBars, setIb2575RawBars] = useState<any[] | null>(null);
   const [ibChartTrade, setIbChartTrade] = useState<TradeForChart | null>(null);
+  const [orbResult, setOrbResult] = useState<OrbResult | null>(null);
+  const [orbRawBars, setOrbRawBars] = useState<any[] | null>(null);
+  const [orbChartTrade, setOrbChartTrade] = useState<TradeForChart | null>(null);
 
   const [occMaxDays, setOccMaxDays] = useState<number>(0);
   const [occWeekdays, setOccWeekdays] = useState<number[]>([1,2,3,4,5]);
@@ -180,7 +184,7 @@ const Index = () => {
     }
 
     setLoading(true);
-    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null); setPullback50Result(null); setIb2575Result(null); setMcm152amResult(null);
+    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null); setPullback50Result(null); setIb2575Result(null); setOrbResult(null); setMcm152amResult(null);
     setSymbol(ticker); setActiveMode(effectiveMode); setAnalysisMaxDays(effectiveMaxDays); setAnalysisWeekdays(weekdays);
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
@@ -314,6 +318,12 @@ const Index = () => {
           setIb2575Result(a);
 
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, ibWindow: effectiveIbWindow, winRate: a.stats.winRate, triggeredTrades: a.triggeredTrades });
+        } else if (effectiveMode === "orbm15") {
+          const a = runOrbM15Backtest(ticker, values as any, "us", 100, 0.1, "both", effectiveMaxDays);
+          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setOrbRawBars(values as any);
+          setOrbResult(a);
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, triggeredDays: a.triggeredDays, winRate: a.winRate, netPnl: a.netPnl });
         }
       }
 
@@ -324,10 +334,10 @@ const Index = () => {
     }
   };
 
-  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullback50Result || ib2575Result || mcm152amResult;
+  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullback50Result || ib2575Result || orbResult || mcm152amResult;
 
   const reportTitle = hasResults
-    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "pullback50" ? "50% pullback strategy report" : activeMode === "ib2575" ? "IB momentum limit report" : activeMode === "mcm15-2am" ? "m15 momentum @ 04:00 ny report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
+    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "pullback50" ? "50% pullback strategy report" : activeMode === "ib2575" ? "IB momentum limit report" : activeMode === "orbm15" ? "orb m15 pullback report" : activeMode === "mcm15-2am" ? "m15 momentum @ 04:00 ny report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
     : "";
 
   const renderCharts = () => {
@@ -787,6 +797,100 @@ const Index = () => {
       );
     }
 
+    if (activeMode === "orbm15" && orbResult) {
+      return (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
+            <strong className="text-foreground">orb m15 pullback</strong> — c1 = candle m15 pertama sesi (09:30 ny). c2 harus pullback masuk range c1.
+            entry breakout c1 high (long) / c1 low (short), sl trailing running low/high c2, tp 0.5× range c1.
+            setup batal jika harga menembus midpoint c1 sebelum entry, sisanya ditutup di close sesi.
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {[
+              { l: "days", v: String(orbResult.totalDays), c: "" },
+              { l: "triggered", v: String(orbResult.triggeredDays), c: "" },
+              { l: "cancelled", v: String(orbResult.cancelledDays), c: "" },
+              { l: "no trigger", v: String(orbResult.noTriggerDays), c: "" },
+              { l: "win rate", v: `${orbResult.winRate.toFixed(1)}%`, c: orbResult.winRate >= 50 ? "text-emerald-500" : "text-rose-500" },
+              { l: "expectancy", v: `${orbResult.expectancyR.toFixed(2)}R`, c: orbResult.expectancyR >= 0 ? "text-emerald-500" : "text-rose-500" },
+              { l: "profit factor", v: isFinite(orbResult.profitFactor) ? orbResult.profitFactor.toFixed(2) : "∞", c: "" },
+              { l: "max dd", v: `-$${orbResult.maxDrawdown.toFixed(0)}`, c: "text-rose-500" },
+              { l: "long / short", v: `${orbResult.longTrades} / ${orbResult.shortTrades}`, c: "" },
+              { l: "net pnl", v: `$${orbResult.netPnl.toFixed(0)}`, c: orbResult.netPnl >= 0 ? "text-emerald-500" : "text-rose-500" },
+            ].map((s) => (
+              <div key={s.l} className="rounded-xl border border-border bg-card px-3 py-2">
+                <p className="text-[10px] text-muted-foreground lowercase">{s.l}</p>
+                <p className={`text-sm font-semibold ${s.c}`}>{s.v}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-xl border border-border bg-card overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="text-muted-foreground border-b border-border">
+                <tr>
+                  <th className="text-left py-2 px-2">date</th>
+                  <th className="text-left py-2 px-2">time</th>
+                  <th className="text-left py-2 px-2">side</th>
+                  <th className="text-right py-2 px-2">entry</th>
+                  <th className="text-right py-2 px-2">sl</th>
+                  <th className="text-right py-2 px-2">tp</th>
+                  <th className="text-right py-2 px-2">r</th>
+                  <th className="text-right py-2 px-2">pnl</th>
+                  <th className="text-left py-2 px-2">exit</th>
+                  <th className="text-center py-2 px-2">chart</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...orbResult.triggered].reverse().map((t, i) => (
+                  <tr key={`${t.date}-${i}`} className="border-b border-border/40">
+                    <td className="py-1.5 px-2">{t.date}</td>
+                    <td className="py-1.5 px-2">{t.entryTime}</td>
+                    <td className={`py-1.5 px-2 uppercase text-[10px] ${t.direction === "long" ? "text-emerald-500" : "text-rose-500"}`}>
+                      {t.direction}
+                    </td>
+                    <td className="py-1.5 px-2 text-right">{t.entryPrice?.toFixed(2)}</td>
+                    <td className="py-1.5 px-2 text-right">{t.stopLoss.toFixed(2)}</td>
+                    <td className="py-1.5 px-2 text-right">{t.target.toFixed(2)}</td>
+                    <td className="py-1.5 px-2 text-right">{t.rMultiple.toFixed(2)}</td>
+                    <td className={`py-1.5 px-2 text-right font-medium ${t.pnlUsd >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                      {t.pnlUsd >= 0 ? "+" : ""}${t.pnlUsd.toFixed(0)}
+                    </td>
+                    <td className="py-1.5 px-2 lowercase">{t.outcome}</td>
+                    <td className="py-1.5 px-2 text-center">
+                      <button
+                        className="h-6 w-6 inline-flex items-center justify-center rounded hover:bg-muted"
+                        onClick={() =>
+                          setOrbChartTrade({
+                            date: t.date,
+                            time: t.entryTime ?? undefined,
+                            direction: t.direction === "long" ? "bullish" : "bearish",
+                            entry: t.entryPrice ?? 0,
+                            stop: t.stopLoss,
+                            target: t.target,
+                            outcome: t.pnlUsd >= 0 ? "win" : "loss",
+                            midpoint: t.midpoint,
+                            exitTime: t.exitTime ?? undefined,
+                            exitPrice: t.exitPrice ?? undefined,
+                          })
+                        }
+                        title="view chart"
+                      >
+                        <BarChart3 className="h-3.5 w-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      );
+    }
+
+
+
     if (activeMode === "mcm15-2am" && mcm152amResult) {
       const bodyPct = `body > ${mcm152amResult.bodyThreshold}× avg body (sma15)`;
       const subtitle = `${symbol} · m15 @ 04:00 ny (fallback 04:15) · ${bodyPct} · ${formatDateRange(analysisMaxDays)}`;
@@ -1124,6 +1228,19 @@ const Index = () => {
         sessionEndMin={16 * 60}
         tfMinutes={5}
       />
+
+      <TradeChartDialog
+        open={!!orbChartTrade}
+        onOpenChange={(v) => !v && setOrbChartTrade(null)}
+        trade={orbChartTrade}
+        bars={orbRawBars ?? []}
+        symbol={symbol}
+        sessionStartMin={9 * 60 + 30}
+        sessionEndMin={16 * 60}
+        tfMinutes={15}
+      />
+
+
 
     </div>
   );
