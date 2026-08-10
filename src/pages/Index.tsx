@@ -184,7 +184,7 @@ const Index = () => {
     }
 
     setLoading(true);
-    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null); setPullback50Result(null); setIb2575Result(null); setMcm152amResult(null);
+    setResult(null); setMomentumResult(null); setOccResult(null); setGapFillResult(null); setInsideBarResult(null); setOutsideDayResult(null); setGlobexIBResult(null); setLondonIBResult(null); setPullback50Result(null); setIb2575Result(null); setOrbResult(null); setMcm152amResult(null);
     setSymbol(ticker); setActiveMode(effectiveMode); setAnalysisMaxDays(effectiveMaxDays); setAnalysisWeekdays(weekdays);
     // Close mobile param panel after run
     if (isMobile) setShowParams(false);
