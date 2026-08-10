@@ -797,6 +797,94 @@ const Index = () => {
       );
     }
 
+    if (activeMode === "orbm15" && orbResult) {
+      return (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
+            <strong className="text-foreground">orb m15 pullback</strong> — c1 = candle m15 pertama sesi (09:30 ny). c2 harus pullback masuk range c1.
+            entry breakout c1 high (long) / c1 low (short), sl trailing running low/high c2, tp 0.5× range c1.
+            setup batal jika harga menembus midpoint c1 sebelum entry, sisanya ditutup di close sesi.
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <StatCard label="days" value={String(orbResult.totalDays)} />
+            <StatCard label="triggered" value={String(orbResult.triggeredDays)} />
+            <StatCard label="cancelled" value={String(orbResult.cancelledDays)} />
+            <StatCard label="no trigger" value={String(orbResult.noTriggerDays)} />
+            <StatCard label="win rate" value={`${orbResult.winRate.toFixed(1)}%`} accent={orbResult.winRate >= 50 ? "pos" : "neg"} />
+            <StatCard label="expectancy" value={`${orbResult.expectancyR.toFixed(2)}R`} accent={orbResult.expectancyR >= 0 ? "pos" : "neg"} />
+            <StatCard label="profit factor" value={isFinite(orbResult.profitFactor) ? orbResult.profitFactor.toFixed(2) : "∞"} />
+            <StatCard label="max dd" value={`-$${orbResult.maxDrawdown.toFixed(0)}`} accent="neg" />
+            <StatCard label="long / short" value={`${orbResult.longTrades} / ${orbResult.shortTrades}`} />
+            <StatCard label="net pnl" value={`$${orbResult.netPnl.toFixed(0)}`} accent={orbResult.netPnl >= 0 ? "pos" : "neg"} />
+          </div>
+
+          <div className="rounded-xl border border-border bg-card overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="text-muted-foreground border-b border-border">
+                <tr>
+                  <th className="text-left py-2 px-2">date</th>
+                  <th className="text-left py-2 px-2">time</th>
+                  <th className="text-left py-2 px-2">side</th>
+                  <th className="text-right py-2 px-2">entry</th>
+                  <th className="text-right py-2 px-2">sl</th>
+                  <th className="text-right py-2 px-2">tp</th>
+                  <th className="text-right py-2 px-2">r</th>
+                  <th className="text-right py-2 px-2">pnl</th>
+                  <th className="text-left py-2 px-2">exit</th>
+                  <th className="text-center py-2 px-2">chart</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...orbResult.trades].reverse().map((t, i) => (
+                  <tr key={`${t.date}-${i}`} className="border-b border-border/40">
+                    <td className="py-1.5 px-2">{t.date}</td>
+                    <td className="py-1.5 px-2">{t.entryTime}</td>
+                    <td className={`py-1.5 px-2 uppercase text-[10px] ${t.direction === "bullish" ? "text-emerald-500" : "text-rose-500"}`}>
+                      {t.direction === "bullish" ? "long" : "short"}
+                    </td>
+                    <td className="py-1.5 px-2 text-right">{t.entry.toFixed(2)}</td>
+                    <td className="py-1.5 px-2 text-right">{t.stop.toFixed(2)}</td>
+                    <td className="py-1.5 px-2 text-right">{t.target.toFixed(2)}</td>
+                    <td className="py-1.5 px-2 text-right">{t.rMultiple.toFixed(2)}</td>
+                    <td className={`py-1.5 px-2 text-right font-medium ${t.pnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                      {t.pnl >= 0 ? "+" : ""}${t.pnl.toFixed(0)}
+                    </td>
+                    <td className="py-1.5 px-2 lowercase">{t.reason}</td>
+                    <td className="py-1.5 px-2 text-center">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0"
+                        onClick={() =>
+                          setOrbChartTrade({
+                            date: t.date,
+                            time: t.entryTime,
+                            direction: t.direction,
+                            entry: t.entry,
+                            stop: t.stop,
+                            target: t.target,
+                            outcome: t.pnl >= 0 ? "win" : "loss",
+                            midpoint: t.midpoint,
+                            exitTime: t.exitTime,
+                            exitPrice: t.exitPrice,
+                          })
+                        }
+                        title="view chart"
+                      >
+                        <BarChart3 className="h-3.5 w-3.5" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+
+
     if (activeMode === "mcm15-2am" && mcm152amResult) {
       const bodyPct = `body > ${mcm152amResult.bodyThreshold}× avg body (sma15)`;
       const subtitle = `${symbol} · m15 @ 04:00 ny (fallback 04:15) · ${bodyPct} · ${formatDateRange(analysisMaxDays)}`;
