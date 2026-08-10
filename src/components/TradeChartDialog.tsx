@@ -126,7 +126,8 @@ export default function TradeChartDialog({
   const lows = m15.map((b) => b.low);
   const levels = ib
     ? [trade.entry, trade.stop, trade.target, ib.high, ib.low]
-    : [trade.entry, trade.stop, trade.target];
+    : [trade.entry, trade.stop, trade.target, ...(trade.midpoint != null ? [trade.midpoint] : [])];
+
   const yMax = Math.max(...highs, ...levels);
   const yMin = Math.min(...lows, ...levels);
   const pad = (yMax - yMin) * 0.08 || 1;
