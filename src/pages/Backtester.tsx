@@ -949,8 +949,17 @@ const Backtester = () => {
         trade={chartTrade}
         bars={result?.bars ?? []}
         symbol={result?.symbol ?? ""}
-        sessionStartMin={dataSource === "csv" ? 6 * 60 : chartTrade?.ib ? 9 * 60 + 30 : undefined}
-        sessionEndMin={dataSource === "csv" ? csvCloseMin : undefined}
+        sessionStartMin={
+          result?.strategy === "orbm15"
+            ? ORB_SESSIONS[orbMarket].start
+            : dataSource === "csv" ? 6 * 60 : chartTrade?.ib ? 9 * 60 + 30 : undefined
+        }
+        sessionEndMin={
+          result?.strategy === "orbm15"
+            ? ORB_SESSIONS[orbMarket].end
+            : dataSource === "csv" ? csvCloseMin : undefined
+        }
+
         tfMinutes={chartTrade?.ib ? 5 : 15}
 
       />
