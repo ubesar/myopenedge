@@ -269,7 +269,22 @@ export default function TradeChartDialog({
                   )}
                 </g>
               )}
+
+              {/* exit marker */}
+              {(() => {
+                if (!trade.exitTime || trade.exitPrice == null) return null;
+                const ei = m15.findIndex((b) => b.time === trade.exitTime);
+                if (ei < 0) return null;
+                const c = trade.outcome === "win" ? levelColor.tp : levelColor.sl;
+                return (
+                  <g>
+                    <circle cx={xFor(ei)} cy={yFor(trade.exitPrice)} r={4} fill={c} />
+                    <text x={xFor(ei) + 6} y={yFor(trade.exitPrice) - 6} fontSize={10} fill={c}>exit</text>
+                  </g>
+                );
+              })()}
             </svg>
+
           </div>
         )}
       </DialogContent>
