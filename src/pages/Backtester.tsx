@@ -528,7 +528,46 @@ const Backtester = () => {
                   </SelectContent>
                 </Select>
               </div>
-              {strategy === "ib2575" ? (
+              {strategy === "orbm15" ? (
+                <>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">market (sesi)</Label>
+                    <Select value={orbMarket} onValueChange={(v) => setOrbMarket(v as OrbMarket)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="us">us — {ORB_SESSIONS.us.label}</SelectItem>
+                        <SelectItem value="idx">idx — {ORB_SESSIONS.idx.label}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">mode setup</Label>
+                    <Select value={orbSide} onValueChange={(v) => setOrbSide(v as OrbSide)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="both">both (long + short)</SelectItem>
+                        <SelectItem value="long">long only</SelectItem>
+                        <SelectItem value="short">short only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">risk / trade ($)</Label>
+                    <Input value={orbRisk} onChange={(e) => setOrbRisk(e.target.value)} inputMode="decimal" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">min sl (% of range)</Label>
+                    <Select value={orbMinStop} onValueChange={setOrbMinStop}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {["0.05", "0.1", "0.15", "0.2", "0.25", "0.3"].map((v) => (
+                          <SelectItem key={v} value={v}>{(parseFloat(v) * 100).toFixed(0)}%</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              ) : strategy === "ib2575" ? (
                 <div className="space-y-1.5">
                   <Label className="text-xs lowercase">ib window (min)</Label>
                   <Select value={ibWindow} onValueChange={setIbWindow}>
@@ -541,6 +580,7 @@ const Backtester = () => {
                   </Select>
                 </div>
               ) : dataSource === "csv" ? (
+
                 <>
                   <div className="space-y-1.5">
                     <Label className="text-xs lowercase">scan start (06:00 – 24:00)</Label>
