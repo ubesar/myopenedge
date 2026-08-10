@@ -268,6 +268,12 @@ const Backtester = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [symbol, setSymbol] = useState("QQQ");
   const [strategy, setStrategy] = useState<StrategyKey>("pb50");
+  const [orbSide, setOrbSide] = useState<OrbSide>("both");
+  const [orbMarket, setOrbMarket] = useState<OrbMarket>("us");
+  const [orbRisk, setOrbRisk] = useState("100");
+  const [orbMinStop, setOrbMinStop] = useState("0.1");
+  const [logFilter, setLogFilter] = useState<"all" | "target" | "stop" | "close">("all");
+
   const [maxDays, setMaxDays] = useState("120");
   const [ibWindow, setIbWindow] = useState("60");
   const [sessionStart, setSessionStart] = useState("570"); // 09:30 ny open
