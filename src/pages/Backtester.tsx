@@ -902,7 +902,7 @@ const Backtester = () => {
                             {t.pnl >= 0 ? "+" : ""}${t.pnl.toFixed(0)}
                           </td>
                           <td className={`py-1.5 px-2 uppercase text-[10px] ${t.outcome === "win" ? "text-emerald-500" : "text-red-500"}`}>
-                            {t.outcome}
+                            {t.reason ?? t.outcome}
                           </td>
                           <td className="py-1.5 px-2 text-center">
                             <Button
@@ -920,7 +920,11 @@ const Backtester = () => {
                                   target: t.target,
                                   outcome: t.outcome,
                                   ib: t.ib,
+                                  midpoint: t.midpoint,
+                                  exitTime: t.exitTime,
+                                  exitPrice: t.exitPrice,
                                 });
+
 
                               }}
                               title="view 15m chart"
