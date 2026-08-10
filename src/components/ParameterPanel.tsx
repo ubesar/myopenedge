@@ -173,8 +173,6 @@ const ParameterPanel = ({
               {!isFree && <SelectItem value="london-ib">IB: london session</SelectItem>}
               {!isFree && <SelectItem value="momentum">momentum candle continuation (mcc)</SelectItem>}
               {!isFree && <SelectItem value="pullback50">50% pullback strategy</SelectItem>}
-              {!isFree && <SelectItem value="orbpullback">orb m15 pullback (buy stop + dynamic sl)</SelectItem>}
-
               {!isFree && <SelectItem value="ib2575">IB momentum limit (IB25/75)</SelectItem>}
               {!isFree && <SelectItem value="mcm15-2am">m15 momentum @ 04:00 ny</SelectItem>}
               <SelectItem value="occ">opening candle continuation</SelectItem>
@@ -185,7 +183,7 @@ const ParameterPanel = ({
           </Select>
           {isFree && <p className="text-[10px] text-muted-foreground">🔒 upgrade to pro for all modes</p>}
 
-          {(mode === "pullback50" || mode === "orbpullback") && (
+          {mode === "pullback50" && (
             <>
               <p className="text-[11px] text-muted-foreground">scan session start (ny)</p>
               <Select value={sessionStart} onValueChange={(v) => { setSessionStart(v); setSelectedTemplateId("custom"); }}>
@@ -200,7 +198,7 @@ const ParameterPanel = ({
             </>
           )}
 
-          {(mode === "momentum" || mode === "pullback50" || mode === "orbpullback") && (
+          {(mode === "momentum" || mode === "pullback50") && (
             <>
               <p className="text-[11px] text-muted-foreground">scan session end (ny)</p>
               <Select value={momentumSessionEnd} onValueChange={(v) => { setMomentumSessionEnd(v); setSelectedTemplateId("custom"); }}>
@@ -216,11 +214,9 @@ const ParameterPanel = ({
                   <SelectItem value="840">14:00</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-[10px] text-muted-foreground">{mode === "orbpullback" ? `candle 1 = m15 momentum candle (${sessionStart === "240" ? "04:00" : "09:30"} ny up to this time). candle 2 pullback ke body candle 1 (batal jika retrace > 50%). entry buy/sell stop di high/low candle 1, sl dynamic di extreme candle 2, tp 0.5× range candle 1. atur threshold & tp di /backtester.` : mode === "pullback50" ? `m15 momentum candles scanned from ${sessionStart === "240" ? "04:00" : "09:30"} ny up to this time. entry on 50% pullback, sl at far end, tp at opposite end of candle 1. positions closed by 16:00 ny.` : "m15 momentum candles scanned from 09:30 ny up to this time. momentum candle = body > 1.5× avg body sma(15). walk-forward to 16:00 close."}</p>
+              <p className="text-[10px] text-muted-foreground">{mode === "pullback50" ? `m15 momentum candles scanned from ${sessionStart === "240" ? "04:00" : "09:30"} ny up to this time. entry on 50% pullback, sl at far end, tp at opposite end of candle 1. positions closed by 16:00 ny.` : "m15 momentum candles scanned from 09:30 ny up to this time. momentum candle = body > 1.5× avg body sma(15). walk-forward to 16:00 close."}</p>
             </>
           )}
-
-
 
           {mode === "ib2575" && (
             <p className="text-[10px] text-muted-foreground">after the IB window, detects which extreme printed first. low first → wait for an m5 momentum candle closing above IB75, then buy limit @ IB75, SL IB50, TP IB high. high first → wait for an m5 momentum candle closing below IB25, then sell limit @ IB25, SL IB50, TP IB low. momentum scan until 13:00 ny, managed until 16:00 ny.</p>
