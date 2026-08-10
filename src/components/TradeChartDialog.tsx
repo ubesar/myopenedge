@@ -240,7 +240,9 @@ export default function TradeChartDialog({
                 { label: "TP", value: trade.target, color: levelColor.tp },
                 { label: "Entry", value: trade.entry, color: levelColor.entry },
                 { label: "SL", value: trade.stop, color: levelColor.sl },
+                ...(trade.midpoint != null ? [{ label: "50%", value: trade.midpoint, color: "#9ca3af" }] : []),
               ]).map((lv) => (
+
 
                 <g key={lv.label}>
                   <line x1={PL} x2={W - PR} y1={yFor(lv.value)} y2={yFor(lv.value)} stroke={lv.color} strokeWidth={1.2} strokeDasharray="5 4" />
