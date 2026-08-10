@@ -1229,6 +1229,19 @@ const Index = () => {
         tfMinutes={5}
       />
 
+      <TradeChartDialog
+        open={!!orbChartTrade}
+        onOpenChange={(v) => !v && setOrbChartTrade(null)}
+        trade={orbChartTrade}
+        bars={orbRawBars ?? []}
+        symbol={symbol}
+        sessionStartMin={9 * 60 + 30}
+        sessionEndMin={16 * 60}
+        tfMinutes={15}
+      />
+
+
+
     </div>
   );
 };
