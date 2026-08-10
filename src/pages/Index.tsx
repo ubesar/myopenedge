@@ -29,6 +29,7 @@ import { analyzeLondonIB, type LondonIBResult } from "@/lib/london-ib-analysis";
 import { analyzePullback50, type Pullback50Result } from "@/lib/pullback50-analysis";
 import { analyzeIB2575, type IB2575Result } from "@/lib/ib2575-analysis";
 import { analyzeMCM152am, type MCM152amResult } from "@/lib/mcm15-2am-analysis";
+import { runOrbM15Backtest, type OrbResult } from "@/lib/orb-backtest";
 import TradeChartDialog, { type TradeForChart } from "@/components/TradeChartDialog";
 
 import InsideBarReport from "@/components/InsideBarReport";
@@ -70,6 +71,9 @@ const Index = () => {
   const [occRawBars, setOccRawBars] = useState<any[] | null>(null);
   const [ib2575RawBars, setIb2575RawBars] = useState<any[] | null>(null);
   const [ibChartTrade, setIbChartTrade] = useState<TradeForChart | null>(null);
+  const [orbResult, setOrbResult] = useState<OrbResult | null>(null);
+  const [orbRawBars, setOrbRawBars] = useState<any[] | null>(null);
+  const [orbChartTrade, setOrbChartTrade] = useState<TradeForChart | null>(null);
 
   const [occMaxDays, setOccMaxDays] = useState<number>(0);
   const [occWeekdays, setOccWeekdays] = useState<number[]>([1,2,3,4,5]);
@@ -314,6 +318,12 @@ const Index = () => {
           setIb2575Result(a);
 
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, ibWindow: effectiveIbWindow, winRate: a.stats.winRate, triggeredTrades: a.triggeredTrades });
+        } else if (effectiveMode === "orbm15") {
+          const a = runOrbM15Backtest(ticker, values as any, "us", 100, 0.1, "both", effectiveMaxDays);
+          if (a.totalDays === 0) { toast.error("Not enough data."); return; }
+          setOrbRawBars(values as any);
+          setOrbResult(a);
+          addRun(effectiveMode, ticker, { totalDays: a.totalDays, triggeredDays: a.triggeredDays, winRate: a.winRate, netPnl: a.netPnl });
         }
       }
 
@@ -324,10 +334,10 @@ const Index = () => {
     }
   };
 
-  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullback50Result || ib2575Result || mcm152amResult;
+  const hasResults = result || momentumResult || occResult || gapFillResult || insideBarResult || outsideDayResult || globexIBResult || londonIBResult || pullback50Result || ib2575Result || orbResult || mcm152amResult;
 
   const reportTitle = hasResults
-    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "pullback50" ? "50% pullback strategy report" : activeMode === "ib2575" ? "IB momentum limit report" : activeMode === "mcm15-2am" ? "m15 momentum @ 04:00 ny report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
+    ? `${symbol.toLowerCase()} ${activeMode === "ib" ? "initial balance breakout by rejection report" : activeMode === "globex-ib" ? "globex IB overnight breakout report" : activeMode === "london-ib" ? "london IB session breakout report" : activeMode === "momentum" ? "momentum candle continuation report" : activeMode === "pullback50" ? "50% pullback strategy report" : activeMode === "ib2575" ? "IB momentum limit report" : activeMode === "orbm15" ? "orb m15 pullback report" : activeMode === "mcm15-2am" ? "m15 momentum @ 04:00 ny report" : activeMode === "occ" ? "opening candle continuation report" : activeMode === "insidebar" ? "inside bar probability report" : activeMode === "outsideday" ? "outside day volatility expansion report" : "gap fill statistics report"}`
     : "";
 
   const renderCharts = () => {
