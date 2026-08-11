@@ -319,7 +319,7 @@ const Index = () => {
 
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, ibWindow: effectiveIbWindow, winRate: a.stats.winRate, triggeredTrades: a.triggeredTrades });
         } else if (effectiveMode === "orbm15") {
-          const a = runOrbM15Backtest(ticker, values as any, "us", 100, 0.1, "both", effectiveMaxDays);
+          const a = runOrbM15Backtest(ticker, values as any, { riskUsd: 100, side: "both", maxDays: effectiveMaxDays, momentumMode: "sma" });
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setOrbRawBars(values as any);
           setOrbResult(a);
@@ -801,16 +801,16 @@ const Index = () => {
       return (
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-[12px] text-foreground/80 leading-relaxed">
-            <strong className="text-foreground">orb m15 pullback</strong> — c1 = candle m15 pertama sesi (09:30 ny). c2 harus pullback masuk range c1.
-            entry breakout c1 high (long) / c1 low (short), sl trailing running low/high c2, tp 0.5× range c1.
-            setup batal jika harga menembus midpoint c1 sebelum entry, sisanya ditutup di close sesi.
+            <strong className="text-foreground">orb m15 pullback</strong> — hanya candle m15 pertama sesi (09:30 ny) yang di-scan dan harus momentum candle (body &gt; 1.5× avg body sma15).
+            bullish → buy limit di middle candle, sl low candle, tp = orb high + 0.5× range. bearish → sell limit di middle candle, sl high candle, tp = orb low − 0.5× range (rr 1:2).
+            limit hanya berlaku 2 candle m15 berikutnya, maksimal 1 entry per hari, sisanya ditutup di close sesi.
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
             {[
               { l: "days", v: String(orbResult.totalDays), c: "" },
               { l: "triggered", v: String(orbResult.triggeredDays), c: "" },
-              { l: "cancelled", v: String(orbResult.cancelledDays), c: "" },
-              { l: "no trigger", v: String(orbResult.noTriggerDays), c: "" },
+              { l: "no setup", v: String(orbResult.noSetupDays), c: "" },
+              { l: "no fill", v: String(orbResult.noFillDays), c: "" },
               { l: "win rate", v: `${orbResult.winRate.toFixed(1)}%`, c: orbResult.winRate >= 50 ? "text-emerald-500" : "text-rose-500" },
               { l: "expectancy", v: `${orbResult.expectancyR.toFixed(2)}R`, c: orbResult.expectancyR >= 0 ? "text-emerald-500" : "text-rose-500" },
               { l: "profit factor", v: isFinite(orbResult.profitFactor) ? orbResult.profitFactor.toFixed(2) : "∞", c: "" },
@@ -869,7 +869,6 @@ const Index = () => {
                             stop: t.stopLoss,
                             target: t.target,
                             outcome: t.pnlUsd >= 0 ? "win" : "loss",
-                            midpoint: t.midpoint,
                             exitTime: t.exitTime ?? undefined,
                             exitPrice: t.exitPrice ?? undefined,
                           })

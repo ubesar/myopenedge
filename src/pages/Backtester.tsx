@@ -20,7 +20,7 @@ import { parseCsvBars, type CsvBar } from "@/lib/csv-bars";
 import BacktestCalendar from "@/components/BacktestCalendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-import { runOrbM15Backtest, segmentOrbStats, ORB_SESSIONS, type OrbTrade, type OrbSide, type OrbMarket, type OrbStats } from "@/lib/orb-backtest";
+import { runOrbM15Backtest, segmentOrbStats, ORB_SESSIONS, type OrbTrade, type OrbSide, type OrbMarket, type OrbStats, type OrbMomentumMode } from "@/lib/orb-backtest";
 
 type StrategyKey = "pb50" | "ib2575" | "orbm15";
 
@@ -208,7 +208,6 @@ function toBTTradesORB(trades: OrbTrade[]): BTTrade[] {
       rMultiple: t.rMultiple,
       pnl: t.pnlUsd,
       qty: t.shares,
-      midpoint: t.midpoint,
       exitTime: t.exitTime ?? undefined,
       exitPrice: t.exitPrice ?? undefined,
       reason: t.outcome,
@@ -271,7 +270,8 @@ const Backtester = () => {
   const [orbSide, setOrbSide] = useState<OrbSide>("both");
   const [orbMarket, setOrbMarket] = useState<OrbMarket>("us");
   const [orbRisk, setOrbRisk] = useState("100");
-  const [orbMinStop, setOrbMinStop] = useState("0.1");
+  const [orbMomentumMode, setOrbMomentumMode] = useState<OrbMomentumMode>("sma");
+  const [orbBodyRatio, setOrbBodyRatio] = useState("0.6");
   const [logFilter, setLogFilter] = useState<"all" | "target" | "stop" | "close">("all");
 
   const [maxDays, setMaxDays] = useState("120");
@@ -364,15 +364,15 @@ const Backtester = () => {
         totalDays = r.totalDays;
 
       } else if (strategy === "orbm15") {
-        const r = runOrbM15Backtest(
-          symbol.trim().toUpperCase(),
-          values,
-          orbMarket,
-          parseFloat(orbRisk) || 100,
-          parseFloat(orbMinStop) || 0.1,
-          orbSide,
-          days,
-        );
+        const r = runOrbM15Backtest(symbol.trim().toUpperCase(), values, {
+          sessionStartMin: ORB_SESSIONS[orbMarket].start,
+          sessionEndMin: ORB_SESSIONS[orbMarket].end,
+          momentumMode: orbMomentumMode,
+          bodyRatio: parseFloat(orbBodyRatio) || 0.6,
+          riskUsd: parseFloat(orbRisk) || 100,
+          side: orbSide,
+          maxDays: days,
+        });
         trades = toBTTradesORB(r.trades);
         totalDays = r.totalDays;
         orbTrades = r.trades;
@@ -556,16 +556,28 @@ const Backtester = () => {
                     <Input value={orbRisk} onChange={(e) => setOrbRisk(e.target.value)} inputMode="decimal" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs lowercase">min sl (% of range)</Label>
-                    <Select value={orbMinStop} onValueChange={setOrbMinStop}>
+                    <Label className="text-xs lowercase">deteksi momentum</Label>
+                    <Select value={orbMomentumMode} onValueChange={(v) => setOrbMomentumMode(v as OrbMomentumMode)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {["0.05", "0.1", "0.15", "0.2", "0.25", "0.3"].map((v) => (
-                          <SelectItem key={v} value={v}>{(parseFloat(v) * 100).toFixed(0)}%</SelectItem>
-                        ))}
+                        <SelectItem value="sma">super body (sma15 × 1.5)</SelectItem>
+                        <SelectItem value="ratio">body / range ratio</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+                  {orbMomentumMode === "ratio" && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs lowercase">min body ratio</Label>
+                      <Select value={orbBodyRatio} onValueChange={setOrbBodyRatio}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {["0.5", "0.55", "0.6", "0.65", "0.7"].map((v) => (
+                            <SelectItem key={v} value={v}>{(parseFloat(v) * 100).toFixed(0)}%</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </>
               ) : strategy === "ib2575" ? (
                 <div className="space-y-1.5">
@@ -700,15 +712,15 @@ const Backtester = () => {
                   <div>
                     <h2 className="text-sm font-semibold lowercase">orb m15 pullback · breakdown</h2>
                     <p className="text-[11px] text-muted-foreground lowercase">
-                      c1 = 15 menit pertama sesi · buy stop di c1 high (sell stop di c1 low) setelah pullback di c2 ·
-                      sl trailing running low/high c2 · batal jika midpoint c1 ditembus · tp 0.5× range
+                      candle m15 pertama sesi harus momentum candle · limit di middle candle (valid 2 candle m15) ·
+                      sl di ujung candle · tp 0.5× extension range (rr 1:2) · maks 1 entry per hari
                     </p>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
                     <StatCard label="days evaluated" value={String(result.orbStats.totalDays)} />
                     <StatCard label="triggered" value={String(result.orbStats.triggeredDays)} />
-                    <StatCard label="cancelled" value={String(result.orbStats.cancelledDays)} />
-                    <StatCard label="no trigger" value={String(result.orbStats.noTriggerDays)} />
+                    <StatCard label="no setup" value={String(result.orbStats.noSetupDays)} />
+                    <StatCard label="no fill" value={String(result.orbStats.noFillDays)} />
                     <StatCard label="expectancy r" value={`${result.orbStats.expectancyR.toFixed(2)}R`} accent={result.orbStats.expectancyR >= 0 ? "pos" : "neg"} />
                     <StatCard label="long / short" value={`${result.orbStats.longTrades} / ${result.orbStats.shortTrades}`} />
                     <StatCard label="long net pnl" value={`$${result.orbStats.longNetPnl.toFixed(0)}`} accent={result.orbStats.longNetPnl >= 0 ? "pos" : "neg"} />
