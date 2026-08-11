@@ -1,39 +1,31 @@
+# Revamp ORB M15 Pullback
 
+Ganti total engine ORB lama dengan logika bergaya 50% Pullback, khusus candle pertama pembukaan NY.
 
-## Update Chart Page: 24-Hour Data via Massive API
+## Aturan strategi
 
-### Konsep
-Saat ini chart hanya menampilkan data RTH (jam pasar) via TwelveData. Dengan beralih ke Massive API (Polygon), chart bisa menampilkan data 24 jam termasuk pre-market, after-hours, dan overnight — karena Polygon menyediakan bar di luar jam reguler.
+- Scan hanya candle M15 pertama sesi NY (09:30–09:45). Ini "ORB candle".
+- Candle itu harus momentum candle. Range ORB = high − low candle tersebut.
+- Setup buy (momentum bullish): buy limit di midpoint candle, SL di low candle, TP = ORB high + 0.5 × range.
+- Setup sell (momentum bearish): sell limit di midpoint candle, SL di high candle, TP = ORB low − 0.5 × range.
+- RR otomatis 1:2 (risk = 0.5 range, reward = 1.0 range).
+- Maksimal 1 entry per hari. Tidak ada setup chaining.
+- Limit hanya berlaku pada 2 candle M15 berikutnya (09:45–10:15). Tidak terisi = no trade hari itu.
+- Setelah terisi, posisi dibiarkan sampai TP atau SL kena; jika tidak kena keduanya sampai 16:00, exit di close.
+- Eksekusi (fill limit, TP, SL) dievaluasi pakai bar M5 agar urutan intrabar akurat; M15 hanya untuk scan momentum candle.
+- Jika TP dan SL kena di bar M5 yang sama, hitung sebagai loss (konservatif, sama seperti PB50).
 
-### Perubahan
+## Deteksi momentum (opsi di UI)
 
-**1. TradingViewChart.tsx — Ganti data source ke massive-bars**
-- Ganti fetch dari `twelvedata-proxy` ke `massive-bars` edge function
-- Hitung `from`/`to` date range otomatis (misal: 5 hari terakhir untuk intraday, 365 hari untuk daily)
-- Map interval UI ke Polygon format: `5min→(5,minute)`, `15min→(15,minute)`, `30min→(30,minute)`, `1h→(1,hour)`
-- Parse response: massive-bars mengembalikan datetime dalam ET string, convert ke unix timestamp untuk lightweight-charts
-- Volume data tetap ditampilkan
+Dua mode yang bisa dipilih di panel parameter:
+1. Super body (SMA): avgBody dari 15 bar M15 sebelumnya, termasuk pre-market/hari sebelumnya, body > 1.5 × avgBody.
+2. Rasio body tetap: body / range ≥ ambang yang dipilih (50%–70%).
 
-**2. Chart.tsx — Tambah timeframe 1D**
-- Tambah opsi `{ label: "1D", value: "1day" }` ke array intervals
-- Massive API support daily bars juga (`timespan: "day"`)
+## Detail teknis
 
-**3. Sesuaikan IB & MC overlay logic**
-- IB overlay: sudah filter berdasarkan waktu 09:30-16:00, tetap bekerja
-- MC overlay: sudah filter 09:30-12:00, tetap bekerja
-- Kedua overlay menggunakan datetime string yang di-parse, compatible dengan format massive-bars
-
-### Data Flow
-```text
-User pilih symbol + interval
-  → POST massive-bars { symbol, from, to, multiplier, timespan }
-  → Polygon API returns 24h bars (pre/post/overnight)
-  → Parse datetime ET → unix timestamp
-  → Display di lightweight-charts
-```
-
-### Catatan
-- MASSIVE_API_KEY sudah dikonfigurasi sebagai secret
-- massive-bars edge function sudah support batching untuk range panjang
-- Tidak perlu edge function baru
-
+- Tulis ulang `src/lib/orb-backtest.ts`: hapus logika C1/C2/trailing stop/cancel-midpoint yang lama. Ekspor `runOrbM15Backtest(symbol, bars, options)` dengan opsi `sessionStartMin`, `momentumMode` ("sma" | "ratio"), `bodyRatio`, `riskUsd`, `side`, `maxDays`. Output tetap `OrbTrade[]` + `OrbStats` supaya UI yang ada tidak pecah, dengan field disesuaikan (`orbCandle`, `midpoint`, `entryPrice`, `stopLoss`, `target`, `outcome`: target | stop | close | no_fill | no_setup).
+- Pakai `aggregateBars` dari `src/lib/m15-aggregation.ts` untuk bucket M15 clock-aligned dan `computeMomentumFlags` dari `src/lib/momentum-candle.ts` untuk mode SMA.
+- `src/pages/Backtester.tsx`: sesuaikan `toBTTradesORB` ke field baru, ganti kontrol parameter ORB lama (market/minStop) dengan mode momentum + ambang rasio + sisi (both/long/short) + risk, dan pastikan tombol chart mengirim `midpoint`, `exitTime`, `exitPrice`.
+- `src/pages/Index.tsx`: samakan blok report + trade log ORB dengan field baru.
+- `src/components/ParameterPanel.tsx`: kontrol mode momentum untuk ORB di `/app`.
+- Chart trade ORB tetap memakai `TradeChartDialog` (midpoint sebagai level 50%, marker exit).
