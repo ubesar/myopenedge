@@ -364,15 +364,15 @@ const Backtester = () => {
         totalDays = r.totalDays;
 
       } else if (strategy === "orbm15") {
-        const r = runOrbM15Backtest(
-          symbol.trim().toUpperCase(),
-          values,
-          orbMarket,
-          parseFloat(orbRisk) || 100,
-          parseFloat(orbMinStop) || 0.1,
-          orbSide,
-          days,
-        );
+        const r = runOrbM15Backtest(symbol.trim().toUpperCase(), values, {
+          sessionStartMin: ORB_SESSIONS[orbMarket].start,
+          sessionEndMin: ORB_SESSIONS[orbMarket].end,
+          momentumMode: orbMomentumMode,
+          bodyRatio: parseFloat(orbBodyRatio) || 0.6,
+          riskUsd: parseFloat(orbRisk) || 100,
+          side: orbSide,
+          maxDays: days,
+        });
         trades = toBTTradesORB(r.trades);
         totalDays = r.totalDays;
         orbTrades = r.trades;
