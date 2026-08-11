@@ -227,6 +227,10 @@ const ParameterPanel = ({
             <p className="text-[10px] text-muted-foreground">scans the m15 candle at 04:00 ny (momentum candle: body &gt; 1.5× avg body sma15). if not a momentum candle, fallback to 04:15. bullish → buy stop @ high, sl @ low. bearish → sell stop @ low, sl @ high. tp1 rr 1:0.5 &amp; tp2 rr 1:1 tracked independently until 16:00 ny close.</p>
           )}
 
+          {mode === "orbm15" && (
+            <p className="text-[10px] text-muted-foreground">only the first m15 candle of the ny open (09:30) is scanned and it must be a momentum candle (body &gt; 1.5× avg body sma15). bullish → buy limit @ candle midpoint, sl @ candle low, tp = orb high + 0.5× range. bearish → sell limit @ midpoint, sl @ candle high, tp = orb low − 0.5× range (rr 1:2). limit valid for the next 2 m15 candles only, max 1 entry per day, flat at 16:00 ny.</p>
+          )}
+
 
 
 
