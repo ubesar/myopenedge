@@ -1,10 +1,21 @@
 /**
  * ORB M15 Pullback — pure TypeScript backtest engine (MyOpenEdge).
  *
- * No external dependencies, no framework, no vendor coupling.
- * Input : 5-minute intraday bars (exchange time) + parameters.
- * Output: per-trade records + aggregate metrics.
+ * Rules (revamped):
+ *  - Only the FIRST m15 candle of the NY session (09:30–09:45) is scanned.
+ *  - That candle must be a momentum candle (super-body SMA mode, or fixed body/range ratio mode).
+ *  - Bullish momentum  -> buy limit at the candle midpoint, SL at candle low,
+ *                         TP = orb high + 0.5 × range  (risk 0.5R range, reward 1.0 range = RR 1:2)
+ *  - Bearish momentum  -> sell limit at the candle midpoint, SL at candle high,
+ *                         TP = orb low  − 0.5 × range
+ *  - The limit is valid for the next 2 m15 candles only. Not filled = no trade that day.
+ *  - Max 1 entry per day. Once filled, the trade runs to TP or SL; still open at session close
+ *    -> exit at the closing price.
+ *  - Fills / TP / SL are resolved on 5-minute bars; m15 is used only to scan the momentum candle.
+ *  - TP and SL touched inside the same 5m bar -> counted as a loss (conservative).
  */
+
+import { computeMomentumFlags, SUPER_BODY_MULT, MOMENTUM_SMA_PERIOD } from "./momentum-candle";
 
 export interface IntradayBar {
   /** "YYYY-MM-DD HH:mm:ss" in exchange time */
@@ -25,16 +36,16 @@ export interface OhlcCandle {
 
 export type OrbMarket = "us" | "idx";
 export type OrbSide = "both" | "long" | "short";
-export type OrbOutcome = "target" | "stop" | "close" | "no_trigger" | "cancelled";
+export type OrbMomentumMode = "sma" | "ratio";
+export type OrbOutcome = "target" | "stop" | "close" | "no_fill" | "no_setup";
 
 export interface OrbTrade {
   date: string;
   direction: "long" | "short";
-  c1: OhlcCandle;
-  c2: OhlcCandle;
+  /** the first m15 candle of the session (the orb candle) */
+  orbCandle: OhlcCandle;
+  /** limit entry level = midpoint of the orb candle */
   midpoint: number;
-  /** stop-order level (C1.high for long, C1.low for short) */
-  buyStop: number;
   stopLoss: number;
   target: number;
   entryTime: string | null;
@@ -52,9 +63,10 @@ export interface OrbTrade {
 
 export interface OrbStats {
   totalDays: number;
+  setupDays: number;
   triggeredDays: number;
-  cancelledDays: number;
-  noTriggerDays: number;
+  noSetupDays: number;
+  noFillDays: number;
   longTrades: number;
   shortTrades: number;
   longNetPnl: number;
@@ -71,13 +83,28 @@ export interface OrbStats {
   equityCurve: number[];
 }
 
+export interface OrbOptions {
+  /** session start in minutes from midnight (default 09:30 NY) */
+  sessionStartMin?: number;
+  /** session end in minutes from midnight (default 16:00) */
+  sessionEndMin?: number;
+  momentumMode?: OrbMomentumMode;
+  /** body / range threshold for the "ratio" mode (0.5 – 0.7) */
+  bodyRatio?: number;
+  riskUsd?: number;
+  side?: OrbSide;
+  maxDays?: number;
+}
+
 export interface OrbResult extends OrbStats {
   symbol: string;
-  market: OrbMarket;
   side: OrbSide;
   riskUsd: number;
-  minStopPctOfRange: number;
-  /** every evaluated day, including cancelled / no_trigger */
+  momentumMode: OrbMomentumMode;
+  bodyRatio: number;
+  sessionStartMin: number;
+  sessionEndMin: number;
+  /** every evaluated day, including no_setup / no_fill */
   trades: OrbTrade[];
   /** only the days that produced a filled position */
   triggered: OrbTrade[];
@@ -90,6 +117,7 @@ export const ORB_SESSIONS: Record<OrbMarket, { start: number; end: number; label
 
 const num = (v: number | string) => (typeof v === "number" ? v : parseFloat(v));
 const pad2 = (n: number) => String(n).padStart(2, "0");
+const label = (min: number) => `${pad2(Math.floor(min / 60))}:${pad2(min % 60)}`;
 
 function minutesOf(datetime: string): number {
   const t = datetime.split(" ")[1] ?? datetime.split("T")[1] ?? "00:00:00";
@@ -116,143 +144,66 @@ function normalize(bars: IntradayBar[]): Bar5[] {
     const o = num(b.open), h = num(b.high), l = num(b.low), c = num(b.close);
     if (![o, h, l, c].every((v) => isFinite(v))) continue;
     const min = minutesOf(dt);
-    out.push({ date, min, time: `${pad2(Math.floor(min / 60))}:${pad2(min % 60)}`, open: o, high: h, low: l, close: c });
+    out.push({ date, min, time: label(min), open: o, high: h, low: l, close: c });
   }
   out.sort((a, b) => (a.date === b.date ? a.min - b.min : a.date.localeCompare(b.date)));
   return out;
 }
 
-/** clock-aligned m15 aggregation (:00 / :15 / :30 / :45) */
-function toM15(bars: Bar5[]): OhlcCandle[] {
-  const groups = new Map<number, Bar5[]>();
+interface M15Bar extends OhlcCandle {
+  date: string;
+  min: number;
+}
+
+/** clock-aligned m15 aggregation (:00 / :15 / :30 / :45) over the whole series */
+function toM15(bars: Bar5[]): M15Bar[] {
+  const groups = new Map<string, Bar5[]>();
   for (const b of bars) {
     const bucket = Math.floor(b.min / 15) * 15;
-    if (!groups.has(bucket)) groups.set(bucket, []);
-    groups.get(bucket)!.push(b);
+    const key = `${b.date} ${bucket}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(b);
   }
   return Array.from(groups.entries())
-    .sort((a, b) => a[0] - b[0])
-    .map(([bucket, g]) => ({
-      time: `${pad2(Math.floor(bucket / 60))}:${pad2(bucket % 60)}`,
-      open: g[0].open,
-      high: Math.max(...g.map((x) => x.high)),
-      low: Math.min(...g.map((x) => x.low)),
-      close: g[g.length - 1].close,
-    }));
-}
-
-function candleOf(bars: Bar5[]): OhlcCandle {
-  return {
-    time: bars[0].time,
-    open: bars[0].open,
-    high: Math.max(...bars.map((b) => b.high)),
-    low: Math.min(...bars.map((b) => b.low)),
-    close: bars[bars.length - 1].close,
-  };
-}
-
-interface Attempt {
-  direction: "long" | "short";
-  outcome: OrbOutcome;
-  entryIdx: number;
-  entryTime: string | null;
-  entryPrice: number | null;
-  stopLoss: number;
-  target: number;
-  exitTime: string | null;
-  exitPrice: number | null;
-}
-
-/**
- * Simulates one directional setup over the session bars.
- * `c2Bars` = the trailing-stop window, `rest` = bars after C2 until session close.
- */
-function simulate(
-  direction: "long" | "short",
-  c1: OhlcCandle,
-  midpoint: number,
-  range: number,
-  c2Bars: Bar5[],
-  rest: Bar5[],
-  minStopPctOfRange: number
-): Attempt {
-  const long = direction === "long";
-  const level = long ? c1.high : c1.low;
-  const target = long ? level + 0.5 * range : level - 0.5 * range;
-  const minStop = minStopPctOfRange * range;
-
-  let pullbackDone = false;
-  let trailing = long ? Infinity : -Infinity; // running low / running high of C2
-  let entryIdx = -1;
-  let entryTime: string | null = null;
-  let stopLoss = long ? level - minStop : level + minStop;
-
-  const monitored = [...c2Bars, ...rest];
-
-  for (let i = 0; i < monitored.length; i++) {
-    const b = monitored[i];
-    const inC2 = i < c2Bars.length;
-
-    // cancel — price breaks the C1 midpoint against the setup
-    if (long ? b.low < midpoint : b.high > midpoint) {
+    .map(([key, g]) => {
+      const [date, bucketStr] = key.split(" ");
+      const bucket = Number(bucketStr);
       return {
-        direction, outcome: "cancelled", entryIdx: -1, entryTime: null, entryPrice: null,
-        stopLoss, target, exitTime: null, exitPrice: null,
+        date,
+        min: bucket,
+        time: label(bucket),
+        open: g[0].open,
+        high: Math.max(...g.map((x) => x.high)),
+        low: Math.min(...g.map((x) => x.low)),
+        close: g[g.length - 1].close,
       };
-    }
-
-    // pullback back into the C1 range must happen before the stop order is valid
-    if (!pullbackDone && (long ? b.low < level : b.high > level)) pullbackDone = true;
-
-    // dynamic trailing stop follows the running extreme of candle 2
-    if (inC2) trailing = long ? Math.min(trailing, b.low) : Math.max(trailing, b.high);
-
-    if (pullbackDone && (long ? b.high > level : b.low < level)) {
-      const raw = isFinite(trailing) ? trailing : long ? c1.low : c1.high;
-      stopLoss = long ? Math.min(raw, level - minStop) : Math.max(raw, level + minStop);
-      entryIdx = i;
-      entryTime = b.time;
-      break;
-    }
-  }
-
-  if (entryIdx < 0) {
-    return {
-      direction, outcome: "no_trigger", entryIdx: -1, entryTime: null, entryPrice: null,
-      stopLoss, target, exitTime: null, exitPrice: null,
-    };
-  }
-
-  // manage the position — stop checked before target, flat at session close
-  for (let i = entryIdx; i < monitored.length; i++) {
-    const b = monitored[i];
-    if (long ? b.low <= stopLoss : b.high >= stopLoss) {
-      return { direction, outcome: "stop", entryIdx, entryTime, entryPrice: level, stopLoss, target, exitTime: b.time, exitPrice: stopLoss };
-    }
-    if (long ? b.high >= target : b.low <= target) {
-      return { direction, outcome: "target", entryIdx, entryTime, entryPrice: level, stopLoss, target, exitTime: b.time, exitPrice: target };
-    }
-  }
-
-  const last = monitored[monitored.length - 1];
-  return { direction, outcome: "close", entryIdx, entryTime, entryPrice: level, stopLoss, target, exitTime: last.time, exitPrice: last.close };
+    })
+    .sort((a, b) => (a.date === b.date ? a.min - b.min : a.date.localeCompare(b.date)));
 }
 
 export function runOrbM15Backtest(
   symbol: string,
   bars: IntradayBar[],
-  market: OrbMarket = "us",
-  riskUsd = 100,
-  minStopPctOfRange = 0.1,
-  side: OrbSide = "both",
-  maxDays = 0
+  options: OrbOptions = {}
 ): OrbResult {
-  const session = ORB_SESSIONS[market] ?? ORB_SESSIONS.us;
+  const sessionStartMin = options.sessionStartMin ?? ORB_SESSIONS.us.start;
+  const sessionEndMin = options.sessionEndMin ?? ORB_SESSIONS.us.end;
+  const momentumMode: OrbMomentumMode = options.momentumMode ?? "sma";
+  const bodyRatio = options.bodyRatio ?? 0.6;
+  const riskUsd = options.riskUsd ?? 100;
+  const side: OrbSide = options.side ?? "both";
+  const maxDays = options.maxDays ?? 0;
+
   const all = normalize(bars);
+  const m15All = toM15(all);
+  // continuous SMA across the whole series (pre-market + previous days included)
+  const flags = computeMomentumFlags(m15All, MOMENTUM_SMA_PERIOD, SUPER_BODY_MULT);
+  const flagOf = new Map<string, (typeof flags)[number]>();
+  m15All.forEach((b, i) => flagOf.set(`${b.date} ${b.min}`, flags[i]));
 
   const byDay = new Map<string, Bar5[]>();
   for (const b of all) {
-    if (b.min < session.start || b.min >= session.end) continue;
+    if (b.min < sessionStartMin || b.min >= sessionEndMin) continue;
     if (!byDay.has(b.date)) byDay.set(b.date, []);
     byDay.get(b.date)!.push(b);
   }
@@ -264,65 +215,116 @@ export function runOrbM15Backtest(
 
   for (const date of days) {
     const dayBars = byDay.get(date)!;
-    const c1Bars = dayBars.filter((b) => b.min >= session.start && b.min < session.start + 15);
-    const c2Bars = dayBars.filter((b) => b.min >= session.start + 15 && b.min < session.start + 30);
-    const rest = dayBars.filter((b) => b.min >= session.start + 30);
-    if (c1Bars.length < 2 || c2Bars.length < 2) continue;
+    const sessionM15 = m15All.filter((b) => b.date === date && b.min >= sessionStartMin && b.min < sessionEndMin);
+    const orbBucket = Math.floor(sessionStartMin / 15) * 15;
+    const orb = m15All.find((b) => b.date === date && b.min === orbBucket);
+    if (!orb) continue;
 
-    const c1 = candleOf(c1Bars);
-    const c2 = candleOf(c2Bars);
-    const range = c1.high - c1.low;
-    if (range <= 0) continue;
-    const midpoint = (c1.high + c1.low) / 2;
-    const m15 = toM15(dayBars);
+    const range = orb.high - orb.low;
+    const body = Math.abs(orb.close - orb.open);
+    const direction: "long" | "short" = orb.close >= orb.open ? "long" : "short";
 
-    const attempts: Attempt[] = [];
-    if (side !== "short") attempts.push(simulate("long", c1, midpoint, range, c2Bars, rest, minStopPctOfRange));
-    if (side !== "long") attempts.push(simulate("short", c1, midpoint, range, c2Bars, rest, minStopPctOfRange));
+    const flag = flagOf.get(`${date} ${orbBucket}`);
+    const isMomentum =
+      range > 0 &&
+      body > 0 &&
+      (momentumMode === "sma" ? !!flag?.isSuper : body / range >= bodyRatio);
 
-    const filled = attempts.filter((a) => a.entryIdx >= 0).sort((a, b) => a.entryIdx - b.entryIdx);
-    const chosen =
-      filled[0] ??
-      attempts.find((a) => a.outcome === "cancelled") ??
-      attempts[0];
-    if (!chosen) continue;
+    const midpoint = (orb.high + orb.low) / 2;
+    const stopLoss = direction === "long" ? orb.low : orb.high;
+    const target = direction === "long" ? orb.high + 0.5 * range : orb.low - 0.5 * range;
 
-    const entryPrice = chosen.entryPrice;
-    const riskPerShare = entryPrice != null ? Math.abs(entryPrice - chosen.stopLoss) : 0;
+    const base = {
+      date,
+      direction,
+      orbCandle: { time: orb.time, open: orb.open, high: orb.high, low: orb.low, close: orb.close },
+      midpoint,
+      stopLoss,
+      target,
+      shares: 0,
+      riskPerShare: 0,
+      pnlUsd: 0,
+      rMultiple: 0,
+      bars: sessionM15.map(({ time, open, high, low, close }) => ({ time, open, high, low, close })),
+    };
+
+    const sideOk = side === "both" || (side === "long" && direction === "long") || (side === "short" && direction === "short");
+
+    if (!isMomentum || !sideOk) {
+      trades.push({ ...base, entryTime: null, entryPrice: null, exitTime: null, exitPrice: null, outcome: "no_setup" });
+      continue;
+    }
+
+    // limit valid for the next 2 m15 candles only
+    const fillFrom = orbBucket + 15;
+    const fillUntil = orbBucket + 45;
+
+    let entryIdx = -1;
+    let entryTime: string | null = null;
+    for (let i = 0; i < dayBars.length; i++) {
+      const b = dayBars[i];
+      if (b.min < fillFrom) continue;
+      if (b.min >= fillUntil) break;
+      const filled = direction === "long" ? b.low <= midpoint : b.high >= midpoint;
+      if (filled) {
+        entryIdx = i;
+        entryTime = b.time;
+        break;
+      }
+    }
+
+    if (entryIdx < 0) {
+      trades.push({ ...base, entryTime: null, entryPrice: null, exitTime: null, exitPrice: null, outcome: "no_fill" });
+      continue;
+    }
+
+    const riskPerShare = Math.abs(midpoint - stopLoss);
     const shares = riskPerShare > 0 ? riskUsd / riskPerShare : 0;
-    const pnlUsd =
-      entryPrice != null && chosen.exitPrice != null
-        ? shares * (chosen.direction === "long" ? chosen.exitPrice - entryPrice : entryPrice - chosen.exitPrice)
-        : 0;
+
+    let outcome: OrbOutcome = "close";
+    let exitTime: string | null = null;
+    let exitPrice: number | null = null;
+
+    for (let i = entryIdx; i < dayBars.length; i++) {
+      const b = dayBars[i];
+      const hitStop = direction === "long" ? b.low <= stopLoss : b.high >= stopLoss;
+      const hitTarget = direction === "long" ? b.high >= target : b.low <= target;
+      if (hitStop) {
+        outcome = "stop"; exitTime = b.time; exitPrice = stopLoss; break;
+      }
+      if (hitTarget) {
+        outcome = "target"; exitTime = b.time; exitPrice = target; break;
+      }
+    }
+    if (exitPrice == null) {
+      const last = dayBars[dayBars.length - 1];
+      outcome = "close"; exitTime = last.time; exitPrice = last.close;
+    }
+
+    const pnlUsd = shares * (direction === "long" ? exitPrice - midpoint : midpoint - exitPrice);
 
     trades.push({
-      date,
-      direction: chosen.direction,
-      c1,
-      c2,
-      midpoint,
-      buyStop: chosen.direction === "long" ? c1.high : c1.low,
-      stopLoss: chosen.stopLoss,
-      target: chosen.target,
-      entryTime: chosen.entryTime,
-      entryPrice,
-      exitTime: chosen.exitTime,
-      exitPrice: chosen.exitPrice,
+      ...base,
+      entryTime,
+      entryPrice: midpoint,
+      exitTime,
+      exitPrice,
       shares,
       riskPerShare,
       pnlUsd,
       rMultiple: riskUsd > 0 ? pnlUsd / riskUsd : 0,
-      outcome: chosen.outcome,
-      bars: m15,
+      outcome,
     });
   }
 
   return {
     symbol,
-    market,
     side,
     riskUsd,
-    minStopPctOfRange,
+    momentumMode,
+    bodyRatio,
+    sessionStartMin,
+    sessionEndMin,
     trades,
     triggered: trades.filter((t) => t.entryPrice != null),
     ...computeOrbStats(trades),
@@ -353,9 +355,10 @@ export function computeOrbStats(trades: OrbTrade[]): OrbStats {
 
   return {
     totalDays: trades.length,
+    setupDays: trades.filter((t) => t.outcome !== "no_setup").length,
     triggeredDays: triggered.length,
-    cancelledDays: trades.filter((t) => t.outcome === "cancelled").length,
-    noTriggerDays: trades.filter((t) => t.outcome === "no_trigger").length,
+    noSetupDays: trades.filter((t) => t.outcome === "no_setup").length,
+    noFillDays: trades.filter((t) => t.outcome === "no_fill").length,
     longTrades: longs.length,
     shortTrades: shorts.length,
     longNetPnl: longs.reduce((s, t) => s + t.pnlUsd, 0),
