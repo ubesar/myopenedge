@@ -869,7 +869,6 @@ const Index = () => {
                             stop: t.stopLoss,
                             target: t.target,
                             outcome: t.pnlUsd >= 0 ? "win" : "loss",
-                            midpoint: t.midpoint,
                             exitTime: t.exitTime ?? undefined,
                             exitPrice: t.exitPrice ?? undefined,
                           })

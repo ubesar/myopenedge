@@ -208,7 +208,6 @@ function toBTTradesORB(trades: OrbTrade[]): BTTrade[] {
       rMultiple: t.rMultiple,
       pnl: t.pnlUsd,
       qty: t.shares,
-      midpoint: t.midpoint,
       exitTime: t.exitTime ?? undefined,
       exitPrice: t.exitPrice ?? undefined,
       reason: t.outcome,
