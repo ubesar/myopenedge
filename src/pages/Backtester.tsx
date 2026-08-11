@@ -20,7 +20,7 @@ import { parseCsvBars, type CsvBar } from "@/lib/csv-bars";
 import BacktestCalendar from "@/components/BacktestCalendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-import { runOrbM15Backtest, segmentOrbStats, ORB_SESSIONS, type OrbTrade, type OrbSide, type OrbMarket, type OrbStats } from "@/lib/orb-backtest";
+import { runOrbM15Backtest, segmentOrbStats, ORB_SESSIONS, type OrbTrade, type OrbSide, type OrbMarket, type OrbStats, type OrbMomentumMode } from "@/lib/orb-backtest";
 
 type StrategyKey = "pb50" | "ib2575" | "orbm15";
 
