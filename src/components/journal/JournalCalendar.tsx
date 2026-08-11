@@ -3,9 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Trade {
   id: string;
-  pnl_gross: number;
   pnl_net: number;
-  fees: number | null;
   side: string;
   close_time: string;
   open_time: string;
@@ -16,8 +14,6 @@ interface JournalCalendarProps {
   trades: Trade[];
   onDayClick?: (date: string) => void;
 }
-
-const netPnl = (t: Trade) => t.pnl_gross - (t.fees || 0);
 
 const JournalCalendar = ({ trades, onDayClick }: JournalCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -30,7 +26,7 @@ const JournalCalendar = ({ trades, onDayClick }: JournalCalendarProps) => {
     trades.forEach((t) => {
       const day = t.close_time.slice(0, 10);
       const existing = map.get(day) || { pnl: 0, count: 0 };
-      map.set(day, { pnl: existing.pnl + netPnl(t), count: existing.count + 1 });
+      map.set(day, { pnl: existing.pnl + t.pnl_net, count: existing.count + 1 });
     });
     return map;
   }, [trades]);
