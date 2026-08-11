@@ -713,15 +713,15 @@ const Backtester = () => {
                   <div>
                     <h2 className="text-sm font-semibold lowercase">orb m15 pullback · breakdown</h2>
                     <p className="text-[11px] text-muted-foreground lowercase">
-                      c1 = 15 menit pertama sesi · buy stop di c1 high (sell stop di c1 low) setelah pullback di c2 ·
-                      sl trailing running low/high c2 · batal jika midpoint c1 ditembus · tp 0.5× range
+                      candle m15 pertama sesi harus momentum candle · limit di middle candle (valid 2 candle m15) ·
+                      sl di ujung candle · tp 0.5× extension range (rr 1:2) · maks 1 entry per hari
                     </p>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
                     <StatCard label="days evaluated" value={String(result.orbStats.totalDays)} />
                     <StatCard label="triggered" value={String(result.orbStats.triggeredDays)} />
-                    <StatCard label="cancelled" value={String(result.orbStats.cancelledDays)} />
-                    <StatCard label="no trigger" value={String(result.orbStats.noTriggerDays)} />
+                    <StatCard label="no setup" value={String(result.orbStats.noSetupDays)} />
+                    <StatCard label="no fill" value={String(result.orbStats.noFillDays)} />
                     <StatCard label="expectancy r" value={`${result.orbStats.expectancyR.toFixed(2)}R`} accent={result.orbStats.expectancyR >= 0 ? "pos" : "neg"} />
                     <StatCard label="long / short" value={`${result.orbStats.longTrades} / ${result.orbStats.shortTrades}`} />
                     <StatCard label="long net pnl" value={`$${result.orbStats.longNetPnl.toFixed(0)}`} accent={result.orbStats.longNetPnl >= 0 ? "pos" : "neg"} />
