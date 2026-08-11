@@ -319,7 +319,7 @@ const Index = () => {
 
           addRun(effectiveMode, ticker, { totalTrades: a.totalTrades, ibWindow: effectiveIbWindow, winRate: a.stats.winRate, triggeredTrades: a.triggeredTrades });
         } else if (effectiveMode === "orbm15") {
-          const a = runOrbM15Backtest(ticker, values as any, "us", 100, 0.1, "both", effectiveMaxDays);
+          const a = runOrbM15Backtest(ticker, values as any, { riskUsd: 100, side: "both", maxDays: effectiveMaxDays, momentumMode: "sma" });
           if (a.totalDays === 0) { toast.error("Not enough data."); return; }
           setOrbRawBars(values as any);
           setOrbResult(a);
