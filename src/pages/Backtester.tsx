@@ -557,16 +557,28 @@ const Backtester = () => {
                     <Input value={orbRisk} onChange={(e) => setOrbRisk(e.target.value)} inputMode="decimal" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs lowercase">min sl (% of range)</Label>
-                    <Select value={orbMinStop} onValueChange={setOrbMinStop}>
+                    <Label className="text-xs lowercase">deteksi momentum</Label>
+                    <Select value={orbMomentumMode} onValueChange={(v) => setOrbMomentumMode(v as OrbMomentumMode)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {["0.05", "0.1", "0.15", "0.2", "0.25", "0.3"].map((v) => (
-                          <SelectItem key={v} value={v}>{(parseFloat(v) * 100).toFixed(0)}%</SelectItem>
-                        ))}
+                        <SelectItem value="sma">super body (sma15 × 1.5)</SelectItem>
+                        <SelectItem value="ratio">body / range ratio</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+                  {orbMomentumMode === "ratio" && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs lowercase">min body ratio</Label>
+                      <Select value={orbBodyRatio} onValueChange={setOrbBodyRatio}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {["0.5", "0.55", "0.6", "0.65", "0.7"].map((v) => (
+                            <SelectItem key={v} value={v}>{(parseFloat(v) * 100).toFixed(0)}%</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </>
               ) : strategy === "ib2575" ? (
                 <div className="space-y-1.5">
