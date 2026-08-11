@@ -271,7 +271,8 @@ const Backtester = () => {
   const [orbSide, setOrbSide] = useState<OrbSide>("both");
   const [orbMarket, setOrbMarket] = useState<OrbMarket>("us");
   const [orbRisk, setOrbRisk] = useState("100");
-  const [orbMinStop, setOrbMinStop] = useState("0.1");
+  const [orbMomentumMode, setOrbMomentumMode] = useState<OrbMomentumMode>("sma");
+  const [orbBodyRatio, setOrbBodyRatio] = useState("0.6");
   const [logFilter, setLogFilter] = useState<"all" | "target" | "stop" | "close">("all");
 
   const [maxDays, setMaxDays] = useState("120");
