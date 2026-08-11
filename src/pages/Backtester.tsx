@@ -39,6 +39,7 @@ const Backtester = () => {
   const [maxDays, setMaxDays] = useState("60");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<NYOrbResult | null>(null);
+  const [variants, setVariants] = useState<{ param: number; days: NYOrbResult["days"] }[]>([]);
   const [ranSymbol, setRanSymbol] = useState("NQ");
   const [ranDays, setRanDays] = useState(60);
 
