@@ -11,8 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import NYOrbM15Dashboard from "@/components/NYOrbM15Dashboard";
 import QuantPanel from "@/components/QuantPanel";
+import BacktestLab from "@/components/BacktestLab";
 import { analyzeNYOrbM15, nyOrbQuantTrades, type NYOrbResult } from "@/lib/ny-orb-m15";
 import { DEFAULT_QUANT_SETTINGS } from "@/lib/quant-metrics";
+
+const BASE_BODY_RATIO = 0.6;
+const PARAM_GRID = [0.48, 0.54, 0.6, 0.66, 0.72];
 
 const DAY_OPTIONS = [
   { value: "20", label: "1 month" },
