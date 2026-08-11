@@ -94,8 +94,7 @@ export function buildExecTrades(days: NYOrbDay[], cfg: ExecConfig): ExecTrade[] 
     if (riskPoints <= 0) continue;
 
     const size = Math.max(1, Math.round(cfg.fixedRiskUsd / (riskPoints * pv)));
-    const grossPnlRaw = (t.rawExitOverride ?? 0, (rawExit - t.entry) * dir * size * pv);
-    const grossPnl = grossPnlRaw;
+    const grossPnl = (rawExit - t.entry) * dir * size * pv;
     const commission = cfg.commissionPerTrade + 2 * cfg.commissionPerContract * size;
     const slippageCost = 2 * slip * size * pv;
     const netPnl = (exit - entry) * dir * size * pv - commission;
