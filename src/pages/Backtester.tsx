@@ -80,15 +80,26 @@ const Backtester = () => {
     if (!ticker) return;
     setLoading(true);
     setResult(null);
+    setVariants([]);
     try {
       const days = parseInt(maxDays);
       const json: any = await fetchMarketData(ticker, days);
       if (json?.status === "error") { toast.error(json.message || "api error"); return; }
       const values = json?.values;
       if (!Array.isArray(values) || values.length === 0) { toast.error("no data returned"); return; }
-      const a = analyzeNYOrbM15(values, days, [1, 2, 3, 4, 5], 0.6, ticker);
+      // static historical snapshot → deterministic re-runs (no repaint)
+      const snapshot = [...values];
+      const a = analyzeNYOrbM15(snapshot, days, [1, 2, 3, 4, 5], BASE_BODY_RATIO, ticker);
       if (a.totalDays === 0) { toast.error("not enough session data"); return; }
       setResult(a);
+      setVariants(
+        PARAM_GRID.map((p) => ({
+          param: p,
+          days: p === BASE_BODY_RATIO
+            ? a.days
+            : analyzeNYOrbM15(snapshot, days, [1, 2, 3, 4, 5], p, ticker).days,
+        })),
+      );
       setRanSymbol(ticker);
       setRanDays(days);
     } catch (e: any) {
