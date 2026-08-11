@@ -171,6 +171,12 @@ const Backtester = () => {
                 dateRange={rangeLabel}
                 weekdays="monday, tuesday, wednesday, thursday, friday"
               />
+              <BacktestLab
+                days={result.days}
+                variants={variants}
+                baseParam={BASE_BODY_RATIO}
+                symbol={ranSymbol}
+              />
               {result.trades.length > 0 && (
                 <QuantPanel
                   trades={nyOrbQuantTrades(result) as any}
