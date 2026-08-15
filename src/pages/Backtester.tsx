@@ -11,12 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import NYOrbM15Dashboard from "@/components/NYOrbM15Dashboard";
 import QuantPanel from "@/components/QuantPanel";
-import BacktestLab from "@/components/BacktestLab";
 import { analyzeNYOrbM15, nyOrbQuantTrades, type NYOrbResult } from "@/lib/ny-orb-m15";
 import { DEFAULT_QUANT_SETTINGS } from "@/lib/quant-metrics";
-
-const BASE_BODY_RATIO = 0.6;
-const PARAM_GRID = [0.48, 0.54, 0.6, 0.66, 0.72];
 
 const DAY_OPTIONS = [
   { value: "20", label: "1 month" },
@@ -39,7 +35,6 @@ const Backtester = () => {
   const [maxDays, setMaxDays] = useState("60");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<NYOrbResult | null>(null);
-  const [variants, setVariants] = useState<{ param: number; days: NYOrbResult["days"] }[]>([]);
   const [ranSymbol, setRanSymbol] = useState("NQ");
   const [ranDays, setRanDays] = useState(60);
 
@@ -80,26 +75,15 @@ const Backtester = () => {
     if (!ticker) return;
     setLoading(true);
     setResult(null);
-    setVariants([]);
     try {
       const days = parseInt(maxDays);
       const json: any = await fetchMarketData(ticker, days);
       if (json?.status === "error") { toast.error(json.message || "api error"); return; }
       const values = json?.values;
       if (!Array.isArray(values) || values.length === 0) { toast.error("no data returned"); return; }
-      // static historical snapshot → deterministic re-runs (no repaint)
-      const snapshot = [...values];
-      const a = analyzeNYOrbM15(snapshot, days, [1, 2, 3, 4, 5], BASE_BODY_RATIO, ticker);
+      const a = analyzeNYOrbM15(values, days, [1, 2, 3, 4, 5], 0.6, ticker);
       if (a.totalDays === 0) { toast.error("not enough session data"); return; }
       setResult(a);
-      setVariants(
-        PARAM_GRID.map((p) => ({
-          param: p,
-          days: p === BASE_BODY_RATIO
-            ? a.days
-            : analyzeNYOrbM15(snapshot, days, [1, 2, 3, 4, 5], p, ticker).days,
-        })),
-      );
       setRanSymbol(ticker);
       setRanDays(days);
     } catch (e: any) {
@@ -170,12 +154,6 @@ const Backtester = () => {
                 symbol={ranSymbol}
                 dateRange={rangeLabel}
                 weekdays="monday, tuesday, wednesday, thursday, friday"
-              />
-              <BacktestLab
-                days={result.days}
-                variants={variants}
-                baseParam={BASE_BODY_RATIO}
-                symbol={ranSymbol}
               />
               {result.trades.length > 0 && (
                 <QuantPanel
