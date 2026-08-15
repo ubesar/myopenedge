@@ -95,7 +95,41 @@ export interface QuantMetrics {
   outSample: EdgeBucket;
   buckets: EdgeBucket[];
   decayStatus: "stable" | "decaying" | "restored" | "insufficient";
+
+  // performance report (equity-curve based, à la investing-algorithm-framework)
+  perf: PerfMetrics;
 }
+
+export interface PerfPoint {
+  date: string;
+  equity: number;
+}
+
+export interface PerfMetrics {
+  startEquity: number;
+  endEquity: number;
+  netProfitDollar: number;
+  netProfitPct: number;
+  cagrPct: number;
+  years: number;
+  maxDrawdownPct: number;
+  maxDrawdownDollar: number;
+  maxDrawdownDurationDays: number;
+  sharpe: number;
+  sortino: number;
+  calmar: number;
+  recoveryFactor: number;
+  volatilityAnnualPct: number;
+  bestTradeR: number;
+  worstTradeR: number;
+  avgTradeR: number;
+  stdevTradeR: number;
+  maxWinStreak: number;
+  maxLossStreak: number;
+  tradesPerDay: number;
+  exposurePct: number;
+  curve: PerfPoint[];
+
 
 /** Wilson score interval for a binomial proportion (95%). */
 export function wilsonInterval(successes: number, n: number, z = 1.96): [number, number] {
