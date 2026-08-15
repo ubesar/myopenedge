@@ -95,7 +95,44 @@ export interface QuantMetrics {
   outSample: EdgeBucket;
   buckets: EdgeBucket[];
   decayStatus: "stable" | "decaying" | "restored" | "insufficient";
+
+  // performance report (equity-curve based, à la investing-algorithm-framework)
+  perf: PerfMetrics;
 }
+
+export interface PerfPoint {
+  date: string;
+  equity: number;
+}
+
+export interface PerfMetrics {
+  startEquity: number;
+  endEquity: number;
+  netProfitDollar: number;
+  netProfitPct: number;
+  cagrPct: number;
+  years: number;
+  maxDrawdownPct: number;
+  maxDrawdownDollar: number;
+  maxDrawdownDurationDays: number;
+  sharpe: number;
+  sortino: number;
+  calmar: number;
+  recoveryFactor: number;
+  volatilityAnnualPct: number;
+  bestTradeR: number;
+  worstTradeR: number;
+  avgTradeR: number;
+  stdevTradeR: number;
+  maxWinStreak: number;
+  maxLossStreak: number;
+  tradesPerDay: number;
+  exposurePct: number;
+  curve: PerfPoint[];
+}
+
+
+
 
 /** Wilson score interval for a binomial proportion (95%). */
 export function wilsonInterval(successes: number, n: number, z = 1.96): [number, number] {
@@ -215,7 +252,113 @@ export function computeQuantMetrics(
     else decayStatus = "stable";
   }
 
+  // ---------- performance report (equity curve) ----------
+  const startEquity = settings.accountSize > 0 ? settings.accountSize : 100000;
+  const perTrade = rows.map((r) => ({ date: r.date, pnl: r.netR * riskDollar, win: r.win }));
+
+  const curve: PerfPoint[] = [];
+  let equity = startEquity;
+  let peak = startEquity;
+  let maxDdPct = 0;
+  let maxDdDollar = 0;
+  let ddStart: string | null = null;
+  let maxDdDays = 0;
+
+  const dayPnl = new Map<string, number>();
+  for (const t of perTrade) dayPnl.set(t.date, (dayPnl.get(t.date) ?? 0) + t.pnl);
+  const days = Array.from(dayPnl.keys()).sort();
+
+  const dailyReturns: number[] = [];
+  for (const d of days) {
+    const prev = equity;
+    equity += dayPnl.get(d)!;
+    dailyReturns.push(prev > 0 ? (equity - prev) / prev : 0);
+    curve.push({ date: d, equity });
+    if (equity >= peak) {
+      peak = equity;
+      ddStart = null;
+    } else {
+      if (!ddStart) ddStart = d;
+      const ddD = peak - equity;
+      const ddP = peak > 0 ? (ddD / peak) * 100 : 0;
+      if (ddP > maxDdPct) { maxDdPct = ddP; maxDdDollar = ddD; }
+      const durDays = Math.round(
+        (new Date(d + "T00:00:00").getTime() - new Date(ddStart + "T00:00:00").getTime()) / 86400000,
+      );
+      if (durDays > maxDdDays) maxDdDays = durDays;
+    }
+  }
+
+  const endEquity = equity;
+  const netProfitDollar = endEquity - startEquity;
+  const netProfitPct = startEquity > 0 ? (netProfitDollar / startEquity) * 100 : 0;
+
+  const spanDays = days.length > 1
+    ? Math.max(1, (new Date(days[days.length - 1] + "T00:00:00").getTime() - new Date(days[0] + "T00:00:00").getTime()) / 86400000)
+    : Math.max(1, days.length);
+  const years = spanDays / 365;
+  const cagrPct = years > 0 && startEquity > 0 && endEquity > 0
+    ? (Math.pow(endEquity / startEquity, 1 / years) - 1) * 100
+    : 0;
+
+  const mean = dailyReturns.length ? dailyReturns.reduce((a, b) => a + b, 0) / dailyReturns.length : 0;
+  const variance = dailyReturns.length > 1
+    ? dailyReturns.reduce((a, b) => a + (b - mean) ** 2, 0) / (dailyReturns.length - 1)
+    : 0;
+  const sd = Math.sqrt(variance);
+  const downside = dailyReturns.filter((r) => r < 0);
+  const dsd = downside.length
+    ? Math.sqrt(downside.reduce((a, b) => a + b * b, 0) / downside.length)
+    : 0;
+  const ann = Math.sqrt(252);
+  const sharpe = sd > 0 ? (mean / sd) * ann : 0;
+  const sortino = dsd > 0 ? (mean / dsd) * ann : 0;
+  const volatilityAnnualPct = sd * ann * 100;
+  const calmar = maxDdPct > 0 ? cagrPct / maxDdPct : 0;
+  const recoveryFactor = maxDdDollar > 0 ? netProfitDollar / maxDdDollar : 0;
+
+  const rvals = rs.map((x) => x.r);
+  const avgTradeR = rvals.length ? rvals.reduce((a, b) => a + b, 0) / rvals.length : 0;
+  const stdevTradeR = rvals.length > 1
+    ? Math.sqrt(rvals.reduce((a, b) => a + (b - avgTradeR) ** 2, 0) / (rvals.length - 1))
+    : 0;
+
+  let maxWinStreak = 0, maxLossStreak = 0, curW = 0, curL = 0;
+  for (const t of perTrade) {
+    if (t.win) { curW++; curL = 0; } else { curL++; curW = 0; }
+    maxWinStreak = Math.max(maxWinStreak, curW);
+    maxLossStreak = Math.max(maxLossStreak, curL);
+  }
+
+  const perf: PerfMetrics = {
+    startEquity,
+    endEquity,
+    netProfitDollar,
+    netProfitPct,
+    cagrPct,
+    years,
+    maxDrawdownPct: maxDdPct,
+    maxDrawdownDollar: maxDdDollar,
+    maxDrawdownDurationDays: maxDdDays,
+    sharpe,
+    sortino,
+    calmar,
+    recoveryFactor,
+    volatilityAnnualPct,
+    bestTradeR: rvals.length ? Math.max(...rvals) : 0,
+    worstTradeR: rvals.length ? Math.min(...rvals) : 0,
+    avgTradeR,
+    stdevTradeR,
+    maxWinStreak,
+    maxLossStreak,
+    tradesPerDay: days.length ? perTrade.length / days.length : 0,
+    exposurePct: tradingDays > 0 && spanDays > 0 ? Math.min(100, (days.length / Math.max(1, spanDays)) * 100) : 0,
+    curve,
+  };
+
   return {
+    perf,
+
     n, wins, losses, open: openCount, winRate, ciLow, ciHigh,
     smallSample: n < 30,
     edgeProven: n > 0 && ciLow > breakevenWinRate,

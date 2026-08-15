@@ -146,6 +146,74 @@ const QuantPanel = ({ trades, settings = DEFAULT_QUANT_SETTINGS, label }: QuantP
           </div>
         </Card>
       </div>
+
+      {/* 5. Backtest performance report */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+        <Card title="returns">
+          <Stat label="start equity" value={money(m.perf.startEquity)} tone="muted" />
+          <Stat label="end equity" value={money(m.perf.endEquity)} tone={m.perf.netProfitDollar > 0 ? "pos" : "neg"} />
+          <Stat label="net profit" value={`${money(m.perf.netProfitDollar)} · ${fmt(m.perf.netProfitPct, 1)}%`} tone={m.perf.netProfitDollar > 0 ? "pos" : "neg"} />
+          <Stat label="cagr" value={`${fmt(m.perf.cagrPct, 1)}%`} tone={m.perf.cagrPct > 0 ? "pos" : "neg"} />
+          <Stat label="periode" value={`${fmt(m.perf.years, 2)} tahun · ${m.perf.curve.length} hari trading`} tone="muted" />
+          <Stat label="profit factor (gross)" value={fmt(m.profitFactorGross)} />
+        </Card>
+
+        <Card title="risk / drawdown">
+          <Stat label="max drawdown" value={`${fmt(m.perf.maxDrawdownPct, 1)}% · ${money(m.perf.maxDrawdownDollar)}`} tone="neg" />
+          <Stat label="dd duration" value={`${m.perf.maxDrawdownDurationDays} hari`} tone="muted" />
+          <Stat label="annual volatility" value={`${fmt(m.perf.volatilityAnnualPct, 1)}%`} tone="muted" />
+          <Stat label="recovery factor" value={fmt(m.perf.recoveryFactor)} tone={m.perf.recoveryFactor > 1 ? "pos" : "neg"} />
+          <Stat label="max win / loss streak" value={`${m.perf.maxWinStreak} / ${m.perf.maxLossStreak}`} />
+          <Stat label="exposure (hari aktif)" value={`${fmt(m.perf.exposurePct, 1)}%`} tone="muted" />
+        </Card>
+
+        <Card title="risk-adjusted">
+          <Stat label="sharpe (annualised)" value={fmt(m.perf.sharpe)} tone={m.perf.sharpe > 1 ? "pos" : m.perf.sharpe > 0 ? undefined : "neg"} />
+          <Stat label="sortino" value={fmt(m.perf.sortino)} tone={m.perf.sortino > 1 ? "pos" : m.perf.sortino > 0 ? undefined : "neg"} />
+          <Stat label="calmar" value={fmt(m.perf.calmar)} tone={m.perf.calmar > 1 ? "pos" : undefined} />
+          <Stat label="avg trade" value={`${fmt(m.perf.avgTradeR)} R`} tone={m.perf.avgTradeR > 0 ? "pos" : "neg"} />
+          <Stat label="stdev per trade" value={`${fmt(m.perf.stdevTradeR)} R`} tone="muted" />
+          <Stat label="best / worst trade" value={`${fmt(m.perf.bestTradeR)}R / ${fmt(m.perf.worstTradeR)}R`} tone="muted" />
+          <Stat label="trades / hari" value={fmt(m.perf.tradesPerDay, 2)} tone="muted" />
+        </Card>
+
+        <Card title="equity curve">
+          {m.perf.curve.length > 1 ? (
+            <>
+              <svg viewBox="0 0 100 40" preserveAspectRatio="none" className="w-full h-[96px]">
+                {(() => {
+                  const eq = m.perf.curve.map((p) => p.equity);
+                  const lo = Math.min(m.perf.startEquity, ...eq);
+                  const hi = Math.max(m.perf.startEquity, ...eq);
+                  const span = hi - lo || 1;
+                  const pts = eq
+                    .map((v, i) => `${(i / (eq.length - 1)) * 100},${40 - ((v - lo) / span) * 40}`)
+                    .join(" ");
+                  const base = 40 - ((m.perf.startEquity - lo) / span) * 40;
+                  return (
+                    <>
+                      <line x1="0" y1={base} x2="100" y2={base} stroke="currentColor" strokeWidth="0.3" className="text-muted-foreground/50" strokeDasharray="2 2" />
+                      <polyline
+                        points={pts}
+                        fill="none"
+                        strokeWidth="1"
+                        vectorEffect="non-scaling-stroke"
+                        className={m.perf.netProfitDollar >= 0 ? "stroke-emerald-500" : "stroke-red-500"}
+                      />
+                    </>
+                  );
+                })()}
+              </svg>
+              <p className="text-[9px] text-muted-foreground">
+                {m.perf.curve[0].date} → {m.perf.curve[m.perf.curve.length - 1].date}
+              </p>
+            </>
+          ) : (
+            <p className="text-[10px] text-muted-foreground">butuh minimal 2 hari trading.</p>
+          )}
+        </Card>
+      </div>
+
     </div>
   );
 };

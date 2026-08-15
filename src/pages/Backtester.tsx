@@ -12,7 +12,39 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import NYOrbM15Dashboard from "@/components/NYOrbM15Dashboard";
 import QuantPanel from "@/components/QuantPanel";
 import { analyzeNYOrbM15, nyOrbQuantTrades, type NYOrbResult } from "@/lib/ny-orb-m15";
-import { DEFAULT_QUANT_SETTINGS } from "@/lib/quant-metrics";
+import PullbackReport from "@/components/PullbackReport";
+import { analyzePullback, type PullbackResult } from "@/lib/pullback-analysis";
+import { DEFAULT_QUANT_SETTINGS, type QuantTrade } from "@/lib/quant-metrics";
+
+type Strategy = "ny-orb-m15" | "pullback-50";
+
+const STRATEGY_OPTIONS: { value: Strategy; label: string; desc: string }[] = [
+  {
+    value: "ny-orb-m15",
+    label: "ny open orb m15",
+    desc: "opening range 09:30–09:45 ET dari 3 candle m5 · breakout by wick · target 0.5 × extension orb · risk fix $100",
+  },
+  {
+    value: "pullback-50",
+    label: "pullback 50%",
+    desc: "momentum candle m15 (super body) · entry di 50% range candle trigger · sl di ekstrem candle · target rr 1:1",
+  },
+];
+
+const pullbackQuantTrades = (r: PullbackResult): QuantTrade[] =>
+  r.trades.map((t) => ({
+    date: t.date,
+    side: t.direction === "bullish" ? "long" : "short",
+    entry: t.entry,
+    risk: Math.abs(t.entry - t.stop),
+    outcome: t.outcome,
+    rMultiple:
+      t.outcome === "open"
+        ? undefined
+        : t.outcome === "win"
+        ? Math.abs(t.target - t.entry) / Math.max(1e-9, Math.abs(t.entry - t.stop))
+        : -1,
+  }));
 
 const DAY_OPTIONS = [
   { value: "20", label: "1 month" },
@@ -34,7 +66,9 @@ const Backtester = () => {
   const [symbol, setSymbol] = useState("NQ");
   const [maxDays, setMaxDays] = useState("60");
   const [loading, setLoading] = useState(false);
+  const [strategy, setStrategy] = useState<Strategy>("ny-orb-m15");
   const [result, setResult] = useState<NYOrbResult | null>(null);
+  const [pullback, setPullback] = useState<PullbackResult | null>(null);
   const [ranSymbol, setRanSymbol] = useState("NQ");
   const [ranDays, setRanDays] = useState(60);
 
@@ -75,15 +109,22 @@ const Backtester = () => {
     if (!ticker) return;
     setLoading(true);
     setResult(null);
+    setPullback(null);
     try {
       const days = parseInt(maxDays);
       const json: any = await fetchMarketData(ticker, days);
       if (json?.status === "error") { toast.error(json.message || "api error"); return; }
       const values = json?.values;
       if (!Array.isArray(values) || values.length === 0) { toast.error("no data returned"); return; }
-      const a = analyzeNYOrbM15(values, days, [1, 2, 3, 4, 5], 0.6, ticker);
-      if (a.totalDays === 0) { toast.error("not enough session data"); return; }
-      setResult(a);
+      if (strategy === "pullback-50") {
+        const p = analyzePullback(values, { maxDays: days });
+        if (p.totalDays === 0) { toast.error("not enough session data"); return; }
+        setPullback(p);
+      } else {
+        const a = analyzeNYOrbM15(values, days, [1, 2, 3, 4, 5], 0.6, ticker);
+        if (a.totalDays === 0) { toast.error("not enough session data"); return; }
+        setResult(a);
+      }
       setRanSymbol(ticker);
       setRanDays(days);
     } catch (e: any) {
@@ -93,6 +134,7 @@ const Backtester = () => {
     }
   };
 
+  const activeStrategy = STRATEGY_OPTIONS.find((s) => s.value === strategy)!;
   const rangeLabel = DAY_OPTIONS.find((d) => d.value === String(ranDays))?.label ?? `${ranDays} days`;
 
   return (
@@ -103,13 +145,24 @@ const Backtester = () => {
       <main className="flex-1 min-w-0 overflow-y-auto">
         <div className="max-w-6xl mx-auto p-4 lg:p-6 space-y-4">
           <div>
-            <h1 className="text-[17px] font-semibold text-foreground lowercase">ny open orb m15 probabilities</h1>
-            <p className="text-[12px] text-muted-foreground mt-0.5">
-              opening range 09:30–09:45 ET dari 3 candle m5 · breakout by wick · target 0.5 × extension orb · risk fix $100
-            </p>
+            <h1 className="text-[17px] font-semibold text-foreground lowercase">backtester — {activeStrategy.label}</h1>
+            <p className="text-[12px] text-muted-foreground mt-0.5">{activeStrategy.desc}</p>
           </div>
 
           <div className="rounded-xl border border-border bg-card p-3 flex flex-wrap items-end gap-3">
+            <div className="space-y-1">
+              <p className="text-[11px] text-muted-foreground">strategy</p>
+              <Select value={strategy} onValueChange={(v) => setStrategy(v as Strategy)}>
+                <SelectTrigger className="w-52 bg-input border-border text-[13px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STRATEGY_OPTIONS.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-1">
               <p className="text-[11px] text-muted-foreground">ticker</p>
               <Input
@@ -165,9 +218,18 @@ const Backtester = () => {
             </>
           )}
 
-          {!loading && !result && (
+          {!loading && pullback && (
+            <>
+              <PullbackReport result={pullback} symbol={ranSymbol} dateRange={rangeLabel} bodyThresholdPct={70} />
+              {pullback.trades.length > 0 && (
+                <QuantPanel trades={pullbackQuantTrades(pullback)} settings={DEFAULT_QUANT_SETTINGS} label="pullback 50%" />
+              )}
+            </>
+          )}
+
+          {!loading && !result && !pullback && (
             <div className="border border-dashed border-border rounded-xl p-10 text-center">
-              <p className="text-[13px] text-muted-foreground">pilih ticker lalu jalankan backtest untuk melihat probabilitas orb high/low formed first</p>
+              <p className="text-[13px] text-muted-foreground">pilih strategy + ticker lalu jalankan backtest untuk melihat statistik lengkap</p>
             </div>
           )}
         </div>
