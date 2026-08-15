@@ -129,6 +129,9 @@ export interface PerfMetrics {
   tradesPerDay: number;
   exposurePct: number;
   curve: PerfPoint[];
+}
+
+
 
 
 /** Wilson score interval for a binomial proportion (95%). */
