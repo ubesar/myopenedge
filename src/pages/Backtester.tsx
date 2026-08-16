@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import NYOrbM15Dashboard from "@/components/NYOrbM15Dashboard";
-import QuantPanel from "@/components/QuantPanel";
+import BacktestReport from "@/components/BacktestReport";
 import { analyzeNYOrbM15, nyOrbQuantTrades, type NYOrbResult } from "@/lib/ny-orb-m15";
 import PullbackReport from "@/components/PullbackReport";
 import { analyzePullback, type PullbackResult } from "@/lib/pullback-analysis";
@@ -143,7 +143,7 @@ const Backtester = () => {
       <AppNavSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
 
       <main className="flex-1 min-w-0 overflow-y-auto">
-        <div className="max-w-6xl mx-auto p-4 lg:p-6 space-y-4">
+        <div className="max-w-7xl mx-auto p-3 lg:p-4 space-y-3">
           <div>
             <h1 className="text-[17px] font-semibold text-foreground lowercase">backtester — {activeStrategy.label}</h1>
             <p className="text-[12px] text-muted-foreground mt-0.5">{activeStrategy.desc}</p>
@@ -201,30 +201,34 @@ const Backtester = () => {
           )}
 
           {!loading && result && (
-            <>
-              <NYOrbM15Dashboard
-                result={result}
-                symbol={ranSymbol}
-                dateRange={rangeLabel}
-                weekdays="monday, tuesday, wednesday, thursday, friday"
-              />
-              {result.trades.length > 0 && (
-                <QuantPanel
-                  trades={nyOrbQuantTrades(result) as any}
-                  settings={DEFAULT_QUANT_SETTINGS}
-                  label="ny open orb m15"
+            <BacktestReport
+              trades={nyOrbQuantTrades(result) as any}
+              settings={DEFAULT_QUANT_SETTINGS}
+              label="ny open orb m15"
+              symbol={ranSymbol}
+              dateRange={rangeLabel}
+              analysis={
+                <NYOrbM15Dashboard
+                  result={result}
+                  symbol={ranSymbol}
+                  dateRange={rangeLabel}
+                  weekdays="monday, tuesday, wednesday, thursday, friday"
                 />
-              )}
-            </>
+              }
+            />
           )}
 
           {!loading && pullback && (
-            <>
-              <PullbackReport result={pullback} symbol={ranSymbol} dateRange={rangeLabel} bodyThresholdPct={70} />
-              {pullback.trades.length > 0 && (
-                <QuantPanel trades={pullbackQuantTrades(pullback)} settings={DEFAULT_QUANT_SETTINGS} label="pullback 50%" />
-              )}
-            </>
+            <BacktestReport
+              trades={pullbackQuantTrades(pullback)}
+              settings={DEFAULT_QUANT_SETTINGS}
+              label="pullback 50%"
+              symbol={ranSymbol}
+              dateRange={rangeLabel}
+              analysis={
+                <PullbackReport result={pullback} symbol={ranSymbol} dateRange={rangeLabel} bodyThresholdPct={70} />
+              }
+            />
           )}
 
           {!loading && !result && !pullback && (
