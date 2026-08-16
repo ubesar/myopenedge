@@ -1,15 +1,16 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Eye, Pencil, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase as _supaClient } from "@/integrations/supabase/client";
+// @ts-ignore - some tables not in generated types
+const supabase: any = _supaClient as any;
+
 import TradeDetailDialog from "./TradeDetailDialog";
 import { resolveTradeScreenshotUrl } from "@/lib/trade-screenshot-url";
 
 interface Trade {
   id: string;
-  pnl_gross: number;
   pnl_net: number;
-  fees: number | null;
   side: string;
   close_time: string;
   open_time: string;
@@ -18,8 +19,6 @@ interface Trade {
   qty?: number;
   notes?: string | null;
 }
-
-const netPnl = (t: Trade) => t.pnl_gross - (t.fees || 0);
 
 interface Attachment {
   id: string;
@@ -88,13 +87,11 @@ const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogPr
   }, [open, loadDayAttachments]);
 
   const stats = useMemo(() => {
-    const winners = dayTrades.filter((t) => netPnl(t) > 0).length;
-    const losers = dayTrades.filter((t) => netPnl(t) < 0).length;
-    const grossPnl = dayTrades.reduce((s, t) => s + t.pnl_gross, 0);
-    const totalFees = dayTrades.reduce((s, t) => s + (t.fees || 0), 0);
-    const totalPnl = grossPnl - totalFees;
+    const winners = dayTrades.filter((t) => t.pnl_net > 0).length;
+    const losers = dayTrades.filter((t) => t.pnl_net < 0).length;
+    const totalPnl = dayTrades.reduce((s, t) => s + t.pnl_net, 0);
     const winRate = dayTrades.length > 0 ? Math.round((winners / dayTrades.length) * 100) : 0;
-    return { total: dayTrades.length, winners, losers, grossPnl, totalFees, totalPnl, winRate };
+    return { total: dayTrades.length, winners, losers, totalPnl, winRate };
   }, [dayTrades]);
 
   const fmtDate = (d: string) => {
@@ -175,8 +172,8 @@ const DayDetailDialog = ({ open, onOpenChange, date, trades }: DayDetailDialogPr
                             </span>
                           </td>
                           <td className="px-4 py-3 text-center text-foreground">{t.qty || 1}</td>
-                          <td className={`px-4 py-3 font-bold ${netPnl(t) >= 0 ? "text-green-400" : "text-red-400"}`}>
-                            {fmtPnl(netPnl(t))}
+                          <td className={`px-4 py-3 font-bold ${t.pnl_net >= 0 ? "text-green-400" : "text-red-400"}`}>
+                            {fmtPnl(t.pnl_net)}
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">

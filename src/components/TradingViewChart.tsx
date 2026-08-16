@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { computeMomentumFlags, computeMomentumFlagsByDay, momentumColor } from "@/lib/momentum-candle";
 import {
   createChart,
   ColorType,
@@ -8,13 +7,9 @@ import {
   CandlestickSeries,
   HistogramSeries,
   LineSeries,
-  BaselineSeries,
-  createSeriesMarkers,
   type IChartApi,
   type ISeriesApi,
-  type ISeriesMarkersPluginApi,
   type CandlestickData,
-  type SeriesMarker,
   type Time,
 } from "lightweight-charts";
 
@@ -23,18 +18,16 @@ interface TradingViewChartProps {
   interval: string;
   showIB?: boolean;
   showMC?: boolean;
-  showPB?: boolean;
+  mccBodyRatio?: number;
 }
 
-const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, showPB = false }: TradingViewChartProps) => {
-
+const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, mccBodyRatio = 0.70 }: TradingViewChartProps) => {
+  const MCC_BODY_RATIO = mccBodyRatio;
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   const ibSeriesListRef = useRef<ISeriesApi<"Line">[]>([]);
-  const pbSeriesListRef = useRef<ISeriesApi<"Line" | "Baseline">[]>([]);
-  const pbMarkersRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null);
   const [chartReady, setChartReady] = useState(false);
   const [ohlc, setOhlc] = useState<{
     o: number; h: number; l: number; c: number; change: number; changePct: number;
@@ -304,197 +297,52 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
           }
         }
 
-        // Momentum Candle (big body) — body vs SMA(15) of body, like the
-        // "Momentum Candle" indicator. Super body (> 1.5x avg) = momentum candle.
+        // MCC (Momentum Candle Continuation): highlight ONLY the NY Open candle (09:30)
+        // jika body >= 70% dari total range candle.
         if (showMC && interval !== "1day" && sorted.length > 0) {
-          const ohlcSeries = sorted.map((b) => ({
-            open: parseFloat(b.open),
-            high: parseFloat(b.high),
-            low: parseFloat(b.low),
-            close: parseFloat(b.close),
-          }));
-          const flags = computeMomentumFlags(ohlcSeries);
+          const dayBarsMap: Record<string, typeof sorted> = {};
+          for (const bar of sorted) {
+            const date = bar.datetime.split(" ")[0];
+            if (!dayBarsMap[date]) dayBarsMap[date] = [];
+            dayBarsMap[date].push(bar);
+          }
 
+          const mccTimestamps = new Map<number, boolean>();
           const toTs = (dt: string) =>
             Math.floor(new Date(dt.replace(" ", "T") + "Z").getTime() / 1000);
 
-          const colorByTs = new Map<number, string>();
-          sorted.forEach((bar, i) => {
-            const up = parseFloat(bar.close) >= parseFloat(bar.open);
-            colorByTs.set(toTs(bar.datetime), momentumColor(flags[i], up));
-          });
+          for (const date of Object.keys(dayBarsMap).sort()) {
+            const bars = dayBarsMap[date];
+            // Cari candle pembukaan NY (09:30 ET)
+            const opening = bars.find(b => b.datetime.split(" ")[1] === "09:30:00");
+            if (!opening) continue;
+
+            const o = parseFloat(opening.open);
+            const h = parseFloat(opening.high);
+            const l = parseFloat(opening.low);
+            const c = parseFloat(opening.close);
+
+            const body = Math.abs(c - o);
+            const range = h - l;
+            if (range <= 0) continue;
+
+            // Hanya valid jika body >= 70% dari range candle pembukaan
+            if (body / range >= MCC_BODY_RATIO) {
+              const isBull = c >= o;
+              mccTimestamps.set(toTs(opening.datetime), isBull);
+            }
+          }
 
           const recolored = candles.map((c) => {
             const ts = c.time as number;
-            const color = colorByTs.get(ts);
-            if (color) return { ...c, color, borderColor: color, wickColor: color };
+            if (mccTimestamps.has(ts)) {
+              const isBull = mccTimestamps.get(ts)!;
+              const color = isBull ? "#00FF66" : "#FF00FF";
+              return { ...c, color, borderColor: color, wickColor: color };
+            }
             return c;
           });
           seriesRef.current!.setData(recolored);
-
-        }
-
-
-        // Clear previous PB50 overlays
-        for (const s of pbSeriesListRef.current) {
-          try { chart.removeSeries(s); } catch {}
-        }
-        pbSeriesListRef.current = [];
-        if (pbMarkersRef.current) {
-          try { pbMarkersRef.current.setMarkers([]); } catch {}
-        }
-
-        // PB50 — 50% pullback strategy markers (15m only, intraday)
-        if (showPB && interval === "15min" && sorted.length > 0) {
-          const MAX_LOOKAHEAD = 2; // candle 2 & 3
-          const dayBars: Record<string, typeof sorted> = {};
-          for (const bar of sorted) {
-            const t = bar.datetime.split(" ")[1];
-            // Match /app: session 09:30–16:00 NY only
-            if (t < "09:30:00" || t >= "16:00:00") continue;
-            const date = bar.datetime.split(" ")[0];
-            if (!dayBars[date]) dayBars[date] = [];
-            dayBars[date].push(bar);
-          }
-          const toTs = (dt: string) =>
-            Math.floor(new Date(dt.replace(" ", "T") + "Z").getTime() / 1000) as Time;
-
-          // Momentum flags (body vs SMA15 of body) computed across the continuous series
-          const pbDates = Object.keys(dayBars).sort();
-          const pbFlagsByDay = computeMomentumFlagsByDay(
-            pbDates.map((d) =>
-              dayBars[d].map((b) => ({
-                open: parseFloat(b.open),
-                high: parseFloat(b.high),
-                low: parseFloat(b.low),
-                close: parseFloat(b.close),
-              }))
-            )
-          );
-
-          const pbMarkers: SeriesMarker<Time>[] = [];
-          const lineOpts = { priceScaleId: "right", lastValueVisible: false, crosshairMarkerVisible: false, priceLineVisible: false };
-
-          for (let dIdx = 0; dIdx < pbDates.length; dIdx++) {
-            const date = pbDates[dIdx];
-            const bars = dayBars[date];
-            const dayFlags = pbFlagsByDay[dIdx];
-            // Only consider bars within 09:30–13:00 NY as candle 1
-            let gateUntil = -1;
-            for (let i = 0; i < bars.length - 1; i++) {
-              if (i <= gateUntil) continue;
-              const b = bars[i];
-              const t = b.datetime.split(" ")[1];
-              if (t < "09:30:00" || t >= "13:00:00") continue;
-
-              const o = parseFloat(b.open);
-              const h = parseFloat(b.high);
-              const l = parseFloat(b.low);
-              const c = parseFloat(b.close);
-              const range = h - l;
-              if (range <= 0 || c === o) continue;
-              const flag = dayFlags[i];
-              if (!flag?.isSuper || !flag.direction) continue;
-
-
-              const isBull = c > o;
-              const entry = (h + l) / 2;
-              const stop = isBull ? l : h;
-              const target = isBull ? h : l;
-
-              // Check trigger on candle 2 / 3
-              let triggered = false;
-              let invalidated = false;
-              let resolvedIdx = -1;
-              const deadline = Math.min(i + MAX_LOOKAHEAD, bars.length - 1);
-              for (let j = i + 1; j < bars.length; j++) {
-                const nb = bars[j];
-                const nh = parseFloat(nb.high);
-                const nl = parseFloat(nb.low);
-                const no = parseFloat(nb.open);
-                const nc = parseFloat(nb.close);
-                if (!triggered) {
-                  const trig = isBull ? nl <= entry : nh >= entry;
-                  if (!trig) {
-                    // invalidate if untriggered bar is itself a momentum candle
-                    if (dayFlags[j]?.isSuper) {
-                      invalidated = true;
-                      break;
-                    }
-
-                    if (j >= deadline) break;
-                    continue;
-                  }
-                  triggered = true;
-                }
-                const hitStop = isBull ? nl <= stop : nh >= stop;
-                const hitTarget = isBull ? nh >= target : nl <= target;
-                if (hitStop || hitTarget) { resolvedIdx = j; break; }
-              }
-              if (invalidated) continue;
-              if (!triggered) continue;
-              // Match /app: skip "open" outcomes (triggered but never hit SL/TP)
-              if (resolvedIdx < 0) continue;
-
-              const startTs = toTs(b.datetime);
-              const endTs = toTs(bars[resolvedIdx].datetime);
-
-              // TradingView-style position tool: shaded risk (red) & reward (green) zones
-              const zoneOpts = {
-                ...lineOpts,
-                lineWidth: 1 as const,
-                baseLineVisible: false,
-                pointMarkersVisible: false,
-                title: "",
-              };
-
-              // risk zone: entry -> SL
-              const riskSeries = chart.addSeries(BaselineSeries, {
-                ...zoneOpts,
-                baseValue: { type: "price" as const, price: entry },
-                topLineColor: "rgba(239,83,80,0.9)",
-                topFillColor1: "rgba(239,83,80,0.28)",
-                topFillColor2: "rgba(239,83,80,0.28)",
-                bottomLineColor: "rgba(239,83,80,0.9)",
-                bottomFillColor1: "rgba(239,83,80,0.28)",
-                bottomFillColor2: "rgba(239,83,80,0.28)",
-              });
-              riskSeries.setData([{ time: startTs, value: stop }, { time: endTs, value: stop }]);
-              pbSeriesListRef.current.push(riskSeries);
-
-              // reward zone: entry -> TP
-              const rewardSeries = chart.addSeries(BaselineSeries, {
-                ...zoneOpts,
-                baseValue: { type: "price" as const, price: entry },
-                topLineColor: "rgba(38,166,154,0.9)",
-                topFillColor1: "rgba(38,166,154,0.25)",
-                topFillColor2: "rgba(38,166,154,0.25)",
-                bottomLineColor: "rgba(38,166,154,0.9)",
-                bottomFillColor1: "rgba(38,166,154,0.25)",
-                bottomFillColor2: "rgba(38,166,154,0.25)",
-              });
-              rewardSeries.setData([{ time: startTs, value: target }, { time: endTs, value: target }]);
-              pbSeriesListRef.current.push(rewardSeries);
-
-              // entry line (dashed) across the position box
-              const entrySeries = chart.addSeries(LineSeries, { ...lineOpts, color: "#c9d1e1", lineWidth: 1, lineStyle: 2, title: "" });
-              entrySeries.setData([{ time: startTs, value: entry }, { time: endTs, value: entry }]);
-              pbSeriesListRef.current.push(entrySeries);
-
-              // no text labels — zones only
-
-              gateUntil = resolvedIdx;
-            }
-          }
-
-          if (pbMarkers.length > 0) {
-            pbMarkers.sort((a, b) => (a.time as number) - (b.time as number));
-            if (!pbMarkersRef.current) {
-              pbMarkersRef.current = createSeriesMarkers(seriesRef.current!, pbMarkers);
-            } else {
-              pbMarkersRef.current.setMarkers(pbMarkers);
-            }
-          }
         }
 
         if (candles.length > 0) {
@@ -516,7 +364,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
     };
 
     fetchData();
-  }, [symbol, interval, chartReady, showIB, showMC, showPB]);
+  }, [symbol, interval, chartReady, showIB, showMC, mccBodyRatio]);
 
   const isPositive = ohlc ? ohlc.change >= 0 : true;
 
