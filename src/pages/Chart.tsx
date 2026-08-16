@@ -22,10 +22,10 @@ const Chart = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [symbol, setSymbol] = useState("QQQ");
   const [symbolInput, setSymbolInput] = useState("QQQ");
-  const [interval, setInterval] = useState("5min");
+  const [interval, setInterval] = useState("15min");
   const [showIB, setShowIB] = useState(true);
   const [showMC, setShowMC] = useState(true);
-  const [mccBodyRatio, setMccBodyRatio] = useState(0.70);
+  const [showPB, setShowPB] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -107,34 +107,30 @@ const Chart = () => {
 
           <button
             onClick={() => setShowMC(!showMC)}
+            title="momentum candle — body > 1.5× avg body sma(15)"
             className={`px-2 py-1 rounded text-[11px] font-medium transition-colors shrink-0 ${
               showMC ? "text-white" : "text-gray-500 hover:text-gray-300"
             }`}
             style={showMC ? { background: "#2962FF" } : {}}
           >
-            MCC
+            MC
           </button>
 
-          {showMC && (
-            <div className="flex items-center gap-1 shrink-0">
-              <span className="text-[10px] text-gray-500">body</span>
-              <select
-                value={mccBodyRatio}
-                onChange={(e) => setMccBodyRatio(parseFloat(e.target.value))}
-                className="px-1.5 py-1 rounded text-[11px] font-medium text-white border-none outline-none cursor-pointer"
-                style={{ background: "#2A2E39" }}
-              >
-                {[0.50, 0.55, 0.60, 0.65, 0.70].map((r) => (
-                  <option key={r} value={r}>≥ {Math.round(r * 100)}%</option>
-                ))}
-              </select>
-            </div>
-          )}
+          <button
+            onClick={() => setShowPB(!showPB)}
+            title="50% pullback strategy (15m only)"
+            className={`px-2 py-1 rounded text-[11px] font-medium transition-colors shrink-0 ${
+              showPB ? "text-white" : "text-gray-500 hover:text-gray-300"
+            }`}
+            style={showPB ? { background: "#2962FF" } : {}}
+          >
+            PB50
+          </button>
 
         </div>
 
         <div className="flex-1 min-h-0">
-          <TradingViewChart symbol={symbol} interval={interval} showIB={showIB} showMC={showMC} mccBodyRatio={mccBodyRatio} />
+          <TradingViewChart symbol={symbol} interval={interval} showIB={showIB} showMC={showMC} showPB={showPB} />
         </div>
       </div>
     </div>
