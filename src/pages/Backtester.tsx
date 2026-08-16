@@ -419,6 +419,11 @@ const Backtester = () => {
     });
   }, [result]);
 
+  const metrics = useMemo(
+    () => (result ? computeAdvancedMetrics(result.trades, Number(initialCapital) || 10000) : null),
+    [result, initialCapital]
+  );
+
   const pnlDistribution = useMemo(() => {
     if (!result) return [];
     const buckets = [-300, -200, -100, 0, 100, 200, 300, 400];
