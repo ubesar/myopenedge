@@ -268,6 +268,7 @@ const Backtester = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [symbol, setSymbol] = useState("QQQ");
   const [strategy, setStrategy] = useState<StrategyKey>("pb50");
+  const [initialCapital, setInitialCapital] = useState("10000");
   const [orbSide, setOrbSide] = useState<OrbSide>("both");
   const [orbMarket, setOrbMarket] = useState<OrbMarket>("us");
   const [orbRisk, setOrbRisk] = useState("100");
