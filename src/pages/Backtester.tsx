@@ -773,6 +773,103 @@ const Backtester = () => {
 
 
 
+              {/* Advanced performance metrics */}
+              {metrics && (
+                <Card className="p-4 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+                    <div>
+                      <h2 className="text-sm font-semibold lowercase">performance metrics</h2>
+                      <p className="text-[11px] text-muted-foreground lowercase">
+                        risk-adjusted metrics ala investing-algorithm-framework · basis modal awal ${metrics.initialCapital.toLocaleString()} ·
+                        {" "}{metrics.periodDays} hari kalender · {metrics.daysInMarket} hari ada trade
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs lowercase">modal awal ($)</Label>
+                      <Input
+                        type="number"
+                        value={initialCapital}
+                        onChange={(e) => setInitialCapital(e.target.value)}
+                        className="w-40"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    <StatCard label="total return" value={`${metrics.totalReturnPct.toFixed(2)}%`} accent={metrics.totalReturnPct >= 0 ? "pos" : "neg"} />
+                    <StatCard label="cagr" value={`${metrics.cagrPct.toFixed(2)}%`} accent={metrics.cagrPct >= 0 ? "pos" : "neg"} />
+                    <StatCard label="sharpe" value={metrics.sharpeRatio.toFixed(2)} accent={metrics.sharpeRatio >= 1 ? "pos" : "neg"} />
+                    <StatCard label="sortino" value={metrics.sortinoRatio.toFixed(2)} accent={metrics.sortinoRatio >= 1 ? "pos" : "neg"} />
+                    <StatCard label="calmar" value={metrics.calmarRatio.toFixed(2)} accent={metrics.calmarRatio >= 1 ? "pos" : "neg"} />
+                    <StatCard label="volatility (ann.)" value={`${metrics.annualVolatilityPct.toFixed(1)}%`} />
+                    <StatCard label="max drawdown %" value={`-${metrics.maxDrawdownPct.toFixed(2)}%`} accent="neg" />
+                    <StatCard label="dd duration" value={`${metrics.maxDrawdownDurationDays}d`} accent="neg" />
+                    <StatCard label="recovery factor" value={metrics.recoveryFactor.toFixed(2)} accent={metrics.recoveryFactor >= 1 ? "pos" : "neg"} />
+                    <StatCard label="exposure" value={`${metrics.exposurePct.toFixed(1)}%`} />
+                    <StatCard label="trades / year" value={metrics.tradesPerYear.toFixed(0)} />
+                    <StatCard label="positive days" value={`${metrics.positiveDaysPct.toFixed(1)}%`} accent={metrics.positiveDaysPct >= 50 ? "pos" : "neg"} />
+                    <StatCard label="win streak" value={String(metrics.winStreak)} accent="pos" />
+                    <StatCard label="loss streak" value={String(metrics.lossStreak)} accent="neg" />
+                    <StatCard label="avg win %" value={`${metrics.avgWinPct.toFixed(2)}%`} accent="pos" />
+                    <StatCard label="avg loss %" value={`${metrics.avgLossPct.toFixed(2)}%`} accent="neg" />
+                    <StatCard label="best trade" value={`${metrics.bestTradePct.toFixed(2)}%`} accent="pos" />
+                    <StatCard label="worst trade" value={`${metrics.worstTradePct.toFixed(2)}%`} accent="neg" />
+                    <StatCard label="final capital" value={`$${metrics.finalCapital.toFixed(0)}`} accent={metrics.finalCapital >= metrics.initialCapital ? "pos" : "neg"} />
+                    {metrics.avgRMultiple != null && (
+                      <StatCard label="avg r" value={`${metrics.avgRMultiple.toFixed(2)}R`} accent={metrics.avgRMultiple >= 0 ? "pos" : "neg"} />
+                    )}
+                    {metrics.bestMonth && (
+                      <StatCard label={`best month · ${metrics.bestMonth.month}`} value={`$${metrics.bestMonth.pnl.toFixed(0)}`} accent="pos" />
+                    )}
+                    {metrics.worstMonth && (
+                      <StatCard label={`worst month · ${metrics.worstMonth.month}`} value={`$${metrics.worstMonth.pnl.toFixed(0)}`} accent="neg" />
+                    )}
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-semibold mb-2 lowercase">drawdown (%)</h3>
+                    <div className="h-48">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={metrics.equity}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={10} hide />
+                          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                          <Tooltip
+                            contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 12 }}
+                            formatter={(v: any) => [`${v}%`, "drawdown"]}
+                          />
+                          <Bar dataKey="drawdownPct" fill="hsl(var(--destructive))" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  {metrics.monthly.length > 1 && (
+                    <div className="overflow-x-auto">
+                      <h3 className="text-xs font-semibold mb-2 lowercase">monthly returns</h3>
+                      <table className="w-full text-xs">
+                        <thead className="text-muted-foreground border-b border-border">
+                          <tr>
+                            <th className="text-left py-1.5 px-2 lowercase">month</th>
+                            <th className="text-right py-1.5 px-2 lowercase">pnl</th>
+                            <th className="text-right py-1.5 px-2 lowercase">return</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {metrics.monthly.map((m) => (
+                            <tr key={m.month} className="border-b border-border/40">
+                              <td className="py-1.5 px-2">{m.month}</td>
+                              <td className={`py-1.5 px-2 text-right ${m.pnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>${m.pnl.toFixed(0)}</td>
+                              <td className={`py-1.5 px-2 text-right ${m.returnPct >= 0 ? "text-emerald-500" : "text-red-500"}`}>{m.returnPct.toFixed(2)}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </Card>
+              )}
+
               {/* Equity Curve */}
               <Card className="p-4">
                 <h2 className="text-sm font-semibold mb-3 lowercase">equity curve</h2>
