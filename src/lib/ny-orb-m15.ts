@@ -219,10 +219,10 @@ export function analyzeNYOrbM15(
       })),
     };
 
-    // ORB = m15 pertama (09:30–09:45). Momentum candle C1 hanya dicari
-    // dari candle m15 setelah ORB selesai (>= 09:45).
+    // ORB = m15 pertama (09:30–09:45). Entry = break high/low ORB,
+    // SL di 50% (mid) ORB candle, target 1 × extension ORB.
     const postOrbM15 = toM15(session).filter((b) => minutesOf(b.d) >= ORB_END);
-    day.trade = findTrade(date, postOrbM15, bodyRatio, orbHigh, orbLow, orbSize);
+    day.trade = findTrade(date, postOrbM15, orbHigh, orbLow, orbSize);
     days.push(day);
   }
 
@@ -277,70 +277,45 @@ export function analyzeNYOrbM15(
   };
 }
 
-/** C1 momentum candle → C2 pullback → stop order at C1 extreme, target 1 × extension. */
+/**
+ * ORB break engine: buy stop di high ORB (long) / sell stop di low ORB (short),
+ * SL di 50% (mid) candle ORB, target 1 × extension ORB.
+ */
 function findTrade(
   date: string,
   m15: Bar[],
-  bodyRatio: number,
   orbHigh: number,
   orbLow: number,
   orbSize: number,
 ): NYOrbTrade | undefined {
-  for (let i = 0; i < m15.length - 1; i++) {
-    const c1 = m15[i];
-    const range = c1.high - c1.low;
-    if (range <= 0) continue;
-    const body = Math.abs(c1.close - c1.open);
-    if (body / range < bodyRatio) continue;
+  const mid = (orbHigh + orbLow) / 2;
 
-    const side: "long" | "short" = c1.close >= c1.open ? "long" : "short";
-    const c2 = m15[i + 1];
-    const isLong = side === "long";
+  for (let i = 0; i < m15.length; i++) {
+    const b = m15[i];
+    const up = b.high >= orbHigh;
+    const down = b.low <= orbLow;
+    if (!up && !down) continue;
 
-    const entry = isLong ? c1.high : c1.low;
-    // target fix di 0.5 extension range C1 (fib 1.5 dari C1)
-    const target = isLong ? c1.high + range * 0.5 : c1.low - range * 0.5;
-    if (isLong ? target <= entry : target >= entry) continue;
-
-    // C2 must pull back before triggering the stop order
-    const pulledBack = isLong ? c2.low < c1.high : c2.high > c1.low;
-    if (!pulledBack) continue;
-
-    // invalidated: C2 breaks the opposite side of C1 → cancel the pending order
-    const invalidated = isLong ? c2.low < c1.low : c2.high > c1.high;
-    const triggered = isLong ? c2.high >= entry : c2.low <= entry;
-
-    if (invalidated && !triggered) {
-      return {
-        date, side, c1Time: hhmm(c1.d), c2Time: hhmm(c2.d),
-        entry, stop: isLong ? c2.low : c2.high, target, risk: 0,
-        outcome: "cancelled", rMultiple: 0, pnlUsd: 0,
-      };
-    }
-    if (!triggered) {
-      return {
-        date, side, c1Time: hhmm(c1.d), c2Time: hhmm(c2.d),
-        entry, stop: isLong ? c2.low : c2.high, target, risk: 0,
-        outcome: "no-trigger", rMultiple: 0, pnlUsd: 0,
-      };
-    }
-
-    // triggered → SL frozen at the C2 extreme
-    const stop = isLong ? c2.low : c2.high;
+    // both sides in one candle → arah candle yang menentukan
+    const isLong = up && down ? b.close >= b.open : up;
+    const side: "long" | "short" = isLong ? "long" : "short";
+    const entry = isLong ? orbHigh : orbLow;
+    const stop = mid;
+    const target = isLong ? orbHigh + orbSize : orbLow - orbSize;
     const risk = Math.abs(entry - stop);
-    if (risk <= 0) continue;
+    if (risk <= 0) return undefined;
 
     let outcome: NYOrbTrade["outcome"] = "open";
     let rMultiple = 0;
     let exitTime: string | undefined;
 
-    const path = m15.slice(i + 1);
-    for (const b of path) {
-      const hitTp = isLong ? b.high >= target : b.low <= target;
-      const hitSl = isLong ? b.low <= stop : b.high >= stop;
-      if (hitSl && hitTp) { outcome = "loss"; rMultiple = -1; exitTime = hhmm(b.d); break; }
-      if (hitTp) { outcome = "win"; rMultiple = Math.abs(target - entry) / risk; exitTime = hhmm(b.d); break; }
-      if (hitSl) { outcome = "loss"; rMultiple = -1; exitTime = hhmm(b.d); break; }
+    const path = m15.slice(i);
+    for (const p of path) {
+      const hitTp = isLong ? p.high >= target : p.low <= target;
+      const hitSl = isLong ? p.low <= stop : p.high >= stop;
+      if (hitSl && hitTp) { outcome = "loss"; rMultiple = -1; exitTime = hhmm(p.d); break; }
+      if (hitTp) { outcome = "win"; rMultiple = Math.abs(target - entry) / risk; exitTime = hhmm(p.d); break; }
+      if (hitSl) { outcome = "loss"; rMultiple = -1; exitTime = hhmm(p.d); break; }
     }
     if (outcome === "open") {
       const last = path[path.length - 1];
@@ -348,7 +323,12 @@ function findTrade(
       exitTime = hhmm(last.d);
     }
 
-    return { date, side, c1Time: hhmm(c1.d), c2Time: hhmm(c2.d), entry, stop, target, risk, outcome, rMultiple, pnlUsd: rMultiple * FIXED_RISK_USD, exitTime };
+    return {
+      date, side,
+      c1Time: hhmm(m15[0].d), c2Time: hhmm(b.d),
+      entry, stop, target, risk, outcome, rMultiple,
+      pnlUsd: rMultiple * FIXED_RISK_USD, exitTime,
+    };
   }
   return undefined;
 }
