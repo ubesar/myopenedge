@@ -485,47 +485,42 @@ const Backtester = () => {
         {isMobile && (
           <MobileHeader onMenuToggle={() => setMobileOpen(!mobileOpen)} title="backtester" />
         )}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4 max-w-[1400px] w-full mx-auto">
-          <div>
-            <h1 className="text-2xl font-bold lowercase">backtester</h1>
-            <p className="text-sm text-muted-foreground lowercase">
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-3 max-w-[1400px] w-full mx-auto">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <h1 className="text-lg font-bold lowercase">backtester</h1>
+            <p className="text-[11px] text-muted-foreground lowercase">
               fixed $100 risk per trade · analytics dashboard
             </p>
           </div>
 
-          {/* Controls */}
-          <Card className="p-4 space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs lowercase">data source</Label>
+          {/* Controls — single compact row */}
+          <Card className="p-2.5">
+            <div className="flex flex-wrap items-end gap-2">
+              <Field label="data source" className="w-[150px]">
                 <Select value={dataSource} onValueChange={(v) => setDataSource(v as "api" | "csv")}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="api">api key (live data)</SelectItem>
                     <SelectItem value="csv">import csv (ohlc file)</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs lowercase">strategy</Label>
+              </Field>
+              <Field label="strategy" className="w-[190px]">
                 <Select value={strategy} onValueChange={(v) => setStrategy(v as StrategyKey)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pb50">50% pullback strategy</SelectItem>
                     <SelectItem value="ib2575">ib momentum limit (ib25/75)</SelectItem>
                     <SelectItem value="orbm15">orb m15 pullback</SelectItem>
-
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs lowercase">ticker</Label>
-                <Input value={symbol} onChange={(e) => setSymbol(e.target.value)} className="uppercase" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs lowercase">trading days</Label>
+              </Field>
+              <Field label="ticker" className="w-[90px]">
+                <Input value={symbol} onChange={(e) => setSymbol(e.target.value)} className="h-8 text-xs uppercase" />
+              </Field>
+              <Field label="days" className="w-[120px]">
                 <Select value={maxDays} onValueChange={setMaxDays}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="20">1 month</SelectItem>
                     <SelectItem value="60">3 months</SelectItem>
@@ -535,167 +530,139 @@ const Backtester = () => {
                     {dataSource === "csv" && <SelectItem value="0">all data in csv</SelectItem>}
                   </SelectContent>
                 </Select>
-              </div>
+              </Field>
+
               {strategy === "orbm15" ? (
                 <>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs lowercase">market (sesi)</Label>
+                  <Field label="market" className="w-[170px]">
                     <Select value={orbMarket} onValueChange={(v) => setOrbMarket(v as OrbMarket)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="us">us — {ORB_SESSIONS.us.label}</SelectItem>
                         <SelectItem value="idx">idx — {ORB_SESSIONS.idx.label}</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs lowercase">mode setup</Label>
+                  </Field>
+                  <Field label="mode" className="w-[130px]">
                     <Select value={orbSide} onValueChange={(v) => setOrbSide(v as OrbSide)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="both">both (long + short)</SelectItem>
+                        <SelectItem value="both">both</SelectItem>
                         <SelectItem value="long">long only</SelectItem>
                         <SelectItem value="short">short only</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs lowercase">risk / trade ($)</Label>
-                    <Input value={orbRisk} onChange={(e) => setOrbRisk(e.target.value)} inputMode="decimal" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs lowercase">deteksi momentum</Label>
+                  </Field>
+                  <Field label="risk ($)" className="w-[80px]">
+                    <Input value={orbRisk} onChange={(e) => setOrbRisk(e.target.value)} inputMode="decimal" className="h-8 text-xs" />
+                  </Field>
+                  <Field label="momentum" className="w-[165px]">
                     <Select value={orbMomentumMode} onValueChange={(v) => setOrbMomentumMode(v as OrbMomentumMode)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="sma">super body (sma15 × 1.5)</SelectItem>
                         <SelectItem value="ratio">body / range ratio</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
+                  </Field>
                   {orbMomentumMode === "ratio" && (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs lowercase">min body ratio</Label>
+                    <Field label="min body" className="w-[90px]">
                       <Select value={orbBodyRatio} onValueChange={setOrbBodyRatio}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {["0.5", "0.55", "0.6", "0.65", "0.7"].map((v) => (
                             <SelectItem key={v} value={v}>{(parseFloat(v) * 100).toFixed(0)}%</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                    </div>
+                    </Field>
                   )}
                 </>
               ) : strategy === "ib2575" ? (
-                <div className="space-y-1.5">
-                  <Label className="text-xs lowercase">ib window (min)</Label>
+                <Field label="ib window (min)" className="w-[110px]">
                   <Select value={ibWindow} onValueChange={setIbWindow}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="30">30</SelectItem>
                       <SelectItem value="60">60</SelectItem>
                       <SelectItem value="90">90</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </Field>
               ) : dataSource === "csv" ? (
-
                 <>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs lowercase">scan start (06:00 – 24:00)</Label>
-                    <Input
-                      type="time"
-                      step={900}
-                      min="06:00"
-                      max="24:00"
-                      value={csvScanStart}
-                      onChange={(e) => setCsvScanStart(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs lowercase">scan end (max 24:00)</Label>
-                    <Input
-                      type="time"
-                      step={900}
-                      value={csvScanEnd === "24:00" ? "23:59" : csvScanEnd}
-                      onChange={(e) => setCsvScanEnd(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs lowercase">batas tp/sl (pagi berikutnya)</Label>
-                    <Input
-                      type="time"
-                      step={900}
-                      value={csvTpDeadline}
-                      onChange={(e) => setCsvTpDeadline(e.target.value)}
-                    />
-                    <p className="text-[11px] text-muted-foreground lowercase">posisi ditutup di {csvTpDeadline} hari berikutnya</p>
-                  </div>
+                  <Field label="scan start" className="w-[110px]">
+                    <Input type="time" step={900} min="06:00" max="24:00" value={csvScanStart} onChange={(e) => setCsvScanStart(e.target.value)} className="h-8 text-xs" />
+                  </Field>
+                  <Field label="scan end" className="w-[110px]">
+                    <Input type="time" step={900} value={csvScanEnd === "24:00" ? "23:59" : csvScanEnd} onChange={(e) => setCsvScanEnd(e.target.value)} className="h-8 text-xs" />
+                  </Field>
+                  <Field label="batas tp/sl" className="w-[110px]">
+                    <Input type="time" step={900} value={csvTpDeadline} onChange={(e) => setCsvTpDeadline(e.target.value)} className="h-8 text-xs" />
+                  </Field>
                 </>
               ) : (
-                <div className="space-y-1.5">
-                  <Label className="text-xs lowercase">scan session start (ny)</Label>
+                <Field label="scan start (ny)" className="w-[140px]">
                   <Select value={sessionStart} onValueChange={setSessionStart}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="570">09:30 (ny open)</SelectItem>
                       <SelectItem value="240">04:00</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </Field>
               )}
 
+              {dataSource === "csv" && (
+                <>
+                  <Field label="csv m5" className="w-[210px]">
+                    <Input
+                      type="file"
+                      accept=".csv,text/csv"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleCsvFile(f);
+                      }}
+                      className="h-8 text-[11px] py-1 file:text-[11px] file:mr-2 file:border-0 file:bg-secondary file:text-secondary-foreground file:rounded file:px-2 file:py-0.5"
+                    />
+                  </Field>
+                  <Field label="timezone csv" className="w-[150px]">
+                    <Select value={csvOffset} onValueChange={setCsvOffset}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">wita (tanpa shift)</SelectItem>
+                        {[-13, -12, -11, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6].map((h) => (
+                          <SelectItem key={h} value={String(h)}>shift {h > 0 ? `+${h}` : h} jam</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                </>
+              )}
+
+              <Button
+                size="sm"
+                onClick={runBacktest}
+                disabled={loading || (dataSource === "csv" && !csvBars?.length)}
+                className="h-8 text-xs"
+              >
+                {loading ? (
+                  <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />running…</>
+                ) : (
+                  <><Play className="mr-1.5 h-3.5 w-3.5" />run backtest</>
+                )}
+              </Button>
             </div>
 
             {dataSource === "csv" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-border pt-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs lowercase">csv m5 (scan m15 + entry / tp / sl)</Label>
-                  <Input
-                    type="file"
-                    accept=".csv,text/csv"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) handleCsvFile(f);
-                    }}
-                    className="text-xs file:text-xs file:mr-3 file:border-0 file:bg-secondary file:text-secondary-foreground file:rounded file:px-2 file:py-1"
-                  />
-                  <p className="text-[11px] text-muted-foreground lowercase">
-                    {csvM5Bars?.length
-                      ? `${csvM5Name} · ${csvM5Bars.length} bars m5 · ${csvM5Bars[0].datetime.slice(0, 10)} → ${csvM5Bars[csvM5Bars.length - 1].datetime.slice(0, 10)}`
-                      : "format: time,open,high,low,close,volume (ninjatrader export) · m15 dibentuk otomatis pada kelipatan 15 menit"}
-                  </p>
-                </div>
-
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs lowercase">timezone data csv</Label>
-                  <Select value={csvOffset} onValueChange={setCsvOffset}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">wita (waktu asli — tanpa shift)</SelectItem>
-                      {[-13, -12, -11, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6].map((h) => (
-                        <SelectItem key={h} value={String(h)}>shift {h > 0 ? `+${h}` : h} jam</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[11px] text-muted-foreground lowercase">
-                    jam pada csv dianggap wita · re-import file setelah mengubah
-                  </p>
-                </div>
-              </div>
+              <p className="mt-1.5 text-[10px] text-muted-foreground lowercase">
+                {csvM5Bars?.length
+                  ? `${csvM5Name} · ${csvM5Bars.length} bars m5 · ${csvM5Bars[0].datetime.slice(0, 10)} → ${csvM5Bars[csvM5Bars.length - 1].datetime.slice(0, 10)} · posisi ditutup ${csvTpDeadline} hari berikutnya`
+                  : "format: time,open,high,low,close,volume (ninjatrader) · jam csv dianggap wita · re-import setelah ubah timezone"}
+              </p>
             )}
-
-
-            <Button onClick={runBacktest} disabled={loading || (dataSource === "csv" && !csvBars?.length)} className="w-full md:w-auto">
-              {loading ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />running…</>
-              ) : (
-                <><Play className="mr-2 h-4 w-4" />run backtest</>
-              )}
-            </Button>
           </Card>
+
 
           {result && (
             <Tabs defaultValue="overview" className="space-y-3">
