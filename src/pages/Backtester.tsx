@@ -19,6 +19,7 @@ import TradeChartDialog, { type TradeForChart } from "@/components/TradeChartDia
 import { parseCsvBars, type CsvBar } from "@/lib/csv-bars";
 import BacktestCalendar from "@/components/BacktestCalendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { runOrbM15Backtest, segmentOrbStats, ORB_SESSIONS, type OrbTrade, type OrbSide, type OrbMarket, type OrbStats, type OrbMomentumMode } from "@/lib/orb-backtest";
 import { computeAdvancedMetrics } from "@/lib/backtest-metrics";
