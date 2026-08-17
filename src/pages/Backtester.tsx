@@ -697,366 +697,381 @@ const Backtester = () => {
           </Card>
 
           {result && (
-            <>
-              {/* Stat cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                <StatCard label="total pnl" value={`$${result.totalPnl.toFixed(0)}`} accent={result.totalPnl >= 0 ? "pos" : "neg"} icon={<DollarSign className="h-4 w-4" />} />
-                <StatCard label="trades" value={String(result.trades.length)} icon={<Target className="h-4 w-4" />} />
-                <StatCard label="win rate" value={`${result.winRate.toFixed(1)}%`} accent={result.winRate >= 50 ? "pos" : "neg"} />
-                <StatCard label="profit factor" value={isFinite(result.profitFactor) ? result.profitFactor.toFixed(2) : "∞"} accent={result.profitFactor >= 1 ? "pos" : "neg"} />
-                <StatCard label="expectancy" value={`$${result.expectancy.toFixed(2)}`} accent={result.expectancy >= 0 ? "pos" : "neg"} />
-                <StatCard label="max drawdown" value={`-$${result.maxDrawdown.toFixed(0)}`} accent="neg" />
-                <StatCard label="wins" value={String(result.wins)} accent="pos" icon={<TrendingUp className="h-4 w-4" />} />
-                <StatCard label="losses" value={String(result.losses)} accent="neg" icon={<TrendingDown className="h-4 w-4" />} />
-                <StatCard label="avg win" value={`$${result.avgWin.toFixed(0)}`} accent="pos" />
-                <StatCard label="avg loss" value={`-$${result.avgLoss.toFixed(0)}`} accent="neg" />
-                <StatCard label="best day" value={`$${result.bestDay.toFixed(0)}`} accent="pos" />
-                <StatCard label="worst day" value={`$${result.worstDay.toFixed(0)}`} accent="neg" />
-              </div>
+            <Tabs defaultValue="overview" className="space-y-3">
+              <TabsList className="h-8">
+                <TabsTrigger value="overview" className="text-xs lowercase px-3 py-1">overview</TabsTrigger>
+                <TabsTrigger value="metrics" className="text-xs lowercase px-3 py-1">metrics</TabsTrigger>
+                <TabsTrigger value="trades" className="text-xs lowercase px-3 py-1">trades</TabsTrigger>
+              </TabsList>
 
-              {result.orbStats && (
-                <Card className="p-4 space-y-3">
-                  <div>
-                    <h2 className="text-sm font-semibold lowercase">orb m15 pullback · breakdown</h2>
-                    <p className="text-[11px] text-muted-foreground lowercase">
-                      candle m15 pertama sesi harus momentum candle · limit di middle candle (valid 2 candle m15) ·
-                      sl di ujung candle · tp 0.5× extension range (rr 1:2) · maks 1 entry per hari
-                    </p>
+              {/* ---------------- OVERVIEW ---------------- */}
+              <TabsContent value="overview" className="space-y-3 mt-0">
+                <Card className="p-2">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 divide-x divide-border/50">
+                    <Kpi label="net pnl" value={`$${result.totalPnl.toFixed(0)}`} accent={result.totalPnl >= 0 ? "pos" : "neg"} />
+                    <Kpi label="trades" value={String(result.trades.length)} />
+                    <Kpi label="win rate" value={`${result.winRate.toFixed(1)}%`} accent={result.winRate >= 50 ? "pos" : "neg"} />
+                    <Kpi label="profit factor" value={isFinite(result.profitFactor) ? result.profitFactor.toFixed(2) : "∞"} accent={result.profitFactor >= 1 ? "pos" : "neg"} />
+                    <Kpi label="expectancy" value={`$${result.expectancy.toFixed(2)}`} accent={result.expectancy >= 0 ? "pos" : "neg"} />
+                    <Kpi label="max dd" value={`-$${result.maxDrawdown.toFixed(0)}`} accent="neg" />
+                    <Kpi label="w / l" value={`${result.wins} / ${result.losses}`} />
+                    <Kpi label="avg w / l" value={`$${result.avgWin.toFixed(0)} / -$${result.avgLoss.toFixed(0)}`} />
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                    <StatCard label="days evaluated" value={String(result.orbStats.totalDays)} />
-                    <StatCard label="triggered" value={String(result.orbStats.triggeredDays)} />
-                    <StatCard label="no setup" value={String(result.orbStats.noSetupDays)} />
-                    <StatCard label="no fill" value={String(result.orbStats.noFillDays)} />
-                    <StatCard label="expectancy r" value={`${result.orbStats.expectancyR.toFixed(2)}R`} accent={result.orbStats.expectancyR >= 0 ? "pos" : "neg"} />
-                    <StatCard label="long / short" value={`${result.orbStats.longTrades} / ${result.orbStats.shortTrades}`} />
-                    <StatCard label="long net pnl" value={`$${result.orbStats.longNetPnl.toFixed(0)}`} accent={result.orbStats.longNetPnl >= 0 ? "pos" : "neg"} />
-                    <StatCard label="short net pnl" value={`$${result.orbStats.shortNetPnl.toFixed(0)}`} accent={result.orbStats.shortNetPnl >= 0 ? "pos" : "neg"} />
-                  </div>
-
-                  {!!result.orbSegments?.length && (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-xs">
-                        <thead className="text-muted-foreground border-b border-border">
-                          <tr>
-                            <th className="text-left py-2 px-2 lowercase">segment</th>
-                            <th className="text-left py-2 px-2 lowercase">periode</th>
-                            <th className="text-right py-2 px-2 lowercase">trades</th>
-                            <th className="text-right py-2 px-2 lowercase">win rate</th>
-                            <th className="text-right py-2 px-2 lowercase">pf</th>
-                            <th className="text-right py-2 px-2 lowercase">exp r</th>
-                            <th className="text-right py-2 px-2 lowercase">max dd</th>
-                            <th className="text-right py-2 px-2 lowercase">net pnl</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {result.orbSegments.map((s) => (
-                            <tr key={s.label} className="border-b border-border/40">
-                              <td className="py-1.5 px-2 lowercase">{s.label}</td>
-                              <td className="py-1.5 px-2">{s.from} → {s.to}</td>
-                              <td className="py-1.5 px-2 text-right">{s.stats.triggeredDays}</td>
-                              <td className="py-1.5 px-2 text-right">{s.stats.winRate.toFixed(1)}%</td>
-                              <td className="py-1.5 px-2 text-right">{isFinite(s.stats.profitFactor) ? s.stats.profitFactor.toFixed(2) : "∞"}</td>
-                              <td className="py-1.5 px-2 text-right">{s.stats.expectancyR.toFixed(2)}</td>
-                              <td className="py-1.5 px-2 text-right text-red-500">-${s.stats.maxDrawdown.toFixed(0)}</td>
-                              <td className={`py-1.5 px-2 text-right font-medium ${s.stats.netPnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-                                {s.stats.netPnl >= 0 ? "+" : ""}${s.stats.netPnl.toFixed(0)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
                 </Card>
-              )}
 
-
-
-              {/* Advanced performance metrics */}
-              {metrics && (
-                <Card className="p-4 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
-                    <div>
-                      <h2 className="text-sm font-semibold lowercase">performance metrics</h2>
-                      <p className="text-[11px] text-muted-foreground lowercase">
-                        risk-adjusted metrics ala investing-algorithm-framework · basis modal awal ${metrics.initialCapital.toLocaleString()} ·
-                        {" "}{metrics.periodDays} hari kalender · {metrics.daysInMarket} hari ada trade
-                      </p>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs lowercase">modal awal ($)</Label>
-                      <Input
-                        type="number"
-                        value={initialCapital}
-                        onChange={(e) => setInitialCapital(e.target.value)}
-                        className="w-40"
-                      />
-                    </div>
+                <Card className="p-3">
+                  <h2 className="text-xs font-semibold mb-2 lowercase">cumulative equity</h2>
+                  <div className="h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={equityCurve} margin={{ top: 4, right: 8, bottom: 0, left: -12 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="i" stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                        <Tooltip
+                          contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }}
+                          formatter={(v: any) => [`$${v}`, "equity"]}
+                          labelFormatter={(l) => `trade #${l}`}
+                        />
+                        <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
+                        <Line type="monotone" dataKey="equity" stroke="hsl(var(--primary))" strokeWidth={1.75} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
                   </div>
+                </Card>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                    <StatCard label="total return" value={`${metrics.totalReturnPct.toFixed(2)}%`} accent={metrics.totalReturnPct >= 0 ? "pos" : "neg"} />
-                    <StatCard label="cagr" value={`${metrics.cagrPct.toFixed(2)}%`} accent={metrics.cagrPct >= 0 ? "pos" : "neg"} />
-                    <StatCard label="sharpe" value={metrics.sharpeRatio.toFixed(2)} accent={metrics.sharpeRatio >= 1 ? "pos" : "neg"} />
-                    <StatCard label="sortino" value={metrics.sortinoRatio.toFixed(2)} accent={metrics.sortinoRatio >= 1 ? "pos" : "neg"} />
-                    <StatCard label="calmar" value={metrics.calmarRatio.toFixed(2)} accent={metrics.calmarRatio >= 1 ? "pos" : "neg"} />
-                    <StatCard label="volatility (ann.)" value={`${metrics.annualVolatilityPct.toFixed(1)}%`} />
-                    <StatCard label="max drawdown %" value={`-${metrics.maxDrawdownPct.toFixed(2)}%`} accent="neg" />
-                    <StatCard label="dd duration" value={`${metrics.maxDrawdownDurationDays}d`} accent="neg" />
-                    <StatCard label="recovery factor" value={metrics.recoveryFactor.toFixed(2)} accent={metrics.recoveryFactor >= 1 ? "pos" : "neg"} />
-                    <StatCard label="exposure" value={`${metrics.exposurePct.toFixed(1)}%`} />
-                    <StatCard label="trades / year" value={metrics.tradesPerYear.toFixed(0)} />
-                    <StatCard label="positive days" value={`${metrics.positiveDaysPct.toFixed(1)}%`} accent={metrics.positiveDaysPct >= 50 ? "pos" : "neg"} />
-                    <StatCard label="win streak" value={String(metrics.winStreak)} accent="pos" />
-                    <StatCard label="loss streak" value={String(metrics.lossStreak)} accent="neg" />
-                    <StatCard label="avg win %" value={`${metrics.avgWinPct.toFixed(2)}%`} accent="pos" />
-                    <StatCard label="avg loss %" value={`${metrics.avgLossPct.toFixed(2)}%`} accent="neg" />
-                    <StatCard label="best trade" value={`${metrics.bestTradePct.toFixed(2)}%`} accent="pos" />
-                    <StatCard label="worst trade" value={`${metrics.worstTradePct.toFixed(2)}%`} accent="neg" />
-                    <StatCard label="final capital" value={`$${metrics.finalCapital.toFixed(0)}`} accent={metrics.finalCapital >= metrics.initialCapital ? "pos" : "neg"} />
-                    {metrics.avgRMultiple != null && (
-                      <StatCard label="avg r" value={`${metrics.avgRMultiple.toFixed(2)}R`} accent={metrics.avgRMultiple >= 0 ? "pos" : "neg"} />
-                    )}
-                    {metrics.bestMonth && (
-                      <StatCard label={`best month · ${metrics.bestMonth.month}`} value={`$${metrics.bestMonth.pnl.toFixed(0)}`} accent="pos" />
-                    )}
-                    {metrics.worstMonth && (
-                      <StatCard label={`worst month · ${metrics.worstMonth.month}`} value={`$${metrics.worstMonth.pnl.toFixed(0)}`} accent="neg" />
-                    )}
-                  </div>
-
-                  <div>
-                    <h3 className="text-xs font-semibold mb-2 lowercase">drawdown (%)</h3>
-                    <div className="h-48">
+                {metrics && (
+                  <Card className="p-3">
+                    <h2 className="text-xs font-semibold mb-2 lowercase">drawdown (%)</h2>
+                    <div className="h-32">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={metrics.equity}>
+                        <BarChart data={metrics.equity} margin={{ top: 4, right: 8, bottom: 0, left: -12 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                          <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={10} hide />
-                          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                          <XAxis dataKey="date" hide />
+                          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
                           <Tooltip
-                            contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 12 }}
+                            contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }}
                             formatter={(v: any) => [`${v}%`, "drawdown"]}
                           />
                           <Bar dataKey="drawdownPct" fill="hsl(var(--destructive))" />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
-                  </div>
+                  </Card>
+                )}
 
-                  {metrics.monthly.length > 1 && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                  <Card className="p-3">
+                    <h2 className="text-xs font-semibold mb-2 lowercase">monthly pnl</h2>
+                    <div className="h-40">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={monthlyPnl} margin={{ top: 4, right: 8, bottom: 0, left: -12 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={9} />
+                          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                          <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }} formatter={(v: any) => [`$${v}`, "pnl"]} />
+                          <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" />
+                          <Bar dataKey="pnl" fill="hsl(var(--primary))" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </Card>
+
+                  <Card className="p-3">
+                    <h2 className="text-xs font-semibold mb-2 lowercase">pnl distribution</h2>
+                    <div className="h-40">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={pnlDistribution} margin={{ top: 4, right: 8, bottom: 0, left: -12 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={9} />
+                          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                          <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }} />
+                          <Bar dataKey="count" fill="hsl(var(--primary))" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </Card>
+
+                  <Card className="p-3">
+                    <h2 className="text-xs font-semibold mb-2 lowercase">pnl by weekday</h2>
+                    <div className="h-40">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={weekdayPnl} margin={{ top: 4, right: 8, bottom: 0, left: -12 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={9} />
+                          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                          <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }} formatter={(v: any) => [`$${v}`, "pnl"]} />
+                          <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" />
+                          <Bar dataKey="pnl" fill="hsl(var(--primary))" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              {/* ---------------- METRICS ---------------- */}
+              <TabsContent value="metrics" className="space-y-3 mt-0">
+                {metrics && (
+                  <div className="flex items-end justify-between gap-2">
+                    <p className="text-[11px] text-muted-foreground lowercase">
+                      basis modal awal ${metrics.initialCapital.toLocaleString()} · {metrics.periodDays} hari kalender · {metrics.daysInMarket} hari ada trade
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-[11px] lowercase whitespace-nowrap">modal awal ($)</Label>
+                      <Input
+                        type="number"
+                        value={initialCapital}
+                        onChange={(e) => setInitialCapital(e.target.value)}
+                        className="h-7 w-28 text-xs"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {metrics && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <MetricTable
+                      title="time metrics"
+                      rows={[
+                        ["period", `${metrics.periodDays} hari`],
+                        ["days in market", String(metrics.daysInMarket)],
+                        ["exposure", `${metrics.exposurePct.toFixed(1)}%`],
+                        ["trades / year", metrics.tradesPerYear.toFixed(0)],
+                        ["positive days", `${metrics.positiveDaysPct.toFixed(1)}%`],
+                        ["best month", metrics.bestMonth ? `${metrics.bestMonth.month} · $${metrics.bestMonth.pnl.toFixed(0)}` : "—", "pos"],
+                        ["worst month", metrics.worstMonth ? `${metrics.worstMonth.month} · $${metrics.worstMonth.pnl.toFixed(0)}` : "—", "neg"],
+                        ["dd duration", `${metrics.maxDrawdownDurationDays}d`, "neg"],
+                      ]}
+                    />
+                    <MetricTable
+                      title="performance metrics"
+                      rows={[
+                        ["total return", `${metrics.totalReturnPct.toFixed(2)}%`, metrics.totalReturnPct >= 0 ? "pos" : "neg"],
+                        ["cagr", `${metrics.cagrPct.toFixed(2)}%`, metrics.cagrPct >= 0 ? "pos" : "neg"],
+                        ["sharpe ratio", metrics.sharpeRatio.toFixed(2), metrics.sharpeRatio >= 1 ? "pos" : "neg"],
+                        ["sortino ratio", metrics.sortinoRatio.toFixed(2), metrics.sortinoRatio >= 1 ? "pos" : "neg"],
+                        ["calmar ratio", metrics.calmarRatio.toFixed(2), metrics.calmarRatio >= 1 ? "pos" : "neg"],
+                        ["annual volatility", `${metrics.annualVolatilityPct.toFixed(1)}%`],
+                        ["max drawdown", `-${metrics.maxDrawdownPct.toFixed(2)}%`, "neg"],
+                        ["recovery factor", metrics.recoveryFactor.toFixed(2), metrics.recoveryFactor >= 1 ? "pos" : "neg"],
+                        ["final capital", `$${metrics.finalCapital.toFixed(0)}`, metrics.finalCapital >= metrics.initialCapital ? "pos" : "neg"],
+                      ]}
+                    />
+                    <MetricTable
+                      title="trade metrics"
+                      rows={[
+                        ["number of trades", String(result.trades.length)],
+                        ["win rate", `${result.winRate.toFixed(1)}%`, result.winRate >= 50 ? "pos" : "neg"],
+                        ["profit factor", isFinite(result.profitFactor) ? result.profitFactor.toFixed(2) : "∞"],
+                        ["avg win %", `${metrics.avgWinPct.toFixed(2)}%`, "pos"],
+                        ["avg loss %", `${metrics.avgLossPct.toFixed(2)}%`, "neg"],
+                        ["best trade", `${metrics.bestTradePct.toFixed(2)}%`, "pos"],
+                        ["worst trade", `${metrics.worstTradePct.toFixed(2)}%`, "neg"],
+                        ["win / loss streak", `${metrics.winStreak} / ${metrics.lossStreak}`],
+                        ["avg r", metrics.avgRMultiple != null ? `${metrics.avgRMultiple.toFixed(2)}R` : "—"],
+                      ]}
+                    />
+                  </div>
+                )}
+
+                {result.orbStats && (
+                  <Card className="p-3 space-y-2">
+                    <div>
+                      <h2 className="text-xs font-semibold lowercase">orb m15 pullback · breakdown</h2>
+                      <p className="text-[10px] text-muted-foreground lowercase">
+                        candle m15 pertama sesi harus momentum candle · limit di middle candle (valid 2 candle m15) ·
+                        sl di ujung candle · tp 0.5× extension range (rr 1:2) · maks 1 entry per hari
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-8 divide-x divide-border/50">
+                      <Kpi label="days" value={String(result.orbStats.totalDays)} />
+                      <Kpi label="triggered" value={String(result.orbStats.triggeredDays)} />
+                      <Kpi label="no setup" value={String(result.orbStats.noSetupDays)} />
+                      <Kpi label="no fill" value={String(result.orbStats.noFillDays)} />
+                      <Kpi label="exp r" value={`${result.orbStats.expectancyR.toFixed(2)}R`} accent={result.orbStats.expectancyR >= 0 ? "pos" : "neg"} />
+                      <Kpi label="long / short" value={`${result.orbStats.longTrades} / ${result.orbStats.shortTrades}`} />
+                      <Kpi label="long pnl" value={`$${result.orbStats.longNetPnl.toFixed(0)}`} accent={result.orbStats.longNetPnl >= 0 ? "pos" : "neg"} />
+                      <Kpi label="short pnl" value={`$${result.orbStats.shortNetPnl.toFixed(0)}`} accent={result.orbStats.shortNetPnl >= 0 ? "pos" : "neg"} />
+                    </div>
+
+                    {!!result.orbSegments?.length && (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-[11px]">
+                          <thead className="text-muted-foreground border-b border-border">
+                            <tr>
+                              <th className="text-left py-1 px-2 lowercase">segment</th>
+                              <th className="text-left py-1 px-2 lowercase">periode</th>
+                              <th className="text-right py-1 px-2 lowercase">trades</th>
+                              <th className="text-right py-1 px-2 lowercase">win rate</th>
+                              <th className="text-right py-1 px-2 lowercase">pf</th>
+                              <th className="text-right py-1 px-2 lowercase">exp r</th>
+                              <th className="text-right py-1 px-2 lowercase">max dd</th>
+                              <th className="text-right py-1 px-2 lowercase">net pnl</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {result.orbSegments.map((s) => (
+                              <tr key={s.label} className="border-b border-border/40">
+                                <td className="py-1 px-2 lowercase">{s.label}</td>
+                                <td className="py-1 px-2">{s.from} → {s.to}</td>
+                                <td className="py-1 px-2 text-right">{s.stats.triggeredDays}</td>
+                                <td className="py-1 px-2 text-right">{s.stats.winRate.toFixed(1)}%</td>
+                                <td className="py-1 px-2 text-right">{isFinite(s.stats.profitFactor) ? s.stats.profitFactor.toFixed(2) : "∞"}</td>
+                                <td className="py-1 px-2 text-right">{s.stats.expectancyR.toFixed(2)}</td>
+                                <td className="py-1 px-2 text-right text-red-500">-${s.stats.maxDrawdown.toFixed(0)}</td>
+                                <td className={`py-1 px-2 text-right font-medium ${s.stats.netPnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                                  {s.stats.netPnl >= 0 ? "+" : ""}${s.stats.netPnl.toFixed(0)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </Card>
+                )}
+
+                {metrics && metrics.monthly.length > 1 && (
+                  <Card className="p-3">
+                    <h3 className="text-xs font-semibold mb-2 lowercase">monthly returns</h3>
                     <div className="overflow-x-auto">
-                      <h3 className="text-xs font-semibold mb-2 lowercase">monthly returns</h3>
-                      <table className="w-full text-xs">
+                      <table className="w-full text-[11px]">
                         <thead className="text-muted-foreground border-b border-border">
                           <tr>
-                            <th className="text-left py-1.5 px-2 lowercase">month</th>
-                            <th className="text-right py-1.5 px-2 lowercase">pnl</th>
-                            <th className="text-right py-1.5 px-2 lowercase">return</th>
+                            <th className="text-left py-1 px-2 lowercase">month</th>
+                            <th className="text-right py-1 px-2 lowercase">pnl</th>
+                            <th className="text-right py-1 px-2 lowercase">return</th>
                           </tr>
                         </thead>
                         <tbody>
                           {metrics.monthly.map((m) => (
                             <tr key={m.month} className="border-b border-border/40">
-                              <td className="py-1.5 px-2">{m.month}</td>
-                              <td className={`py-1.5 px-2 text-right ${m.pnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>${m.pnl.toFixed(0)}</td>
-                              <td className={`py-1.5 px-2 text-right ${m.returnPct >= 0 ? "text-emerald-500" : "text-red-500"}`}>{m.returnPct.toFixed(2)}%</td>
+                              <td className="py-1 px-2">{m.month}</td>
+                              <td className={`py-1 px-2 text-right ${m.pnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>${m.pnl.toFixed(0)}</td>
+                              <td className={`py-1 px-2 text-right ${m.returnPct >= 0 ? "text-emerald-500" : "text-red-500"}`}>{m.returnPct.toFixed(2)}%</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
-                  )}
-                </Card>
-              )}
-
-              {/* Equity Curve */}
-              <Card className="p-4">
-                <h2 className="text-sm font-semibold mb-3 lowercase">equity curve</h2>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={equityCurve}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="i" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                      <Tooltip
-                        contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 12 }}
-                        formatter={(v: any) => [`$${v}`, "equity"]}
-                        labelFormatter={(l) => `trade #${l}`}
-                      />
-                      <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeDasharray="3 3" />
-                      <Line type="monotone" dataKey="equity" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {/* PnL Distribution */}
-                <Card className="p-4">
-                  <h2 className="text-sm font-semibold mb-3 lowercase">pnl distribution</h2>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={pnlDistribution}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={10} angle={-25} textAnchor="end" height={60} />
-                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                        <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 12 }} />
-                        <Bar dataKey="count" fill="hsl(var(--primary))" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </Card>
-
-                {/* Weekday */}
-                <Card className="p-4">
-                  <h2 className="text-sm font-semibold mb-3 lowercase">pnl by weekday</h2>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={weekdayPnl}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                        <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 12 }} formatter={(v: any) => [`$${v}`, "pnl"]} />
-                        <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" />
-                        <Bar dataKey="pnl" fill="hsl(var(--primary))" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </Card>
-              </div>
-
-              {/* Monthly */}
-              <Card className="p-4">
-                <h2 className="text-sm font-semibold mb-3 lowercase">monthly pnl</h2>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={monthlyPnl}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                      <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 12 }} formatter={(v: any) => [`$${v}`, "pnl"]} />
-                      <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" />
-                      <Bar dataKey="pnl" fill="hsl(var(--primary))" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
-
-              {/* Trade Log — calendar view */}
-              <Card className="p-4">
-                <BacktestCalendar
-                  trades={result.trades.map((t) => ({ date: t.date, pnl: t.pnl }))}
-                  selected={selectedDay}
-                  onDayClick={(d) => setSelectedDay((prev) => (prev === d ? null : d))}
-                />
-              </Card>
-
-              <Dialog open={!!selectedDay} onOpenChange={(v) => !v && setSelectedDay(null)}>
-                <DialogContent className="max-w-3xl">
-                  <DialogHeader>
-                    <DialogTitle className="text-sm lowercase">trade log · {selectedDay}</DialogTitle>
-                  </DialogHeader>
-                {result.strategy === "orbm15" && (
-                  <div className="flex items-center gap-2">
-                    <Label className="text-xs lowercase">filter</Label>
-                    <Select value={logFilter} onValueChange={(v) => setLogFilter(v as any)}>
-                      <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">semua</SelectItem>
-                        <SelectItem value="target">target</SelectItem>
-                        <SelectItem value="stop">stop</SelectItem>
-                        <SelectItem value="close">close</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  </Card>
                 )}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead className="text-muted-foreground border-b border-border">
-                      <tr>
-                        <th className="text-left py-2 px-2">#</th>
-                        <th className="text-left py-2 px-2">date</th>
-                        <th className="text-left py-2 px-2">time</th>
-                        <th className="text-left py-2 px-2">side</th>
-                        <th className="text-right py-2 px-2">entry</th>
-                        <th className="text-right py-2 px-2">sl</th>
-                        <th className="text-right py-2 px-2">tp</th>
-                        <th className="text-right py-2 px-2">qty</th>
-                        <th className="text-right py-2 px-2">r</th>
-                        <th className="text-right py-2 px-2">pnl</th>
-                        <th className="text-left py-2 px-2">outcome</th>
-                        <th className="text-center py-2 px-2">chart</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[...result.trades]
-                        .map((t, i) => ({ t, seq: i + 1 }))
-                        .filter(({ t }) => !selectedDay || t.date === selectedDay)
-                        .filter(({ t }) => logFilter === "all" || !t.reason || t.reason === logFilter)
+              </TabsContent>
 
-                        .sort((a, b) => {
-                          const d = b.t.date.localeCompare(a.t.date);
-                          if (d !== 0) return d;
-                          return (b.t.time ?? "").localeCompare(a.t.time ?? "");
-                        })
-                        .map(({ t, seq }) => (
+              {/* ---------------- TRADES ---------------- */}
+              <TabsContent value="trades" className="space-y-3 mt-0">
+                <Card className="p-3">
+                  <BacktestCalendar
+                    trades={result.trades.map((t) => ({ date: t.date, pnl: t.pnl }))}
+                    selected={selectedDay}
+                    onDayClick={(d) => setSelectedDay((prev) => (prev === d ? null : d))}
+                  />
+                </Card>
 
-                        <tr key={seq} className="border-b border-border/40">
-                          <td className="py-1.5 px-2 text-muted-foreground">{seq}</td>
-                          <td className="py-1.5 px-2">{t.date}</td>
-                          <td className="py-1.5 px-2">{t.time ?? "10:25"}</td>
-                          <td className={`py-1.5 px-2 font-medium ${t.direction === "bullish" ? "text-emerald-500" : "text-red-500"}`}>
-                            {t.direction === "bullish" ? "long" : "short"}
-                          </td>
-                          <td className="py-1.5 px-2 text-right">{t.entry.toFixed(2)}</td>
-                          <td className="py-1.5 px-2 text-right">{t.stop.toFixed(2)}</td>
-                          <td className="py-1.5 px-2 text-right">{t.target.toFixed(2)}</td>
-                          <td className="py-1.5 px-2 text-right">{t.qty.toFixed(2)}</td>
-                          <td className="py-1.5 px-2 text-right">{t.rMultiple.toFixed(2)}</td>
-                          <td className={`py-1.5 px-2 text-right font-medium ${t.pnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-                            {t.pnl >= 0 ? "+" : ""}${t.pnl.toFixed(0)}
-                          </td>
-                          <td className={`py-1.5 px-2 uppercase text-[10px] ${t.outcome === "win" ? "text-emerald-500" : "text-red-500"}`}>
-                            {t.reason ?? t.outcome}
-                          </td>
-                          <td className="py-1.5 px-2 text-center">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 w-6 p-0"
-                              onClick={() => {
-                                setSelectedDay(null);
-                                setChartTrade({
-                                  date: t.date,
-                                  time: t.time,
-                                  direction: t.direction,
-                                  entry: t.entry,
-                                  stop: t.stop,
-                                  target: t.target,
-                                  outcome: t.outcome,
-                                  ib: t.ib,
-                                  midpoint: t.midpoint,
-                                  exitTime: t.exitTime,
-                                  exitPrice: t.exitPrice,
-                                });
-
-
-                              }}
-                              title="view 15m chart"
-                            >
-                              <BarChart3 className="h-3.5 w-3.5" />
-                            </Button>
-                          </td>
+                <Card className="p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-xs font-semibold lowercase">trade log{selectedDay ? ` · ${selectedDay}` : ""}</h3>
+                    <div className="flex items-center gap-2">
+                      {selectedDay && (
+                        <Button size="sm" variant="ghost" className="h-7 text-[11px] lowercase" onClick={() => setSelectedDay(null)}>
+                          reset filter tanggal
+                        </Button>
+                      )}
+                      {result.strategy === "orbm15" && (
+                        <Select value={logFilter} onValueChange={(v) => setLogFilter(v as any)}>
+                          <SelectTrigger className="h-7 w-32 text-[11px]"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">semua</SelectItem>
+                            <SelectItem value="target">target</SelectItem>
+                            <SelectItem value="stop">stop</SelectItem>
+                            <SelectItem value="close">close</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto max-h-[520px] overflow-y-auto">
+                    <table className="w-full text-[11px]">
+                      <thead className="text-muted-foreground border-b border-border sticky top-0 bg-card">
+                        <tr>
+                          <th className="text-left py-1 px-2">#</th>
+                          <th className="text-left py-1 px-2">date</th>
+                          <th className="text-left py-1 px-2">time</th>
+                          <th className="text-left py-1 px-2">side</th>
+                          <th className="text-right py-1 px-2">entry</th>
+                          <th className="text-right py-1 px-2">sl</th>
+                          <th className="text-right py-1 px-2">tp</th>
+                          <th className="text-right py-1 px-2">qty</th>
+                          <th className="text-right py-1 px-2">r</th>
+                          <th className="text-right py-1 px-2">pnl</th>
+                          <th className="text-left py-1 px-2">outcome</th>
+                          <th className="text-center py-1 px-2">chart</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                </DialogContent>
-              </Dialog>
-            </>
+                      </thead>
+                      <tbody>
+                        {[...result.trades]
+                          .map((t, i) => ({ t, seq: i + 1 }))
+                          .filter(({ t }) => !selectedDay || t.date === selectedDay)
+                          .filter(({ t }) => logFilter === "all" || !t.reason || t.reason === logFilter)
+                          .sort((a, b) => {
+                            const d = b.t.date.localeCompare(a.t.date);
+                            if (d !== 0) return d;
+                            return (b.t.time ?? "").localeCompare(a.t.time ?? "");
+                          })
+                          .map(({ t, seq }) => (
+                            <tr key={seq} className="border-b border-border/40">
+                              <td className="py-1 px-2 text-muted-foreground">{seq}</td>
+                              <td className="py-1 px-2">{t.date}</td>
+                              <td className="py-1 px-2">{t.time ?? "10:25"}</td>
+                              <td className={`py-1 px-2 font-medium ${t.direction === "bullish" ? "text-emerald-500" : "text-red-500"}`}>
+                                {t.direction === "bullish" ? "long" : "short"}
+                              </td>
+                              <td className="py-1 px-2 text-right">{t.entry.toFixed(2)}</td>
+                              <td className="py-1 px-2 text-right">{t.stop.toFixed(2)}</td>
+                              <td className="py-1 px-2 text-right">{t.target.toFixed(2)}</td>
+                              <td className="py-1 px-2 text-right">{t.qty.toFixed(2)}</td>
+                              <td className="py-1 px-2 text-right">{t.rMultiple.toFixed(2)}</td>
+                              <td className={`py-1 px-2 text-right font-medium ${t.pnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                                {t.pnl >= 0 ? "+" : ""}${t.pnl.toFixed(0)}
+                              </td>
+                              <td className={`py-1 px-2 uppercase text-[10px] ${t.outcome === "win" ? "text-emerald-500" : "text-red-500"}`}>
+                                {t.reason ?? t.outcome}
+                              </td>
+                              <td className="py-1 px-2 text-center">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() =>
+                                    setChartTrade({
+                                      date: t.date,
+                                      time: t.time,
+                                      direction: t.direction,
+                                      entry: t.entry,
+                                      stop: t.stop,
+                                      target: t.target,
+                                      outcome: t.outcome,
+                                      ib: t.ib,
+                                      midpoint: t.midpoint,
+                                      exitTime: t.exitTime,
+                                      exitPrice: t.exitPrice,
+                                    })
+                                  }
+                                  title="view 15m chart"
+                                >
+                                  <BarChart3 className="h-3.5 w-3.5" />
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              </TabsContent>
+            </Tabs>
           )}
+
         </main>
       </div>
       <TradeChartDialog
