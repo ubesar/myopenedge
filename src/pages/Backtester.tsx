@@ -1100,6 +1100,33 @@ const Backtester = () => {
   );
 };
 
+const Kpi = ({ label, value, accent }: { label: string; value: string; accent?: "pos" | "neg" }) => (
+  <div className="px-2 py-1">
+    <div className="text-[10px] text-muted-foreground lowercase truncate">{label}</div>
+    <div className={`text-sm font-semibold tabular-nums ${accent === "pos" ? "text-emerald-500" : accent === "neg" ? "text-red-500" : ""}`}>
+      {value}
+    </div>
+  </div>
+);
+
+const MetricTable = ({ title, rows }: { title: string; rows: (string | undefined)[][] }) => (
+  <Card className="p-3">
+    <h3 className="text-xs font-semibold mb-1.5 lowercase">{title}</h3>
+    <table className="w-full text-[11px]">
+      <tbody>
+        {rows.map(([label, value, accent]) => (
+          <tr key={label} className="border-b border-border/30 last:border-0">
+            <td className="py-1 text-muted-foreground lowercase">{label}</td>
+            <td className={`py-1 text-right tabular-nums font-medium ${accent === "pos" ? "text-emerald-500" : accent === "neg" ? "text-red-500" : ""}`}>
+              {value}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </Card>
+);
+
 const StatCard = ({ label, value, accent, icon }: { label: string; value: string; accent?: "pos" | "neg"; icon?: React.ReactNode }) => (
   <Card className="p-3">
     <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground lowercase mb-1">
