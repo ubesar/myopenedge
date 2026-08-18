@@ -400,6 +400,48 @@ export type Database = {
         }
         Relationships: []
       }
+      market_data_chunks: {
+        Row: {
+          bar_count: number
+          bars: Json
+          created_at: string
+          first_bar: string | null
+          id: string
+          interval: string
+          last_bar: string | null
+          period: string
+          symbol: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bar_count?: number
+          bars?: Json
+          created_at?: string
+          first_bar?: string | null
+          id?: string
+          interval: string
+          last_bar?: string | null
+          period: string
+          symbol: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bar_count?: number
+          bars?: Json
+          created_at?: string
+          first_bar?: string | null
+          id?: string
+          interval?: string
+          last_bar?: string | null
+          period?: string
+          symbol?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       mc_alert_state: {
         Row: {
           id: number
