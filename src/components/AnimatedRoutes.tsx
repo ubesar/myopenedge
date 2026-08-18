@@ -19,6 +19,7 @@ import AdminPanel from "@/pages/AdminPanel";
 import ConsistencyCalculator from "@/pages/ConsistencyCalculator";
 import Backtester from "@/pages/Backtester";
 import MonteCarlo from "@/pages/MonteCarlo";
+import DataSourcePage from "@/pages/DataSource";
 import ProRoute from "./ProRoute";
 
 const AnimatedRoutes = () => {
@@ -35,6 +36,7 @@ const AnimatedRoutes = () => {
         <Route path="/chart" element={<PageTransition><Chart /></PageTransition>} />
         <Route path="/watchlist" element={<PageTransition><ConsistencyCalculator /></PageTransition>} />
         <Route path="/journal" element={<PageTransition><Journal /></PageTransition>} />
+        <Route path="/data-source" element={<PageTransition><DataSourcePage /></PageTransition>} />
         <Route path="/upgrade" element={<PageTransition><Upgrade /></PageTransition>} />
         <Route path="/docs" element={<PageTransition><Docs /></PageTransition>} />
         <Route path="/docs/paddle-guide" element={<PageTransition><PaddleLiveGuide /></PageTransition>} />

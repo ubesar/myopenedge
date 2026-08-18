@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   ChevronLeft, ChevronRight, Rocket, Bot, FlaskConical, CandlestickChart,
   TrendingUp, Cpu, Calculator, Users, BookOpen, LineChart, Dices,
-  Crown, LogOut, Menu, X
+  Crown, LogOut, Menu, X, Database
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import iconX from "@/assets/icon-x.png";
@@ -27,6 +27,7 @@ const workspaceItems = [
   { icon: Cpu, label: "algos", href: "/algos" },
   { icon: Calculator, label: "consistency calc", href: "/consistency-calculator" },
   { icon: BookOpen, label: "journal", href: "/journal" },
+  { icon: Database, label: "data source", href: "/data-source" },
 ];
 
 const communityItems = [

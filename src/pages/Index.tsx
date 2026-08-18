@@ -3,6 +3,7 @@ import AITradingInsight from "@/components/AITradingInsight";
 import ContinuationStackCard from "@/components/ContinuationStackCard";
 import MomentumResultCard from "@/components/MomentumResultCard";
 import { supabase } from "@/integrations/supabase/client";
+import { getDataSourceMode, loadStoredValues } from "@/lib/data-source";
 import { useNavigate, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -116,6 +117,10 @@ const Index = () => {
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   const fetchMarketData = async (ticker: string, totalDays: number) => {
+    if (getDataSourceMode() === "stored") {
+      const stored = await loadStoredValues(ticker.toUpperCase(), "5min", totalDays);
+      if (stored.values.length > 0) return stored;
+    }
     if (totalDays <= MAX_BATCH_DAYS) {
       const { data, error } = await supabase.functions.invoke("twelvedata-proxy", {
         body: { symbol: ticker, outputsize: String(BATCH_OUTPUTSIZE), key_index: 0 },
