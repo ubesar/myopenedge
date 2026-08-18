@@ -96,6 +96,7 @@ Deno.serve(async (req) => {
   let outputsize = "5000";
   let endpoint = "time_series";
   let end_date: string | null = null;
+  let start_date: string | null = null;
 
   if (req.method === "GET") {
     const url = new URL(req.url);
@@ -104,6 +105,7 @@ Deno.serve(async (req) => {
     outputsize = url.searchParams.get("outputsize") || "5000";
     endpoint = url.searchParams.get("endpoint") || "time_series";
     end_date = url.searchParams.get("end_date");
+    start_date = url.searchParams.get("start_date");
   } else {
     try {
       const body = await req.json();
@@ -112,6 +114,7 @@ Deno.serve(async (req) => {
       outputsize = String(body.outputsize ?? "5000");
       endpoint = body.endpoint || "time_series";
       end_date = body.end_date || null;
+      start_date = body.start_date || null;
     } catch {
       // ignore
     }
@@ -156,6 +159,7 @@ Deno.serve(async (req) => {
       format: "JSON",
     });
     if (end_date) params.set("end_date", end_date);
+    if (start_date) params.set("start_date", start_date);
     tdUrl = `https://api.twelvedata.com/time_series?${params.toString()}`;
   }
 
