@@ -81,6 +81,13 @@ function normalizeBars(values: any[]): StoredBar[] {
     .sort((a, b) => a.datetime.localeCompare(b.datetime));
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+function isRateLimit(msg: string) {
+  const m = msg.toLowerCase();
+  return m.includes("api credits") || m.includes("rate limit") || m.includes("429");
+}
+
 /** Downloads one month from TwelveData and stores it. Returns bar count saved. */
 export async function downloadMonth(
   symbol: string,
@@ -88,17 +95,43 @@ export async function downloadMonth(
   period: string
 ): Promise<number> {
   const { start, end } = monthBounds(period);
-  const { data, error } = await supabase.functions.invoke("twelvedata-proxy", {
-    body: {
-      symbol,
-      interval,
-      outputsize: "5000",
-      start_date: start,
-      end_date: end,
-    },
-  });
-  if (error) throw new Error(`fetch failed (${period})`);
-  if (data?.status === "error") throw new Error(data.message || `api error (${period})`);
+
+  let data: any = null;
+  const maxAttempts = 4;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const res = await supabase.functions.invoke("twelvedata-proxy", {
+      body: {
+        symbol,
+        interval,
+        outputsize: "5000",
+        start_date: start,
+        end_date: end,
+      },
+    });
+
+    let msg = "";
+    if (res.error) {
+      // Non-2xx (e.g. 429) — try to read the body for the real reason
+      const ctx: any = (res.error as any).context;
+      try {
+        const body = ctx && typeof ctx.json === "function" ? await ctx.clone().json() : null;
+        msg = body?.message || body?.error || res.error.message || "";
+      } catch {
+        msg = res.error.message || "";
+      }
+    } else if (res.data?.status === "error") {
+      msg = res.data.message || "";
+    } else {
+      data = res.data;
+      break;
+    }
+
+    if (isRateLimit(msg) && attempt < maxAttempts) {
+      await sleep(62000);
+      continue;
+    }
+    throw new Error(msg || `fetch failed (${period})`);
+  }
 
   const bars = normalizeBars(Array.isArray(data?.values) ? data.values : []).filter(
     (b) => b.datetime >= start && b.datetime < end
