@@ -190,16 +190,14 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
         const from = fromDate.toISOString().split("T")[0];
 
         // Stored data source (data source page) takes priority when enabled
+        let storedSorted: any[] | null = null;
         if (getDataSourceMode() === "stored") {
           const storedBars = await loadStoredBars(symbol, interval);
-          if (storedBars.length > 0) {
-            renderBars(storedBars);
-            return;
-          }
+          if (storedBars.length > 0) storedSorted = storedBars;
         }
 
         // Use massive-bars edge function (Polygon API)
-        const res = await fetch(`${baseUrl}/functions/v1/massive-bars`, {
+        const res = storedSorted ? null : await fetch(`${baseUrl}/functions/v1/massive-bars`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -215,15 +213,15 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
           }),
         });
 
-        if (!res.ok) throw new Error("Failed to fetch data");
+        if (res && !res.ok) throw new Error("Failed to fetch data");
 
-        const json = await res.json();
-        if (!json.values || !Array.isArray(json.values)) {
+        const json = res ? await res.json() : null;
+        if (!storedSorted && (!json?.values || !Array.isArray(json.values))) {
           throw new Error("No data returned");
         }
 
-        // massive-bars already returns sorted ascending ET datetimes
-        const sorted = json.values;
+        // sorted ascending ET datetimes
+        const sorted = storedSorted ?? json!.values;
 
         // Parse bars
         const candles: CandlestickData<Time>[] = [];
