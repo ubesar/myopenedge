@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Loader2, TrendingUp, TrendingDown, DollarSign, Target, Play, BarChart3 } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, DollarSign, Target, Play, BarChart3, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
 import {

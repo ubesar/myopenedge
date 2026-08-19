@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getDataSourceMode, loadStoredBars } from "@/lib/data-source";
 import { computeMomentumFlags, computeMomentumFlagsByDay, momentumColor } from "@/lib/momentum-candle";
 import {
   createChart,
@@ -187,6 +188,15 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
           fromDate.setDate(fromDate.getDate() - 30);
         }
         const from = fromDate.toISOString().split("T")[0];
+
+        // Stored data source (data source page) takes priority when enabled
+        if (getDataSourceMode() === "stored") {
+          const storedBars = await loadStoredBars(symbol, interval);
+          if (storedBars.length > 0) {
+            renderBars(storedBars);
+            return;
+          }
+        }
 
         // Use massive-bars edge function (Polygon API)
         const res = await fetch(`${baseUrl}/functions/v1/massive-bars`, {
