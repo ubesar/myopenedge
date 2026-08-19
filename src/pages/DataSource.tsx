@@ -27,7 +27,8 @@ const QUICK_SYMBOLS = ["QQQ", "GLD", "SPY", "AAPL", "NVDA", "TSLA"];
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: CURRENT_YEAR - 2009 }, (_, i) => CURRENT_YEAR - i);
 const MONTHS = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0"));
-const BATCH_DELAY_MS = 3000;
+// twelvedata free tier: 8 credits/minute -> ~1 request per 8s
+const BATCH_DELAY_MS = 8500;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 type RangeMode = "month" | "year" | "range";
