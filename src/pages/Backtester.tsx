@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Loader2, TrendingUp, TrendingDown, DollarSign, Target, Play, BarChart3 } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, DollarSign, Target, Play, BarChart3, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
 import {
@@ -274,7 +274,19 @@ const Backtester = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [symbol, setSymbol] = useState("QQQ");
   const [strategy, setStrategy] = useState<StrategyKey>("pb50");
-  const [initialCapital, setInitialCapital] = useState("10000");
+  const [initialCapital, setInitialCapital] = useState(
+    () => localStorage.getItem("moe:backtester-capital") || "10000"
+  );
+  const [capitalLocked, setCapitalLocked] = useState(
+    () => localStorage.getItem("moe:backtester-capital-locked") === "1"
+  );
+
+  const saveCapital = () => {
+    localStorage.setItem("moe:backtester-capital", initialCapital);
+    localStorage.setItem("moe:backtester-capital-locked", "1");
+    setCapitalLocked(true);
+    toast.success(`modal awal $${Number(initialCapital).toLocaleString()} dikunci & disimpan`);
+  };
   const [orbSide, setOrbSide] = useState<OrbSide>("both");
   const [orbMarket, setOrbMarket] = useState<OrbMarket>("us");
   const [orbRisk, setOrbRisk] = useState("100");
@@ -827,9 +839,27 @@ const Backtester = () => {
                       <Input
                         type="number"
                         value={initialCapital}
+                        disabled={capitalLocked}
                         onChange={(e) => setInitialCapital(e.target.value)}
                         className="h-7 w-28 text-xs"
                       />
+                      {capitalLocked ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2 text-[11px] gap-1"
+                          onClick={() => {
+                            localStorage.setItem("moe:backtester-capital-locked", "0");
+                            setCapitalLocked(false);
+                          }}
+                        >
+                          <Lock className="h-3 w-3" /> terkunci
+                        </Button>
+                      ) : (
+                        <Button size="sm" className="h-7 px-2 text-[11px] gap-1" onClick={saveCapital}>
+                          <Unlock className="h-3 w-3" /> kunci & simpan
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}
