@@ -3,7 +3,8 @@ import AITradingInsight from "@/components/AITradingInsight";
 import ContinuationStackCard from "@/components/ContinuationStackCard";
 import MomentumResultCard from "@/components/MomentumResultCard";
 import { supabase } from "@/integrations/supabase/client";
-import { preferStored, loadStoredValues } from "@/lib/data-source";
+import { preferStoredFor, loadStoredValues } from "@/lib/data-source";
+import DataSourceToggle from "@/components/DataSourceToggle";
 import { useNavigate, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -117,7 +118,7 @@ const Index = () => {
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   const fetchMarketData = async (ticker: string, totalDays: number) => {
-    if (preferStored()) {
+    if (preferStoredFor("app")) {
       const stored = await loadStoredValues(ticker.toUpperCase(), "5min", totalDays);
       if (stored.values.length > 0) return stored;
     }
@@ -1176,6 +1177,7 @@ const Index = () => {
 
       {/* Column 3: Main Content */}
       <main className="flex-1 min-w-0 overflow-y-auto p-4 lg:p-6">
+        <DataSourceToggle scope="app" className="mb-4" />
         {hasResults && (
           <div className="flex items-center gap-3 mb-5 flex-wrap">
             <h2 className="text-[14px] lg:text-[15px] text-foreground font-medium lowercase">{reportTitle}</h2>
