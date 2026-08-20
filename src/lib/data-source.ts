@@ -23,11 +23,18 @@ export const DATA_SOURCE_INTERVALS = ["5min", "15min", "30min", "1h", "1day"] as
 export type DataSourceInterval = (typeof DATA_SOURCE_INTERVALS)[number];
 
 const MODE_KEY = "moe:data-source-mode";
-export type DataSourceMode = "live" | "stored";
+export type DataSourceMode = "auto" | "live" | "stored";
 
+/** Default is "auto": stored data is used automatically when available, else live api. */
 export function getDataSourceMode(): DataSourceMode {
-  if (typeof localStorage === "undefined") return "live";
-  return localStorage.getItem(MODE_KEY) === "stored" ? "stored" : "live";
+  if (typeof localStorage === "undefined") return "auto";
+  const v = localStorage.getItem(MODE_KEY);
+  return v === "stored" || v === "live" ? v : "auto";
+}
+
+/** True when stored data should be tried first (auto + stored modes). */
+export function preferStored(): boolean {
+  return getDataSourceMode() !== "live";
 }
 
 export function setDataSourceMode(mode: DataSourceMode) {
