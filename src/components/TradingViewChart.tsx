@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getDataSourceMode, loadStoredBars } from "@/lib/data-source";
+import { preferStored, loadStoredBars } from "@/lib/data-source";
 import { computeMomentumFlags, computeMomentumFlagsByDay, momentumColor } from "@/lib/momentum-candle";
 import {
   createChart,
@@ -191,7 +191,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
 
         // Stored data source (data source page) takes priority when enabled
         let storedSorted: any[] | null = null;
-        if (getDataSourceMode() === "stored") {
+        if (preferStored()) {
           const storedBars = await loadStoredBars(symbol, interval);
           if (storedBars.length > 0) storedSorted = storedBars;
         }

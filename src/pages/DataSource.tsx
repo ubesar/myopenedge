@@ -17,6 +17,7 @@ import {
   downloadCsv,
   downloadMonth,
   getDataSourceMode,
+  type DataSourceMode,
   listDatasets,
   loadStoredBars,
   monthsInRange,
@@ -121,10 +122,16 @@ const DataSourcePage = () => {
     }
   };
 
-  const toggleMode = (m: "live" | "stored") => {
+  const toggleMode = (m: DataSourceMode) => {
     setDataSourceMode(m);
     setMode(m);
-    toast.success(m === "stored" ? "semua halaman memakai data tersimpan" : "semua halaman memakai data live");
+    toast.success(
+      m === "stored"
+        ? "semua halaman memakai data tersimpan"
+        : m === "live"
+        ? "semua halaman memakai data live"
+        : "otomatis: pakai data tersimpan bila ada"
+    );
   };
 
   if (loading || !user) return null;
@@ -148,7 +155,7 @@ const DataSourcePage = () => {
         <Card className="p-3 flex flex-wrap items-center gap-2">
           <Database className="h-4 w-4 text-muted-foreground" />
           <span className="text-[12px] text-muted-foreground">sumber data aktif</span>
-          {(["live", "stored"] as const).map((m) => (
+          {(["auto", "stored", "live"] as const).map((m) => (
             <button
               key={m}
               onClick={() => toggleMode(m)}
@@ -156,9 +163,12 @@ const DataSourcePage = () => {
                 mode === m ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
               }`}
             >
-              {m === "live" ? "live api" : "data tersimpan"}
+              {m === "auto" ? "otomatis" : m === "live" ? "live api" : "data tersimpan"}
             </button>
           ))}
+          <span className="text-[11px] text-muted-foreground">
+            otomatis: /app, /backtester & /chart pakai data tersimpan bila tersedia, selain itu live api.
+          </span>
         </Card>
 
         {/* downloader */}
