@@ -37,6 +37,35 @@ export function preferStored(): boolean {
   return getDataSourceMode() !== "live";
 }
 
+/** Per-page override ------------------------------------------------------ */
+export type DataSourceScope = "app" | "backtester" | "chart";
+export type PageDataSource = "default" | "auto" | "live" | "stored";
+
+const pageKey = (scope: DataSourceScope) => `moe:data-source-mode:${scope}`;
+
+export function getPageDataSource(scope: DataSourceScope): PageDataSource {
+  if (typeof localStorage === "undefined") return "default";
+  const v = localStorage.getItem(pageKey(scope));
+  return v === "auto" || v === "live" || v === "stored" ? v : "default";
+}
+
+export function setPageDataSource(scope: DataSourceScope, value: PageDataSource) {
+  if (value === "default") localStorage.removeItem(pageKey(scope));
+  else localStorage.setItem(pageKey(scope), value);
+  window.dispatchEvent(new CustomEvent("moe:data-source-mode", { detail: value }));
+}
+
+/** Resolves the effective mode for a page (page override → global mode). */
+export function resolveDataSource(scope: DataSourceScope): DataSourceMode {
+  const page = getPageDataSource(scope);
+  return page === "default" ? getDataSourceMode() : page;
+}
+
+/** True when the given page should try stored data first. */
+export function preferStoredFor(scope: DataSourceScope): boolean {
+  return resolveDataSource(scope) !== "live";
+}
+
 export function setDataSourceMode(mode: DataSourceMode) {
   localStorage.setItem(MODE_KEY, mode);
   window.dispatchEvent(new CustomEvent("moe:data-source-mode", { detail: mode }));
