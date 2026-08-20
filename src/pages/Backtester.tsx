@@ -509,6 +509,7 @@ const Backtester = () => {
             <p className="text-sm text-muted-foreground lowercase">
               fixed $100 risk per trade · analytics dashboard
             </p>
+            <DataSourceToggle scope="backtester" className="mt-2" />
           </div>
 
           {/* Controls */}

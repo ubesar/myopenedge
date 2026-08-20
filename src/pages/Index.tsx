@@ -1177,6 +1177,7 @@ const Index = () => {
 
       {/* Column 3: Main Content */}
       <main className="flex-1 min-w-0 overflow-y-auto p-4 lg:p-6">
+        <DataSourceToggle scope="app" className="mb-4" />
         {hasResults && (
           <div className="flex items-center gap-3 mb-5 flex-wrap">
             <h2 className="text-[14px] lg:text-[15px] text-foreground font-medium lowercase">{reportTitle}</h2>

@@ -42,6 +42,13 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
     o: number; h: number; l: number; c: number; change: number; changePct: number;
   } | null>(null);
 
+  // Re-fetch when the data source selection changes
+  useEffect(() => {
+    const onChange = () => setDsTick((t) => t + 1);
+    window.addEventListener("moe:data-source-mode", onChange);
+    return () => window.removeEventListener("moe:data-source-mode", onChange);
+  }, []);
+
   // Init chart once on mount
   useEffect(() => {
     if (!containerRef.current) return;

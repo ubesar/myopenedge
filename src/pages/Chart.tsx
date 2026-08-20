@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
 import TradingViewChart from "@/components/TradingViewChart";
+import DataSourceToggle from "@/components/DataSourceToggle";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const intervals = [
@@ -92,6 +93,10 @@ const Chart = () => {
               </button>
             ))}
           </div>
+
+          <div className="h-5 w-px mx-1 shrink-0" style={{ background: "#2A2E39" }} />
+
+          <DataSourceToggle scope="chart" dark className="shrink-0" />
 
           <div className="h-5 w-px mx-1 shrink-0" style={{ background: "#2A2E39" }} />
 
