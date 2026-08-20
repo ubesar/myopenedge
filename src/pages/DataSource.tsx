@@ -121,10 +121,16 @@ const DataSourcePage = () => {
     }
   };
 
-  const toggleMode = (m: "live" | "stored") => {
+  const toggleMode = (m: DataSourceMode) => {
     setDataSourceMode(m);
     setMode(m);
-    toast.success(m === "stored" ? "semua halaman memakai data tersimpan" : "semua halaman memakai data live");
+    toast.success(
+      m === "stored"
+        ? "semua halaman memakai data tersimpan"
+        : m === "live"
+        ? "semua halaman memakai data live"
+        : "otomatis: pakai data tersimpan bila ada"
+    );
   };
 
   if (loading || !user) return null;
