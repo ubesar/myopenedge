@@ -17,6 +17,7 @@ import {
   downloadCsv,
   downloadMonth,
   getDataSourceMode,
+  type DataSourceMode,
   listDatasets,
   loadStoredBars,
   monthsInRange,
