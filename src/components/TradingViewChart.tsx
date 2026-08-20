@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { preferStored, loadStoredBars } from "@/lib/data-source";
+import { preferStoredFor, loadStoredBars } from "@/lib/data-source";
 import { computeMomentumFlags, computeMomentumFlagsByDay, momentumColor } from "@/lib/momentum-candle";
 import {
   createChart,
@@ -37,6 +37,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
   const pbSeriesListRef = useRef<ISeriesApi<"Line" | "Baseline">[]>([]);
   const pbMarkersRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null);
   const [chartReady, setChartReady] = useState(false);
+  const [dsTick, setDsTick] = useState(0);
   const [ohlc, setOhlc] = useState<{
     o: number; h: number; l: number; c: number; change: number; changePct: number;
   } | null>(null);
@@ -191,7 +192,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
 
         // Stored data source (data source page) takes priority when enabled
         let storedSorted: any[] | null = null;
-        if (preferStored()) {
+        if (preferStoredFor("chart")) {
           const storedBars = await loadStoredBars(symbol, interval);
           if (storedBars.length > 0) storedSorted = storedBars;
         }
@@ -524,7 +525,7 @@ const TradingViewChart = ({ symbol, interval, showIB = false, showMC = false, sh
     };
 
     fetchData();
-  }, [symbol, interval, chartReady, showIB, showMC, showPB]);
+  }, [symbol, interval, chartReady, showIB, showMC, showPB, dsTick]);
 
   const isPositive = ohlc ? ohlc.change >= 0 : true;
 

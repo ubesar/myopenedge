@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { preferStored, loadStoredValues } from "@/lib/data-source";
+import { preferStoredFor, loadStoredValues } from "@/lib/data-source";
+import DataSourceToggle from "@/components/DataSourceToggle";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,7 +80,7 @@ const BATCH_DELAY_MS = 3000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function fetchMarketData(ticker: string, totalDays: number) {
-  if (preferStored()) {
+  if (preferStoredFor("backtester")) {
     const stored = await loadStoredValues(ticker.toUpperCase(), "5min", totalDays);
     if (stored.values.length > 0) return stored;
   }

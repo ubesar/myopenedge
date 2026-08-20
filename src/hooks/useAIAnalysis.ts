@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { preferStored, loadStoredValues } from "@/lib/data-source";
+import { preferStoredFor, loadStoredValues } from "@/lib/data-source";
 import { analyzeIB } from "@/lib/ib-analysis";
 import { analyzeMomentum } from "@/lib/momentum-analysis";
 import { analyzeOCC } from "@/lib/occ-analysis";
@@ -37,7 +37,7 @@ const BATCH_DELAY_MS = 3000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function fetchMarketData(ticker: string, totalDays: number) {
-  if (preferStored()) {
+  if (preferStoredFor("app")) {
     const stored = await loadStoredValues(ticker.toUpperCase(), "5min", totalDays);
     if (stored.values.length > 0) return stored;
   }
