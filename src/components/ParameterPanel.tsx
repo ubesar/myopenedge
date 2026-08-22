@@ -82,6 +82,15 @@ const ParameterPanel = ({
   const [templateName, setTemplateName] = useState("");
   const isTemplateLocked = selectedTemplateId !== "custom";
 
+  const [storedMode, setStoredMode] = useState(() => preferStoredFor("app"));
+  useEffect(() => {
+    const onChange = () => setStoredMode(preferStoredFor("app"));
+    window.addEventListener("moe:data-source-mode", onChange);
+    return () => window.removeEventListener("moe:data-source-mode", onChange);
+  }, []);
+  const dayOptions = storedMode ? [...DAY_OPTIONS, ...STORED_DAY_OPTIONS] : DAY_OPTIONS;
+
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!symbol.trim()) return;
