@@ -126,11 +126,7 @@ const DataSourcePage = () => {
     setDataSourceMode(m);
     setMode(m);
     toast.success(
-      m === "stored"
-        ? "semua halaman memakai data tersimpan"
-        : m === "live"
-        ? "semua halaman memakai data live"
-        : "otomatis: pakai data tersimpan bila ada"
+      m === "stored" ? "semua halaman memakai data tersimpan" : "semua halaman memakai data live"
     );
   };
 
@@ -155,7 +151,7 @@ const DataSourcePage = () => {
         <Card className="p-3 flex flex-wrap items-center gap-2">
           <Database className="h-4 w-4 text-muted-foreground" />
           <span className="text-[12px] text-muted-foreground">sumber data aktif</span>
-          {(["auto", "stored", "live"] as const).map((m) => (
+          {(["live", "stored"] as const).map((m) => (
             <button
               key={m}
               onClick={() => toggleMode(m)}
@@ -163,11 +159,11 @@ const DataSourcePage = () => {
                 mode === m ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
               }`}
             >
-              {m === "auto" ? "otomatis" : m === "live" ? "live api" : "data tersimpan"}
+              {m === "live" ? "live api" : "data tersimpan"}
             </button>
           ))}
           <span className="text-[11px] text-muted-foreground">
-            otomatis: /app, /backtester & /chart pakai data tersimpan bila tersedia, selain itu live api.
+default live api — tiap halaman (/app, /backtester, /chart) bisa dipilih sendiri.
           </span>
         </Card>
 
