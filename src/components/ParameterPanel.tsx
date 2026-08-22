@@ -43,6 +43,16 @@ const DAY_OPTIONS = [
   { value: "720", label: "36 Months" },
 ];
 
+const STORED_DAY_OPTIONS = [
+  { value: "1250", label: "5 Years" },
+  { value: "1500", label: "6 Years" },
+  { value: "1750", label: "7 Years" },
+  { value: "2000", label: "8 Years" },
+  { value: "2250", label: "9 Years" },
+  { value: "2500", label: "10 Years" },
+];
+
+
 const WEEKDAYS = [
   { value: 1, label: "Mon" },
   { value: 2, label: "Tue" },
