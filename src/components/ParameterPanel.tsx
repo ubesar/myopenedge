@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, Play, Plus, Trash2 } from "lucide-react";
+import { preferStoredFor } from "@/lib/data-source";
+
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -43,6 +45,16 @@ const DAY_OPTIONS = [
   { value: "720", label: "36 Months" },
 ];
 
+const STORED_DAY_OPTIONS = [
+  { value: "1250", label: "5 Years" },
+  { value: "1500", label: "6 Years" },
+  { value: "1750", label: "7 Years" },
+  { value: "2000", label: "8 Years" },
+  { value: "2250", label: "9 Years" },
+  { value: "2500", label: "10 Years" },
+];
+
+
 const WEEKDAYS = [
   { value: 1, label: "Mon" },
   { value: 2, label: "Tue" },
@@ -69,6 +81,20 @@ const ParameterPanel = ({
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const isTemplateLocked = selectedTemplateId !== "custom";
+
+  const [storedMode, setStoredMode] = useState(() => preferStoredFor("app"));
+  useEffect(() => {
+    const onChange = () => setStoredMode(preferStoredFor("app"));
+    window.addEventListener("moe:data-source-mode", onChange);
+    return () => window.removeEventListener("moe:data-source-mode", onChange);
+  }, []);
+  const dayOptions = storedMode ? [...DAY_OPTIONS, ...STORED_DAY_OPTIONS] : DAY_OPTIONS;
+
+  useEffect(() => {
+    if (!storedMode && parseInt(maxDays) > 720) setMaxDays("720");
+  }, [storedMode, maxDays]);
+
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -264,7 +290,7 @@ const ParameterPanel = ({
             <SelectContent>
               {isFree
                 ? <SelectItem value="20">1 Month</SelectItem>
-                : DAY_OPTIONS.map((d) => (
+                : dayOptions.map((d) => (
                     <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
                   ))
               }
