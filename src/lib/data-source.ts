@@ -23,47 +23,43 @@ export const DATA_SOURCE_INTERVALS = ["5min", "15min", "30min", "1h", "1day"] as
 export type DataSourceInterval = (typeof DATA_SOURCE_INTERVALS)[number];
 
 const MODE_KEY = "moe:data-source-mode";
-export type DataSourceMode = "auto" | "live" | "stored";
+export type DataSourceMode = "live" | "stored";
 
-/** Default is "auto": stored data is used automatically when available, else live api. */
+/** Default is "live". */
 export function getDataSourceMode(): DataSourceMode {
-  if (typeof localStorage === "undefined") return "auto";
-  const v = localStorage.getItem(MODE_KEY);
-  return v === "stored" || v === "live" ? v : "auto";
+  if (typeof localStorage === "undefined") return "live";
+  return localStorage.getItem(MODE_KEY) === "stored" ? "stored" : "live";
 }
 
-/** True when stored data should be tried first (auto + stored modes). */
+/** True when stored data should be used. */
 export function preferStored(): boolean {
-  return getDataSourceMode() !== "live";
+  return getDataSourceMode() === "stored";
 }
 
 /** Per-page override ------------------------------------------------------ */
 export type DataSourceScope = "app" | "backtester" | "chart";
-export type PageDataSource = "default" | "auto" | "live" | "stored";
+export type PageDataSource = DataSourceMode;
 
 const pageKey = (scope: DataSourceScope) => `moe:data-source-mode:${scope}`;
 
 export function getPageDataSource(scope: DataSourceScope): PageDataSource {
-  if (typeof localStorage === "undefined") return "default";
-  const v = localStorage.getItem(pageKey(scope));
-  return v === "auto" || v === "live" || v === "stored" ? v : "default";
+  if (typeof localStorage === "undefined") return "live";
+  return localStorage.getItem(pageKey(scope)) === "stored" ? "stored" : "live";
 }
 
 export function setPageDataSource(scope: DataSourceScope, value: PageDataSource) {
-  if (value === "default") localStorage.removeItem(pageKey(scope));
-  else localStorage.setItem(pageKey(scope), value);
+  localStorage.setItem(pageKey(scope), value);
   window.dispatchEvent(new CustomEvent("moe:data-source-mode", { detail: value }));
 }
 
-/** Resolves the effective mode for a page (page override → global mode). */
+/** Resolves the effective mode for a page. */
 export function resolveDataSource(scope: DataSourceScope): DataSourceMode {
-  const page = getPageDataSource(scope);
-  return page === "default" ? getDataSourceMode() : page;
+  return getPageDataSource(scope);
 }
 
-/** True when the given page should try stored data first. */
+/** True when the given page should use stored data. */
 export function preferStoredFor(scope: DataSourceScope): boolean {
-  return resolveDataSource(scope) !== "live";
+  return resolveDataSource(scope) === "stored";
 }
 
 export function setDataSourceMode(mode: DataSourceMode) {
