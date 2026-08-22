@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { preferStoredFor, loadStoredValues } from "@/lib/data-source";
 import DataSourceToggle from "@/components/DataSourceToggle";
@@ -77,6 +77,15 @@ const RISK_USD = 100;
 const MAX_BATCH_DAYS = 60;
 const BATCH_OUTPUTSIZE = 5000;
 const BATCH_DELAY_MS = 3000;
+
+const STORED_DAY_OPTIONS = [
+  { value: "1250", label: "5 years" },
+  { value: "1500", label: "6 years" },
+  { value: "1750", label: "7 years" },
+  { value: "2000", label: "8 years" },
+  { value: "2250", label: "9 years" },
+  { value: "2500", label: "10 years" },
+];
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function fetchMarketData(ticker: string, totalDays: number) {
@@ -302,6 +311,16 @@ const Backtester = () => {
   const [csvScanEnd, setCsvScanEnd] = useState("24:00");
   const [csvTpDeadline, setCsvTpDeadline] = useState("04:00");
   const [dataSource, setDataSource] = useState<"api" | "csv">("api");
+  const [storedMode, setStoredMode] = useState(() => preferStoredFor("backtester"));
+  useEffect(() => {
+    const onChange = () => setStoredMode(preferStoredFor("backtester"));
+    window.addEventListener("moe:data-source-mode", onChange);
+    return () => window.removeEventListener("moe:data-source-mode", onChange);
+  }, []);
+  // reset multi-year range back to the live-api max when stored data is turned off
+  useEffect(() => {
+    if (!storedMode && parseInt(maxDays) > 720) setMaxDays("720");
+  }, [storedMode, maxDays]);
   const [csvBars, setCsvBars] = useState<CsvBar[] | null>(null); // m15 — momentum scan
   const [csvName, setCsvName] = useState("");
   const [csvM5Bars, setCsvM5Bars] = useState<CsvBar[] | null>(null); // m5 — entry/tp/sl
@@ -551,6 +570,10 @@ const Backtester = () => {
                     <SelectItem value="120">6 months</SelectItem>
                     <SelectItem value="240">12 months</SelectItem>
                     <SelectItem value="480">24 months</SelectItem>
+                    {storedMode && dataSource === "api" &&
+                      STORED_DAY_OPTIONS.map((d) => (
+                        <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                      ))}
                     {dataSource === "csv" && <SelectItem value="0">all data in csv</SelectItem>}
                   </SelectContent>
                 </Select>
