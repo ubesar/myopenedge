@@ -311,6 +311,16 @@ const Backtester = () => {
   const [csvScanEnd, setCsvScanEnd] = useState("24:00");
   const [csvTpDeadline, setCsvTpDeadline] = useState("04:00");
   const [dataSource, setDataSource] = useState<"api" | "csv">("api");
+  const [storedMode, setStoredMode] = useState(() => preferStoredFor("backtester"));
+  useEffect(() => {
+    const onChange = () => setStoredMode(preferStoredFor("backtester"));
+    window.addEventListener("moe:data-source-mode", onChange);
+    return () => window.removeEventListener("moe:data-source-mode", onChange);
+  }, []);
+  // reset multi-year range back to the live-api max when stored data is turned off
+  useEffect(() => {
+    if (!storedMode && parseInt(maxDays) > 720) setMaxDays("720");
+  }, [storedMode, maxDays]);
   const [csvBars, setCsvBars] = useState<CsvBar[] | null>(null); // m15 — momentum scan
   const [csvName, setCsvName] = useState("");
   const [csvM5Bars, setCsvM5Bars] = useState<CsvBar[] | null>(null); // m5 — entry/tp/sl
