@@ -570,6 +570,10 @@ const Backtester = () => {
                     <SelectItem value="120">6 months</SelectItem>
                     <SelectItem value="240">12 months</SelectItem>
                     <SelectItem value="480">24 months</SelectItem>
+                    {storedMode && dataSource === "api" &&
+                      STORED_DAY_OPTIONS.map((d) => (
+                        <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                      ))}
                     {dataSource === "csv" && <SelectItem value="0">all data in csv</SelectItem>}
                   </SelectContent>
                 </Select>
