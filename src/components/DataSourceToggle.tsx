@@ -51,7 +51,6 @@ const DataSourceToggle = ({ scope, dark = false, className = "" }: Props) => {
           <button
             key={o.value}
             onClick={() => pick(o.value)}
-            title={o.value === "default" ? `global: ${globalLabel}` : undefined}
             className={`px-2 py-0.5 rounded-md text-[11px] lowercase transition-colors ${
               active
                 ? "bg-primary text-primary-foreground"
