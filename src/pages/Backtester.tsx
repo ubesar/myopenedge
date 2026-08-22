@@ -77,6 +77,15 @@ const RISK_USD = 100;
 const MAX_BATCH_DAYS = 60;
 const BATCH_OUTPUTSIZE = 5000;
 const BATCH_DELAY_MS = 3000;
+
+const STORED_DAY_OPTIONS = [
+  { value: "1250", label: "5 years" },
+  { value: "1500", label: "6 years" },
+  { value: "1750", label: "7 years" },
+  { value: "2000", label: "8 years" },
+  { value: "2250", label: "9 years" },
+  { value: "2500", label: "10 years" },
+];
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function fetchMarketData(ticker: string, totalDays: number) {
