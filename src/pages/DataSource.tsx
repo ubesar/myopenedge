@@ -126,11 +126,7 @@ const DataSourcePage = () => {
     setDataSourceMode(m);
     setMode(m);
     toast.success(
-      m === "stored"
-        ? "semua halaman memakai data tersimpan"
-        : m === "live"
-        ? "semua halaman memakai data live"
-        : "otomatis: pakai data tersimpan bila ada"
+      m === "stored" ? "semua halaman memakai data tersimpan" : "semua halaman memakai data live"
     );
   };
 
@@ -167,7 +163,7 @@ const DataSourcePage = () => {
             </button>
           ))}
           <span className="text-[11px] text-muted-foreground">
-            otomatis: /app, /backtester & /chart pakai data tersimpan bila tersedia, selain itu live api.
+default live api — tiap halaman (/app, /backtester, /chart) bisa dipilih sendiri.
           </span>
         </Card>
 
