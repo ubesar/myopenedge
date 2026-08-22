@@ -285,7 +285,7 @@ const ParameterPanel = ({
             <SelectContent>
               {isFree
                 ? <SelectItem value="20">1 Month</SelectItem>
-                : DAY_OPTIONS.map((d) => (
+                : dayOptions.map((d) => (
                     <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
                   ))
               }
