@@ -90,6 +90,11 @@ const ParameterPanel = ({
   }, []);
   const dayOptions = storedMode ? [...DAY_OPTIONS, ...STORED_DAY_OPTIONS] : DAY_OPTIONS;
 
+  useEffect(() => {
+    if (!storedMode && parseInt(maxDays) > 720) setMaxDays("720");
+  }, [storedMode, maxDays]);
+
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
