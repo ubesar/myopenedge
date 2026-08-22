@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { preferStoredFor, loadStoredValues } from "@/lib/data-source";
 import DataSourceToggle from "@/components/DataSourceToggle";
