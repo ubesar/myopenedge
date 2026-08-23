@@ -326,6 +326,16 @@ const Backtester = () => {
   const [orbBodyRatio, setOrbBodyRatio] = useState("0.6");
   const [logFilter, setLogFilter] = useState<"all" | "target" | "stop" | "close">("all");
 
+  // ---- ivfg (inverse fvg) params — risk locked at $300 ----
+  const [ivfgSide, setIvfgSide] = useState<IvfgSide>("both");
+  const [ivfgRR, setIvfgRR] = useState("1");
+  const [ivfgMinGap, setIvfgMinGap] = useState("0.05");
+  const [ivfgEntryMode, setIvfgEntryMode] = useState<"retest" | "immediate">("retest");
+  const [ivfgRetestBars, setIvfgRetestBars] = useState("10");
+  const [ivfgExtreme, setIvfgExtreme] = useState("10");
+  const [ivfgRequireMomentum, setIvfgRequireMomentum] = useState("both");
+  const [ivfgDailyTarget, setIvfgDailyTarget] = useState("0");
+
   const [maxDays, setMaxDays] = useState("120");
   const [ibWindow, setIbWindow] = useState("60");
   const [sessionStart, setSessionStart] = useState("570"); // 09:30 ny open
