@@ -435,6 +435,27 @@ const Backtester = () => {
         trades = toBTTradesPB50(r.trades);
         totalDays = r.totalDays;
 
+      } else if (strategy === "ivfg") {
+        const isCsv = dataSource === "csv";
+        const r = runIvfgBacktest(symbol.trim().toUpperCase(), values, {
+          riskUsd: IVFG_RISK_USD,
+          rewardMultiple: parseFloat(ivfgRR) || 1,
+          minGap: parseFloat(ivfgMinGap) || 0,
+          waitForRetest: ivfgEntryMode === "retest",
+          retestExpiryBars: parseInt(ivfgRetestBars) || 10,
+          requireExtremeConfirmation: parseInt(ivfgExtreme) > 0,
+          extremeLookback: parseInt(ivfgExtreme) || 10,
+          requireMomentumCandle: ivfgRequireMomentum === "both" || ivfgRequireMomentum === "formation",
+          requireMomentumOnInversion: ivfgRequireMomentum === "both" || ivfgRequireMomentum === "inversion",
+          dailyTarget: parseFloat(ivfgDailyTarget) || 0,
+          side: ivfgSide,
+          sessionStartMin: isCsv ? csvScanStartMin : parseInt(sessionStart),
+          sessionEndMin: isCsv ? csvScanEndMin : 16 * 60,
+          maxDays: days,
+        });
+        trades = toBTTradesIVFG(r.trades);
+        totalDays = r.totalDays;
+
       } else if (strategy === "orbm15") {
         const r = runOrbM15Backtest(symbol.trim().toUpperCase(), values, {
           sessionStartMin: ORB_SESSIONS[orbMarket].start,
