@@ -24,9 +24,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { runOrbM15Backtest, segmentOrbStats, ORB_SESSIONS, type OrbTrade, type OrbSide, type OrbMarket, type OrbStats, type OrbMomentumMode } from "@/lib/orb-backtest";
+import { runIvfgBacktest, type IvfgTrade, type IvfgSide } from "@/lib/ivfg-analysis";
 import { computeAdvancedMetrics } from "@/lib/backtest-metrics";
 
-type StrategyKey = "pb50" | "ib2575" | "orbm15";
+type StrategyKey = "pb50" | "ib2575" | "orbm15" | "ivfg";
+
+/** fixed dollar risk for the ivfg (inverse fvg) strategy */
+const IVFG_RISK_USD = 300;
 
 interface BTTrade {
   date: string;
