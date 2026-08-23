@@ -24,9 +24,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { runOrbM15Backtest, segmentOrbStats, ORB_SESSIONS, type OrbTrade, type OrbSide, type OrbMarket, type OrbStats, type OrbMomentumMode } from "@/lib/orb-backtest";
+import { runIvfgBacktest, type IvfgTrade, type IvfgSide } from "@/lib/ivfg-analysis";
 import { computeAdvancedMetrics } from "@/lib/backtest-metrics";
 
-type StrategyKey = "pb50" | "ib2575" | "orbm15";
+type StrategyKey = "pb50" | "ib2575" | "orbm15" | "ivfg";
+
+/** fixed dollar risk for the ivfg (inverse fvg) strategy */
+const IVFG_RISK_USD = 300;
 
 interface BTTrade {
   date: string;
@@ -231,6 +235,24 @@ function toBTTradesORB(trades: OrbTrade[]): BTTrade[] {
     }));
 }
 
+function toBTTradesIVFG(trades: IvfgTrade[]): BTTrade[] {
+  return trades.map((t) => ({
+    date: t.date,
+    time: t.entryTime,
+    direction: t.direction === "long" ? ("bullish" as const) : ("bearish" as const),
+    entry: t.entryPrice,
+    stop: t.stopLoss,
+    target: t.target,
+    outcome: (t.pnlUsd >= 0 ? "win" : "loss") as "win" | "loss",
+    rMultiple: t.rMultiple,
+    pnl: t.pnlUsd,
+    qty: t.shares,
+    exitTime: t.exitTime,
+    exitPrice: t.exitPrice,
+    reason: t.outcome,
+  }));
+}
+
 function computeMetrics(trades: BTTrade[]): Omit<BTResult, "strategy" | "symbol" | "totalDays" | "trades" | "bars" | "orbTrades" | "orbStats" | "orbSegments"> {
 
   const wins = trades.filter((t) => t.outcome === "win");
@@ -303,6 +325,16 @@ const Backtester = () => {
   const [orbMomentumMode, setOrbMomentumMode] = useState<OrbMomentumMode>("sma");
   const [orbBodyRatio, setOrbBodyRatio] = useState("0.6");
   const [logFilter, setLogFilter] = useState<"all" | "target" | "stop" | "close">("all");
+
+  // ---- ivfg (inverse fvg) params — risk locked at $300 ----
+  const [ivfgSide, setIvfgSide] = useState<IvfgSide>("both");
+  const [ivfgRR, setIvfgRR] = useState("1");
+  const [ivfgMinGap, setIvfgMinGap] = useState("0.05");
+  const [ivfgEntryMode, setIvfgEntryMode] = useState<"retest" | "immediate">("retest");
+  const [ivfgRetestBars, setIvfgRetestBars] = useState("10");
+  const [ivfgExtreme, setIvfgExtreme] = useState("10");
+  const [ivfgRequireMomentum, setIvfgRequireMomentum] = useState("both");
+  const [ivfgDailyTarget, setIvfgDailyTarget] = useState("0");
 
   const [maxDays, setMaxDays] = useState("120");
   const [ibWindow, setIbWindow] = useState("60");
@@ -401,6 +433,27 @@ const Backtester = () => {
           isCsv ? csvCloseMin : undefined,
         );
         trades = toBTTradesPB50(r.trades);
+        totalDays = r.totalDays;
+
+      } else if (strategy === "ivfg") {
+        const isCsv = dataSource === "csv";
+        const r = runIvfgBacktest(symbol.trim().toUpperCase(), values, {
+          riskUsd: IVFG_RISK_USD,
+          rewardMultiple: parseFloat(ivfgRR) || 1,
+          minGap: parseFloat(ivfgMinGap) || 0,
+          waitForRetest: ivfgEntryMode === "retest",
+          retestExpiryBars: parseInt(ivfgRetestBars) || 10,
+          requireExtremeConfirmation: parseInt(ivfgExtreme) > 0,
+          extremeLookback: parseInt(ivfgExtreme) || 10,
+          requireMomentumCandle: ivfgRequireMomentum === "both" || ivfgRequireMomentum === "formation",
+          requireMomentumOnInversion: ivfgRequireMomentum === "both" || ivfgRequireMomentum === "inversion",
+          dailyTarget: parseFloat(ivfgDailyTarget) || 0,
+          side: ivfgSide,
+          sessionStartMin: isCsv ? csvScanStartMin : parseInt(sessionStart),
+          sessionEndMin: isCsv ? csvScanEndMin : 16 * 60,
+          maxDays: days,
+        });
+        trades = toBTTradesIVFG(r.trades);
         totalDays = r.totalDays;
 
       } else if (strategy === "orbm15") {
