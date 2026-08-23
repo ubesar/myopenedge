@@ -235,6 +235,24 @@ function toBTTradesORB(trades: OrbTrade[]): BTTrade[] {
     }));
 }
 
+function toBTTradesIVFG(trades: IvfgTrade[]): BTTrade[] {
+  return trades.map((t) => ({
+    date: t.date,
+    time: t.entryTime,
+    direction: t.direction === "long" ? ("bullish" as const) : ("bearish" as const),
+    entry: t.entryPrice,
+    stop: t.stopLoss,
+    target: t.target,
+    outcome: (t.pnlUsd >= 0 ? "win" : "loss") as "win" | "loss",
+    rMultiple: t.rMultiple,
+    pnl: t.pnlUsd,
+    qty: t.shares,
+    exitTime: t.exitTime,
+    exitPrice: t.exitPrice,
+    reason: t.outcome,
+  }));
+}
+
 function computeMetrics(trades: BTTrade[]): Omit<BTResult, "strategy" | "symbol" | "totalDays" | "trades" | "bars" | "orbTrades" | "orbStats" | "orbSegments"> {
 
   const wins = trades.filter((t) => t.outcome === "win");
