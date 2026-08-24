@@ -605,6 +605,8 @@ const Backtester = () => {
                     <SelectItem value="pb50">50% pullback strategy</SelectItem>
                     <SelectItem value="ib2575">ib momentum limit (ib25/75)</SelectItem>
                     <SelectItem value="orbm15">orb m15 pullback</SelectItem>
+                    <SelectItem value="ivfg">ivfg (inverse fair value gap)</SelectItem>
+
 
                   </SelectContent>
                 </Select>
@@ -681,6 +683,75 @@ const Backtester = () => {
                       </Select>
                     </div>
                   )}
+                </>
+              ) : strategy === "ivfg" ? (
+                <>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">mode setup</Label>
+                    <Select value={ivfgSide} onValueChange={(v) => setIvfgSide(v as IvfgSide)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="both">both (long + short)</SelectItem>
+                        <SelectItem value="long">long only</SelectItem>
+                        <SelectItem value="short">short only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">risk / trade ($)</Label>
+                    <Input value={`${IVFG_RISK_USD}`} disabled className="opacity-70" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">reward (rr)</Label>
+                    <Select value={ivfgRR} onValueChange={setIvfgRR}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {["0.5", "1", "1.5", "2", "3"].map((v) => (
+                          <SelectItem key={v} value={v}>1:{v}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">entry mode</Label>
+                    <Select value={ivfgEntryMode} onValueChange={(v) => setIvfgEntryMode(v as "retest" | "immediate")}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="retest">wait for retest</SelectItem>
+                        <SelectItem value="immediate">immediate (saat inversi)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {ivfgEntryMode === "retest" && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs lowercase">retest expiry (bar)</Label>
+                      <Input value={ivfgRetestBars} onChange={(e) => setIvfgRetestBars(e.target.value)} inputMode="numeric" />
+                    </div>
+                  )}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">extreme lookback (0 = off)</Label>
+                    <Input value={ivfgExtreme} onChange={(e) => setIvfgExtreme(e.target.value)} inputMode="numeric" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">filter momentum</Label>
+                    <Select value={ivfgRequireMomentum} onValueChange={setIvfgRequireMomentum}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="both">formasi + inversi</SelectItem>
+                        <SelectItem value="formation">formasi fvg saja</SelectItem>
+                        <SelectItem value="inversion">inversi saja</SelectItem>
+                        <SelectItem value="none">tanpa filter</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">min gap ($)</Label>
+                    <Input value={ivfgMinGap} onChange={(e) => setIvfgMinGap(e.target.value)} inputMode="decimal" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">daily target ($, 0 = off)</Label>
+                    <Input value={ivfgDailyTarget} onChange={(e) => setIvfgDailyTarget(e.target.value)} inputMode="decimal" />
+                  </div>
                 </>
               ) : strategy === "ib2575" ? (
                 <div className="space-y-1.5">
