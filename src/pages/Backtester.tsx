@@ -503,6 +503,29 @@ const Backtester = () => {
     }
   };
 
+  /** satu baris per hari yang diproses (termasuk hari tanpa setup) */
+  const dailyLog = useMemo(() => {
+    if (!result) return [] as { date: string; trades: BTTrade[] }[];
+    const byDate = new Map<string, BTTrade[]>();
+    for (const t of result.trades) {
+      if (!byDate.has(t.date)) byDate.set(t.date, []);
+      byDate.get(t.date)!.push(t);
+    }
+    const barDates = new Set<string>();
+    for (const b of result.bars ?? []) {
+      const dt: string | undefined = (b as any)?.datetime ?? (b as any)?.date;
+      if (typeof dt === "string" && dt.length >= 10) barDates.add(dt.slice(0, 10));
+    }
+    let dates = Array.from(new Set([...barDates, ...byDate.keys()])).sort();
+    if (result.totalDays > 0) dates = dates.slice(-result.totalDays);
+    return dates
+      .sort((a, b) => b.localeCompare(a))
+      .map((date) => ({
+        date,
+        trades: (byDate.get(date) ?? []).sort((a, b) => (a.time ?? "").localeCompare(b.time ?? "")),
+      }));
+  }, [result]);
+
   const equityCurve = useMemo(() => {
     if (!result) return [];
     let eq = 0;
