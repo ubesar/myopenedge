@@ -605,6 +605,8 @@ const Backtester = () => {
                     <SelectItem value="pb50">50% pullback strategy</SelectItem>
                     <SelectItem value="ib2575">ib momentum limit (ib25/75)</SelectItem>
                     <SelectItem value="orbm15">orb m15 pullback</SelectItem>
+                    <SelectItem value="ivfg">ivfg (inverse fair value gap)</SelectItem>
+
 
                   </SelectContent>
                 </Select>
