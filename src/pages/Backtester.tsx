@@ -503,6 +503,29 @@ const Backtester = () => {
     }
   };
 
+  /** satu baris per hari yang diproses (termasuk hari tanpa setup) */
+  const dailyLog = useMemo(() => {
+    if (!result) return [] as { date: string; trades: BTTrade[] }[];
+    const byDate = new Map<string, BTTrade[]>();
+    for (const t of result.trades) {
+      if (!byDate.has(t.date)) byDate.set(t.date, []);
+      byDate.get(t.date)!.push(t);
+    }
+    const barDates = new Set<string>();
+    for (const b of result.bars ?? []) {
+      const dt: string | undefined = (b as any)?.datetime ?? (b as any)?.date;
+      if (typeof dt === "string" && dt.length >= 10) barDates.add(dt.slice(0, 10));
+    }
+    let dates = Array.from(new Set([...barDates, ...byDate.keys()])).sort();
+    if (result.totalDays > 0) dates = dates.slice(-result.totalDays);
+    return dates
+      .sort((a, b) => b.localeCompare(a))
+      .map((date) => ({
+        date,
+        trades: (byDate.get(date) ?? []).sort((a, b) => (a.time ?? "").localeCompare(b.time ?? "")),
+      }));
+  }, [result]);
+
   const equityCurve = useMemo(() => {
     if (!result) return [];
     let eq = 0;
@@ -1253,6 +1276,65 @@ const Backtester = () => {
                     </table>
                   </div>
                 </Card>
+
+                <Card className="p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-xs font-semibold lowercase">log harian · {dailyLog.length} hari diproses</h3>
+                    <span className="text-[10px] text-muted-foreground lowercase">
+                      {dailyLog.filter((d) => d.trades.length === 0).length} hari tanpa setup
+                    </span>
+                  </div>
+                  <div className="overflow-x-auto max-h-[520px] overflow-y-auto">
+                    <table className="w-full text-[11px]">
+                      <thead className="text-muted-foreground border-b border-border sticky top-0 bg-card">
+                        <tr>
+                          <th className="text-left py-1 px-2">tanggal</th>
+                          <th className="text-left py-1 px-2">waktu entry</th>
+                          <th className="text-left py-1 px-2">waktu exit</th>
+                          <th className="text-left py-1 px-2">side</th>
+                          <th className="text-right py-1 px-2">entry</th>
+                          <th className="text-right py-1 px-2">stop</th>
+                          <th className="text-right py-1 px-2">target</th>
+                          <th className="text-right py-1 px-2">exit</th>
+                          <th className="text-right py-1 px-2">hasil r</th>
+                          <th className="text-right py-1 px-2">pnl</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dailyLog.map(({ date, trades }) =>
+                          trades.length === 0 ? (
+                            <tr key={date} className="border-b border-border/40 text-muted-foreground">
+                              <td className="py-1 px-2">{date}</td>
+                              <td className="py-1 px-2 lowercase" colSpan={9}>no setup</td>
+                            </tr>
+                          ) : (
+                            trades.map((t, i) => (
+                              <tr key={`${date}-${i}`} className="border-b border-border/40">
+                                <td className="py-1 px-2">{i === 0 ? date : ""}</td>
+                                <td className="py-1 px-2">{t.time ?? "-"}</td>
+                                <td className="py-1 px-2">{t.exitTime ? t.exitTime.slice(-8, -3) || t.exitTime : "-"}</td>
+                                <td className={`py-1 px-2 font-medium ${t.direction === "bullish" ? "text-emerald-500" : "text-red-500"}`}>
+                                  {t.direction === "bullish" ? "long" : "short"}
+                                </td>
+                                <td className="py-1 px-2 text-right">{t.entry.toFixed(2)}</td>
+                                <td className="py-1 px-2 text-right">{t.stop.toFixed(2)}</td>
+                                <td className="py-1 px-2 text-right">{t.target.toFixed(2)}</td>
+                                <td className="py-1 px-2 text-right">{t.exitPrice != null ? t.exitPrice.toFixed(2) : "-"}</td>
+                                <td className={`py-1 px-2 text-right font-medium ${t.rMultiple >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                                  {t.rMultiple >= 0 ? "+" : ""}{t.rMultiple.toFixed(2)}R
+                                </td>
+                                <td className={`py-1 px-2 text-right ${t.pnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                                  {t.pnl >= 0 ? "+" : ""}${t.pnl.toFixed(0)}
+                                </td>
+                              </tr>
+                            ))
+                          )
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+
               </TabsContent>
             </Tabs>
           )}
