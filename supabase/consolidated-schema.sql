@@ -544,10 +544,10 @@ DROP TRIGGER IF EXISTS update_market_data_chunks_updated_at ON public.market_dat
 CREATE TRIGGER update_market_data_chunks_updated_at BEFORE UPDATE ON public.market_data_chunks FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 -- ============================================================
--- Storage: trade-screenshots bucket + RLS (private bucket)
+-- Storage: RLS policies for trade-screenshots bucket (private)
+-- NOTE: the bucket itself is created via supabase--storage_create_bucket tool
+--       (INSERT INTO storage.buckets is rejected by the migration tool).
 -- ============================================================
-INSERT INTO storage.buckets (id, name, public) VALUES ('trade-screenshots', 'trade-screenshots', false)
-ON CONFLICT (id) DO NOTHING;
 DROP POLICY IF EXISTS "Users upload own screenshots" ON storage.objects;
 CREATE POLICY "Users upload own screenshots" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'trade-screenshots' AND auth.uid()::text = (storage.foldername(name))[1]);
 DROP POLICY IF EXISTS "Users view own screenshots" ON storage.objects;
