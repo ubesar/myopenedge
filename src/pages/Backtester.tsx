@@ -254,6 +254,24 @@ function toBTTradesIVFG(trades: IvfgTrade[]): BTTrade[] {
   }));
 }
 
+function toBTTradesDREV(trades: DailyReversalTrade[], allocationUsd: number): BTTrade[] {
+  return trades.map((t) => ({
+    date: t.entryDate,
+    time: "open",
+    direction: "bullish" as const,
+    entry: t.entryPrice,
+    stop: t.entryPrice, // no stop-loss in this playbook
+    target: t.exitPrice,
+    outcome: (t.pnlUsd >= 0 ? "win" : "loss") as "win" | "loss",
+    rMultiple: allocationUsd > 0 ? t.pnlUsd / allocationUsd : 0,
+    pnl: t.pnlUsd,
+    qty: t.shares,
+    exitTime: `close ${t.exitDate}`,
+    exitPrice: t.exitPrice,
+    reason: t.outcome === "flip" ? "bullish flip" : `time exit (${t.holdDays}d)`,
+  }));
+}
+
 function computeMetrics(trades: BTTrade[]): Omit<BTResult, "strategy" | "symbol" | "totalDays" | "trades" | "bars" | "orbTrades" | "orbStats" | "orbSegments"> {
 
   const wins = trades.filter((t) => t.outcome === "win");
