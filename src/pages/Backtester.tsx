@@ -355,6 +355,10 @@ const Backtester = () => {
   const [ivfgRequireMomentum, setIvfgRequireMomentum] = useState("both");
   const [ivfgDailyTarget, setIvfgDailyTarget] = useState("0");
 
+  // ---- daily candle reversal params (long only, tanpa stop-loss) ----
+  const [drevMaxHold, setDrevMaxHold] = useState("10");
+  const [drevAllocation, setDrevAllocation] = useState("10000");
+
   const [maxDays, setMaxDays] = useState("120");
   const [ibWindow, setIbWindow] = useState("60");
   const [sessionStart, setSessionStart] = useState("570"); // 09:30 ny open
@@ -490,6 +494,16 @@ const Backtester = () => {
         orbTrades = r.trades;
         orbStats = r;
         orbSegments = segmentOrbStats(r.triggered, 3);
+
+      } else if (strategy === "drev") {
+        const alloc = parseFloat(drevAllocation) || 10000;
+        const r = runDailyReversalBacktest(symbol.trim().toUpperCase(), values, {
+          maxHoldDays: parseInt(drevMaxHold) || 10,
+          allocationUsd: alloc,
+          maxDays: days > 0 ? days : undefined,
+        });
+        trades = toBTTradesDREV(r.tradesList, alloc);
+        totalDays = r.totalDays;
 
       } else {
         const r = analyzeIB2575(values, parseInt(ibWindow), days, [1, 2, 3, 4, 5]);
@@ -648,6 +662,7 @@ const Backtester = () => {
                     <SelectItem value="ib2575">ib momentum limit (ib25/75)</SelectItem>
                     <SelectItem value="orbm15">orb m15 pullback</SelectItem>
                     <SelectItem value="ivfg">ivfg (inverse fair value gap)</SelectItem>
+                    <SelectItem value="drev">daily candle reversal (bearish→bullish flip)</SelectItem>
 
 
                   </SelectContent>
