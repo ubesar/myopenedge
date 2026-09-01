@@ -26,8 +26,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { runOrbM15Backtest, segmentOrbStats, ORB_SESSIONS, type OrbTrade, type OrbSide, type OrbMarket, type OrbStats, type OrbMomentumMode } from "@/lib/orb-backtest";
 import { runIvfgBacktest, type IvfgTrade, type IvfgSide } from "@/lib/ivfg-analysis";
 import { computeAdvancedMetrics } from "@/lib/backtest-metrics";
+import { runDailyReversalBacktest, type DailyReversalTrade } from "@/lib/daily-reversal";
 
-type StrategyKey = "pb50" | "ib2575" | "orbm15" | "ivfg";
+type StrategyKey = "pb50" | "ib2575" | "orbm15" | "ivfg" | "drev";
 
 /** fixed dollar risk for the ivfg (inverse fvg) strategy */
 const IVFG_RISK_USD = 300;
@@ -253,6 +254,24 @@ function toBTTradesIVFG(trades: IvfgTrade[]): BTTrade[] {
   }));
 }
 
+function toBTTradesDREV(trades: DailyReversalTrade[], allocationUsd: number): BTTrade[] {
+  return trades.map((t) => ({
+    date: t.entryDate,
+    time: "open",
+    direction: "bullish" as const,
+    entry: t.entryPrice,
+    stop: t.entryPrice, // no stop-loss in this playbook
+    target: t.exitPrice,
+    outcome: (t.pnlUsd >= 0 ? "win" : "loss") as "win" | "loss",
+    rMultiple: allocationUsd > 0 ? t.pnlUsd / allocationUsd : 0,
+    pnl: t.pnlUsd,
+    qty: t.shares,
+    exitTime: `close ${t.exitDate}`,
+    exitPrice: t.exitPrice,
+    reason: t.outcome === "flip" ? "bullish flip" : `time exit (${t.holdDays}d)`,
+  }));
+}
+
 function computeMetrics(trades: BTTrade[]): Omit<BTResult, "strategy" | "symbol" | "totalDays" | "trades" | "bars" | "orbTrades" | "orbStats" | "orbSegments"> {
 
   const wins = trades.filter((t) => t.outcome === "win");
@@ -335,6 +354,10 @@ const Backtester = () => {
   const [ivfgExtreme, setIvfgExtreme] = useState("10");
   const [ivfgRequireMomentum, setIvfgRequireMomentum] = useState("both");
   const [ivfgDailyTarget, setIvfgDailyTarget] = useState("0");
+
+  // ---- daily candle reversal params (long only, tanpa stop-loss) ----
+  const [drevMaxHold, setDrevMaxHold] = useState("10");
+  const [drevAllocation, setDrevAllocation] = useState("10000");
 
   const [maxDays, setMaxDays] = useState("120");
   const [ibWindow, setIbWindow] = useState("60");
@@ -471,6 +494,16 @@ const Backtester = () => {
         orbTrades = r.trades;
         orbStats = r;
         orbSegments = segmentOrbStats(r.triggered, 3);
+
+      } else if (strategy === "drev") {
+        const alloc = parseFloat(drevAllocation) || 10000;
+        const r = runDailyReversalBacktest(symbol.trim().toUpperCase(), values, {
+          maxHoldDays: parseInt(drevMaxHold) || 10,
+          allocationUsd: alloc,
+          maxDays: days > 0 ? days : undefined,
+        });
+        trades = toBTTradesDREV(r.tradesList, alloc);
+        totalDays = r.totalDays;
 
       } else {
         const r = analyzeIB2575(values, parseInt(ibWindow), days, [1, 2, 3, 4, 5]);
@@ -629,6 +662,7 @@ const Backtester = () => {
                     <SelectItem value="ib2575">ib momentum limit (ib25/75)</SelectItem>
                     <SelectItem value="orbm15">orb m15 pullback</SelectItem>
                     <SelectItem value="ivfg">ivfg (inverse fair value gap)</SelectItem>
+                    <SelectItem value="drev">daily candle reversal (bearish→bullish flip)</SelectItem>
 
 
                   </SelectContent>
@@ -788,6 +822,29 @@ const Backtester = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              ) : strategy === "drev" ? (
+                <>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">max hold (hari trading)</Label>
+                    <Select value={drevMaxHold} onValueChange={setDrevMaxHold}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {["5", "7", "10", "15", "20"].map((v) => (
+                          <SelectItem key={v} value={v}>{v} hari</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">alokasi / trade ($)</Label>
+                    <Input value={drevAllocation} onChange={(e) => setDrevAllocation(e.target.value)} inputMode="decimal" />
+                  </div>
+                  <div className="space-y-1.5 md:col-span-2">
+                    <p className="text-[11px] text-muted-foreground lowercase">
+                      long only · buy di open jika candle kemarin bearish · sell di close saat candle bullish atau setelah {drevMaxHold} hari tanpa flip · tanpa stop-loss
+                    </p>
+                  </div>
+                </>
               ) : dataSource === "csv" ? (
 
                 <>
