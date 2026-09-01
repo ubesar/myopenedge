@@ -822,6 +822,29 @@ const Backtester = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              ) : strategy === "drev" ? (
+                <>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">max hold (hari trading)</Label>
+                    <Select value={drevMaxHold} onValueChange={setDrevMaxHold}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {["5", "7", "10", "15", "20"].map((v) => (
+                          <SelectItem key={v} value={v}>{v} hari</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">alokasi / trade ($)</Label>
+                    <Input value={drevAllocation} onChange={(e) => setDrevAllocation(e.target.value)} inputMode="decimal" />
+                  </div>
+                  <div className="space-y-1.5 md:col-span-2">
+                    <p className="text-[11px] text-muted-foreground lowercase">
+                      long only · buy di open jika candle kemarin bearish · sell di close saat candle bullish atau setelah {drevMaxHold} hari tanpa flip · tanpa stop-loss
+                    </p>
+                  </div>
+                </>
               ) : dataSource === "csv" ? (
 
                 <>
