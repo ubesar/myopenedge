@@ -355,9 +355,17 @@ const Backtester = () => {
   const [ivfgRequireMomentum, setIvfgRequireMomentum] = useState("both");
   const [ivfgDailyTarget, setIvfgDailyTarget] = useState("0");
 
-  // ---- daily candle reversal params (long only, tanpa stop-loss) ----
-  const [drevMaxHold, setDrevMaxHold] = useState("10");
+  // ---- daily candle reversal params (deepbuycandle port, long only) ----
+  const [drevCandleMode, setDrevCandleMode] = useState<"closeVsOpen" | "closeVsPrevClose">("closeVsOpen");
+  const [drevBuyOnBearish, setDrevBuyOnBearish] = useState("true");
+  const [drevBearDays, setDrevBearDays] = useState("1");
+  const [drevBullDays, setDrevBullDays] = useState("1");
+  const [drevMinBodyTicks, setDrevMinBodyTicks] = useState("0");
+  const [drevTickSize, setDrevTickSize] = useState("0.25");
+  const [drevSizing, setDrevSizing] = useState<"notional" | "contracts">("notional");
   const [drevAllocation, setDrevAllocation] = useState("10000");
+  const [drevContracts, setDrevContracts] = useState("1");
+  const [drevPointValue, setDrevPointValue] = useState("20");
 
   const [maxDays, setMaxDays] = useState("120");
   const [ibWindow, setIbWindow] = useState("60");
