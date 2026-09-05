@@ -1,30 +1,33 @@
 /**
- * Daily Candle Reversal — Bearish→Bullish Flip (MyOpenEdge).
+ * Daily Candle Reversal — DeepBuyCandle port (MyOpenEdge).
  *
- * Pure TypeScript backtest engine. Long only, 1 position (no pyramiding),
- * no stop-loss, no SMA filter.
+ * Faithful TypeScript port of the NinjaTrader "DeepBuyCandle" strategy.
  *
- * SIGNAL
- *   bearish candle : close < open
- *   bullish candle : close > open
- *   doji (close = open) : neutral — neither bearish nor bullish
+ * CANDLE DEFINITION (configurable)
+ *   closeVsOpen      : body = close(D) - open(D)
+ *   closeVsPrevClose : body = close(D) - close(D-1)
+ *   |body| in ticks < minBodyTicks  -> neutral / doji (no signal)
+ *   body > 0 -> bullish, body < 0 -> bearish
  *
- * ENTRY
- *   flat AND candle(D-1) bearish  ->  BUY at the OPEN of day D
- *   (the bearish state of D-1 is known from the start of day D)
+ * STREAKS
+ *   consecutive bearish / bullish counters. A neutral candle breaks BOTH
+ *   streaks. A candle of the opposite direction resets the other streak.
  *
- * EXIT (whichever comes first)
- *   candle flip : in-position AND candle(D) bullish -> SELL at the CLOSE of day D
- *   time exit   : position held `maxHoldDays` trading days with no bullish
- *                 candle -> force SELL at the CLOSE of day `maxHoldDays`
- *   if today is bearish while in-position -> no action, just keep counting days
+ * SIGNALS (buyOnBearish = true, default)
+ *   flat  AND bearish streak >= bearishDaysRequired -> logical long = true
+ *             (the buy streak counter is reset to 0 after firing)
+ *   long  AND bullish streak >= bullishDaysRequired -> logical long = false
+ *             (the sell streak counter is reset to 0 after firing)
+ *   buyOnBearish = false flips which streak drives buy vs sell.
  *
- * Pseudocode:
- *   Open(D):  if flat AND candle(D-1) bearish -> BUY
- *   Close(D): if in-position:
- *               barsInTrade++
- *               if candle(D) bullish      -> SELL (tp)
- *               else if barsInTrade >= N  -> SELL (force exit)
+ * EXECUTION (Calculate.OnBarClose)
+ *   Signals are evaluated at the CLOSE of day D, orders fill at the OPEN of
+ *   day D+1 — both for entries and exits. Long only, 1 position, no
+ *   pyramiding, no stop-loss, no target.
+ *
+ * The prop-firm 04:00-06:00 WITA forced-flat window is a live-execution
+ * concern only (the NinjaScript skips it outside State.Realtime), so it is
+ * intentionally not modelled in this backtest engine.
  *
  * Input can be daily bars OR intraday bars — intraday bars are aggregated
  * into daily candles by calendar date first.
@@ -39,30 +42,40 @@ export interface DailyInputBar {
   close: number | string;
 }
 
+export type CandleKind = "bullish" | "bearish" | "neutral";
+export type CandleDefinition = "closeVsOpen" | "closeVsPrevClose";
+
 export interface DailyCandle {
   date: string;
   open: number;
   high: number;
   low: number;
   close: number;
-  /** "bullish" | "bearish" | "doji" */
-  kind: "bullish" | "bearish" | "doji";
+  /** signed body according to the active candle definition */
+  body: number;
+  bodyTicks: number;
+  kind: CandleKind;
 }
 
-export type DailyReversalOutcome = "flip" | "time_exit";
+export type DailyReversalOutcome = "signal_exit" | "open_at_end";
 
 export interface DailyReversalTrade {
   entryDate: string;
   entryPrice: number;
   exitDate: string;
   exitPrice: number;
+  /** contracts (contracts sizing) or shares (notional sizing) */
   shares: number;
   pnlUsd: number;
-  /** return on the allocated notional, in % */
+  /** return on the entry price, in % */
   returnPct: number;
   /** number of trading days the position was held (entry day = 1) */
   holdDays: number;
   outcome: DailyReversalOutcome;
+  /** streak length that triggered the entry */
+  entryStreak: number;
+  /** streak length that triggered the exit (0 when still open at the end) */
+  exitStreak: number;
 }
 
 export interface DailyReversalStats {
@@ -76,33 +89,57 @@ export interface DailyReversalStats {
   avgLoss: number;
   profitFactor: number;
   avgHoldDays: number;
-  flipExits: number;
-  timeExits: number;
+  signalExits: number;
+  openAtEnd: number;
   maxDrawdown: number;
   equityCurve: number[];
 }
 
 export interface DailyReversalOptions {
-  /** max trading days in a trade before the forced exit (default 10) */
-  maxHoldDays?: number;
-  /** fixed notional allocated per trade in $ (default 10000) */
+  /** how bullish/bearish is measured (default "closeVsOpen") */
+  candleMode?: CandleDefinition;
+  /** bodies smaller than this (in ticks) are neutral; 0 = disabled */
+  minBodyTicks?: number;
+  /** instrument tick size used for the minBodyTicks filter (default 0.01) */
+  tickSize?: number;
+  /** true = bearish streak buys (default); false = flips the logic */
+  buyOnBearish?: boolean;
+  /** consecutive bearish candles required (default 1) */
+  bearishDaysRequired?: number;
+  /** consecutive bullish candles required (default 1) */
+  bullishDaysRequired?: number;
+  /** "notional" = allocationUsd / price, "contracts" = fixed contracts */
+  sizing?: "notional" | "contracts";
+  /** fixed notional allocated per trade in $ (notional sizing, default 10000) */
   allocationUsd?: number;
+  /** number of contracts (contracts sizing, default 1) */
+  contracts?: number;
+  /** $ value of a 1.00 price move per contract (contracts sizing, default 1) */
+  pointValue?: number;
   /** limit to the most recent N trading days */
   maxDays?: number;
 }
 
 export interface DailyReversalResult extends DailyReversalStats {
   symbol: string;
-  maxHoldDays: number;
+  candleMode: CandleDefinition;
+  buyOnBearish: boolean;
+  bearishDaysRequired: number;
+  bullishDaysRequired: number;
+  minBodyTicks: number;
+  sizing: "notional" | "contracts";
   allocationUsd: number;
+  contracts: number;
   tradesList: DailyReversalTrade[];
   candles: DailyCandle[];
 }
 
 const num = (v: number | string) => (typeof v === "number" ? v : parseFloat(v));
 
-/** Aggregate (possibly intraday) bars into daily candles, sorted ascending. */
-export function aggregateDailyBars(bars: DailyInputBar[]): DailyCandle[] {
+interface RawDaily { date: string; open: number; high: number; low: number; close: number }
+
+/** Aggregate (possibly intraday) bars into daily OHLC, sorted ascending. */
+function aggregateRaw(bars: DailyInputBar[]): RawDaily[] {
   const map = new Map<string, { open: number; high: number; low: number; close: number; first: string; last: string }>();
   for (const b of bars) {
     const dt = String(b.datetime).replace("T", " ");
@@ -122,14 +159,34 @@ export function aggregateDailyBars(bars: DailyInputBar[]): DailyCandle[] {
   }
   return Array.from(map.entries())
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, v]) => ({
-      date,
-      open: v.open,
-      high: v.high,
-      low: v.low,
-      close: v.close,
-      kind: v.close > v.open ? "bullish" : v.close < v.open ? "bearish" : "doji",
-    }));
+    .map(([date, v]) => ({ date, open: v.open, high: v.high, low: v.low, close: v.close }));
+}
+
+/**
+ * Aggregate bars into classified daily candles.
+ * `closeVsPrevClose` compares against the previous day's close; the first
+ * candle of the series is therefore always neutral in that mode.
+ */
+export function aggregateDailyBars(
+  bars: DailyInputBar[],
+  candleMode: CandleDefinition = "closeVsOpen",
+  minBodyTicks = 0,
+  tickSize = 0.01,
+): DailyCandle[] {
+  const raw = aggregateRaw(bars);
+  const ts = tickSize > 0 ? tickSize : 0.01;
+  return raw.map((d, i) => {
+    const ref = candleMode === "closeVsPrevClose" ? (i > 0 ? raw[i - 1].close : NaN) : d.open;
+    const body = isFinite(ref) ? d.close - ref : 0;
+    const bodyTicks = Math.abs(body) / ts;
+    const valid = body !== 0 && bodyTicks >= minBodyTicks;
+    return {
+      ...d,
+      body,
+      bodyTicks,
+      kind: (valid ? (body > 0 ? "bullish" : "bearish") : "neutral") as CandleKind,
+    };
+  });
 }
 
 export function runDailyReversalBacktest(
@@ -137,73 +194,117 @@ export function runDailyReversalBacktest(
   inputBars: DailyInputBar[],
   options: DailyReversalOptions = {}
 ): DailyReversalResult {
-  const maxHoldDays = Math.max(1, options.maxHoldDays ?? 10);
+  const candleMode = options.candleMode ?? "closeVsOpen";
+  const minBodyTicks = Math.max(0, options.minBodyTicks ?? 0);
+  const tickSize = options.tickSize && options.tickSize > 0 ? options.tickSize : 0.01;
+  const buyOnBearish = options.buyOnBearish ?? true;
+  const bearishDaysRequired = Math.max(1, options.bearishDaysRequired ?? 1);
+  const bullishDaysRequired = Math.max(1, options.bullishDaysRequired ?? 1);
+  const sizing = options.sizing ?? "notional";
   const allocationUsd = options.allocationUsd ?? 10_000;
+  const contracts = Math.max(1, options.contracts ?? 1);
+  const pointValue = options.pointValue && options.pointValue > 0 ? options.pointValue : 1;
 
-  let candles = aggregateDailyBars(inputBars);
-  if (options.maxDays && options.maxDays > 0 && candles.length > options.maxDays + 1) {
-    // keep one extra day at the front so the first in-range day can still
-    // reference candle(D-1) for its entry condition
-    candles = candles.slice(candles.length - (options.maxDays + 1));
+  let candles = aggregateDailyBars(inputBars, candleMode, minBodyTicks, tickSize);
+  if (options.maxDays && options.maxDays > 0 && candles.length > options.maxDays) {
+    candles = candles.slice(candles.length - options.maxDays);
   }
 
   const tradesList: DailyReversalTrade[] = [];
-  let pos: { entryDate: string; entryPrice: number; shares: number; daysHeld: number } | null = null;
+  let logicalLong = false;
+  let bearStreak = 0;
+  let bullStreak = 0;
+  /** pending order to be filled at the next bar open */
+  let pending: { side: "buy" | "sell"; streak: number } | null = null;
+  let pos: { entryDate: string; entryPrice: number; shares: number; entryIndex: number; entryStreak: number } | null = null;
 
-  for (let i = 1; i < candles.length; i++) {
-    const prev = candles[i - 1];
+  const sizeFor = (price: number) =>
+    sizing === "contracts" ? contracts : price > 0 ? allocationUsd / price : 0;
+
+  for (let i = 0; i < candles.length; i++) {
     const cur = candles[i];
 
-    // Open(D): flat AND candle(D-1) bearish -> BUY at open
-    if (!pos && prev.kind === "bearish") {
-      const shares = cur.open > 0 ? allocationUsd / cur.open : 0;
-      if (shares > 0) pos = { entryDate: cur.date, entryPrice: cur.open, shares, daysHeld: 0 };
-    }
-
-    // Close(D)
-    if (pos) {
-      pos.daysHeld++;
-      const flip = cur.kind === "bullish";
-      const timeUp = pos.daysHeld >= maxHoldDays;
-      if (flip || timeUp) {
-        const pnlUsd = pos.shares * (cur.close - pos.entryPrice);
+    // ---- fill pending order at this bar's OPEN ----
+    if (pending) {
+      if (pending.side === "buy" && !pos) {
+        const shares = sizeFor(cur.open);
+        if (shares > 0) {
+          pos = { entryDate: cur.date, entryPrice: cur.open, shares, entryIndex: i, entryStreak: pending.streak };
+        }
+      } else if (pending.side === "sell" && pos) {
+        const mult = sizing === "contracts" ? pointValue : 1;
         tradesList.push({
           entryDate: pos.entryDate,
           entryPrice: pos.entryPrice,
           exitDate: cur.date,
-          exitPrice: cur.close,
+          exitPrice: cur.open,
           shares: pos.shares,
-          pnlUsd,
-          returnPct: (cur.close - pos.entryPrice) / pos.entryPrice * 100,
-          holdDays: pos.daysHeld,
-          outcome: flip ? "flip" : "time_exit",
+          pnlUsd: pos.shares * (cur.open - pos.entryPrice) * mult,
+          returnPct: ((cur.open - pos.entryPrice) / pos.entryPrice) * 100,
+          holdDays: i - pos.entryIndex,
+          outcome: "signal_exit",
+          entryStreak: pos.entryStreak,
+          exitStreak: pending.streak,
         });
         pos = null;
+      }
+      pending = null;
+    }
+
+    // ---- evaluate the candle at its CLOSE ----
+    if (cur.kind === "bearish") { bearStreak++; bullStreak = 0; }
+    else if (cur.kind === "bullish") { bullStreak++; bearStreak = 0; }
+    else { bearStreak = 0; bullStreak = 0; }
+
+    const buyCount = buyOnBearish ? bearStreak : bullStreak;
+    const buyRequired = buyOnBearish ? bearishDaysRequired : bullishDaysRequired;
+    const sellCount = buyOnBearish ? bullStreak : bearStreak;
+    const sellRequired = buyOnBearish ? bullishDaysRequired : bearishDaysRequired;
+
+    if (!logicalLong) {
+      if (buyCount >= buyRequired) {
+        logicalLong = true;
+        pending = { side: "buy", streak: buyCount };
+        if (buyOnBearish) bearStreak = 0; else bullStreak = 0;
+      }
+    } else {
+      if (sellCount >= sellRequired) {
+        logicalLong = false;
+        pending = { side: "sell", streak: sellCount };
+        if (buyOnBearish) bullStreak = 0; else bearStreak = 0;
       }
     }
   }
 
-  // still open at the end of the series -> mark-to-market close at last close
+  // still open at the end of the series -> mark-to-market at the last close
   if (pos && candles.length) {
     const last = candles[candles.length - 1];
-    const pnlUsd = pos.shares * (last.close - pos.entryPrice);
+    const mult = sizing === "contracts" ? pointValue : 1;
     tradesList.push({
       entryDate: pos.entryDate,
       entryPrice: pos.entryPrice,
       exitDate: last.date,
       exitPrice: last.close,
       shares: pos.shares,
-      pnlUsd,
-      returnPct: (last.close - pos.entryPrice) / pos.entryPrice * 100,
-      holdDays: pos.daysHeld,
-      outcome: pos.daysHeld >= maxHoldDays ? "time_exit" : "flip",
+      pnlUsd: pos.shares * (last.close - pos.entryPrice) * mult,
+      returnPct: ((last.close - pos.entryPrice) / pos.entryPrice) * 100,
+      holdDays: candles.length - 1 - pos.entryIndex + 1,
+      outcome: "open_at_end",
+      entryStreak: pos.entryStreak,
+      exitStreak: 0,
     });
   }
 
   return {
     symbol,
-    maxHoldDays,
+    candleMode,
+    buyOnBearish,
+    bearishDaysRequired,
+    bullishDaysRequired,
+    minBodyTicks,
+    sizing,
     allocationUsd,
+    contracts,
     tradesList,
     candles,
     ...computeDailyReversalStats(tradesList, candles.length),
@@ -240,8 +341,8 @@ export function computeDailyReversalStats(
     avgLoss: losses.length ? grossLoss / losses.length : 0,
     profitFactor: grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? Infinity : 0,
     avgHoldDays: trades.length ? trades.reduce((s, t) => s + t.holdDays, 0) / trades.length : 0,
-    flipExits: trades.filter((t) => t.outcome === "flip").length,
-    timeExits: trades.filter((t) => t.outcome === "time_exit").length,
+    signalExits: trades.filter((t) => t.outcome === "signal_exit").length,
+    openAtEnd: trades.filter((t) => t.outcome === "open_at_end").length,
     maxDrawdown,
     equityCurve,
   };

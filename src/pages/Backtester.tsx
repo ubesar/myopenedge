@@ -254,7 +254,7 @@ function toBTTradesIVFG(trades: IvfgTrade[]): BTTrade[] {
   }));
 }
 
-function toBTTradesDREV(trades: DailyReversalTrade[], allocationUsd: number): BTTrade[] {
+function toBTTradesDREV(trades: DailyReversalTrade[], riskBase: number): BTTrade[] {
   return trades.map((t) => ({
     date: t.entryDate,
     time: "open",
@@ -263,12 +263,15 @@ function toBTTradesDREV(trades: DailyReversalTrade[], allocationUsd: number): BT
     stop: t.entryPrice, // no stop-loss in this playbook
     target: t.exitPrice,
     outcome: (t.pnlUsd >= 0 ? "win" : "loss") as "win" | "loss",
-    rMultiple: allocationUsd > 0 ? t.pnlUsd / allocationUsd : 0,
+    rMultiple: riskBase > 0 ? t.pnlUsd / riskBase : 0,
     pnl: t.pnlUsd,
     qty: t.shares,
-    exitTime: `close ${t.exitDate}`,
+    exitTime: `open ${t.exitDate}`,
     exitPrice: t.exitPrice,
-    reason: t.outcome === "flip" ? "bullish flip" : `time exit (${t.holdDays}d)`,
+    reason:
+      t.outcome === "signal_exit"
+        ? `exit signal (streak ${t.exitStreak}) · ${t.holdDays}d`
+        : `open at end · ${t.holdDays}d`,
   }));
 }
 
@@ -355,9 +358,17 @@ const Backtester = () => {
   const [ivfgRequireMomentum, setIvfgRequireMomentum] = useState("both");
   const [ivfgDailyTarget, setIvfgDailyTarget] = useState("0");
 
-  // ---- daily candle reversal params (long only, tanpa stop-loss) ----
-  const [drevMaxHold, setDrevMaxHold] = useState("10");
+  // ---- daily candle reversal params (deepbuycandle port, long only) ----
+  const [drevCandleMode, setDrevCandleMode] = useState<"closeVsOpen" | "closeVsPrevClose">("closeVsOpen");
+  const [drevBuyOnBearish, setDrevBuyOnBearish] = useState("true");
+  const [drevBearDays, setDrevBearDays] = useState("1");
+  const [drevBullDays, setDrevBullDays] = useState("1");
+  const [drevMinBodyTicks, setDrevMinBodyTicks] = useState("0");
+  const [drevTickSize, setDrevTickSize] = useState("0.25");
+  const [drevSizing, setDrevSizing] = useState<"notional" | "contracts">("notional");
   const [drevAllocation, setDrevAllocation] = useState("10000");
+  const [drevContracts, setDrevContracts] = useState("1");
+  const [drevPointValue, setDrevPointValue] = useState("20");
 
   const [maxDays, setMaxDays] = useState("120");
   const [ibWindow, setIbWindow] = useState("60");
@@ -497,12 +508,22 @@ const Backtester = () => {
 
       } else if (strategy === "drev") {
         const alloc = parseFloat(drevAllocation) || 10000;
+        const ctr = parseInt(drevContracts) || 1;
+        const pv = parseFloat(drevPointValue) || 1;
         const r = runDailyReversalBacktest(symbol.trim().toUpperCase(), values, {
-          maxHoldDays: parseInt(drevMaxHold) || 10,
+          candleMode: drevCandleMode,
+          minBodyTicks: parseFloat(drevMinBodyTicks) || 0,
+          tickSize: parseFloat(drevTickSize) || 0.01,
+          buyOnBearish: drevBuyOnBearish === "true",
+          bearishDaysRequired: parseInt(drevBearDays) || 1,
+          bullishDaysRequired: parseInt(drevBullDays) || 1,
+          sizing: drevSizing,
           allocationUsd: alloc,
+          contracts: ctr,
+          pointValue: pv,
           maxDays: days > 0 ? days : undefined,
         });
-        trades = toBTTradesDREV(r.tradesList, alloc);
+        trades = toBTTradesDREV(r.tradesList, drevSizing === "contracts" ? ctr * pv : alloc);
         totalDays = r.totalDays;
 
       } else {
@@ -825,23 +846,81 @@ const Backtester = () => {
               ) : strategy === "drev" ? (
                 <>
                   <div className="space-y-1.5">
-                    <Label className="text-xs lowercase">max hold (hari trading)</Label>
-                    <Select value={drevMaxHold} onValueChange={setDrevMaxHold}>
+                    <Label className="text-xs lowercase">candle definition</Label>
+                    <Select value={drevCandleMode} onValueChange={(v) => setDrevCandleMode(v as "closeVsOpen" | "closeVsPrevClose")}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {["5", "7", "10", "15", "20"].map((v) => (
-                          <SelectItem key={v} value={v}>{v} hari</SelectItem>
-                        ))}
+                        <SelectItem value="closeVsOpen">close vs open</SelectItem>
+                        <SelectItem value="closeVsPrevClose">close vs prev close</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs lowercase">alokasi / trade ($)</Label>
-                    <Input value={drevAllocation} onChange={(e) => setDrevAllocation(e.target.value)} inputMode="decimal" />
+                    <Label className="text-xs lowercase">arah sinyal</Label>
+                    <Select value={drevBuyOnBearish} onValueChange={setDrevBuyOnBearish}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="true">buy on bearish streak</SelectItem>
+                        <SelectItem value="false">buy on bullish streak</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">bearish days required</Label>
+                    <Select value={drevBearDays} onValueChange={setDrevBearDays}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {["1", "2", "3", "4", "5"].map((v) => <SelectItem key={v} value={v}>{v} candle</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">bullish days required</Label>
+                    <Select value={drevBullDays} onValueChange={setDrevBullDays}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {["1", "2", "3", "4", "5"].map((v) => <SelectItem key={v} value={v}>{v} candle</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">min body (ticks)</Label>
+                    <Input value={drevMinBodyTicks} onChange={(e) => setDrevMinBodyTicks(e.target.value)} inputMode="decimal" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">tick size</Label>
+                    <Input value={drevTickSize} onChange={(e) => setDrevTickSize(e.target.value)} inputMode="decimal" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">sizing</Label>
+                    <Select value={drevSizing} onValueChange={(v) => setDrevSizing(v as "notional" | "contracts")}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="notional">notional ($ / trade)</SelectItem>
+                        <SelectItem value="contracts">contracts</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {drevSizing === "notional" ? (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs lowercase">alokasi / trade ($)</Label>
+                      <Input value={drevAllocation} onChange={(e) => setDrevAllocation(e.target.value)} inputMode="decimal" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs lowercase">contracts</Label>
+                        <Input value={drevContracts} onChange={(e) => setDrevContracts(e.target.value)} inputMode="numeric" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs lowercase">point value ($ per 1.00)</Label>
+                        <Input value={drevPointValue} onChange={(e) => setDrevPointValue(e.target.value)} inputMode="decimal" />
+                      </div>
+                    </>
+                  )}
                   <div className="space-y-1.5 md:col-span-2">
                     <p className="text-[11px] text-muted-foreground lowercase">
-                      long only · buy di open jika candle kemarin bearish · sell di close saat candle bullish atau setelah {drevMaxHold} hari tanpa flip · tanpa stop-loss
+                      long only · sinyal dievaluasi di close, order fill di open hari berikutnya · buy setelah {drevBearDays} candle {drevBuyOnBearish === "true" ? "bearish" : "bullish"} berturut-turut · sell setelah {drevBullDays} candle {drevBuyOnBearish === "true" ? "bullish" : "bearish"} berturut-turut · tanpa stop-loss, tanpa time exit
                     </p>
                   </div>
                 </>
