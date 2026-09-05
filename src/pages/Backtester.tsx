@@ -254,7 +254,7 @@ function toBTTradesIVFG(trades: IvfgTrade[]): BTTrade[] {
   }));
 }
 
-function toBTTradesDREV(trades: DailyReversalTrade[], allocationUsd: number): BTTrade[] {
+function toBTTradesDREV(trades: DailyReversalTrade[], riskBase: number): BTTrade[] {
   return trades.map((t) => ({
     date: t.entryDate,
     time: "open",
@@ -263,12 +263,15 @@ function toBTTradesDREV(trades: DailyReversalTrade[], allocationUsd: number): BT
     stop: t.entryPrice, // no stop-loss in this playbook
     target: t.exitPrice,
     outcome: (t.pnlUsd >= 0 ? "win" : "loss") as "win" | "loss",
-    rMultiple: allocationUsd > 0 ? t.pnlUsd / allocationUsd : 0,
+    rMultiple: riskBase > 0 ? t.pnlUsd / riskBase : 0,
     pnl: t.pnlUsd,
     qty: t.shares,
-    exitTime: `close ${t.exitDate}`,
+    exitTime: `open ${t.exitDate}`,
     exitPrice: t.exitPrice,
-    reason: t.outcome === "flip" ? "bullish flip" : `time exit (${t.holdDays}d)`,
+    reason:
+      t.outcome === "signal_exit"
+        ? `exit signal (streak ${t.exitStreak}) · ${t.holdDays}d`
+        : `open at end · ${t.holdDays}d`,
   }));
 }
 
