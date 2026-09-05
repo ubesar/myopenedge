@@ -508,12 +508,22 @@ const Backtester = () => {
 
       } else if (strategy === "drev") {
         const alloc = parseFloat(drevAllocation) || 10000;
+        const ctr = parseInt(drevContracts) || 1;
+        const pv = parseFloat(drevPointValue) || 1;
         const r = runDailyReversalBacktest(symbol.trim().toUpperCase(), values, {
-          maxHoldDays: parseInt(drevMaxHold) || 10,
+          candleMode: drevCandleMode,
+          minBodyTicks: parseFloat(drevMinBodyTicks) || 0,
+          tickSize: parseFloat(drevTickSize) || 0.01,
+          buyOnBearish: drevBuyOnBearish === "true",
+          bearishDaysRequired: parseInt(drevBearDays) || 1,
+          bullishDaysRequired: parseInt(drevBullDays) || 1,
+          sizing: drevSizing,
           allocationUsd: alloc,
+          contracts: ctr,
+          pointValue: pv,
           maxDays: days > 0 ? days : undefined,
         });
-        trades = toBTTradesDREV(r.tradesList, alloc);
+        trades = toBTTradesDREV(r.tradesList, drevSizing === "contracts" ? ctr * pv : alloc);
         totalDays = r.totalDays;
 
       } else {
