@@ -392,6 +392,7 @@ const Backtester = () => {
   const [csvM5Bars, setCsvM5Bars] = useState<CsvBar[] | null>(null); // m5 — entry/tp/sl
   const [csvM5Name, setCsvM5Name] = useState("");
   const [csvOffset, setCsvOffset] = useState("0");
+  const csvIsDaily = !!csvBars?.length && csvBars.every((b) => b.datetime.endsWith(" 00:00:00"));
 
   const toMin = (v: string) => {
     const [h, m] = v.split(":").map(Number);
@@ -439,6 +440,10 @@ const Backtester = () => {
       let values: any[];
       if (dataSource === "csv") {
         if (!csvBars?.length) throw new Error("import a csv file first");
+        if (csvIsDaily && strategy !== "drev")
+          throw new Error("file csv ini data harian (d1) — hanya strategi daily candle reversal yang bisa memakainya");
+        if (!csvIsDaily && strategy === "drev")
+          console.log("[drev] intraday csv → diagregasi jadi daily candle");
         values = csvBars;
       } else {
         const usePreMarket = strategy === "pb50" && parseInt(sessionStart) < 9 * 60 + 30;
@@ -977,7 +982,7 @@ const Backtester = () => {
             {dataSource === "csv" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-border pt-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs lowercase">csv m5 (scan m15 + entry / tp / sl)</Label>
+                  <Label className="text-xs lowercase">csv m5 (intraday) / d1 (daily candle reversal)</Label>
                   <Input
                     type="file"
                     accept=".csv,text/csv"
@@ -989,7 +994,7 @@ const Backtester = () => {
                   />
                   <p className="text-[11px] text-muted-foreground lowercase">
                     {csvM5Bars?.length
-                      ? `${csvM5Name} · ${csvM5Bars.length} bars m5 · ${csvM5Bars[0].datetime.slice(0, 10)} → ${csvM5Bars[csvM5Bars.length - 1].datetime.slice(0, 10)}`
+                      ? `${csvM5Name} · ${csvM5Bars.length} bars ${csvIsDaily ? "d1" : "m5"} · ${csvM5Bars[0].datetime.slice(0, 10)} → ${csvM5Bars[csvM5Bars.length - 1].datetime.slice(0, 10)}`
                       : "format: time,open,high,low,close,volume (ninjatrader export) · m15 dibentuk otomatis pada kelipatan 15 menit"}
                   </p>
                 </div>
