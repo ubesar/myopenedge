@@ -417,7 +417,8 @@ const Backtester = () => {
       setCsvName(file.name);
       const guess = file.name.replace(/\.csv$/i, "").split(/[_\-\s]/).find((p) => /^[A-Za-z]{1,6}$/.test(p) && p.toLowerCase() !== "export");
       if (guess) setSymbol(guess.toUpperCase());
-      toast.success(`${bars.length} bars m5 loaded from ${file.name}`);
+      const isDaily = bars.every((b) => b.datetime.endsWith("00:00:00"));
+      toast.success(`${bars.length} bars ${isDaily ? "d1" : "m5"} loaded from ${file.name}`);
     } catch (e: any) {
       setCsvBars(null);
       setCsvName("");
