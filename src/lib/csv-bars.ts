@@ -98,14 +98,20 @@ export function parseCsvBars(text: string, hourOffset = 0): CsvBar[] {
   const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
   if (lines.length < 2) throw new Error("csv is empty");
 
+  const header = lines[0].replace(/^\ufeff/, "").toLowerCase();
+  if (header.includes("tanggal") || ID_DATE_RE.test(lines[0].replace(/^\ufeff/, "").replace(/^"/, "").slice(0, 10))) {
+    return parseInvestingDaily(lines);
+  }
+
   const delimiter = lines[0].includes(";") ? ";" : ",";
   const out: CsvBar[] = [];
 
   for (let li = 0; li < lines.length; li++) {
-    const raw = lines[li].split(delimiter).map((s) => s.trim().replace(/^"|"$/g, ""));
+    const raw = lines[li].split(delimiter).map((s) => s.trim().replace(/^"|"$/g, "").replace(/^\ufeff/, ""));
     if (raw.length < 5) continue;
     const dt = raw[0];
     if (!DT_RE.test(dt)) continue; // skips the header and malformed rows
+    const dailyRow = DATE_ONLY_RE.test(dt);
 
     const rest = raw.slice(1);
     let ohlc: number[] | null;
@@ -120,7 +126,13 @@ export function parseCsvBars(text: string, hourOffset = 0): CsvBar[] {
     // sanity check — drops truncated / malformed rows
     if (h < l || o > h || o < l || c > h || c < l) continue;
 
-    const datetime = hourOffset ? shiftDatetime(dt, hourOffset) : `${dt.replace("T", " ")}${dt.length === 16 ? ":00" : ""}`;
+    // daily rows keep their calendar date — no session shifting
+    const datetime = dailyRow
+      ? `${dt} 00:00:00`
+      : hourOffset
+        ? shiftDatetime(dt, hourOffset)
+        : `${dt.replace("T", " ")}${dt.length === 16 ? ":00" : ""}`;
+
     out.push({
       datetime,
       open: String(ohlc[0]),
