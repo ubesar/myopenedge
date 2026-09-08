@@ -46,6 +46,11 @@ export interface CalMondayOptions {
   pointValue?: number;
   contracts?: number;
   maxDays?: number;
+  /**
+   * true  → skip the day when no bar sits inside [target, target+tolerance]
+   * false → fall back to the nearest available bar (rth-only feeds like qqq have no 06:00 bar)
+   */
+  strictWindow?: boolean;
 }
 
 export interface CalMondayResult {
@@ -79,6 +84,7 @@ export function runCalendarMondayBacktest(
   const cost = opts.costPoints ?? 0.5;
   const pv = opts.pointValue ?? 1;
   const contracts = opts.contracts ?? 1;
+  const strict = opts.strictWindow ?? false;
 
   // group bars by calendar date
   const byDate = new Map<string, { dt: string; min: number; open: number }[]>();
@@ -102,8 +108,15 @@ export function runCalendarMondayBacktest(
     if (weekdayOf(date) !== weekday) continue;
     const day = (byDate.get(date) ?? []).sort((a, b) => a.min - b.min);
     const pick = (target: number) => day.find((b) => b.min >= target && b.min <= target + tol);
-    const e = pick(entryMin);
-    const x = pick(exitMin);
+    // fallback for session-limited feeds (etf/stock rth data has no 06:00 bar):
+    // entry = first bar at/after the target, else the first bar of the day
+    const pickEntry = (target: number) =>
+      pick(target) ?? (strict ? undefined : day.find((b) => b.min >= target) ?? day[0]);
+    // exit = first bar at/after the target, else the last bar of the day
+    const pickExit = (target: number) =>
+      pick(target) ?? (strict ? undefined : day.find((b) => b.min >= target) ?? day[day.length - 1]);
+    const e = pickEntry(entryMin);
+    const x = pickExit(exitMin);
     if (!e || !x || x.min <= e.min) {
       skipped.push({ date, reason: !e ? "no entry bar" : "no exit bar" });
       continue;
