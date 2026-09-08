@@ -394,6 +394,7 @@ const Backtester = () => {
   const [calCost, setCalCost] = useState("0.5");
   const [calPointValue, setCalPointValue] = useState("1");
   const [calContracts, setCalContracts] = useState("1");
+  const [calStrict, setCalStrict] = useState("false");
 
   const [maxDays, setMaxDays] = useState("120");
   const [ibWindow, setIbWindow] = useState("60");
@@ -567,6 +568,7 @@ const Backtester = () => {
           costPoints: parseFloat(calCost) || 0,
           pointValue: pv,
           contracts: ctr,
+          strictWindow: calStrict === "true",
           maxDays: days > 0 ? days : undefined,
         });
         trades = toBTTradesCALMON(r.trades, pv * ctr);
@@ -924,6 +926,16 @@ const Backtester = () => {
                   <div className="space-y-1.5">
                     <Label className="text-xs lowercase">contracts</Label>
                     <Input value={calContracts} onChange={(e) => setCalContracts(e.target.value)} inputMode="numeric" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">jika jam tidak tersedia</Label>
+                    <Select value={calStrict} onValueChange={setCalStrict}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="false">pakai bar terdekat (qqq / data rth)</SelectItem>
+                        <SelectItem value="true">skip hari itu (futures 24 jam)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="md:col-span-4">
                     <p className="text-[11px] text-muted-foreground lowercase">
