@@ -27,8 +27,9 @@ import { runOrbM15Backtest, segmentOrbStats, ORB_SESSIONS, type OrbTrade, type O
 import { runIvfgBacktest, type IvfgTrade, type IvfgSide } from "@/lib/ivfg-analysis";
 import { computeAdvancedMetrics } from "@/lib/backtest-metrics";
 import { runDailyReversalBacktest, type DailyReversalTrade } from "@/lib/daily-reversal";
+import { runCalendarMondayBacktest, type CalMondayTrade } from "@/lib/calendar-monday";
 
-type StrategyKey = "pb50" | "ib2575" | "orbm15" | "ivfg" | "drev";
+type StrategyKey = "pb50" | "ib2575" | "orbm15" | "ivfg" | "drev" | "calmon";
 
 /** fixed dollar risk for the ivfg (inverse fvg) strategy */
 const IVFG_RISK_USD = 300;
@@ -275,6 +276,24 @@ function toBTTradesDREV(trades: DailyReversalTrade[], riskBase: number): BTTrade
   }));
 }
 
+function toBTTradesCALMON(trades: CalMondayTrade[], riskBase: number): BTTrade[] {
+  return trades.map((t) => ({
+    date: t.date,
+    time: t.entryTime,
+    direction: "bullish" as const,
+    entry: t.entryPrice,
+    stop: t.entryPrice, // no stop in this playbook
+    target: t.exitPrice,
+    outcome: t.outcome,
+    rMultiple: riskBase > 0 ? t.pnlUsd / riskBase : 0,
+    pnl: t.pnlUsd,
+    qty: t.contracts,
+    exitTime: t.exitTime,
+    exitPrice: t.exitPrice,
+    reason: `time exit · ${t.netPoints.toFixed(2)} pts`,
+  }));
+}
+
 function computeMetrics(trades: BTTrade[]): Omit<BTResult, "strategy" | "symbol" | "totalDays" | "trades" | "bars" | "orbTrades" | "orbStats" | "orbSegments"> {
 
   const wins = trades.filter((t) => t.outcome === "win");
@@ -369,6 +388,12 @@ const Backtester = () => {
   const [drevAllocation, setDrevAllocation] = useState("10000");
   const [drevContracts, setDrevContracts] = useState("1");
   const [drevPointValue, setDrevPointValue] = useState("20");
+  const [calWeekday, setCalWeekday] = useState("1");
+  const [calEntry, setCalEntry] = useState("06:00");
+  const [calExit, setCalExit] = useState("16:00");
+  const [calCost, setCalCost] = useState("0.5");
+  const [calPointValue, setCalPointValue] = useState("1");
+  const [calContracts, setCalContracts] = useState("1");
 
   const [maxDays, setMaxDays] = useState("120");
   const [ibWindow, setIbWindow] = useState("60");
@@ -532,6 +557,21 @@ const Backtester = () => {
         trades = toBTTradesDREV(r.tradesList, drevSizing === "contracts" ? ctr * pv : alloc);
         totalDays = r.totalDays;
 
+      } else if (strategy === "calmon") {
+        const pv = parseFloat(calPointValue) || 1;
+        const ctr = parseInt(calContracts) || 1;
+        const r = runCalendarMondayBacktest(values, {
+          weekday: parseInt(calWeekday),
+          entryMin: toMin(calEntry),
+          exitMin: toMin(calExit),
+          costPoints: parseFloat(calCost) || 0,
+          pointValue: pv,
+          contracts: ctr,
+          maxDays: days > 0 ? days : undefined,
+        });
+        trades = toBTTradesCALMON(r.trades, pv * ctr);
+        totalDays = r.totalDays;
+
       } else {
         const r = analyzeIB2575(values, parseInt(ibWindow), days, [1, 2, 3, 4, 5]);
         trades = toBTTradesIB2575(r.trades, parseInt(ibWindow));
@@ -690,6 +730,7 @@ const Backtester = () => {
                     <SelectItem value="orbm15">orb m15 pullback</SelectItem>
                     <SelectItem value="ivfg">ivfg (inverse fair value gap)</SelectItem>
                     <SelectItem value="drev">daily candle reversal (bearish→bullish flip)</SelectItem>
+                    <SelectItem value="calmon">calendar monday (06:00 → 16:00 et)</SelectItem>
 
 
                   </SelectContent>
@@ -849,6 +890,47 @@ const Backtester = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              ) : strategy === "calmon" ? (
+                <>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">hari</Label>
+                    <Select value={calWeekday} onValueChange={setCalWeekday}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">monday</SelectItem>
+                        <SelectItem value="2">tuesday</SelectItem>
+                        <SelectItem value="3">wednesday</SelectItem>
+                        <SelectItem value="4">thursday</SelectItem>
+                        <SelectItem value="5">friday</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">buy time (et)</Label>
+                    <Input value={calEntry} onChange={(e) => setCalEntry(e.target.value)} placeholder="06:00" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">sell time (et)</Label>
+                    <Input value={calExit} onChange={(e) => setCalExit(e.target.value)} placeholder="16:00" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">cost (points / round trip)</Label>
+                    <Input value={calCost} onChange={(e) => setCalCost(e.target.value)} inputMode="decimal" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">point value ($)</Label>
+                    <Input value={calPointValue} onChange={(e) => setCalPointValue(e.target.value)} inputMode="decimal" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">contracts</Label>
+                    <Input value={calContracts} onChange={(e) => setCalContracts(e.target.value)} inputMode="numeric" />
+                  </div>
+                  <div className="md:col-span-4">
+                    <p className="text-[11px] text-muted-foreground lowercase">
+                      long only · hanya {["sunday","monday","tuesday","wednesday","thursday","friday","saturday"][parseInt(calWeekday)]} · buy di open candle {calEntry} et, sell di open candle {calExit} et · tanpa sl / tp · hari libur otomatis dilewati
+                    </p>
+                  </div>
+                </>
               ) : strategy === "drev" ? (
                 <>
                   <div className="space-y-1.5">
