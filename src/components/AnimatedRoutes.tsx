@@ -20,6 +20,7 @@ import ConsistencyCalculator from "@/pages/ConsistencyCalculator";
 import Backtester from "@/pages/Backtester";
 import MonteCarlo from "@/pages/MonteCarlo";
 import DataSourcePage from "@/pages/DataSource";
+import PeerBreadth from "@/pages/PeerBreadth";
 import ProRoute from "./ProRoute";
 
 const AnimatedRoutes = () => {
