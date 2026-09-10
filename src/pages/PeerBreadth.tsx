@@ -60,9 +60,10 @@ const PeerBreadth = () => {
     });
   }, [result]);
 
-  const run = async () => {
+  const run = useCallback(async () => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
     setLoading(true);
-    setResult(null);
     try {
       // download at least breadth + ATR warmup before the sim window
       const fetchStart = new Date(Date.parse(`${startDate}T00:00:00Z`) - 60 * 86_400_000)
@@ -94,14 +95,24 @@ const PeerBreadth = () => {
       };
       const r = runPeerBreadthBacktest(data, cfg, startDate);
       setResult(r);
+      setLastRunAt(new Date());
       toast.success(`${r.stats.trades} trade dari ${r.signals.length} sinyal (${loaded} koin)`);
     } catch (e: any) {
       toast.error(e?.message || "gagal menjalankan peer breadth");
     } finally {
+      loadingRef.current = false;
       setLoading(false);
       setProgress("");
     }
-  };
+  }, [startDate, useFunding, startEquity]);
+
+  // auto-run saat halaman dibuka + refresh ulang setiap jam
+  useEffect(() => {
+    run();
+    if (!autoRefresh) return;
+    const id = setInterval(run, 60 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [run, autoRefresh]);
 
   const s = result?.stats;
 
