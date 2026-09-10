@@ -20,6 +20,7 @@ import ConsistencyCalculator from "@/pages/ConsistencyCalculator";
 import Backtester from "@/pages/Backtester";
 import MonteCarlo from "@/pages/MonteCarlo";
 import DataSourcePage from "@/pages/DataSource";
+import PeerBreadth from "@/pages/PeerBreadth";
 import ProRoute from "./ProRoute";
 
 const AnimatedRoutes = () => {
@@ -45,6 +46,7 @@ const AnimatedRoutes = () => {
         <Route path="/consistency-calculator" element={<PageTransition><ConsistencyCalculator /></PageTransition>} />
         <Route path="/backtester" element={<ProRoute><PageTransition><Backtester /></PageTransition></ProRoute>} />
         <Route path="/monte-carlo" element={<ProRoute><PageTransition><MonteCarlo /></PageTransition></ProRoute>} />
+        <Route path="/peer-breadth" element={<ProRoute><PageTransition><PeerBreadth /></PageTransition></ProRoute>} />
         <Route path="/admin-x9k7-88f2-vqp9" element={<PageTransition><AdminPanel /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
