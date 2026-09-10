@@ -23,6 +23,7 @@ const workspaceItems = [
   { icon: FlaskConical, label: "edge lab", href: "/app" },
   { icon: LineChart, label: "backtester", href: "/backtester" },
   { icon: Dices, label: "monte carlo", href: "/monte-carlo" },
+  { icon: Radar, label: "peer breadth", href: "/peer-breadth" },
   { icon: CandlestickChart, label: "chart", href: "/chart" },
   { icon: Cpu, label: "algos", href: "/algos" },
   { icon: Calculator, label: "consistency calc", href: "/consistency-calculator" },
