@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
@@ -44,6 +44,9 @@ const PeerBreadth = () => {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState("");
   const [result, setResult] = useState<PeerBreadthResult | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastRunAt, setLastRunAt] = useState<Date | null>(null);
+  const loadingRef = useRef(false);
 
   const equityChart = useMemo(
     () => (result?.equity || []).map((e) => ({ date: e.date, equity: Math.round(e.equity) })),
@@ -57,9 +60,10 @@ const PeerBreadth = () => {
     });
   }, [result]);
 
-  const run = async () => {
+  const run = useCallback(async () => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
     setLoading(true);
-    setResult(null);
     try {
       // download at least breadth + ATR warmup before the sim window
       const fetchStart = new Date(Date.parse(`${startDate}T00:00:00Z`) - 60 * 86_400_000)
@@ -91,14 +95,24 @@ const PeerBreadth = () => {
       };
       const r = runPeerBreadthBacktest(data, cfg, startDate);
       setResult(r);
+      setLastRunAt(new Date());
       toast.success(`${r.stats.trades} trade dari ${r.signals.length} sinyal (${loaded} koin)`);
     } catch (e: any) {
       toast.error(e?.message || "gagal menjalankan peer breadth");
     } finally {
+      loadingRef.current = false;
       setLoading(false);
       setProgress("");
     }
-  };
+  }, [startDate, useFunding, startEquity]);
+
+  // auto-run saat halaman dibuka + refresh ulang setiap jam
+  useEffect(() => {
+    run();
+    if (!autoRefresh) return;
+    const id = setInterval(run, 60 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [run, autoRefresh]);
 
   const s = result?.stats;
 
@@ -159,9 +173,15 @@ const PeerBreadth = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-2 h-9">
-                <Switch checked={useFunding} onCheckedChange={setUseFunding} id="funding" />
-                <Label htmlFor="funding" className="text-[11px] lowercase">hitung biaya funding 8 jam</Label>
+              <div className="flex flex-col justify-center gap-1.5 h-9">
+                <div className="flex items-center gap-2">
+                  <Switch checked={useFunding} onCheckedChange={setUseFunding} id="funding" />
+                  <Label htmlFor="funding" className="text-[11px] lowercase">funding 8 jam</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} id="autorefresh" />
+                  <Label htmlFor="autorefresh" className="text-[11px] lowercase">auto-refresh tiap jam</Label>
+                </div>
               </div>
               <Button onClick={run} disabled={loading} className="h-9 text-[12px] lowercase">
                 {loading ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Play className="h-4 w-4 mr-1.5" />}
@@ -171,6 +191,12 @@ const PeerBreadth = () => {
             <p className="text-[10px] text-muted-foreground mt-2">
               biaya 20 bp bolak-balik (10 bp per sisi), risiko 0.25% ekuitas per sinyal, batas risiko terbuka 1.5%,
               gross maksimal 2× ekuitas, satu posisi per koin.
+              {lastRunAt && (
+                <span className="block mt-0.5">
+                  terakhir diperbarui: {lastRunAt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                  {autoRefresh ? " — diperbarui otomatis setiap jam" : ""}
+                </span>
+              )}
             </p>
           </Card>
 
