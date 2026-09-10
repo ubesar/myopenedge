@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import AppNavSidebar, { MobileHeader } from "@/components/AppNavSidebar";
@@ -44,6 +44,9 @@ const PeerBreadth = () => {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState("");
   const [result, setResult] = useState<PeerBreadthResult | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastRunAt, setLastRunAt] = useState<Date | null>(null);
+  const loadingRef = useRef(false);
 
   const equityChart = useMemo(
     () => (result?.equity || []).map((e) => ({ date: e.date, equity: Math.round(e.equity) })),
