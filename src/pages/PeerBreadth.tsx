@@ -173,9 +173,15 @@ const PeerBreadth = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-2 h-9">
-                <Switch checked={useFunding} onCheckedChange={setUseFunding} id="funding" />
-                <Label htmlFor="funding" className="text-[11px] lowercase">hitung biaya funding 8 jam</Label>
+              <div className="flex flex-col justify-center gap-1.5 h-9">
+                <div className="flex items-center gap-2">
+                  <Switch checked={useFunding} onCheckedChange={setUseFunding} id="funding" />
+                  <Label htmlFor="funding" className="text-[11px] lowercase">funding 8 jam</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} id="autorefresh" />
+                  <Label htmlFor="autorefresh" className="text-[11px] lowercase">auto-refresh tiap jam</Label>
+                </div>
               </div>
               <Button onClick={run} disabled={loading} className="h-9 text-[12px] lowercase">
                 {loading ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Play className="h-4 w-4 mr-1.5" />}
@@ -185,6 +191,12 @@ const PeerBreadth = () => {
             <p className="text-[10px] text-muted-foreground mt-2">
               biaya 20 bp bolak-balik (10 bp per sisi), risiko 0.25% ekuitas per sinyal, batas risiko terbuka 1.5%,
               gross maksimal 2× ekuitas, satu posisi per koin.
+              {lastRunAt && (
+                <span className="block mt-0.5">
+                  terakhir diperbarui: {lastRunAt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                  {autoRefresh ? " — diperbarui otomatis setiap jam" : ""}
+                </span>
+              )}
             </p>
           </Card>
 
