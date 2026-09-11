@@ -14,8 +14,8 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area,
 } from "recharts";
 import {
-  PEER_BREADTH_UNIVERSE, DEFAULT_PEER_BREADTH_CONFIG, runPeerBreadthBacktest,
-  type SymbolData, type PeerBreadthResult,
+  PEER_BREADTH_UNIVERSE, DEFAULT_PEER_BREADTH_CONFIG, runPeerBreadthBacktest, computePeerBreadthLive,
+  type SymbolData, type PeerBreadthResult, type PeerBreadthLive,
 } from "@/lib/peer-breadth";
 
 const CHUNK = 4;
@@ -44,6 +44,7 @@ const PeerBreadth = () => {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState("");
   const [result, setResult] = useState<PeerBreadthResult | null>(null);
+  const [live, setLive] = useState<PeerBreadthLive | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRunAt, setLastRunAt] = useState<Date | null>(null);
   const loadingRef = useRef(false);
@@ -95,6 +96,7 @@ const PeerBreadth = () => {
       };
       const r = runPeerBreadthBacktest(data, cfg, startDate);
       setResult(r);
+      setLive(computePeerBreadthLive(data, cfg));
       setLastRunAt(new Date());
       toast.success(`${r.stats.trades} trade dari ${r.signals.length} sinyal (${loaded} koin)`);
     } catch (e: any) {
