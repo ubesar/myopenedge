@@ -14,8 +14,8 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area,
 } from "recharts";
 import {
-  PEER_BREADTH_UNIVERSE, DEFAULT_PEER_BREADTH_CONFIG, runPeerBreadthBacktest,
-  type SymbolData, type PeerBreadthResult,
+  PEER_BREADTH_UNIVERSE, DEFAULT_PEER_BREADTH_CONFIG, runPeerBreadthBacktest, computePeerBreadthLive,
+  type SymbolData, type PeerBreadthResult, type PeerBreadthLive,
 } from "@/lib/peer-breadth";
 
 const CHUNK = 4;
@@ -44,6 +44,7 @@ const PeerBreadth = () => {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState("");
   const [result, setResult] = useState<PeerBreadthResult | null>(null);
+  const [live, setLive] = useState<PeerBreadthLive | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRunAt, setLastRunAt] = useState<Date | null>(null);
   const loadingRef = useRef(false);
@@ -95,6 +96,7 @@ const PeerBreadth = () => {
       };
       const r = runPeerBreadthBacktest(data, cfg, startDate);
       setResult(r);
+      setLive(computePeerBreadthLive(data, cfg));
       setLastRunAt(new Date());
       toast.success(`${r.stats.trades} trade dari ${r.signals.length} sinyal (${loaded} koin)`);
     } catch (e: any) {
@@ -199,6 +201,158 @@ const PeerBreadth = () => {
               )}
             </p>
           </Card>
+
+          {/* live signal dashboard */}
+          {live && (
+            <Card className="p-3 sm:p-4 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-[14px] font-semibold lowercase flex items-center gap-2">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-70" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                    </span>
+                    live signal dashboard
+                  </h2>
+                  <p className="text-[11px] text-muted-foreground">
+                    bar harian terakhir {live.date} — berapa dari 19 koin lain yang naik dalam 5 hari? saat
+                    porsinya melewati garis 70%, sakelarnya berbalik.
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">semesta naik 5 hari</p>
+                  <p className="text-[18px] font-semibold">
+                    {live.coinsUp}/{live.coinsCounted}{" "}
+                    <span className="text-[12px] text-muted-foreground">
+                      ({(live.universeShare * 100).toFixed(0)}%)
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap gap-1.5">
+                  {live.coins.map((c) => (
+                    <span
+                      key={c.symbol}
+                      title={`${c.symbol.replace("USDT", "")} • 5d ${(c.ownReturn * 100).toFixed(2)}%`}
+                      className={`h-5 w-5 rounded-full border ${
+                        c.ownUp ? "bg-emerald-500/80 border-emerald-400" : "bg-muted border-border"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden relative">
+                  <div
+                    className={`h-full ${live.universeShare >= live.threshold ? "bg-emerald-500" : "bg-primary/70"}`}
+                    style={{ width: `${live.universeShare * 100}%` }}
+                  />
+                  <div
+                    className="absolute top-0 h-full w-[2px] bg-amber-400"
+                    style={{ left: `${live.threshold * 100}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  garis kuning = ambang {(live.threshold * 100).toFixed(0)}%
+                </p>
+              </div>
+
+              {live.signals.length === 0 ? (
+                <p className="text-[12px] text-muted-foreground">
+                  belum ada sinyal entry pada bar {live.date}. tidak ada koin yang melewati garis 70% hari ini.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {live.signals.map((c) => (
+                    <div
+                      key={c.symbol}
+                      className={`rounded-lg border p-3 ${
+                        c.signal === 1 ? "border-emerald-500/50 bg-emerald-500/5" : "border-red-500/50 bg-red-500/5"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-[13px] font-semibold">{c.symbol.replace("USDT", "")}</p>
+                        <span
+                          className={`inline-flex items-center gap-1 text-[11px] font-medium ${
+                            c.signal === 1 ? "text-emerald-500" : "text-red-500"
+                          }`}
+                        >
+                          {c.signal === 1 ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
+                          {c.signal === 1 ? "long" : "short"}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        entry di open harian berikutnya · breadth{" "}
+                        {((c.signal === 1 ? c.positiveShare : c.negativeShare) * 100).toFixed(0)}% (kemarin{" "}
+                        {((c.signal === 1 ? c.prevPositiveShare : c.prevNegativeShare) * 100).toFixed(0)}%)
+                      </p>
+                      <div className="grid grid-cols-3 gap-2 mt-2 text-[11px]">
+                        <div>
+                          <p className="text-muted-foreground text-[10px]">ref close</p>
+                          <p className="font-medium">{c.entryRef.toPrecision(6)}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-[10px]">stop</p>
+                          <p className="font-medium text-red-500">{c.stop?.toPrecision(6)}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-[10px]">target 3r</p>
+                          <p className="font-medium text-emerald-500">{c.target?.toPrecision(6)}</p>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1.5">
+                        stop {((c.stopPct || 0) * 100).toFixed(2)}% · return 5 hari {(c.ownReturn * 100).toFixed(2)}%
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="overflow-x-auto max-h-[320px]">
+                <table className="w-full text-[11px]">
+                  <thead className="text-muted-foreground sticky top-0 bg-card">
+                    <tr className="border-b border-border">
+                      <th className="text-left py-1.5">koin</th>
+                      <th className="text-right">peers naik</th>
+                      <th className="text-right">breadth</th>
+                      <th className="text-right">kemarin</th>
+                      <th className="text-right">return 5d</th>
+                      <th className="text-right">stop %</th>
+                      <th className="text-left pl-3">status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {live.coins.map((c) => {
+                      const above = c.positiveShare >= live.threshold;
+                      const status = c.signal === 1 ? "sinyal long"
+                        : c.signal === -1 ? "sinyal short"
+                        : c.stopTooWide ? "stop terlalu lebar"
+                        : c.crossedUp || c.crossedDown ? "cross tanpa konfirmasi koin"
+                        : above ? "breadth di atas ambang (bukan cross baru)"
+                        : "menunggu";
+                      return (
+                        <tr key={c.symbol} className="border-b border-border/50">
+                          <td className="py-1.5 font-medium">{c.symbol.replace("USDT", "")}</td>
+                          <td className="text-right">{c.peersUp}/{c.eligiblePeers}</td>
+                          <td className={`text-right ${above ? "text-emerald-500" : ""}`}>
+                            {(c.positiveShare * 100).toFixed(0)}%
+                          </td>
+                          <td className="text-right text-muted-foreground">{(c.prevPositiveShare * 100).toFixed(0)}%</td>
+                          <td className={`text-right ${c.ownReturn >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                            {(c.ownReturn * 100).toFixed(2)}%
+                          </td>
+                          <td className="text-right">{c.stopPct != null ? `${(c.stopPct * 100).toFixed(2)}%` : "—"}</td>
+                          <td className={`pl-3 ${c.signal !== 0 ? "font-medium text-primary" : "text-muted-foreground"}`}>
+                            {status}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
 
           {/* results */}
           {s && result && (

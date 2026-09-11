@@ -550,3 +550,160 @@ function computeStats(trades: PeerBreadthTrade[], equity: EquityPoint[], startEq
     finalEquity,
   };
 }
+
+/* ------------------------------------------------------------------ */
+/* Live breadth dashboard                                              */
+/* ------------------------------------------------------------------ */
+
+export interface LiveCoinState {
+  symbol: string;
+  date: string;
+  close: number;
+  ownReturn: number;          // 5-day close-to-close return
+  ownUp: boolean;             // ownReturn > 0
+  closedUp: boolean;          // close > previous close
+  eligiblePeers: number;
+  peersUp: number;            // peers with positive 5d return today
+  peersDown: number;
+  positiveShare: number;
+  negativeShare: number;
+  prevPositiveShare: number;
+  prevNegativeShare: number;
+  crossedUp: boolean;         // positive share crossed the 70% line today
+  crossedDown: boolean;
+  stopPct: number | null;     // null when ATR unavailable
+  stopTooWide: boolean;
+  signal: 0 | 1 | -1;         // actionable entry for the next daily open
+  entryRef: number;           // reference price (today's close)
+  stop: number | null;
+  target: number | null;
+}
+
+export interface PeerBreadthLive {
+  date: string;
+  coinsUp: number;            // coins in the universe with positive 5d return
+  coinsCounted: number;
+  universeShare: number;      // coinsUp / coinsCounted
+  threshold: number;          // cfg.breadthFraction
+  coins: LiveCoinState[];
+  signals: LiveCoinState[];   // coins with signal !== 0
+}
+
+/** Snapshot of breadth + actionable entries on the most recent complete daily bar. */
+export function computePeerBreadthLive(
+  data: Record<string, SymbolData>,
+  cfg: PeerBreadthConfig = DEFAULT_PEER_BREADTH_CONFIG
+): PeerBreadthLive | null {
+  const symbols = Object.keys(data).filter((s) => (data[s]?.bars?.length ?? 0) > cfg.breadthBars + 1);
+  if (symbols.length < 2) return null;
+
+  const closeBy: Record<string, Map<string, number>> = {};
+  const chgBy: Record<string, Map<string, number>> = {};
+  const atrBy: Record<string, Map<string, number>> = {};
+  const dateSet = new Set<string>();
+
+  for (const s of symbols) {
+    const bars = data[s].bars.slice().sort((a, b) => (a.date < b.date ? -1 : 1));
+    const cm = new Map<string, number>();
+    const gm = new Map<string, number>();
+    const am = new Map<string, number>();
+    const atr = simpleAtr(bars, cfg.atrPeriod);
+    bars.forEach((b, i) => {
+      cm.set(b.date, b.close);
+      dateSet.add(b.date);
+      if (i >= cfg.breadthBars) gm.set(b.date, b.close / bars[i - cfg.breadthBars].close - 1);
+      const a = atr[i];
+      if (a != null) am.set(b.date, a);
+    });
+    closeBy[s] = cm;
+    chgBy[s] = gm;
+    atrBy[s] = am;
+  }
+
+  const allDates = Array.from(dateSet).sort();
+  if (allDates.length < 2) return null;
+  const date = allDates[allDates.length - 1];
+  const prev = allDates[allDates.length - 2];
+
+  const coins: LiveCoinState[] = [];
+  let coinsUp = 0, coinsCounted = 0;
+
+  for (const s of symbols) {
+    const own = chgBy[s].get(date);
+    const close = closeBy[s].get(date);
+    const prevClose = closeBy[s].get(prev);
+    if (own == null || close == null || prevClose == null) continue;
+    coinsCounted++;
+    if (own > 0) coinsUp++;
+
+    const peers = symbols.filter((p) => p !== s);
+    const required = Math.max(cfg.minPeers, Math.ceil(cfg.peerCoverage * peers.length));
+    let eligible = 0, pos = 0, posPrev = 0, neg = 0, negPrev = 0;
+    for (const p of peers) {
+      const now = chgBy[p].get(date);
+      const before = chgBy[p].get(prev);
+      if (now == null || before == null) continue;
+      eligible++;
+      if (now > 0) pos++;
+      if (before > 0) posPrev++;
+      if (now < 0) neg++;
+      if (before < 0) negPrev++;
+    }
+
+    const positiveShare = eligible ? pos / eligible : 0;
+    const negativeShare = eligible ? neg / eligible : 0;
+    const prevPositiveShare = eligible ? posPrev / eligible : 0;
+    const prevNegativeShare = eligible ? negPrev / eligible : 0;
+    const enough = eligible >= required;
+
+    const crossedUp = enough && positiveShare >= cfg.breadthFraction && prevPositiveShare < cfg.breadthFraction;
+    const crossedDown = enough && negativeShare >= cfg.breadthFraction && prevNegativeShare < cfg.breadthFraction;
+
+    const atr = atrBy[s].get(date);
+    const stopPct = atr != null ? Math.max(cfg.minStopPct, (cfg.stopAtr * atr) / close) : null;
+    const stopTooWide = stopPct != null && stopPct > cfg.maxStopPct;
+
+    const closedUp = close > prevClose;
+    let signal: 0 | 1 | -1 = 0;
+    if (stopPct != null && !stopTooWide) {
+      if (crossedUp && own > 0 && closedUp) signal = 1;
+      else if (crossedDown && own < 0 && close < prevClose) signal = -1;
+    }
+
+    coins.push({
+      symbol: s,
+      date,
+      close,
+      ownReturn: own,
+      ownUp: own > 0,
+      closedUp,
+      eligiblePeers: eligible,
+      peersUp: pos,
+      peersDown: neg,
+      positiveShare,
+      negativeShare,
+      prevPositiveShare,
+      prevNegativeShare,
+      crossedUp,
+      crossedDown,
+      stopPct,
+      stopTooWide,
+      signal,
+      entryRef: close,
+      stop: signal !== 0 && stopPct != null ? close * (1 - signal * stopPct) : null,
+      target: signal !== 0 && stopPct != null ? close * (1 + signal * stopPct * cfg.targetR) : null,
+    });
+  }
+
+  coins.sort((a, b) => b.positiveShare - a.positiveShare || (a.symbol < b.symbol ? -1 : 1));
+
+  return {
+    date,
+    coinsUp,
+    coinsCounted,
+    universeShare: coinsCounted ? coinsUp / coinsCounted : 0,
+    threshold: cfg.breadthFraction,
+    coins,
+    signals: coins.filter((c) => c.signal !== 0),
+  };
+}
