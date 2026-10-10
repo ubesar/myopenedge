@@ -29,7 +29,7 @@ import { computeAdvancedMetrics } from "@/lib/backtest-metrics";
 import { runDailyReversalBacktest, type DailyReversalTrade } from "@/lib/daily-reversal";
 import { runCalendarMondayBacktest, type CalMondayTrade } from "@/lib/calendar-monday";
 
-type StrategyKey = "pb50" | "ib2575" | "orbm15" | "ivfg" | "drev" | "calmon";
+type StrategyKey = "pb50" | "ib2575" | "orbm15" | "ivfg" | "drev" | "calmon" | "timebs";
 
 /** fixed dollar risk for the ivfg (inverse fvg) strategy */
 const IVFG_RISK_USD = 300;
@@ -276,11 +276,11 @@ function toBTTradesDREV(trades: DailyReversalTrade[], riskBase: number): BTTrade
   }));
 }
 
-function toBTTradesCALMON(trades: CalMondayTrade[], riskBase: number): BTTrade[] {
+function toBTTradesCALMON(trades: CalMondayTrade[], riskBase: number, dir: 1 | -1 = 1): BTTrade[] {
   return trades.map((t) => ({
     date: t.date,
     time: t.entryTime,
-    direction: "bullish" as const,
+    direction: (dir === 1 ? "bullish" : "bearish") as "bullish",
     entry: t.entryPrice,
     stop: t.entryPrice, // no stop in this playbook
     target: t.exitPrice,
@@ -395,6 +395,8 @@ const Backtester = () => {
   const [calPointValue, setCalPointValue] = useState("1");
   const [calContracts, setCalContracts] = useState("1");
   const [calStrict, setCalStrict] = useState("false");
+  const [tbsDays, setTbsDays] = useState("all");
+  const [tbsDir, setTbsDir] = useState("1");
 
   const [maxDays, setMaxDays] = useState("120");
   const [ibWindow, setIbWindow] = useState("60");
@@ -558,11 +560,15 @@ const Backtester = () => {
         trades = toBTTradesDREV(r.tradesList, drevSizing === "contracts" ? ctr * pv : alloc);
         totalDays = r.totalDays;
 
-      } else if (strategy === "calmon") {
+      } else if (strategy === "calmon" || strategy === "timebs") {
+        const isTbs = strategy === "timebs";
+        const dir = (isTbs ? parseInt(tbsDir) : 1) as 1 | -1;
         const pv = parseFloat(calPointValue) || 1;
         const ctr = parseInt(calContracts) || 1;
         const r = runCalendarMondayBacktest(values, {
           weekday: parseInt(calWeekday),
+          weekdays: isTbs ? (tbsDays === "all" ? [1, 2, 3, 4, 5] : [parseInt(tbsDays)]) : undefined,
+          direction: dir,
           entryMin: toMin(calEntry),
           exitMin: toMin(calExit),
           costPoints: parseFloat(calCost) || 0,
@@ -571,7 +577,7 @@ const Backtester = () => {
           strictWindow: calStrict === "true",
           maxDays: days > 0 ? days : undefined,
         });
-        trades = toBTTradesCALMON(r.trades, pv * ctr);
+        trades = toBTTradesCALMON(r.trades, pv * ctr, dir);
         totalDays = r.totalDays;
 
       } else {
@@ -733,6 +739,7 @@ const Backtester = () => {
                     <SelectItem value="ivfg">ivfg (inverse fair value gap)</SelectItem>
                     <SelectItem value="drev">daily candle reversal (bearish→bullish flip)</SelectItem>
                     <SelectItem value="calmon">calendar monday (06:00 → 16:00 et)</SelectItem>
+                    <SelectItem value="timebs">time buy / sell (jam bebas)</SelectItem>
 
 
                   </SelectContent>
@@ -892,8 +899,36 @@ const Backtester = () => {
                     </SelectContent>
                   </Select>
                 </div>
-              ) : strategy === "calmon" ? (
+              ) : strategy === "calmon" || strategy === "timebs" ? (
                 <>
+                  {strategy === "timebs" ? (
+                  <>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">arah</Label>
+                    <Select value={tbsDir} onValueChange={setTbsDir}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">buy → sell (long)</SelectItem>
+                        <SelectItem value="-1">sell → buy (short)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs lowercase">hari</Label>
+                    <Select value={tbsDays} onValueChange={setTbsDays}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">semua hari (mon–fri)</SelectItem>
+                        <SelectItem value="1">monday</SelectItem>
+                        <SelectItem value="2">tuesday</SelectItem>
+                        <SelectItem value="3">wednesday</SelectItem>
+                        <SelectItem value="4">thursday</SelectItem>
+                        <SelectItem value="5">friday</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  </>
+                  ) : (
                   <div className="space-y-1.5">
                     <Label className="text-xs lowercase">hari</Label>
                     <Select value={calWeekday} onValueChange={setCalWeekday}>
@@ -907,13 +942,14 @@ const Backtester = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  )}
                   <div className="space-y-1.5">
-                    <Label className="text-xs lowercase">buy time (et)</Label>
-                    <Input value={calEntry} onChange={(e) => setCalEntry(e.target.value)} placeholder="06:00" />
+                    <Label className="text-xs lowercase">{strategy === "timebs" && tbsDir === "-1" ? "sell" : "buy"} time (et)</Label>
+                    <Input type="time" value={calEntry} onChange={(e) => setCalEntry(e.target.value)} />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs lowercase">sell time (et)</Label>
-                    <Input value={calExit} onChange={(e) => setCalExit(e.target.value)} placeholder="16:00" />
+                    <Label className="text-xs lowercase">{strategy === "timebs" && tbsDir === "-1" ? "buy back" : "sell"} time (et)</Label>
+                    <Input type="time" value={calExit} onChange={(e) => setCalExit(e.target.value)} />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs lowercase">cost (points / round trip)</Label>
@@ -939,7 +975,7 @@ const Backtester = () => {
                   </div>
                   <div className="md:col-span-4">
                     <p className="text-[11px] text-muted-foreground lowercase">
-                      long only · hanya {["sunday","monday","tuesday","wednesday","thursday","friday","saturday"][parseInt(calWeekday)]} · buy di open candle {calEntry} et, sell di open candle {calExit} et · tanpa sl / tp · hari libur otomatis dilewati
+                      {strategy === "timebs" ? `${tbsDir === "1" ? "long" : "short"} · ${tbsDays === "all" ? "setiap hari mon–fri" : ["","monday","tuesday","wednesday","thursday","friday"][parseInt(tbsDays)]} · entry di open candle ${calEntry} et, exit di open candle ${calExit} et · tanpa sl / tp` : <>long only · hanya {["sunday","monday","tuesday","wednesday","thursday","friday","saturday"][parseInt(calWeekday)]} · buy di open candle {calEntry} et, sell di open candle {calExit} et · tanpa sl / tp · hari libur otomatis dilewati</>}
                     </p>
                   </div>
                 </>
