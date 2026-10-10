@@ -35,6 +35,10 @@ export interface CalMondayTrade {
 export interface CalMondayOptions {
   /** 0=sun … 1=monday (default) */
   weekday?: number;
+  /** optional list of weekdays (overrides weekday) */
+  weekdays?: number[];
+  /** 1 = buy then sell (long), -1 = sell then buy back (short) */
+  direction?: 1 | -1;
   /** minutes from midnight, ET */
   entryMin?: number;
   exitMin?: number;
@@ -78,6 +82,8 @@ export function runCalendarMondayBacktest(
   opts: CalMondayOptions = {},
 ): CalMondayResult {
   const weekday = opts.weekday ?? 1;
+  const wds = opts.weekdays && opts.weekdays.length ? opts.weekdays : [weekday];
+  const dir = opts.direction ?? 1;
   const entryMin = opts.entryMin ?? 6 * 60;
   const exitMin = opts.exitMin ?? 16 * 60;
   const tol = opts.toleranceMin ?? 5;
@@ -105,7 +111,8 @@ export function runCalendarMondayBacktest(
   const skipped: { date: string; reason: string }[] = [];
 
   for (const date of dates) {
-    if (weekdayOf(date) !== weekday) continue;
+    const wd = weekdayOf(date);
+    if (!wds.includes(wd)) continue;
     const day = (byDate.get(date) ?? []).sort((a, b) => a.min - b.min);
     const pick = (target: number) => day.find((b) => b.min >= target && b.min <= target + tol);
     // fallback for session-limited feeds (etf/stock rth data has no 06:00 bar):
@@ -121,12 +128,12 @@ export function runCalendarMondayBacktest(
       skipped.push({ date, reason: !e ? "no entry bar" : "no exit bar" });
       continue;
     }
-    const grossPoints = x.open - e.open;
+    const grossPoints = (x.open - e.open) * dir;
     const netPoints = grossPoints - cost;
     const pnlUsd = netPoints * pv * contracts;
     trades.push({
       date,
-      weekday,
+      weekday: wd,
       entryTime: e.dt.split(" ")[1] ?? "",
       entryPrice: e.open,
       exitTime: x.dt.split(" ")[1] ?? "",
