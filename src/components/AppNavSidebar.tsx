@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   ChevronLeft, ChevronRight, Rocket, Bot, FlaskConical, CandlestickChart,
   TrendingUp, Cpu, Calculator, Users, BookOpen, LineChart, Dices,
-  Crown, LogOut, Menu, X, Database, Radar, Crosshair
+  Crown, LogOut, Menu, X, Database, Radar, Crosshair, Clock
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import iconX from "@/assets/icon-x.png";
@@ -25,6 +25,7 @@ const workspaceItems = [
   { icon: Dices, label: "monte carlo", href: "/monte-carlo" },
   { icon: Radar, label: "peer breadth", href: "/peer-breadth" },
   { icon: Crosshair, label: "open retest", href: "/open-retest" },
+  { icon: Clock, label: "seasonal window", href: "/seasonal-window" },
   { icon: CandlestickChart, label: "chart", href: "/chart" },
   { icon: Cpu, label: "algos", href: "/algos" },
   { icon: Calculator, label: "consistency calc", href: "/consistency-calculator" },
