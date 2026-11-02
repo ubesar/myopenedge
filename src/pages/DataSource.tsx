@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import LocalM1Panel from "@/components/LocalM1Panel";
 import { Download, Trash2, Database, HardDriveDownload } from "lucide-react";
 import {
   DATA_SOURCE_INTERVALS,
@@ -323,6 +324,7 @@ default live api — tiap halaman (/app, /backtester, /chart) bisa dipilih sendi
             </div>
           )}
         </Card>
+        <LocalM1Panel />
       </main>
     </div>
   );
