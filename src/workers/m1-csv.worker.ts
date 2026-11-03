@@ -6,7 +6,7 @@ self.onmessage = async (ev: MessageEvent<{ file: File }>) => {
   try {
     const cap0 = Math.max(1024, Math.ceil(file.size / 45));
     let cap = cap0;
-    let t = new Int32Array(cap), o = new Float32Array(cap), c = new Float32Array(cap);
+    let t = new Int32Array(cap), o = new Float32Array(cap), h = new Float32Array(cap), l = new Float32Array(cap), c = new Float32Array(cap);
     let n = 0, read = 0, lastPct = -1, rest = "";
     const reader = file.stream().pipeThrough(new TextDecoderStream()).getReader();
     const push = (line: string) => {
@@ -16,9 +16,11 @@ self.onmessage = async (ev: MessageEvent<{ file: File }>) => {
         cap *= 2;
         const t2 = new Int32Array(cap); t2.set(t); t = t2;
         const o2 = new Float32Array(cap); o2.set(o); o = o2;
+        const h2 = new Float32Array(cap); h2.set(h); h = h2;
+        const l2 = new Float32Array(cap); l2.set(l); l = l2;
         const c2 = new Float32Array(cap); c2.set(c); c = c2;
       }
-      t[n] = r[0]; o[n] = r[1]; c[n] = r[2]; n++;
+      t[n] = r[0]; o[n] = r[1]; h[n] = r[2]; l[n] = r[3]; c[n] = r[4]; n++;
     };
     for (;;) {
       const { value, done } = await reader.read();
@@ -26,7 +28,7 @@ self.onmessage = async (ev: MessageEvent<{ file: File }>) => {
       read += value.length;
       const lines = (rest + value).split(/\r?\n/);
       rest = lines.pop() ?? "";
-      for (const l of lines) push(l);
+      for (const l2 of lines) push(l2);
       const pct = Math.floor((read / file.size) * 100);
       if (pct !== lastPct) { lastPct = pct; (self as any).postMessage({ type: "progress", pct }); }
     }
@@ -40,15 +42,15 @@ self.onmessage = async (ev: MessageEvent<{ file: File }>) => {
     if (!sorted) {
       idx = Array.from({ length: n }, (_, i) => i).sort((a, b) => t[a] - t[b]);
     }
-    const T = new Int32Array(n), O = new Float32Array(n), C = new Float32Array(n);
+    const T = new Int32Array(n), O = new Float32Array(n), H = new Float32Array(n), L = new Float32Array(n), C = new Float32Array(n);
     let m = 0;
     for (let k = 0; k < n; k++) {
       const i = idx ? idx[k] : k;
       if (m > 0 && T[m - 1] === t[i]) continue;
-      T[m] = t[i]; O[m] = o[i]; C[m] = c[i]; m++;
+      T[m] = t[i]; O[m] = o[i]; H[m] = h[i]; L[m] = l[i]; C[m] = c[i]; m++;
     }
-    const out = { t: T.slice(0, m), o: O.slice(0, m), c: C.slice(0, m) };
-    (self as any).postMessage({ type: "done", series: out }, [out.t.buffer, out.o.buffer, out.c.buffer]);
+    const out = { t: T.slice(0, m), o: O.slice(0, m), h: H.slice(0, m), l: L.slice(0, m), c: C.slice(0, m) };
+    (self as any).postMessage({ type: "done", series: out }, [out.t.buffer, out.o.buffer, out.h.buffer, out.l.buffer, out.c.buffer]);
   } catch (e: any) {
     (self as any).postMessage({ type: "error", message: e?.message || String(e) });
   }

@@ -16,6 +16,8 @@ interface Row extends LocalDatasetMeta {
   t: ArrayBuffer;
   o: ArrayBuffer;
   c: ArrayBuffer;
+  h?: ArrayBuffer;
+  l?: ArrayBuffer;
 }
 
 function open(): Promise<IDBDatabase> {
@@ -49,6 +51,7 @@ export async function saveLocalDataset(name: string, s: M1Series): Promise<void>
     o: s.o.buffer as ArrayBuffer,
     c: s.c.buffer as ArrayBuffer,
   };
+  if (s.h && s.l) { row.h = s.h.buffer as ArrayBuffer; row.l = s.l.buffer as ArrayBuffer; }
   await tx("readwrite", (st) => st.put(row));
 }
 
@@ -60,7 +63,10 @@ export async function listLocalDatasets(): Promise<LocalDatasetMeta[]> {
 export async function loadLocalDataset(name: string): Promise<M1Series | null> {
   const r = await tx<Row | undefined>("readonly", (st) => st.get(name));
   if (!r) return null;
-  return { t: new Int32Array(r.t), o: new Float32Array(r.o), c: new Float32Array(r.c) };
+  const s: M1Series = { t: new Int32Array(r.t), o: new Float32Array(r.o), c: new Float32Array(r.c) };
+  // datasets imported before high/low support fall back to open/close-derived extremes
+  if (r.h && r.l) { s.h = new Float32Array(r.h); s.l = new Float32Array(r.l); }
+  return s;
 }
 
 export async function deleteLocalDataset(name: string): Promise<void> {
